@@ -16,34 +16,44 @@ const App = () => {
 
   const handleAI = async () => {
     setIsAnalyzing(true);
-    setAnalysis('Taipan ИИ анализирует... Подождите.');
+    setAnalysis('Taipan ИИ подбирает рабочую модель...');
     
-    // Пробуем модель flash-latest, она самая стабильная для v1beta
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
+    // Список моделей от самой новой к самой стабильной
+    const models = [
+      "gemini-1.5-flash",
+      "gemini-1.5-pro",
+      "gemini-pro"
+    ];
 
-    try {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: "Напиши один очень короткий, хищный совет для бизнеса в Казахстане по Telegram Mini Apps. 1 предложение." }] }]
-        })
-      });
+    let success = false;
+
+    for (const modelName of models) {
+      if (success) break;
       
-      const data = await response.json();
+      try {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: "Дай один короткий совет для бизнеса в 1 предложение." }] }]
+          })
+        });
+        
+        const data = await response.json();
 
-      if (data.error) {
-        setAnalysis(`Google заблокировал запрос. Причина: ${data.error.message}. Попробуйте включить VPN.`);
-      } else if (data.candidates && data.candidates[0].content) {
-        setAnalysis(data.candidates[0].content.parts[0].text);
-      } else {
-        setAnalysis("ИИ не смог ответить. Попробуйте еще раз.");
+        if (data.candidates && data.candidates[0].content) {
+          setAnalysis(data.candidates[0].content.parts[0].text);
+          success = true;
+        }
+      } catch (e) {
+        console.log(`Модель ${modelName} не ответила, пробую следующую...`);
       }
-    } catch (e) {
-      setAnalysis("Ошибка соединения. Включите VPN, если вы в Казахстане.");
-    } finally {
-      setIsAnalyzing(false);
     }
+
+    if (!success) {
+      setAnalysis("Все модели Google сейчас недоступны в вашем регионе. Пожалуйста, включите VPN и попробуйте снова.");
+    }
+    setIsAnalyzing(false);
   };
 
   if (loading) return (
@@ -54,26 +64,28 @@ const App = () => {
 
   return (
     <div style={{backgroundColor: 'black', color: 'white', minHeight: '100vh', padding: '20px', fontFamily: 'sans-serif'}}>
-      <h1 style={{color: '#10b981', fontStyle: 'italic', fontWeight: '900', fontSize: '28px'}}>TAIPAN MEDIA</h1>
+      <header style={{marginBottom: '30px'}}>
+        <h1 style={{color: '#10b981', fontStyle: 'italic', fontWeight: '900', fontSize: '28px', margin: 0}}>TAIPAN MEDIA</h1>
+      </header>
       
       {view === 'select' ? (
-        <button onClick={() => setView('biz')} style={{width: '100%', marginTop: '30px', padding: '25px', backgroundColor: '#18181b', border: '1px solid #10b98144', borderRadius: '20px', textAlign: 'left', color: 'white'}}>
+        <button onClick={() => setView('biz')} style={{width: '100%', padding: '25px', backgroundColor: '#18181b', border: '1px solid #10b98144', borderRadius: '20px', textAlign: 'left', color: 'white', cursor: 'pointer'}}>
           <div style={{fontSize: '18px', fontWeight: 'bold'}}>💼 Предприниматель</div>
-          <div style={{fontSize: '12px', color: '#71717a'}}>Получить совет от ИИ</div>
+          <div style={{fontSize: '12px', color: '#71717a'}}>Получить стратегию от ИИ</div>
         </button>
       ) : (
         <div>
-          <button onClick={() => setView('select')} style={{color: '#71717a', background: 'none', border: 'none', marginBottom: '20px'}}>← НАЗАД</button>
+          <button onClick={() => setView('select')} style={{color: '#71717a', background: 'none', border: 'none', marginBottom: '20px', cursor: 'pointer'}}>← НАЗАД</button>
           <div style={{backgroundColor: '#18181b', padding: '30px', borderRadius: '25px', border: '1px solid #10b98122'}}>
             <button 
               onClick={handleAI} 
               disabled={isAnalyzing}
-              style={{width: '100%', backgroundColor: '#10b981', color: 'black', fontWeight: '900', padding: '18px', borderRadius: '15px', border: 'none'}}
+              style={{width: '100%', backgroundColor: '#10b981', color: 'black', fontWeight: '900', padding: '18px', borderRadius: '15px', border: 'none', cursor: 'pointer'}}
             >
-              {isAnalyzing ? "ДУМАЮ..." : "СГЕНЕРИРОВАТЬ СОВЕТ"}
+              {isAnalyzing ? "ПОИСК МОДЕЛИ..." : "СГЕНЕРИРОВАТЬ СОВЕТ"}
             </button>
             {analysis && (
-              <div style={{marginTop: '25px', padding: '20px', backgroundColor: '#000', borderRadius: '15px', borderLeft: '4px solid #10b981'}}>
+              <div style={{marginTop: '25px', padding: '20px', backgroundColor: '#000', borderRadius: '15px', borderLeft: '4px solid #10b981', fontSize: '15px'}}>
                 {analysis}
               </div>
             )}

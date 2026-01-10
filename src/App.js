@@ -40,19 +40,15 @@ const apiKey = "sk-proj-fyj8TGhu_L5hoIKt_kjWq8q6U630cloKirjVDzNGrO-l0kJhUI-oas7E
 const callOpenAIAPI = async (prompt, history = []) => {
   try {
     if (!apiKey) {
-      // Mock response if API key is missing
       await new Promise(r => setTimeout(r, 2000));
       return "СИСТЕМА: API ключ не обнаружен. Проверьте настройки.";
     }
 
-    // Формируем историю сообщений для OpenAI
-    // OpenAI использует роли: 'system', 'user', 'assistant'
     const messages = history.map(msg => ({
       role: msg.sender === 'user' ? 'user' : 'assistant',
       content: msg.text
     }));
     
-    // Добавляем системный промпт
     messages.unshift({
         role: "system",
         content: `Ты — AI-ассистент элитного агентства Taipan Media. Твой тон: уверенный, профессиональный, немного дерзкий ("хищный"), но вежливый. Ты эксперт в Telegram Mini Apps. 
@@ -60,7 +56,6 @@ const callOpenAIAPI = async (prompt, history = []) => {
         Используй эмодзи. Отвечай кратко и по делу.`
     });
 
-    // Добавляем текущий запрос пользователя
     messages.push({ role: 'user', content: prompt });
 
     const response = await fetch(
@@ -72,7 +67,7 @@ const callOpenAIAPI = async (prompt, history = []) => {
           'Authorization': `Bearer ${apiKey}`
         },
         body: JSON.stringify({
-          model: "gpt-4o", // Используем актуальную модель
+          model: "gpt-4o",
           messages: messages,
           temperature: 0.7
         }),
@@ -80,8 +75,6 @@ const callOpenAIAPI = async (prompt, history = []) => {
     );
     
     if (!response.ok) {
-        const errorData = await response.json();
-        console.error("OpenAI API Error Details:", errorData);
         throw new Error('API Error');
     }
 
@@ -169,21 +162,21 @@ const DEV_ROLES = [
     title: 'Backend Инженер',
     icon: <Cpu size={24} />,
     desc: 'Логика, базы данных, API. Ты строишь "мозги" системы.',
-    color: 'blue'
+    color: 'emerald'
   },
   {
     id: 'design',
     title: 'UI/UX Дизайнер',
     icon: <Palette size={24} />,
     desc: 'Стиль, психология, удобство. Ты управляешь вниманием пользователя.',
-    color: 'purple'
+    color: 'emerald'
   },
   {
     id: 'traffic',
     title: 'Арбитраж Трафика',
     icon: <Zap size={24} />,
     desc: 'Реклама, воронки, лиды. Ты приводишь клиентов и делаешь кэш.',
-    color: 'amber'
+    color: 'emerald'
   }
 ];
 
@@ -274,6 +267,79 @@ const SnakePatternBackground = () => (
     <div className="absolute inset-0 bg-gradient-to-b from-black via-transparent to-emerald-900/10"></div>
   </div>
 );
+
+const ShatterText = ({ visible, children }) => {
+  const [status, setStatus] = useState(visible ? 'visible' : 'hidden');
+  const [shatter, setShatter] = useState(false);
+
+  useEffect(() => {
+    if (visible) {
+      setStatus('visible');
+      setShatter(false);
+    } else if (status === 'visible' && !visible) {
+      setStatus('shattering');
+      // Trigger animation frame for smooth transition
+      requestAnimationFrame(() => {
+         requestAnimationFrame(() => {
+            setShatter(true);
+         });
+      });
+      const timer = setTimeout(() => setStatus('hidden'), 800);
+      return () => clearTimeout(timer);
+    }
+  }, [visible]);
+
+  if (status === 'hidden') return null;
+
+  return (
+    <div className="relative inline-block w-full">
+       {/* GHOST ELEMENT: 
+          Keeps the layout size correct while the animation plays absolutely on top.
+          Only invisible during shattering, visible otherwise.
+       */}
+       <div className={`transition-opacity duration-300 ${status === 'visible' ? 'opacity-100' : 'opacity-0'}`}>
+          {children}
+       </div>
+
+       {/* SHARDS: Only rendered during the shattering phase */}
+       {status === 'shattering' && (
+         <div className="absolute inset-0 pointer-events-none z-20">
+            {/* Shard 1 - Top Left */}
+            <div 
+                className={`absolute inset-0 transition-all duration-700 ease-out origin-bottom-right ${shatter ? '-translate-x-12 -translate-y-12 -rotate-12 opacity-0 scale-75' : ''}`} 
+                style={{ clipPath: 'polygon(0 0, 50% 0, 50% 50%, 0 50%)' }}
+            >
+                {children}
+            </div>
+            {/* Shard 2 - Top Right */}
+            <div 
+                className={`absolute inset-0 transition-all duration-700 ease-out origin-bottom-left ${shatter ? 'translate-x-12 -translate-y-12 rotate-12 opacity-0 scale-75' : ''}`} 
+                style={{ clipPath: 'polygon(50% 0, 100% 0, 100% 50%, 50% 50%)' }}
+            >
+                {children}
+            </div>
+            {/* Shard 3 - Bottom Right */}
+            <div 
+                className={`absolute inset-0 transition-all duration-700 ease-out origin-top-left ${shatter ? 'translate-x-12 translate-y-12 -rotate-12 opacity-0 scale-75' : ''}`} 
+                style={{ clipPath: 'polygon(50% 50%, 100% 50%, 100% 100%, 50% 100%)' }}
+            >
+                {children}
+            </div>
+            {/* Shard 4 - Bottom Left */}
+            <div 
+                className={`absolute inset-0 transition-all duration-700 ease-out origin-top-right ${shatter ? '-translate-x-12 translate-y-12 rotate-12 opacity-0 scale-75' : ''}`} 
+                style={{ clipPath: 'polygon(0 50%, 50% 50%, 50% 100%, 0 100%)' }}
+            >
+                {children}
+            </div>
+            
+            {/* Flash Effect */}
+            <div className={`absolute inset-0 bg-emerald-400/30 mix-blend-overlay transition-opacity duration-200 ${shatter ? 'opacity-0' : 'opacity-100'}`}></div>
+         </div>
+       )}
+    </div>
+  );
+};
 
 // --- AI CHAT COMPONENT ---
 const AIChat = ({ isOpen, onClose }) => {
@@ -416,15 +482,15 @@ const SelectView = ({ setMode }) => (
 
         <button
           onClick={() => setMode('dev')}
-          className="group relative overflow-hidden rounded-3xl bg-zinc-900 border border-zinc-800 p-1 hover:border-blue-500/50 transition-all duration-500 active:scale-[0.98]"
+          className="group relative overflow-hidden rounded-3xl bg-zinc-900 border border-zinc-800 p-1 hover:border-emerald-500/50 transition-all duration-500 active:scale-[0.98]"
         >
           <div className="absolute inset-0 opacity-10 bg-[url('https://images.unsplash.com/photo-1550948537-130a1ce83314?q=80&w=2072&auto=format&fit=crop')] bg-cover bg-center mix-blend-overlay group-hover:opacity-20 transition-opacity"></div>
           <div className="bg-gradient-to-br from-zinc-800/80 to-black/90 rounded-[20px] p-6 h-full relative z-10 text-left backdrop-blur-sm">
              <div className="flex justify-between items-start mb-4">
-                <div className="w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-500 border border-blue-500/20 shadow-[0_0_15px_rgba(59,130,246,0.1)] group-hover:scale-110 transition-transform">
+                <div className="w-12 h-12 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500 border border-emerald-500/20 shadow-[0_0_15px_rgba(59,130,246,0.1)] group-hover:scale-110 transition-transform">
                    <Code size={24} />
                 </div>
-                <ArrowRight className="text-zinc-700 group-hover:text-blue-500 transition-colors group-hover:translate-x-1 duration-300" />
+                <ArrowRight className="text-zinc-700 group-hover:text-emerald-500 transition-colors group-hover:translate-x-1 duration-300" />
              </div>
              <h3 className="text-xl font-bold text-white mb-1">Разработчик</h3>
              <p className="text-zinc-500 text-xs">Обучение созданию Mini Apps и заработок.</p>
@@ -759,6 +825,38 @@ const DevView = ({ setMode }) => {
   const [selectedRole, setSelectedRole] = useState(null);
   const [roleAnalysis, setRoleAnalysis] = useState('');
   
+  // Animation state for Intro (step 0)
+  const [introStep, setIntroStep] = useState(0);
+
+  useEffect(() => {
+    if (devStep === 0) {
+        // Timeline for intro animation (ms)
+        // 0: Start
+        // 1: Headline In (100ms)
+        // 2: Bit In (1000ms)
+        // 3: Bit Out (3000ms)
+        // 4: Insta In (3500ms)
+        // 5: Insta Out (5500ms)
+        // 6: WB In (6000ms)
+        // 7: WB Out (8000ms)
+        // 8: Final In (8500ms)
+        
+        const timers = [
+            setTimeout(() => setIntroStep(1), 100),
+            setTimeout(() => setIntroStep(2), 1000),
+            setTimeout(() => setIntroStep(3), 3000),
+            setTimeout(() => setIntroStep(4), 3500),
+            setTimeout(() => setIntroStep(5), 5500),
+            setTimeout(() => setIntroStep(6), 6000),
+            setTimeout(() => setIntroStep(7), 8000),
+            setTimeout(() => setIntroStep(8), 8500),
+        ];
+        return () => timers.forEach(clearTimeout);
+    } else {
+        setIntroStep(0); // Reset
+    }
+  }, [devStep]);
+  
   const handleRoleSelect = async (role) => {
       setSelectedRole(role);
       setDevStep(2); // Loading step
@@ -777,43 +875,98 @@ const DevView = ({ setMode }) => {
     switch(devStep) {
         case 0:
             return (
-                <div className="h-full flex flex-col justify-center px-6 animate-in fade-in duration-500">
-                    <div className="mb-8">
-                        <div className="inline-block p-3 rounded-2xl bg-blue-500/10 border border-blue-500/20 mb-4">
-                            <Terminal size={32} className="text-blue-500" />
-                        </div>
-                        <h2 className="text-3xl font-black text-white italic tracking-tighter mb-4">
-                            INITIATION<span className="text-blue-500">.EXE</span>
+                <div className="h-full flex flex-col justify-center px-6 relative overflow-hidden font-mono">
+                    {/* Background Title - Always visible after step 1 */}
+                    <div className={`absolute top-[15%] left-0 right-0 text-center transition-all duration-700 ${introStep >= 1 ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
+                        <h2 className="text-2xl font-black text-white italic tracking-tight">
+                            Telegram-шопп: <br/>
+                            <span className="text-emerald-500">Тренд на года</span> или просто хайп?
                         </h2>
-                        <p className="text-zinc-400 text-sm leading-relaxed">
-                            Telegram Mini Apps — это новый "Дикий Запад". Рынок пуст. Спрос огромен. 
-                            <br/><br/>
-                            В Taipan мы не просто пишем код. Мы создаем цифровые активы.
-                            Готов выбрать свою специализацию?
-                        </p>
                     </div>
-                    <button 
-                        onClick={() => setDevStep(1)}
-                        className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-xl uppercase tracking-widest shadow-lg shadow-blue-900/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
-                    >
-                        Начать Инициацию <ArrowRight size={16}/>
-                    </button>
+
+                    {/* Fading Messages Container */}
+                    <div className="h-32 flex items-center justify-center relative">
+                        {/* Bitcoin */}
+                        <div className="absolute w-full flex justify-center">
+                            <ShatterText visible={introStep === 2}>
+                                <div className="flex flex-col items-center gap-3 text-zinc-400">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-red-500 text-4xl font-bold drop-shadow-[0_0_15px_rgba(239,68,68,0.5)]">❌</span>
+                                        <img src="https://upload.wikimedia.org/wikipedia/commons/4/46/Bitcoin.svg" alt="Bitcoin" className="h-12 w-12" />
+                                    </div>
+                                    <span className="text-lg font-medium">2009 год: <br/><span className="text-white font-bold">Bitcoin</span>, всего лишь забава</span>
+                                </div>
+                            </ShatterText>
+                        </div>
+
+                        {/* Instagram */}
+                        <div className="absolute w-full flex justify-center">
+                            <ShatterText visible={introStep === 4}>
+                                <div className="flex flex-col items-center gap-3 text-zinc-400">
+                                    <div className="flex items-center gap-2">
+                                         <span className="text-red-500 text-4xl font-bold drop-shadow-[0_0_15px_rgba(239,68,68,0.5)]">❌</span>
+                                         <img src="https://upload.wikimedia.org/wikipedia/commons/e/e7/Instagram_logo_2016.svg" alt="Instagram" className="h-12 w-12" />
+                                    </div>
+                                    <span className="text-lg font-medium">2012 год: <br/><span className="text-white font-bold">Instagram</span> не место для денег</span>
+                                </div>
+                            </ShatterText>
+                        </div>
+
+                         {/* WB and Kaspi */}
+                        <div className="absolute w-full flex justify-center">
+                            <ShatterText visible={introStep === 6}>
+                                <div className="flex flex-col items-center gap-3 text-zinc-400">
+                                    <div className="flex items-center gap-4">
+                                        <span className="text-red-500 text-4xl font-bold drop-shadow-[0_0_15px_rgba(239,68,68,0.5)]">❌</span>
+                                        <div className="flex gap-3 bg-white/5 p-3 rounded-2xl backdrop-blur-md border border-white/10">
+                                            {/* WB Logo Mockup */}
+                                            <div className="flex items-center justify-center px-3 py-1.5 bg-gradient-to-r from-fuchsia-700 to-purple-800 rounded-lg shadow-lg">
+                                                <span className="text-white font-black text-xl italic tracking-tighter">WB</span>
+                                            </div>
+                                            
+                                            {/* Kaspi Logo Mockup */}
+                                            <div className="flex items-center justify-center px-3 py-1.5 bg-red-600 rounded-lg shadow-lg">
+                                                <span className="text-white font-bold text-lg tracking-tight">Kaspi.kz</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <span className="text-lg font-medium">2019 год: <br/><span className="text-white font-bold">WB и Kaspi</span> — непонятно и не место заработка</span>
+                                </div>
+                            </ShatterText>
+                        </div>
+                    </div>
+
+                    {/* Final CTA - Centered like fading messages */}
+                    <div className={`absolute inset-0 flex items-center justify-center pointer-events-none ${introStep >= 8 ? 'z-20' : 'z-0'}`}>
+                        <div className={`w-full max-w-md px-6 text-center transition-all duration-1000 ease-out pointer-events-auto ${introStep >= 8 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'}`}>
+                             <p className="text-white text-lg font-bold mb-8 text-center leading-relaxed">
+                                2026 год: Taipan Media. <br/>
+                                <span className="text-emerald-500 text-2xl">Не упусти свой шанс.</span>
+                             </p>
+                            <button 
+                                onClick={() => setDevStep(1)}
+                                className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-4 rounded-xl uppercase tracking-widest shadow-[0_0_30px_rgba(16,185,129,0.3)] active:scale-[0.98] transition-all flex items-center justify-center gap-2 animate-pulse"
+                            >
+                                Начать Инициацию <ArrowRight size={16}/>
+                            </button>
+                        </div>
+                    </div>
                 </div>
             );
         case 1:
             return (
-                <div className="px-4 py-8 pb-32 animate-in slide-in-from-right duration-500">
+                <div className="px-4 py-8 pb-32 animate-in slide-in-from-right duration-500 font-mono">
                      <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                        <Users size={20} className="text-blue-500"/> Выбери свой путь
+                        <Users size={20} className="text-emerald-500"/> Выбери свой путь
                      </h2>
                      <div className="grid gap-3">
                          {DEV_ROLES.map(role => (
                              <button 
                                 key={role.id}
                                 onClick={() => handleRoleSelect(role)}
-                                className="bg-zinc-900/50 border border-zinc-800 p-4 rounded-2xl text-left hover:border-blue-500/50 hover:bg-zinc-900 transition-all group relative overflow-hidden active:scale-[0.98]"
+                                className="bg-zinc-900/50 border border-zinc-800 p-4 rounded-2xl text-left hover:border-emerald-500/50 hover:bg-zinc-900 transition-all group relative overflow-hidden active:scale-[0.98]"
                              >
-                                 <div className="absolute inset-0 bg-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                 <div className="absolute inset-0 bg-emerald-500/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                                  <div className="flex justify-between items-start mb-2 relative z-10">
                                      <div className={`p-2 rounded-lg bg-${role.color}-500/10 text-${role.color}-500`}>
                                          {role.icon}
@@ -831,28 +984,28 @@ const DevView = ({ setMode }) => {
             );
         case 2:
             return (
-                <div className="h-full flex flex-col items-center justify-center text-center px-8 animate-in fade-in duration-300">
+                <div className="h-full flex flex-col items-center justify-center text-center px-8 animate-in fade-in duration-300 font-mono">
                     <div className="relative mb-6">
-                        <div className="w-16 h-16 rounded-full border-2 border-blue-500/30 border-t-blue-500 animate-spin"></div>
+                        <div className="w-16 h-16 rounded-full border-2 border-emerald-500/30 border-t-emerald-500 animate-spin"></div>
                         <div className="absolute inset-0 flex items-center justify-center">
-                            <Bot size={24} className="text-blue-500" />
+                            <Bot size={24} className="text-emerald-500" />
                         </div>
                     </div>
-                    <div className="text-blue-500 font-mono text-xs mb-2">PROCESSING_DATA...</div>
+                    <div className="text-emerald-500 text-xs mb-2">PROCESSING_DATA...</div>
                     <h3 className="text-white font-bold text-lg">Анализ психотипа</h3>
                     <p className="text-zinc-500 text-xs mt-2">Нейросеть подбирает программу обучения...</p>
                 </div>
             );
         case 3:
             return (
-                <div className="px-4 py-8 pb-32 animate-in slide-in-from-bottom duration-500">
-                    <div className="bg-gradient-to-br from-blue-900/20 to-black border border-blue-500/30 rounded-[32px] p-6 relative overflow-hidden mb-6">
+                <div className="px-4 py-8 pb-32 animate-in slide-in-from-bottom duration-500 font-mono">
+                    <div className="bg-gradient-to-br from-emerald-900/20 to-black border border-emerald-500/30 rounded-[32px] p-6 relative overflow-hidden mb-6">
                         <div className="absolute top-0 right-0 p-6 opacity-20">
-                            <ShieldCheck size={64} className="text-blue-500"/>
+                            <ShieldCheck size={64} className="text-emerald-500"/>
                         </div>
                         
                         <div className="relative z-10">
-                            <span className="inline-block px-3 py-1 rounded-full bg-blue-500/20 border border-blue-500/30 text-blue-400 text-[10px] font-bold uppercase tracking-widest mb-4">
+                            <span className="inline-block px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-[10px] font-bold uppercase tracking-widest mb-4">
                                 Результат Анализа
                             </span>
                             <h2 className="text-2xl font-bold text-white mb-4">
@@ -904,7 +1057,7 @@ const DevView = ({ setMode }) => {
         <button onClick={() => setMode('select')} className="w-8 h-8 rounded-full bg-zinc-900 flex items-center justify-center text-white hover:bg-zinc-800 transition-colors">
           <ChevronRight className="rotate-180" size={18}/>
         </button>
-        <span className="text-[10px] font-bold tracking-widest text-blue-500 uppercase">Dev Модуль</span>
+        <span className="text-[10px] font-bold tracking-widest text-emerald-500 uppercase">Dev Модуль</span>
         <div className="w-8"></div>
       </div>
 

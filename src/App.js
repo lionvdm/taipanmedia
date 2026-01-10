@@ -1,9 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
-  Briefcase, Code, ChevronRight, Activity, Lock, 
-  Users, Target, Calculator, Zap, Bot, 
-  BrainCircuit, Send, Loader2, X, TrendingDown, GraduationCap,
-  CheckCircle2, HelpCircle, Star, Rocket
+  Briefcase, ChevronRight, Calculator, Zap, 
+  BrainCircuit, Loader2, TrendingDown, GraduationCap,
+  CheckCircle2, Star, Rocket, Activity, Code
 } from 'lucide-react';
 
 // --- API INTEGRATION ---
@@ -34,19 +33,16 @@ const callOpenAIAPI = async (prompt) => {
 
 const formatCurrency = (val) => new Intl.NumberFormat('ru-RU').format(Math.floor(val)) + ' ₸';
 
-// --- MAIN APP ---
 export default function App() {
   const [showSplash, setShowSplash] = useState(true);
-  const [mode, setMode] = useState('select'); // 'select', 'business', 'learn'
-  const [learnStep, setLearnStep] = useState('manifesto'); // 'manifesto', 'faq', 'segments', 'offer'
+  const [mode, setMode] = useState('select'); 
+  const [learnStep, setLearnStep] = useState('manifesto');
   const [viewedFaq, setViewedFaq] = useState(new Set());
-  
   const [params, setParams] = useState({ leads: 0, conv: 0, check: 0, margin: 0 });
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [aiAnalysis, setAiAnalysis] = useState('');
-  const [isChatOpen, setIsChatOpen] = useState(false);
 
-  // Расчеты бизнес-модуля
+  // Логика бизнес-расчетов
   const lostConv = 100 - (params.conv || 0);
   const lostProfitPotential = (params.leads * (lostConv / 100)) * params.check * (params.margin / 100);
   const taipanRecoveryProfit = lostProfitPotential * 0.20;
@@ -54,11 +50,9 @@ export default function App() {
   const roi = taipanRecoveryProfit > 0 ? (((taipanRecoveryProfit - setupCost) / setupCost) * 100).toFixed(0) : -100;
 
   useEffect(() => {
-    if (showSplash) {
-      const timer = setTimeout(() => setShowSplash(false), 2000);
-      return () => clearTimeout(timer);
-    }
-  }, [showSplash]);
+    const timer = setTimeout(() => setShowSplash(false), 2000);
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleAIStrategy = async () => {
     setIsAnalyzing(true);
@@ -68,28 +62,27 @@ export default function App() {
   };
 
   if (showSplash) return (
-    <div className="fixed inset-0 bg-black flex items-center justify-center font-mono text-emerald-500 text-xs p-10">
-      <div className="space-y-2 animate-pulse">
+    <div className="fixed inset-0 bg-black flex items-center justify-center font-mono text-emerald-500 text-xs">
+      <div className="space-y-2 animate-pulse text-center">
         <p>> INITIALIZING TAIPAN_PROTOCOL...</p>
-        <p>> LOADING ASSETS...</p>
         <p>> ACCESS GRANTED.</p>
       </div>
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-[#050505] text-white p-4 pb-24 font-sans selection:bg-emerald-500/30">
+    <div className="min-h-screen bg-[#050505] text-white p-4 pb-12 font-sans overflow-x-hidden">
       <div className="max-w-md mx-auto pt-6">
         
         {/* --- HEADER --- */}
-        <div className="text-center mb-8">
-            <h1 className="text-3xl font-black italic tracking-tighter uppercase">TAIPAN<span className="text-emerald-500">MEDIA</span></h1>
-            <p className="text-[9px] text-zinc-500 uppercase tracking-[0.4em]">Scalability Protocol V1</p>
+        <div className="text-center mb-10">
+            <h1 className="text-3xl font-black italic tracking-tighter uppercase leading-none">TAIPAN<span className="text-emerald-500">MEDIA</span></h1>
+            <p className="text-[9px] text-zinc-500 uppercase tracking-[0.4em] mt-2">Scalability Protocol V1</p>
         </div>
 
-        {/* --- MODE SELECT --- */}
+        {/* --- MENU --- */}
         {mode === 'select' && (
-          <div className="grid gap-4 animate-in fade-in duration-700">
+          <div className="grid gap-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
             <button onClick={() => setMode('business')} className="group p-6 bg-zinc-900/40 border border-zinc-800 rounded-[32px] text-left hover:border-emerald-500/50 transition-all">
               <Briefcase className="text-emerald-500 mb-4" size={28} />
               <h3 className="text-xl font-bold">Бизнес модуль</h3>
@@ -98,7 +91,7 @@ export default function App() {
             <button onClick={() => setMode('learn')} className="group p-6 bg-zinc-900/40 border border-zinc-800 rounded-[32px] text-left hover:border-blue-500/50 transition-all">
               <GraduationCap className="text-blue-500 mb-4" size={28} />
               <h3 className="text-xl font-bold uppercase">Хочу научиться</h3>
-              <p className="text-zinc-500 text-xs italic">Создавать системы как эта</p>
+              <p className="text-zinc-500 text-xs italic">Создавать Mini Apps</p>
             </button>
           </div>
         )}
@@ -107,47 +100,41 @@ export default function App() {
         {mode === 'business' && (
           <div className="animate-in zoom-in duration-500">
             <button onClick={() => setMode('select')} className="mb-6 text-zinc-500 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest"><ChevronRight className="rotate-180" size={14}/> Назад</button>
-            
             <div className="bg-[#0C0C0C] border border-zinc-800/50 rounded-[40px] p-6 shadow-2xl relative overflow-hidden">
-              <div className="flex items-center gap-3 mb-8">
-                <Calculator className="text-emerald-500" size={20} />
-                <h2 className="text-xl font-bold tracking-tight">Прогноз Эффективности</h2>
-              </div>
-
+              <div className="flex items-center gap-3 mb-8"><Calculator className="text-emerald-500" size={20} /><h2 className="text-xl font-bold tracking-tight">Прогноз Эффективности</h2></div>
               <div className="space-y-4">
                 <div className="bg-[#141414] rounded-2xl p-4 border border-zinc-800/50">
                   <label className="text-[10px] font-bold text-zinc-500 uppercase mb-2 block">Заявок в месяц</label>
                   <input type="number" placeholder="0" className="bg-transparent w-full text-2xl font-bold outline-none" onChange={(e) => setParams({...params, leads: parseFloat(e.target.value) || 0})}/>
                 </div>
                 <div className="bg-[#141414] rounded-2xl p-4 border border-zinc-800/50">
-                  <label className="text-[10px] font-bold text-zinc-500 uppercase mb-2 block text-emerald-500">Конверсия в продажу (%)</label>
+                  <label className="text-[10px] font-bold text-emerald-500 uppercase mb-2 block">Конверсия (%)</label>
                   <input type="number" placeholder="0" className="bg-transparent w-full text-2xl font-bold outline-none text-emerald-500" onChange={(e) => setParams({...params, conv: parseFloat(e.target.value) || 0})}/>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="bg-[#141414] rounded-2xl p-4 border border-zinc-800/50 text-center">
-                    <label className="text-[10px] font-bold text-zinc-500 uppercase mb-2 block">Ср. Чек (₸)</label>
+                    <label className="text-[10px] font-bold text-zinc-500 uppercase mb-2 block text-center">Ср. Чек (₸)</label>
                     <input type="number" placeholder="0" className="bg-transparent w-full text-xl font-bold outline-none text-center" onChange={(e) => setParams({...params, check: parseFloat(e.target.value) || 0})}/>
                   </div>
                   <div className="bg-[#141414] rounded-2xl p-4 border border-zinc-800/50 text-center">
-                    <label className="text-[10px] font-bold text-zinc-500 uppercase mb-2 block">Маржа (%)</label>
+                    <label className="text-[10px] font-bold text-zinc-500 uppercase mb-2 block text-center">Маржа (%)</label>
                     <input type="number" placeholder="0" className="bg-transparent w-full text-xl font-bold outline-none text-center" onChange={(e) => setParams({...params, margin: parseFloat(e.target.value) || 0})}/>
                   </div>
                 </div>
               </div>
-
               {params.leads > 0 && (
                 <div className="mt-8 space-y-4">
                    <div className="p-4 bg-red-500/5 border border-red-500/20 rounded-2xl flex justify-between items-center">
-                      <div><p className="text-[9px] font-bold text-red-400 uppercase mb-1">Вы теряете {lostConv}% прибыли</p><h3 className="text-xl font-black">{formatCurrency(lostProfitPotential)}</h3></div>
+                      <div><p className="text-[9px] font-bold text-red-400 uppercase mb-1">Потеря прибыли</p><h3 className="text-xl font-black">{formatCurrency(lostProfitPotential)}</h3></div>
                       <TrendingDown className="text-red-500 opacity-50" size={24}/>
                    </div>
                    <div className="bg-gradient-to-br from-emerald-600 to-emerald-900 rounded-[32px] p-6 shadow-xl">
                       <div className="flex justify-between items-start mb-6 text-white">
-                        <div><p className="text-[10px] font-black uppercase opacity-80 mb-1">Чистая прибыль (мес)</p><h3 className="text-4xl font-black">{formatCurrency(taipanRecoveryProfit)}</h3></div>
+                        <div><p className="text-[10px] font-black uppercase opacity-80 mb-1">Вернем с Mini App</p><h3 className="text-4xl font-black">{formatCurrency(taipanRecoveryProfit)}</h3></div>
                         <div className="text-right"><p className="text-[10px] font-black uppercase opacity-80 mb-1">ROI</p><h3 className="text-2xl font-black">{roi}%</h3></div>
                       </div>
-                      <button onClick={handleAIStrategy} disabled={isAnalyzing} className="w-full py-4 bg-white text-black font-black rounded-xl text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all">
-                        {isAnalyzing ? <Loader2 className="animate-spin" size={16}/> : <BrainCircuit size={16}/>} Сгенерировать стратегию
+                      <button onClick={handleAIStrategy} disabled={isAnalyzing} className="w-full py-4 bg-white text-black font-black rounded-xl text-[10px] uppercase tracking-widest flex items-center justify-center gap-2">
+                        {isAnalyzing ? <Loader2 className="animate-spin" size={16}/> : <BrainCircuit size={16}/>} Анализ стратегии ИИ
                       </button>
                    </div>
                 </div>
@@ -156,31 +143,27 @@ export default function App() {
           </div>
         )}
 
-        {/* --- LEARN MODULE (FROM BOT) --- */}
+        {/* --- LEARN MODULE --- */}
         {mode === 'learn' && (
           <div className="animate-in slide-in-from-right duration-500">
              <button onClick={() => setMode('select')} className="mb-6 text-zinc-500 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest"><ChevronRight className="rotate-180" size={14}/> Назад</button>
-             
-             <div className="bg-[#0C0C0C] border border-zinc-800/50 rounded-[40px] p-8 shadow-2xl relative overflow-hidden min-h-[400px]">
+             <div className="bg-[#0C0C0C] border border-zinc-800/50 rounded-[40px] p-8 shadow-2xl min-h-[420px] flex flex-col justify-center">
                 
                 {learnStep === 'manifesto' && (
                   <div className="animate-in fade-in slide-in-from-bottom-4">
-                    <h2 className="text-xl font-black italic mb-6 leading-tight">Telegram-шопп: Тренд на года или просто хайп?</h2>
-                    <div className="space-y-4 text-zinc-400 text-sm leading-relaxed mb-8">
-                       <p>❌ 2009 год: Bitcoin, всего лишь забава</p>
-                       <p>❌ 2012 год: Instagram не место для денег</p>
-                       <p>❌ 2019 год: WB и Kaspi — непонятно что</p>
-                       <p className="text-white font-bold italic">Мы все это видели. Вы снова зритель? Или пора что-то менять?</p>
+                    <h2 className="text-xl font-black italic mb-6 leading-tight">Telegram-шопп: Тренд на года или хайп?</h2>
+                    <div className="space-y-4 text-zinc-400 text-sm leading-relaxed mb-10 italic">
+                       <p>❌ 2009: Bitcoin забава</p>
+                       <p>❌ 2019: WB и Kaspi — непонятно</p>
+                       <p className="text-white font-bold not-italic">Вы снова зритель? Или пора что-то менять?</p>
                     </div>
-                    <button onClick={() => setLearnStep('faq')} className="w-full py-5 bg-blue-600 text-white font-black rounded-2xl text-[11px] uppercase tracking-[0.2em] flex items-center justify-center gap-2">
-                       🔥 ПОРА ВСЁ МЕНЯТЬ
-                    </button>
+                    <button onClick={() => setLearnStep('faq')} className="w-full py-5 bg-blue-600 text-white font-black rounded-2xl text-[11px] uppercase tracking-widest">🔥 ПОРА ВСЁ МЕНЯТЬ</button>
                   </div>
                 )}
 
                 {learnStep === 'faq' && (
-                  <div className="animate-in fade-in slide-in-from-bottom-4">
-                    <h2 className="text-lg font-bold mb-6 text-blue-400">Изучите топ-3 вопроса наших учеников:</h2>
+                  <div className="animate-in fade-in">
+                    <h2 className="text-sm font-bold mb-6 text-blue-400 uppercase tracking-widest text-center">Топ-3 вопроса учеников:</h2>
                     <div className="space-y-3 mb-8">
                       {[
                         {id: 'demand', icon: <Activity size={16}/>, t: "Нужно ли это бизнесу?"},
@@ -193,19 +176,17 @@ export default function App() {
                       ))}
                     </div>
                     {viewedFaq.size >= 3 && (
-                      <button onClick={() => setLearnStep('segments')} className="w-full py-5 bg-white text-black font-black rounded-2xl text-[11px] uppercase tracking-[0.2em] animate-bounce">
-                        🤔 А У МЕНЯ ПОЛУЧИТСЯ?
-                      </button>
+                      <button onClick={() => setLearnStep('segments')} className="w-full py-5 bg-white text-black font-black rounded-2xl text-[11px] uppercase tracking-widest animate-pulse">🤔 А У МЕНЯ ПОЛУЧИТСЯ?</button>
                     )}
                   </div>
                 )}
 
                 {learnStep === 'segments' && (
-                   <div className="animate-in fade-in slide-in-from-bottom-4 text-center">
-                      <h2 className="text-xl font-black mb-6 uppercase italic text-blue-400">Конечно получится!</h2>
-                      <p className="text-zinc-400 text-xs mb-8">Давайте определимся с вашей точкой старта:</p>
+                   <div className="animate-in fade-in text-center">
+                      <h2 className="text-xl font-black mb-6 uppercase text-blue-400">Получится!</h2>
+                      <p className="text-zinc-400 text-xs mb-8">Кто вы сейчас?</p>
                       <div className="grid grid-cols-2 gap-3">
-                        {["Мама в декрете", "В найме", "Без работы", "SMM / Таргет"].map(s => (
+                        {["Мама в декрете", "В найме", "Без работы", "SMM / Профи"].map(s => (
                           <button key={s} onClick={() => setLearnStep('offer')} className="p-4 bg-zinc-900 border border-zinc-800 rounded-2xl text-[10px] font-bold uppercase hover:border-blue-500 transition-colors">{s}</button>
                         ))}
                       </div>
@@ -213,22 +194,15 @@ export default function App() {
                 )}
 
                 {learnStep === 'offer' && (
-                  <div className="animate-in zoom-in duration-500 text-center">
+                  <div className="animate-in zoom-in text-center">
                     <Star className="text-yellow-400 mx-auto mb-4" size={40} fill="currentColor"/>
-                    <h2 className="text-2xl font-black mb-4 uppercase">Твой путь к 100.000₸</h2>
-                    <div className="space-y-4 mb-8">
-                       <div className="p-4 bg-zinc-900/50 rounded-2xl border border-zinc-800">
-                          <p className="text-emerald-400 font-black">⭐️ Т-2. ОПТИМАЛЬНЫЙ</p>
-                          <p className="text-xs text-zinc-500 uppercase mt-1">50.000 ₸</p>
-                       </div>
-                    </div>
-                    <a href="https://t.me/taipanmedia" className="block w-full py-5 bg-blue-600 text-white font-black rounded-2xl text-[11px] uppercase tracking-[0.2em] mb-4">
-                       🎯 ВЫБРАТЬ ПАКЕТ
+                    <h2 className="text-2xl font-black mb-4 uppercase leading-none">Твой путь к 100.000₸</h2>
+                    <p className="text-xs text-zinc-500 mb-8">Начни с пакета Оптимальный</p>
+                    <a href="https://t.me/taipanmedia" className="block w-full py-5 bg-blue-600 text-white font-black rounded-2xl text-[11px] uppercase tracking-widest mb-4 flex items-center justify-center gap-2">
+                       <Rocket size={16}/> НАПИСАТЬ МЕНЕДЖЕРУ
                     </a>
-                    <button onClick={() => setLearnStep('manifesto')} className="text-zinc-500 text-[10px] font-bold uppercase">Вернуться к началу</button>
                   </div>
                 )}
-
              </div>
           </div>
         )}
@@ -236,32 +210,10 @@ export default function App() {
         {/* --- AI OUTPUT --- */}
         {aiAnalysis && (
           <div className="mt-6 p-6 bg-emerald-500/5 border border-emerald-500/20 rounded-[32px] animate-in slide-in-from-bottom-5">
-             <div className="flex items-center gap-2 text-emerald-500 font-bold text-[10px] uppercase mb-3"><Bot size={14}/> Taipan_AI Аналитика</div>
              <p className="text-xs text-zinc-300 leading-relaxed italic border-l-2 border-emerald-500/30 pl-4 whitespace-pre-line">{aiAnalysis}</p>
           </div>
         )}
       </div>
-
-      {/* --- FLOATING CHAT BUTTON --- */}
-      <button onClick={() => setIsChatOpen(true)} className="fixed bottom-6 right-6 w-16 h-16 bg-emerald-500 rounded-full flex items-center justify-center shadow-2xl z-50 hover:scale-110 transition-transform">
-        <Bot className="text-black" size={28} />
-      </button>
-
-      {/* --- SIMPLE CHAT MODAL --- */}
-      {isChatOpen && (
-        <div className="fixed inset-0 z-[100] bg-black flex flex-col p-6 animate-in slide-in-from-bottom-full duration-500">
-          <div className="flex justify-between items-center mb-8">
-            <h2 className="text-sm font-black italic uppercase">Taipan Support AI</h2>
-            <button onClick={() => setIsChatOpen(false)} className="p-3 bg-zinc-900 rounded-full"><X size={20}/></button>
-          </div>
-          <div className="flex-1 flex items-center justify-center text-center text-zinc-500">
-            <p className="text-xs uppercase tracking-widest leading-relaxed">Напишите напрямую менеджеру<br/><span className="text-emerald-500 font-black mt-2 block">@taipanmedia</span></p>
-          </div>
-          <a href="https://t.me/taipanmedia" className="w-full py-5 bg-emerald-500 text-black font-black rounded-2xl text-[11px] uppercase tracking-[0.2em] text-center">
-             🚀 ПЕРЕЙТИ В TELEGRAM
-          </a>
-        </div>
-      )}
     </div>
   );
 }

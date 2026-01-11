@@ -50,29 +50,28 @@ const callOpenAIAPI = async (prompt, history = []) => {
 
 const SnakeText = ({ children, className = "" }) => (
   <span className={`font-black italic tracking-tighter ${className}`} style={{
-      // Текстура ярко-зеленой гадюки с четкой чешуей
-      backgroundImage: `url('https://images.unsplash.com/photo-1596739349887-573581db2b20?q=80&w=2574&auto=format&fit=crop')`, 
-      backgroundSize: '150%', // Масштаб чешуи
-      backgroundPosition: 'center 60%',
+      // Яркая, четкая текстура зеленой чешуи
+      backgroundImage: `url('https://images.unsplash.com/photo-1620188467120-5042ed1eb5da?q=80&w=2574&auto=format&fit=crop')`, 
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
       WebkitBackgroundClip: 'text',
       backgroundClip: 'text',
       color: 'transparent',
       WebkitTextFillColor: 'transparent',
-      // Жесткая обводка для выделения формы букв на черном фоне
-      WebkitTextStroke: '2px #10b981', 
-      // Глубокая тень для эффекта объема и свечения
-      filter: 'drop-shadow(0 0 10px rgba(16, 185, 129, 0.6)) contrast(1.2) brightness(1.1)',
+      // Тонкая зеленая обводка для выделения формы букв
+      WebkitTextStroke: '1px rgba(16, 185, 129, 0.8)', 
+      // Тень для объема
+      filter: 'drop-shadow(0 0 15px rgba(16, 185, 129, 0.4)) contrast(1.3) brightness(1.2)',
       display: 'inline-block'
     }}>{children}</span>
 );
 
 const ScalesBackground = () => (
   <div className="fixed inset-0 z-0 bg-[#020202] overflow-hidden">
-    {/* Background Texture */}
-    <div className="absolute inset-0 opacity-20 mix-blend-overlay" style={{
-        backgroundImage: `url('https://images.unsplash.com/photo-1533748293994-683a4c44238e?q=80&w=2670&auto=format&fit=crop')`,
-        backgroundSize: 'cover',
-        filter: 'grayscale(100%) contrast(1.5)'
+    {/* Hexagonal Scales Pattern */}
+    <div className="absolute inset-0 opacity-10" style={{
+        backgroundImage: `url("data:image/svg+xml,%3Csvg width='24' height='40' viewBox='0 0 24 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 40c5.523 0 10-4.477 10-10V10c0-5.523-4.477-10-10-10s-10 4.477-10 10v20c0 5.523 4.477 10 10 10zM12 20c5.523 0 10-4.477 10-10V0H2v10c0 5.523 4.477 10 10 10z' fill='%2310b981' fill-opacity='0.2' fill-rule='evenodd'/%3E%3C/svg%3E")`,
+        backgroundSize: '30px 50px'
     }}></div>
     
     {/* Venomous Glow Spots */}
@@ -126,7 +125,7 @@ const SelectView = ({ setMode }) => (
         </div>
         
         {/* SNAKE SCALE TEXT EFFECT */}
-        <h1 className="text-7xl md:text-9xl leading-none mb-6 whitespace-nowrap">
+        <h1 className="text-6xl md:text-8xl leading-none mb-6 whitespace-nowrap">
            <SnakeText>TAIPAN</SnakeText>
         </h1>
 

@@ -6,36 +6,25 @@ import {
   ArrowRight,
   Activity,
   Lock,
-  CreditCard,
   Users,
   TrendingUp,
-  PieChart,
-  Coins,
-  RefreshCcw,
   ShoppingBag,
   Check,
-  FileText,
-  BarChart3,
-  BellRing,
   X,
   Calculator,
   Sparkles,
   Bot,
-  BrainCircuit,
   MessageSquare,
   Send,
-  Loader2,
-  ArrowDownRight,
-  Terminal,
+  Loader, // Используем стабильную иконку Loader
   Cpu,
   Palette,
-  Zap,
-  ShieldCheck,
-  Play
+  Zap
 } from 'lucide-react';
 
 // --- OPENAI API INTEGRATION ---
-const apiKey = "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"; 
+// Исправлено: Ключ вставлен напрямую, чтобы избежать ошибки "process is not defined"
+const apiKey = "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";
 
 const callOpenAIAPI = async (prompt, history = []) => {
   try {
@@ -89,7 +78,7 @@ const callOpenAIAPI = async (prompt, history = []) => {
     return data.choices?.[0]?.message?.content || "Ошибка анализа данных.";
   } catch (error) {
     console.error("OpenAI API Error:", error);
-    return "Система перегружена. Повторите попытку позже.";
+    return "Система перегружена. Повторите попытку позже (проверьте консоль на ошибки CORS).";
   }
 };
 
@@ -275,74 +264,6 @@ const SnakePatternBackground = () => (
   </div>
 );
 
-const ShatterText = ({ visible, children }) => {
-  const [status, setStatus] = useState('hidden'); // hidden, visible, shattering
-  const [shatter, setShatter] = useState(false);
-
-  useEffect(() => {
-    if (visible) {
-      setStatus('visible');
-      setShatter(false);
-    } else if (status === 'visible') {
-      setStatus('shattering');
-      // Trigger animation after a brief delay
-      requestAnimationFrame(() => {
-          setShatter(true);
-      });
-      const timer = setTimeout(() => setStatus('hidden'), 800);
-      return () => clearTimeout(timer);
-    }
-  }, [visible]);
-
-  if (status === 'hidden') return null;
-
-  if (status === 'visible') {
-    return (
-      <div className="animate-in fade-in zoom-in duration-500 relative z-10 w-full">
-        {children}
-      </div>
-    );
-  }
-
-  // Shattering State
-  // We duplicate the content and clip it into 4 shards
-  return (
-    <div className="relative w-full h-full pointer-events-none">
-        {/* Shard 1 - Top Left */}
-        <div 
-            className={`absolute inset-0 transition-all duration-700 ease-out ${shatter ? '-translate-x-12 -translate-y-12 -rotate-12 opacity-0 blur-sm scale-110' : ''}`} 
-            style={{ clipPath: 'polygon(0 0, 60% 0, 40% 40%, 0 50%)' }}
-        >
-            {children}
-        </div>
-        {/* Shard 2 - Top Right */}
-        <div 
-            className={`absolute inset-0 transition-all duration-700 ease-out ${shatter ? 'translate-x-16 -translate-y-8 rotate-12 opacity-0 blur-sm scale-110' : ''}`} 
-            style={{ clipPath: 'polygon(60% 0, 100% 0, 100% 60%, 40% 40%)' }}
-        >
-            {children}
-        </div>
-        {/* Shard 3 - Bottom Right */}
-        <div 
-            className={`absolute inset-0 transition-all duration-700 ease-out ${shatter ? 'translate-x-8 translate-y-16 -rotate-6 opacity-0 blur-sm scale-110' : ''}`} 
-            style={{ clipPath: 'polygon(40% 40%, 100% 60%, 100% 100%, 30% 100%)' }}
-        >
-            {children}
-        </div>
-        {/* Shard 4 - Bottom Left */}
-        <div 
-            className={`absolute inset-0 transition-all duration-700 ease-out ${shatter ? '-translate-x-16 translate-y-8 rotate-6 opacity-0 blur-sm scale-110' : ''}`} 
-            style={{ clipPath: 'polygon(0 50%, 40% 40%, 30% 100%, 0 100%)' }}
-        >
-            {children}
-        </div>
-        
-        {/* Flash Effect on break */}
-        <div className={`absolute inset-0 bg-emerald-500/20 mix-blend-overlay transition-opacity duration-300 ${shatter ? 'opacity-100' : 'opacity-0'}`}></div>
-    </div>
-  );
-};
-
 // --- AI CHAT COMPONENT ---
 const AIChat = ({ isOpen, onClose }) => {
   const [messages, setMessages] = useState([
@@ -489,7 +410,7 @@ const SelectView = ({ setMode }) => (
           <div className="absolute inset-0 opacity-10 bg-[url('https://images.unsplash.com/photo-1550948537-130a1ce83314?q=80&w=2072&auto=format&fit=crop')] bg-cover bg-center mix-blend-overlay group-hover:opacity-20 transition-opacity"></div>
           <div className="bg-gradient-to-br from-zinc-800/80 to-black/90 rounded-[20px] p-6 h-full relative z-10 text-left backdrop-blur-sm">
              <div className="flex justify-between items-start mb-4">
-                <div className="w-12 h-12 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500 border border-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.1)] group-hover:scale-110 transition-transform">
+                <div className="w-12 h-12 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500 border border-emerald-500/20 shadow-[0_0_15px_rgba(59,130,246,0.1)] group-hover:scale-110 transition-transform">
                    <Code size={24} />
                 </div>
                 <ArrowRight className="text-zinc-700 group-hover:text-emerald-500 transition-colors group-hover:translate-x-1 duration-300" />
@@ -731,7 +652,7 @@ const BusinessView = ({ setMode, bizParams, setBizParams }) => {
                     >
                        {isAnalyzing ? (
                          <>
-                            <Loader2 size={14} className="animate-spin text-emerald-500"/>
+                            <Loader size={14} className="animate-spin text-emerald-500"/>
                             АНАЛИЗ...
                          </>
                        ) : (
@@ -750,7 +671,7 @@ const BusinessView = ({ setMode, bizParams, setBizParams }) => {
                  <div className="animate-in fade-in slide-in-from-top-4 mt-6 bg-[#0A0A0A] border border-emerald-500/20 rounded-[24px] p-6 shadow-2xl relative overflow-hidden">
                     <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 via-transparent to-transparent"></div>
                     <div className="flex items-center gap-2 mb-4">
-                       <BrainCircuit size={18} className="text-emerald-400"/>
+                       <Bot size={18} className="text-emerald-400"/>
                        <h4 className="text-sm font-bold text-white uppercase tracking-wider">Стратегия Taipan AI</h4>
                     </div>
                     <div className="text-xs text-zinc-300 leading-relaxed whitespace-pre-line font-medium">
@@ -827,38 +748,6 @@ const DevView = ({ setMode }) => {
   const [selectedRole, setSelectedRole] = useState(null);
   const [roleAnalysis, setRoleAnalysis] = useState('');
   
-  // Animation state for Intro (step 0)
-  const [introStep, setIntroStep] = useState(0);
-
-  useEffect(() => {
-    if (devStep === 0) {
-        // Timeline for intro animation (ms)
-        // 0: Start
-        // 1: Headline In (100ms)
-        // 2: Bit In (1000ms)
-        // 3: Bit Out (3000ms)
-        // 4: Insta In (3500ms)
-        // 5: Insta Out (5500ms)
-        // 6: WB In (6000ms)
-        // 7: WB Out (8000ms)
-        // 8: Final In (8500ms)
-        
-        const timers = [
-            setTimeout(() => setIntroStep(1), 100),
-            setTimeout(() => setIntroStep(2), 1000),
-            setTimeout(() => setIntroStep(3), 3000),
-            setTimeout(() => setIntroStep(4), 3500),
-            setTimeout(() => setIntroStep(5), 5500),
-            setTimeout(() => setIntroStep(6), 6000),
-            setTimeout(() => setIntroStep(7), 8000),
-            setTimeout(() => setIntroStep(8), 8500),
-        ];
-        return () => timers.forEach(clearTimeout);
-    } else {
-        setIntroStep(0); // Reset
-    }
-  }, [devStep]);
-  
   const handleRoleSelect = async (role) => {
       setSelectedRole(role);
       setDevStep(2); // Loading step
@@ -877,82 +766,27 @@ const DevView = ({ setMode }) => {
     switch(devStep) {
         case 0:
             return (
-                <div className="h-full flex flex-col justify-center px-6 relative overflow-hidden font-mono">
-                    {/* Background Title - Always visible after step 1 */}
-                    <div className={`absolute top-[15%] left-0 right-0 text-center transition-all duration-700 ${introStep >= 1 ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
-                        <h2 className="text-2xl font-black text-white italic tracking-tight">
-                            Telegram-шопп: <br/>
-                            <span className="text-emerald-500">Тренд на года</span> или просто хайп?
+                <div className="h-full flex flex-col justify-center px-6 animate-in fade-in duration-500">
+                    <div className="mb-8">
+                        <div className="inline-block p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 mb-4">
+                            <Code size={32} className="text-emerald-500" />
+                        </div>
+                        <h2 className="text-3xl font-black text-white italic tracking-tighter mb-4">
+                            INITIATION<span className="text-emerald-500">.EXE</span>
                         </h2>
+                        <p className="text-zinc-400 text-sm leading-relaxed font-mono">
+                            Telegram-шопп: Тренд на года или просто хайп?
+                            <br/><br/>
+                            В Taipan мы не просто пишем код. Мы создаем цифровые активы.
+                            Готов выбрать свою специализацию?
+                        </p>
                     </div>
-
-                    {/* Fading Messages Container */}
-                    <div className="h-32 flex items-center justify-center relative">
-                        {/* Bitcoin */}
-                        <div className="absolute w-full flex justify-center">
-                            <ShatterText visible={introStep === 2}>
-                                <div className="flex flex-col items-center gap-3 text-zinc-400">
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-red-500 text-4xl font-bold drop-shadow-[0_0_15px_rgba(239,68,68,0.5)]">❌</span>
-                                        <img src="https://upload.wikimedia.org/wikipedia/commons/4/46/Bitcoin.svg" alt="Bitcoin" className="h-12 w-12" />
-                                    </div>
-                                    <span className="text-lg font-medium">2009 год: <br/><span className="text-white font-bold">Bitcoin</span>, всего лишь забава</span>
-                                </div>
-                            </ShatterText>
-                        </div>
-
-                        {/* Instagram */}
-                        <div className="absolute w-full flex justify-center">
-                            <ShatterText visible={introStep === 4}>
-                                <div className="flex flex-col items-center gap-3 text-zinc-400">
-                                    <div className="flex items-center gap-2">
-                                         <span className="text-red-500 text-4xl font-bold drop-shadow-[0_0_15px_rgba(239,68,68,0.5)]">❌</span>
-                                         <img src="https://upload.wikimedia.org/wikipedia/commons/e/e7/Instagram_logo_2016.svg" alt="Instagram" className="h-12 w-12" />
-                                    </div>
-                                    <span className="text-lg font-medium">2012 год: <br/><span className="text-white font-bold">Instagram</span> не место для денег</span>
-                                </div>
-                            </ShatterText>
-                        </div>
-
-                         {/* WB and Kaspi */}
-                        <div className="absolute w-full flex justify-center">
-                            <ShatterText visible={introStep === 6}>
-                                <div className="flex flex-col items-center gap-3 text-zinc-400">
-                                    <div className="flex items-center gap-4">
-                                        <span className="text-red-500 text-4xl font-bold drop-shadow-[0_0_15px_rgba(239,68,68,0.5)]">❌</span>
-                                        <div className="flex gap-3 bg-white/5 p-3 rounded-2xl backdrop-blur-md border border-white/10">
-                                            {/* WB Logo Mockup */}
-                                            <div className="flex items-center justify-center px-3 py-1.5 bg-gradient-to-r from-fuchsia-700 to-purple-800 rounded-lg shadow-lg">
-                                                <span className="text-white font-black text-xl italic tracking-tighter">WB</span>
-                                            </div>
-                                            
-                                            {/* Kaspi Logo Mockup */}
-                                            <div className="flex items-center justify-center px-3 py-1.5 bg-red-600 rounded-lg shadow-lg">
-                                                <span className="text-white font-bold text-lg tracking-tight">Kaspi.kz</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <span className="text-lg font-medium">2019 год: <br/><span className="text-white font-bold">WB и Kaspi</span> — непонятно и не место заработка</span>
-                                </div>
-                            </ShatterText>
-                        </div>
-                    </div>
-
-                    {/* Final CTA - Centered like fading messages */}
-                    <div className={`absolute inset-0 flex items-center justify-center pointer-events-none ${introStep >= 8 ? 'z-20' : 'z-0'}`}>
-                        <div className={`w-full max-w-md px-6 text-center transition-all duration-1000 ease-out pointer-events-auto ${introStep >= 8 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'}`}>
-                             <p className="text-white text-lg font-bold mb-8 text-center leading-relaxed">
-                                2026 год: Taipan Media. <br/>
-                                <span className="text-emerald-500 text-2xl">Не упусти свой шанс.</span>
-                             </p>
-                            <button 
-                                onClick={() => setDevStep(1)}
-                                className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-4 rounded-xl uppercase tracking-widest shadow-[0_0_30px_rgba(16,185,129,0.3)] active:scale-[0.98] transition-all flex items-center justify-center gap-2 animate-pulse"
-                            >
-                                Начать Инициацию <ArrowRight size={16}/>
-                            </button>
-                        </div>
-                    </div>
+                    <button 
+                        onClick={() => setDevStep(1)}
+                        className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-4 rounded-xl uppercase tracking-widest shadow-lg shadow-emerald-900/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                    >
+                        Начать Инициацию <ArrowRight size={16}/>
+                    </button>
                 </div>
             );
         case 1:
@@ -973,7 +807,7 @@ const DevView = ({ setMode }) => {
                                      <div className={`p-2 rounded-lg bg-${role.color}-500/10 text-${role.color}-500`}>
                                          {role.icon}
                                      </div>
-                                     <ArrowRight className="text-zinc-700 group-hover:text-white transition-colors"/>
+                                     <ArrowRight className="text-zinc-700 group-hover:text-emerald-500 transition-colors"/>
                                  </div>
                                  <div className="relative z-10">
                                      <h3 className="text-white font-bold text-sm mb-1">{role.title}</h3>
@@ -1003,7 +837,7 @@ const DevView = ({ setMode }) => {
                 <div className="px-4 py-8 pb-32 animate-in slide-in-from-bottom duration-500 font-mono">
                     <div className="bg-gradient-to-br from-emerald-900/20 to-black border border-emerald-500/30 rounded-[32px] p-6 relative overflow-hidden mb-6">
                         <div className="absolute top-0 right-0 p-6 opacity-20">
-                            <ShieldCheck size={64} className="text-emerald-500"/>
+                            <Check size={64} className="text-emerald-500"/>
                         </div>
                         
                         <div className="relative z-10">
@@ -1066,43 +900,6 @@ const DevView = ({ setMode }) => {
       <div className="relative z-10 flex-1 flex flex-col max-w-md mx-auto w-full">
          {renderContent()}
       </div>
-    </div>
-  );
-};
-
-// --- MAIN APP ---
-const App = () => {
-  const [mode, setMode] = useState('splash'); // splash, select, business, dev
-  const [showChat, setShowChat] = useState(false);
-  const [bizParams, setBizParams] = useState({
-      users: 0,
-      currentConversion: 0,
-      check: 0,
-      margin: 0
-  });
-
-  const handleSplashComplete = () => {
-     setMode('select');
-  };
-
-  return (
-    <div className="bg-black min-h-screen text-white">
-       {/* Global Chat Button (Only in Business/Dev modes) */}
-       {(mode === 'business' || mode === 'dev') && (
-         <button 
-           onClick={() => setShowChat(true)}
-           className={`fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full shadow-2xl flex items-center justify-center transition-transform hover:scale-105 active:scale-95 ${mode === 'business' ? 'bg-emerald-600 shadow-emerald-900/20' : 'bg-blue-600 shadow-blue-900/20'}`}
-         >
-             <MessageSquare className="text-white" size={24} />
-         </button>
-       )}
-
-       <AIChat isOpen={showChat} onClose={() => setShowChat(false)} />
-
-       {mode === 'splash' && <TerminalSplash onComplete={handleSplashComplete} />}
-       {mode === 'select' && <SelectView setMode={setMode} />}
-       {mode === 'business' && <BusinessView setMode={setMode} bizParams={bizParams} setBizParams={setBizParams} />}
-       {mode === 'dev' && <DevView setMode={setMode} />}
     </div>
   );
 };

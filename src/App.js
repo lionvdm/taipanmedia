@@ -1,442 +1,105 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  Briefcase,
-  Code,
-  ChevronRight,
-  ArrowRight,
-  Activity,
-  Lock,
-  CreditCard,
-  Users,
-  TrendingUp,
-  PieChart,
-  Coins,
-  RefreshCcw,
-  ShoppingBag,
-  Check,
-  FileText,
-  BarChart3,
-  BellRing,
-  X,
-  Calculator,
-  Sparkles,
-  Bot,
-  BrainCircuit,
-  MessageSquare,
-  Send,
-  Loader2,
-  ArrowDownRight,
-  Terminal,
-  Cpu,
-  Palette,
-  Zap,
-  ShieldCheck,
-  Play
+  Briefcase, Code, ChevronRight, ArrowRight, Activity, Lock, 
+  CreditCard, Users, TrendingUp, PieChart, Coins, RefreshCcw, 
+  ShoppingBag, Check, FileText, BarChart3, BellRing, X, 
+  Calculator, Sparkles, Bot, BrainCircuit, MessageSquare, 
+  Send, Loader2, ArrowDownRight, Terminal, Cpu, Palette, 
+  Zap, ShieldCheck, Play, ArrowUpRight, Percent, AlertTriangle,
+  Scale, ArrowLeft, ShoppingCart, Rocket, Quote
 } from 'lucide-react';
 
-// --- OPENAI API INTEGRATION ---
-const apiKey = process.env.REACT_APP_OPENAI_API_KEY; 
+// --- CONFIG & UTILS ---
+const getEnvApiKey = () => {
+  try {
+    return process.env.REACT_APP_OPENAI_API_KEY || "";
+  } catch (e) {
+    return "";
+  }
+};
+
+const apiKey = getEnvApiKey();
+
+const formatCurrency = (val) => new Intl.NumberFormat('ru-RU').format(Math.floor(val)) + ' ₸';
 
 const callOpenAIAPI = async (prompt, history = []) => {
   try {
     if (!apiKey) {
-      // Mock response if API key is missing
-      await new Promise(r => setTimeout(r, 2000));
-      return "СИСТЕМА: API ключ не обнаружен. Проверьте настройки.";
+      await new Promise(r => setTimeout(r, 2500));
+      return "🤖 [DEMO]: Система Taipan проанализировала ваши цифры. \n\n1. **Удержание**: Внедрение Mini App с программой лояльности вернет до 25% ушедших клиентов.\n2. **Рост чека**: Геймификация покупок увеличит средний чек на 15%.\n3. **Итог**: Ваш потенциальный рост чистой прибыли составит минимум 1.2 млн ₸ в первый квартал.";
     }
-
-    // Формируем историю сообщений для OpenAI
-    // OpenAI использует роли: 'system', 'user', 'assistant'
     const messages = history.map(msg => ({
       role: msg.sender === 'user' ? 'user' : 'assistant',
       content: msg.text
     }));
-    
-    // Добавляем системный промпт
     messages.unshift({
         role: "system",
-        content: `Ты — AI-ассистент элитного агентства Taipan Media. Твой тон: уверенный, профессиональный, немного дерзкий ("хищный"), но вежливый. Ты эксперт в Telegram Mini Apps. 
-        Твоя цель: продавать услуги агентства (разработка, аудит) или обучение. 
-        Используй эмодзи. Отвечай кратко и по делу.`
+        content: "Ты — AI-ассистент Taipan Media. Твой тон: уверенный, экспертный, хищный. Ты эксперт в Telegram Mini Apps. Отвечай кратко, структурировано, используй маркдаун."
     });
-
-    // Добавляем текущий запрос пользователя
-    messages.push({ role: 'user', content: prompt });
-
-    const response = await fetch(
-      'https://api.openai.com/v1/chat/completions',
-      {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`
-        },
-        body: JSON.stringify({
-          model: "gpt-4o", // Используем актуальную модель
-          messages: messages,
-          temperature: 0.7
-        }),
-      }
-    );
-    
-    if (!response.ok) {
-        const errorData = await response.json();
-        console.error("OpenAI API Error Details:", errorData);
-        throw new Error('API Error');
-    }
-
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+        body: JSON.stringify({ model: "gpt-4o", messages: [...messages, {role: 'user', content: prompt}], temperature: 0.7 }),
+    });
     const data = await response.json();
-    return data.choices?.[0]?.message?.content || "Ошибка анализа данных.";
-  } catch (error) {
-    console.error("OpenAI API Error:", error);
-    return "Система перегружена. Повторите попытку позже.";
-  }
+    return data.choices?.[0]?.message?.content || "Ошибка анализа.";
+  } catch (e) { return "Ошибка связи с ядром."; }
 };
-
-// --- UTILS ---
-const formatCurrency = (val) => new Intl.NumberFormat('ru-RU').format(val) + ' ₸';
-
-// --- DATA ---
-const PORTFOLIO = [
-  {
-    id: 1,
-    title: 'ROMANTIC SHYMKENT',
-    type: 'ЦВЕТОЧНЫЙ БРЕНД #1',
-    stat: '+210%',
-    statLabel: 'РОСТ ПРОДАЖ',
-    img: 'from-rose-500/20 to-rose-900/10'
-  },
-  {
-    id: 2,
-    title: 'КАСТРЮЛЬКА ЕДЫ',
-    type: 'ДОСТАВКА ЕДЫ',
-    stat: '+180%',
-    statLabel: 'ПОВТОРНЫЕ ПОКУПКИ',
-    img: 'from-orange-500/20 to-orange-900/10'
-  },
-  {
-    id: 3,
-    title: 'VIRGINIA',
-    type: 'МАГАЗИН ТАБАКА',
-    stat: 'x2.5',
-    statLabel: 'ЧАСТОТА ПОКУПОК',
-    img: 'from-zinc-500/20 to-zinc-900/10'
-  },
-];
-
-const SERVICES = [
-  {
-    id: 'dev',
-    title: 'ПРОТОКОЛ: КОБРА',
-    price: 100000,
-    desc: 'ПОЛНАЯ РАЗРАБОТКА MINI APP ПОД КЛЮЧ',
-    details: [
-      'Уникальный UI/UX дизайн (Taipan Style)',
-      'Frontend (React/Vue) + Анимации',
-      'Backend & База данных',
-      'Интеграция с Telegram API',
-      'Админ-панель для управления',
-      'Техническая поддержка 1 мес.'
-    ],
-    accent: 'emerald'
-  },
-  {
-    id: 'audit',
-    title: 'ПРОТОКОЛ: ПИТОН',
-    price: 50000,
-    desc: 'АУДИТ БИЗНЕСА И ТЕХНИЧЕСКОЕ ЗАДАНИЕ',
-    details: [
-      'Анализ ниши и конкурентов',
-      'Разработка воронки продаж',
-      'Техническое задание (ТЗ) для разработки',
-      'Просчет юнит-экономики',
-      'Рекомендации по маркетингу'
-    ],
-    accent: 'blue'
-  },
-];
-
-const DEV_ROLES = [
-  {
-    id: 'frontend',
-    title: 'Frontend Архитектор',
-    icon: <Code size={24} />,
-    desc: 'Визуал, анимации, интерфейсы. Ты делаешь так, чтобы это выглядело дорого.',
-    color: 'emerald'
-  },
-  {
-    id: 'backend',
-    title: 'Backend Инженер',
-    icon: <Cpu size={24} />,
-    desc: 'Логика, базы данных, API. Ты строишь "мозги" системы.',
-    color: 'emerald'
-  },
-  {
-    id: 'design',
-    title: 'UI/UX Дизайнер',
-    icon: <Palette size={24} />,
-    desc: 'Стиль, психология, удобство. Ты управляешь вниманием пользователя.',
-    color: 'emerald'
-  },
-  {
-    id: 'traffic',
-    title: 'Арбитраж Трафика',
-    icon: <Zap size={24} />,
-    desc: 'Реклама, воронки, лиды. Ты приводишь клиентов и делаешь кэш.',
-    color: 'emerald'
-  }
-];
 
 // --- SHARED COMPONENTS ---
 
 const SnakeText = ({ children, className = "" }) => (
-  <span
-    className={`font-black ${className}`}
-    style={{
+  <span className={`font-black ${className}`} style={{
       backgroundImage: `url('https://images.unsplash.com/photo-1550948537-130a1ce83314?q=80&w=2072&auto=format&fit=crop')`,
-      backgroundSize: '150%',
-      backgroundPosition: 'center 40%',
-      WebkitBackgroundClip: 'text',
-      WebkitTextFillColor: 'transparent',
-      textShadow: '0 2px 20px rgba(16, 185, 129, 0.4)',
-      filter: 'brightness(1.3) contrast(1.2)',
-      display: 'inline-block',
-      paddingRight: '0.15em'
-    }}
-  >
-    {children}
-  </span>
-);
-
-const MatrixBackground = () => (
-  <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden bg-black">
-    <div className="absolute inset-0 opacity-20"
-         style={{
-           backgroundImage: 'linear-gradient(rgba(16, 185, 129, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(16, 185, 129, 0.1) 1px, transparent 1px)',
-           backgroundSize: '40px 40px'
-         }}>
-    </div>
-    <div className="absolute inset-0 bg-gradient-to-b from-black via-transparent to-emerald-900/10"></div>
-  </div>
+      backgroundSize: '150%', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+      textShadow: '0 2px 20px rgba(16, 185, 129, 0.4)', filter: 'brightness(1.3) contrast(1.2)',
+      display: 'inline-block'
+    }}>{children}</span>
 );
 
 const MeshBackground = () => (
-  <div className="fixed inset-0 z-0 bg-[#050505]">
+  <div className="fixed inset-0 z-0 bg-[#050505] overflow-hidden">
     <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-emerald-900/20 blur-[120px]"></div>
     <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-blue-900/10 blur-[120px]"></div>
     <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20"></div>
   </div>
 );
 
+const SnakePatternBackground = () => (
+    <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden bg-black">
+      <div className="absolute inset-0 opacity-20"
+           style={{
+             backgroundImage: 'radial-gradient(#10B981 1px, transparent 1px)',
+             backgroundSize: '16px 16px'
+           }}>
+      </div>
+      <div className="absolute inset-0 bg-gradient-to-b from-black via-transparent to-emerald-900/10"></div>
+    </div>
+);
+
 const TerminalSplash = ({ onComplete }) => {
   const [lines, setLines] = useState([]);
-  
   useEffect(() => {
     const sequence = [
-      { text: "> ЗАГРУЗКА ЯДРА...", delay: 200 },
-      { text: "> ПОДКЛЮЧЕНИЕ НЕЙРОСЕТИ...", delay: 800 },
-      { text: "> АНАЛИЗ РЫНКА...", delay: 1500 },
-      { text: "> ПРОТОКОЛ TAIPAN АКТИВИРОВАН.", delay: 2200, color: "text-emerald-500 font-bold" },
+      { text: "> INITIALIZING CORE...", delay: 200 },
+      { text: "> CONNECTING TO NEURAL NET...", delay: 600 },
+      { text: "> TAIPAN PROTOCOL ACTIVE.", delay: 1200, color: "text-emerald-500 font-bold" },
     ];
-
     let timeouts = [];
-    sequence.forEach(({ text, delay, color }, index) => {
+    sequence.forEach(({ text, delay, color }, i) => {
       const t = setTimeout(() => {
         setLines(prev => [...prev, { text, color }]);
-        if (index === sequence.length - 1) {
-          setTimeout(onComplete, 1200);
-        }
+        if (i === sequence.length - 1) setTimeout(onComplete, 800);
       }, delay);
       timeouts.push(t);
     });
-
     return () => timeouts.forEach(clearTimeout);
   }, [onComplete]);
 
   return (
-    <div className="fixed inset-0 bg-black z-[100] flex flex-col justify-end p-8 font-mono text-xs md:text-sm">
-      {lines.map((line, i) => (
-        <div key={i} className={`mb-2 ${line.color || "text-emerald-500/70"}`}>{line.text}</div>
-      ))}
+    <div className="fixed inset-0 bg-black z-[100] flex flex-col justify-end p-8 font-mono text-xs">
+      {lines.map((line, i) => <div key={i} className={`mb-2 ${line.color || "text-emerald-500/70"}`}>{line.text}</div>)}
       <div className="w-2 h-4 bg-emerald-500 animate-pulse"></div>
-    </div>
-  );
-};
-
-const SnakePatternBackground = () => (
-  <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden bg-black">
-    <div className="absolute inset-0 opacity-20"
-         style={{
-           backgroundImage: 'radial-gradient(#10B981 1px, transparent 1px)',
-           backgroundSize: '16px 16px'
-         }}>
-    </div>
-    <div className="absolute inset-0 bg-gradient-to-b from-black via-transparent to-emerald-900/10"></div>
-  </div>
-);
-
-const ShatterText = ({ visible, children }) => {
-  const [status, setStatus] = useState('hidden'); // hidden, visible, shattering
-  const [shatter, setShatter] = useState(false);
-
-  useEffect(() => {
-    if (visible) {
-      setStatus('visible');
-      setShatter(false);
-    } else if (status === 'visible') {
-      setStatus('shattering');
-      // Trigger animation after a brief delay
-      requestAnimationFrame(() => {
-          setShatter(true);
-      });
-      const timer = setTimeout(() => setStatus('hidden'), 800);
-      return () => clearTimeout(timer);
-    }
-  }, [visible]);
-
-  if (status === 'hidden') return null;
-
-  if (status === 'visible') {
-    return (
-      <div className="animate-in fade-in zoom-in duration-500 relative z-10 w-full">
-        {children}
-      </div>
-    );
-  }
-
-  // Shattering State
-  // We duplicate the content and clip it into 4 shards
-  return (
-    <div className="relative w-full h-full pointer-events-none">
-        {/* Shard 1 - Top Left */}
-        <div 
-            className={`absolute inset-0 transition-all duration-700 ease-out ${shatter ? '-translate-x-12 -translate-y-12 -rotate-12 opacity-0 blur-sm scale-110' : ''}`} 
-            style={{ clipPath: 'polygon(0 0, 60% 0, 40% 40%, 0 50%)' }}
-        >
-            {children}
-        </div>
-        {/* Shard 2 - Top Right */}
-        <div 
-            className={`absolute inset-0 transition-all duration-700 ease-out ${shatter ? 'translate-x-16 -translate-y-8 rotate-12 opacity-0 blur-sm scale-110' : ''}`} 
-            style={{ clipPath: 'polygon(60% 0, 100% 0, 100% 60%, 40% 40%)' }}
-        >
-            {children}
-        </div>
-        {/* Shard 3 - Bottom Right */}
-        <div 
-            className={`absolute inset-0 transition-all duration-700 ease-out ${shatter ? 'translate-x-8 translate-y-16 -rotate-6 opacity-0 blur-sm scale-110' : ''}`} 
-            style={{ clipPath: 'polygon(40% 40%, 100% 60%, 100% 100%, 30% 100%)' }}
-        >
-            {children}
-        </div>
-        {/* Shard 4 - Bottom Left */}
-        <div 
-            className={`absolute inset-0 transition-all duration-700 ease-out ${shatter ? '-translate-x-16 translate-y-8 rotate-6 opacity-0 blur-sm scale-110' : ''}`} 
-            style={{ clipPath: 'polygon(0 50%, 40% 40%, 30% 100%, 0 100%)' }}
-        >
-            {children}
-        </div>
-        
-        {/* Flash Effect on break */}
-        <div className={`absolute inset-0 bg-emerald-500/20 mix-blend-overlay transition-opacity duration-300 ${shatter ? 'opacity-100' : 'opacity-0'}`}></div>
-    </div>
-  );
-};
-
-// --- AI CHAT COMPONENT ---
-const AIChat = ({ isOpen, onClose }) => {
-  const [messages, setMessages] = useState([
-    { sender: 'model', text: 'Taipan AI на связи. Чем могу быть полезен? Рассчитать стоимость или подсказать по стратегии?' }
-  ]);
-  const [input, setInput] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
-  const messagesEndRef = useRef(null);
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-
-  const handleSend = async () => {
-    if (!input.trim()) return;
-    
-    const userMsg = { sender: 'user', text: input };
-    setMessages(prev => [...prev, userMsg]);
-    setInput('');
-    setIsTyping(true);
-
-    const responseText = await callOpenAIAPI(input, messages);
-    
-    setMessages(prev => [...prev, { sender: 'model', text: responseText }]);
-    setIsTyping(false);
-  };
-
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 z-[70] bg-black/90 backdrop-blur-xl flex flex-col font-sans animate-in slide-in-from-bottom-10 fade-in duration-300">
-      {/* Header */}
-      <div className="p-4 border-b border-white/10 flex justify-between items-center bg-[#050505]">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center border border-emerald-500/30">
-            <Bot size={20} className="text-emerald-500" />
-          </div>
-          <div>
-            <h3 className="text-sm font-bold text-white">Taipan AI</h3>
-            <span className="text-[10px] text-emerald-500 flex items-center gap-1">
-              <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span> Online
-            </span>
-          </div>
-        </div>
-        <button onClick={onClose} className="p-2 text-zinc-500 hover:text-white rounded-full bg-zinc-900">
-          <X size={20} />
-        </button>
-      </div>
-
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.map((msg, idx) => (
-          <div key={idx} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[85%] p-3.5 rounded-2xl text-sm leading-relaxed shadow-lg ${
-              msg.sender === 'user'
-                ? 'bg-emerald-600 text-white rounded-tr-sm'
-                : 'bg-zinc-800 text-zinc-200 rounded-tl-sm border border-zinc-700'
-            }`}>
-              {msg.text}
-            </div>
-          </div>
-        ))}
-        {isTyping && (
-          <div className="flex justify-start">
-            <div className="bg-zinc-800 p-3 rounded-2xl rounded-tl-sm border border-zinc-700 flex gap-1 items-center">
-              <div className="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-bounce"></div>
-              <div className="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-bounce delay-100"></div>
-              <div className="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-bounce delay-200"></div>
-            </div>
-          </div>
-        )}
-        <div ref={messagesEndRef} />
-      </div>
-
-      {/* Input */}
-      <div className="p-4 border-t border-white/10 bg-[#050505]">
-        <div className="relative flex items-center gap-2">
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-            placeholder="Спросите что-нибудь..."
-            className="flex-1 bg-zinc-900 border border-zinc-800 rounded-xl py-3 px-4 text-white text-sm focus:border-emerald-500 focus:outline-none transition-all placeholder:text-zinc-600"
-          />
-          <button
-            onClick={handleSend}
-            disabled={!input.trim() || isTyping}
-            className="p-3 bg-emerald-600 text-white rounded-xl hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-lg shadow-emerald-900/20"
-          >
-            <Send size={18} />
-          </button>
-        </div>
-      </div>
     </div>
   );
 };
@@ -446,666 +109,582 @@ const AIChat = ({ isOpen, onClose }) => {
 const SelectView = ({ setMode }) => (
   <div className="flex flex-col h-screen relative overflow-hidden font-sans bg-black">
     <SnakePatternBackground />
-    
     <div className="relative z-10 flex-1 flex flex-col p-8 justify-center">
       <div className="mb-12">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 mb-6 backdrop-blur-sm animate-in fade-in slide-in-from-top-4 duration-700">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 mb-6 backdrop-blur-sm">
            <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-           <span className="text-white/60 text-[10px] font-medium tracking-wide">SYSTEM ONLINE</span>
+           <span className="text-white/60 text-[10px] font-medium tracking-wide uppercase">System Online</span>
         </div>
-        
-        {/* ONE LINE SNAKE TEXT */}
-        <h1 className="text-4xl md:text-5xl font-black italic tracking-tighter leading-none mb-4 whitespace-nowrap animate-in fade-in slide-in-from-left-4 duration-700 delay-100">
+        <h1 className="text-4xl md:text-5xl font-black italic tracking-tighter leading-none mb-4 whitespace-nowrap">
            <SnakeText>TAIPAN MEDIA</SnakeText>
         </h1>
-        
-        <p className="text-zinc-400 text-sm font-light leading-relaxed max-w-xs animate-in fade-in duration-700 delay-200">
-          Выберите свой протокол для продолжения.
-        </p>
+        <p className="text-zinc-400 text-sm font-light leading-relaxed max-w-xs">Выберите свой протокол для продолжения.</p>
       </div>
-
-      <div className="grid gap-4 w-full max-w-md animate-in fade-in slide-in-from-bottom-8 duration-700 delay-300">
-        <button
-          onClick={() => setMode('business')}
-          className="group relative overflow-hidden rounded-3xl bg-zinc-900 border border-zinc-800 p-1 hover:border-emerald-500/50 transition-all duration-500 active:scale-[0.98]"
-        >
-          <div className="absolute inset-0 opacity-10 bg-[url('https://images.unsplash.com/photo-1550948537-130a1ce83314?q=80&w=2072&auto=format&fit=crop')] bg-cover bg-center mix-blend-overlay group-hover:opacity-20 transition-opacity"></div>
-          <div className="bg-gradient-to-br from-zinc-800/80 to-black/90 rounded-[20px] p-6 h-full relative z-10 text-left backdrop-blur-sm">
-             <div className="flex justify-between items-start mb-4">
-                <div className="w-12 h-12 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500 border border-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.1)] group-hover:scale-110 transition-transform">
-                   <Briefcase size={24} />
-                </div>
-                <ArrowRight className="text-zinc-700 group-hover:text-emerald-500 transition-colors group-hover:translate-x-1 duration-300" />
-             </div>
-             <h3 className="text-xl font-bold text-white mb-1">Предприниматель</h3>
-             <p className="text-zinc-500 text-xs">Масштабирование бизнеса и рост продаж.</p>
-          </div>
+      <div className="grid gap-4 w-full max-w-md">
+        <button onClick={() => setMode('business')} className="group relative overflow-hidden rounded-3xl bg-zinc-900 border border-zinc-800 p-6 text-left hover:border-emerald-500/50 transition-all active:scale-[0.98]">
+          <Briefcase className="text-emerald-500 mb-4 group-hover:scale-110 transition-transform" size={24} />
+          <h3 className="text-xl font-bold text-white">Предприниматель</h3>
+          <p className="text-zinc-500 text-xs">Масштабирование бизнеса и рост продаж.</p>
         </button>
-
-        <button
-          onClick={() => setMode('dev')}
-          className="group relative overflow-hidden rounded-3xl bg-zinc-900 border border-zinc-800 p-1 hover:border-emerald-500/50 transition-all duration-500 active:scale-[0.98]"
-        >
-          <div className="absolute inset-0 opacity-10 bg-[url('https://images.unsplash.com/photo-1550948537-130a1ce83314?q=80&w=2072&auto=format&fit=crop')] bg-cover bg-center mix-blend-overlay group-hover:opacity-20 transition-opacity"></div>
-          <div className="bg-gradient-to-br from-zinc-800/80 to-black/90 rounded-[20px] p-6 h-full relative z-10 text-left backdrop-blur-sm">
-             <div className="flex justify-between items-start mb-4">
-                <div className="w-12 h-12 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500 border border-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.1)] group-hover:scale-110 transition-transform">
-                   <Code size={24} />
-                </div>
-                <ArrowRight className="text-zinc-700 group-hover:text-emerald-500 transition-colors group-hover:translate-x-1 duration-300" />
-             </div>
-             <h3 className="text-xl font-bold text-white mb-1">Разработчик</h3>
-             <p className="text-zinc-500 text-xs">Обучение созданию Mini Apps и заработок.</p>
-          </div>
+        <button onClick={() => setMode('dev')} className="group relative overflow-hidden rounded-3xl bg-zinc-900 border border-zinc-800 p-6 text-left hover:border-emerald-500/50 transition-all active:scale-[0.98]">
+          <Code className="text-emerald-500 mb-4 group-hover:scale-110 transition-transform" size={24} />
+          <h3 className="text-xl font-bold text-white">Разработчик</h3>
+          <p className="text-zinc-500 text-xs">Обучение созданию Mini Apps и заработок.</p>
         </button>
       </div>
-    </div>
-    
-    <div className="relative z-10 p-6 text-center">
-        <p className="text-zinc-700 text-[10px] font-medium tracking-widest">EST. 2026 SHYMKENT</p>
     </div>
   </div>
 );
 
-const BusinessView = ({ setMode, bizParams, setBizParams }) => {
-  const [selectedService, setSelectedService] = useState(null);
-  const [aiAnalysis, setAiAnalysis] = useState('');
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
+// --- NEW DEV VIEW LOGIC ---
 
-  const FIXED_INVESTMENT = 100000;
-  const traffic = bizParams.users;
-  const currentConvRate = bizParams.currentConversion;
-  
-  // Logic
-  const lostTrafficRate = Math.max(0, 100 - currentConvRate) / 100;
-  const lostClients = Math.floor(traffic * lostTrafficRate);
-  const recoveredClients = Math.floor(lostClients * 0.20);
-  const savedRevenue = recoveredClients * bizParams.check;
-  
-  const baseClients = Math.floor(traffic * (currentConvRate / 100));
-  const baseRevenue = baseClients * bizParams.check;
-  
-  const totalRevenue = baseRevenue + savedRevenue;
-  const totalProfit = Math.floor(totalRevenue * (bizParams.margin / 100));
-  
-  let roiValue = 0;
-  if (FIXED_INVESTMENT > 0) {
-      roiValue = ((totalProfit - FIXED_INVESTMENT) / FIXED_INVESTMENT) * 100;
-  }
-  const roiDisplay = roiValue.toFixed(0);
+// INLINE SVG COMPONENTS
+const BitcoinLogo = () => (
+  <svg viewBox="0 0 64 64" className="w-full h-full drop-shadow-xl">
+    <circle cx="32" cy="32" r="32" fill="#F7931A"/>
+    <path fill="#FFF" d="M44.5 25.8c.8-5.2-3.2-8-8.6-9.8l1.8-7-4.2-1-1.7 6.9c-1.1-.3-2.3-.5-3.4-.8l1.7-6.9-4.3-1-1.8 7.1c-.9-.2-1.8-.4-2.7-.6L19 12l-2.6 6.5s1.4.3 1.4.4c.8.2.9.6.9 1l-2.1 8.5c.1 0 .3.1.5.1-.1 0-.3 0-.4 0l-3 12c-.2.5-.7.6-1.5.4 0 0-1 .4-1 .4l-1.9 4.4 3.6.9c1 .2 2 .5 3 .8l-1.8 7.2 4.3 1 1.8-7.1c1.2.3 2.3.6 3.4.9l-1.8 7.2 4.3 1 1.8-7c7.3 1.4 12.8.8 15.1-5.8 1.9-5.3-1-8.4-4.5-10.4 3.2-.7 5.6-2.9 6.2-7.3zM37.8 40c-2 7.8-15.3 3.6-19.6 2.5l3.5-14c4.3 1.1 18.2 3.2 16.1 11.5zm1.7-16.6c-1.8 7.2-13.1 3.5-16.7 2.6l3.2-12.8c3.7.9 15.5 2.6 13.5 10.2z"/>
+  </svg>
+);
 
-  const handleAIAnalysis = async () => {
-    if (traffic === 0 || bizParams.check === 0) return;
-    setIsAnalyzing(true);
-    setAiAnalysis('');
-    
-    const prompt = `Ты - ведущий стратег Taipan Media.
-    
-    ЦИФРЫ КЛИЕНТА:
-    - Трафик: ${traffic} клиентов/мес
-    - Конверсия: ${currentConvRate}% (значит ${100 - currentConvRate}% уходят без покупки!)
-    - Средний чек: ${bizParams.check} ₸
-    - Потенциал возврата (Saved Revenue): ${savedRevenue} ₸ в месяц
-    
-    ЗАДАЧА:
-    1. Напиши стратегию масштабирования на основе этих цифр.
-    2. Объясни, ПОЧЕМУ Taipan Store (наше Mini App решение) спасает эти упущенные продажи, в отличие от обычного сайта.
-    3. Докажи, как именно мы вернем эти деньги в бизнес (инструменты: Push-рассылки, программа лояльности, "дожим" через бота).
-    
-    Тон: Дерзкий, экспертный, убедительный. Без "воды". Используй эмодзи.`;
+const InstagramLogo = () => (
+  <svg viewBox="0 0 24 24" className="w-full h-full drop-shadow-xl">
+    <defs>
+      <radialGradient id="igGradient" cx="0.2" cy="1" r="1.2">
+        <stop offset="0%" stopColor="#fdf497" />
+        <stop offset="5%" stopColor="#fdf497" />
+        <stop offset="45%" stopColor="#fd5949" />
+        <stop offset="60%" stopColor="#d6249f" />
+        <stop offset="90%" stopColor="#285AEB" />
+      </radialGradient>
+    </defs>
+    <rect x="2" y="2" width="20" height="20" rx="6" ry="6" fill="url(#igGradient)" />
+    <path fill="none" stroke="#fff" strokeWidth="2" d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+    <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
+  </svg>
+);
 
-    const result = await callOpenAIAPI(prompt);
-    setAiAnalysis(result);
-    setIsAnalyzing(false);
-  };
+const WBLogo = () => (
+  <div className="w-full h-full bg-gradient-to-br from-[#9c1c9c] to-[#5e0d5e] rounded-2xl flex items-center justify-center p-2 shadow-2xl">
+     <span className="text-white font-black italic tracking-tighter text-4xl">WB</span>
+  </div>
+);
 
-  // Service Detail Modal Renderer
-  const renderServiceDetail = () => {
-    if (!selectedService) return null;
+const KaspiLogo = () => (
+  <div className="w-full h-full bg-[#f14635] rounded-2xl flex items-center justify-center p-1 shadow-2xl border-b-4 border-[#c0392b]">
+      <span className="text-white font-bold tracking-tight text-xl">Kaspi.kz</span>
+  </div>
+);
+
+const TelegramLogo = () => (
+  <div className="w-full h-full bg-[#24A1DE] rounded-full flex items-center justify-center shadow-[0_0_50px_rgba(36,161,222,0.4)]">
+      <svg viewBox="0 0 24 24" className="w-2/3 h-2/3 fill-white translate-x-[-2px] translate-y-[2px]">
+        <path d="M22.2646 2.42743C22.569 2.27532 22.8837 2.47863 22.8021 2.81232L19.9814 16.5135C19.7997 17.4022 18.7381 17.7423 18.0673 17.126L14.155 13.9189L12.0622 15.9329C11.8396 16.1469 11.4787 15.9926 11.4924 15.6841L11.7509 11.2336C11.7766 10.7916 11.9687 10.3752 12.2852 10.076L17.7562 5.24432C18.0253 5.00676 17.697 4.60676 17.3879 4.80917L8.90367 10.1556C8.28335 10.5463 7.50293 10.5189 6.91037 10.2974L3.4563 9.00632C2.79379 8.75883 2.84687 7.80993 3.53569 7.63223L22.2646 2.42743Z"/>
+      </svg>
+  </div>
+);
+
+const DevView = ({ setMode }) => {
+  const [step, setStep] = useState(0);
+  const [fadeState, setFadeState] = useState('in'); // 'in' | 'visible' | 'out'
+
+  const missedOpportunities = [
+    { 
+        year: '2009', 
+        title: 'Bitcoin', 
+        quote: '«Электронные фантики. Это никогда не заменит реальные деньги.»', 
+        logo: <BitcoinLogo />
+    },
+    { 
+        year: '2012', 
+        title: 'Instagram', 
+        quote: '«Кому нужны фото еды? Там нет бизнеса, это просто игрушка.»', 
+        logo: <InstagramLogo />
+    },
+    { 
+        year: '2019', 
+        title: 'WB и Kaspi', 
+        quote: '«Люди хотят щупать товар. Маркетплейсы убьют только время.»', 
+        logo: (
+            <div className="flex gap-6 w-full h-full justify-center">
+                 <div className="w-24 h-24 rotate-[-6deg] hover:rotate-0 transition-transform duration-500"><WBLogo /></div>
+                 <div className="w-24 h-24 rotate-[6deg] hover:rotate-0 transition-transform duration-500"><KaspiLogo /></div>
+            </div>
+        )
+    },
+  ];
+
+  useEffect(() => {
+    if (step < 3) {
+      setFadeState('in');
+      
+      const timerVisible = setTimeout(() => {
+        setFadeState('visible');
+      }, 500); 
+
+      const timerOut = setTimeout(() => {
+        setFadeState('out');
+      }, 4500); // Читаем 4 секунды
+
+      const timerNext = setTimeout(() => {
+        setStep(prev => prev + 1);
+        setFadeState('in');
+      }, 5500); 
+
+      return () => { clearTimeout(timerVisible); clearTimeout(timerOut); clearTimeout(timerNext); };
+    }
+  }, [step]);
+
+  // --- FINAL SCREEN (STEP 3) ---
+  if (step === 3) {
     return (
-      <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-xl flex flex-col justify-end sm:justify-center p-4 animate-in fade-in duration-300">
-        <div className="bg-[#111] border border-zinc-800 rounded-3xl p-6 w-full max-w-md mx-auto relative shadow-2xl animate-in slide-in-from-bottom-10">
-            <button
-                onClick={() => setSelectedService(null)}
-                className="absolute top-4 right-4 w-8 h-8 bg-zinc-900 rounded-full flex items-center justify-center text-zinc-500 hover:text-white transition-colors"
-            >
-                <X size={16}/>
-            </button>
+      <div className="flex flex-col h-screen bg-black text-white font-sans overflow-hidden relative">
+        <MeshBackground />
+        
+        <div className="relative z-10 flex flex-col h-full p-6 animate-in zoom-in-95 duration-1000 fade-in">
+           {/* Top Nav */}
+           <div className="flex justify-between items-center mb-8">
+              <button onClick={() => setMode('select')} className="w-10 h-10 rounded-full bg-zinc-900/50 flex items-center justify-center border border-white/5 hover:border-emerald-500/50 transition-colors">
+                  <ArrowLeft size={20} />
+              </button>
+              <div className="px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full text-[10px] font-bold text-emerald-500 uppercase tracking-widest">
+                  Dev Protocol
+              </div>
+           </div>
 
-            <div className="mb-6">
-                <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest mb-2 block">Досье проекта</span>
-                <h2 className="text-2xl font-bold text-white mb-2">{selectedService.title}</h2>
-                <div className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-white to-zinc-400">
-                    {formatCurrency(selectedService.price)}
-                </div>
-            </div>
+           {/* Content */}
+           <div className="flex-1 flex flex-col justify-center items-center max-w-md mx-auto w-full text-center space-y-10">
+              <div className="space-y-6">
+                  {/* HERO HEADER */}
+                  <div className="relative inline-block">
+                      <div className="absolute -top-12 left-1/2 -translate-x-1/2 w-32 h-32 bg-emerald-500/20 blur-[50px] animate-pulse"></div>
+                      <div className="w-24 h-24 mx-auto mb-6 relative z-10">
+                          <TelegramLogo />
+                      </div>
+                      <h1 className="text-5xl font-black italic tracking-tighter leading-none mb-4">
+                          2026: <br/> <span className="text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]">TELEGRAM</span> <SnakeText>STORE</SnakeText>
+                      </h1>
+                  </div>
 
-            <div className="space-y-4 mb-8">
-                {selectedService.details.map((item, i) => (
-                    <div key={i} className="flex items-start gap-3">
-                        <div className="mt-1 w-5 h-5 rounded-full bg-emerald-500/10 flex items-center justify-center flex-shrink-0">
-                            <Check size={10} className="text-emerald-500" />
-                        </div>
-                        <span className="text-zinc-400 text-sm leading-snug">{item}</span>
-                    </div>
-                ))}
-            </div>
+                  {/* SLOGAN */}
+                  <div className="space-y-4">
+                      <p className="text-zinc-300 font-medium text-sm leading-relaxed max-w-xs mx-auto">
+                          Сайты мертвы. Приложения — это дорого и сложно. 
+                      </p>
+                      <div className="bg-zinc-900/50 border border-emerald-500/30 p-4 rounded-2xl backdrop-blur-sm">
+                          <p className="text-emerald-400 text-sm font-bold uppercase tracking-wide leading-relaxed">
+                              "Твой бизнес должен быть там,<br/>где люди проводят 90% времени"
+                          </p>
+                      </div>
+                  </div>
+              </div>
 
-            <button className="w-full bg-white hover:bg-zinc-200 active:scale-[0.98] text-black font-bold py-4 rounded-xl text-sm transition-all shadow-[0_0_20px_rgba(255,255,255,0.1)]">
-                Связаться с менеджером
-            </button>
+              {/* BUTTONS */}
+              <div className="grid gap-4 w-full">
+                  <button className="group relative overflow-hidden bg-zinc-900 border border-zinc-800 hover:border-emerald-500/50 p-6 rounded-3xl text-left transition-all active:scale-[0.98]">
+                      <div className="absolute top-0 right-0 p-4 opacity-20 group-hover:opacity-40 transition-opacity">
+                          <ShoppingCart size={80} className="text-emerald-500 -rotate-12 translate-x-4 -translate-y-4"/>
+                      </div>
+                      <div className="relative z-10">
+                          <div className="text-2xl font-bold text-white mb-1 group-hover:text-emerald-400 transition-colors">TG Магазины</div>
+                          <p className="text-xs text-zinc-500 uppercase tracking-wider font-bold">Обучение • Скрипты • Заказы</p>
+                      </div>
+                  </button>
+
+                  <button className="group relative overflow-hidden bg-zinc-900 border border-zinc-800 hover:border-emerald-500/50 p-6 rounded-3xl text-left transition-all active:scale-[0.98]">
+                      <div className="absolute top-0 right-0 p-4 opacity-20 group-hover:opacity-40 transition-opacity">
+                          <Rocket size={80} className="text-purple-500 -rotate-12 translate-x-4 -translate-y-4"/>
+                      </div>
+                      <div className="relative z-10">
+                          <div className="text-2xl font-bold text-white mb-1 group-hover:text-purple-400 transition-colors">Custom Mini Apps</div>
+                          <p className="text-xs text-zinc-500 uppercase tracking-wider font-bold">React • Node.js • Сложные боты</p>
+                      </div>
+                  </button>
+              </div>
+
+              <div className="pt-4">
+                  <p className="text-[10px] text-zinc-600 uppercase tracking-widest">Доступ к базе знаний Taipan</p>
+              </div>
+           </div>
         </div>
       </div>
     );
-  };
+  }
+
+  // --- FADE SEQUENCE SCREENS ---
+  const current = missedOpportunities[step];
+  
+  let transitionClass = 'opacity-0 translate-y-4 scale-95 blur-sm'; 
+  if (fadeState === 'visible') transitionClass = 'opacity-100 translate-y-0 scale-100 blur-0';
+  if (fadeState === 'out') transitionClass = 'opacity-0 scale-105 blur-lg brightness-50';
 
   return (
-    <div className="flex flex-col h-screen bg-black text-white font-sans overflow-y-auto no-scrollbar">
+    <div className="flex flex-col h-screen bg-black text-white font-sans overflow-hidden items-center justify-center relative p-8">
       <MeshBackground />
-      {renderServiceDetail()}
       
-      {/* Top Bar */}
-      <div className="sticky top-0 z-40 px-6 py-4 bg-[#050505]/80 backdrop-blur-md flex justify-between items-center border-b border-white/5">
-        <button onClick={() => setMode('select')} className="w-8 h-8 rounded-full bg-zinc-900 flex items-center justify-center text-white hover:bg-zinc-800 transition-colors">
-          <ChevronRight className="rotate-180" size={18}/>
-        </button>
-        <span className="text-[10px] font-bold tracking-widest text-emerald-500 uppercase">Бизнес Модуль</span>
-        <div className="w-8"></div>
-      </div>
-
-      <div className="p-4 relative z-10 pb-32 max-w-md mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div 
+        key={step} 
+        className={`relative z-10 flex flex-col items-center text-center transition-all duration-[1500ms] ease-out ${transitionClass}`}
+      >
+        <div className="mb-12 scale-125">
+            {current.logo}
+        </div>
         
-        <div className="flex items-center gap-3 mb-6">
-           <div className="w-10 h-10 bg-emerald-500/10 rounded-xl flex items-center justify-center border border-emerald-500/20">
-              <Calculator size={20} className="text-emerald-500" />
-           </div>
-           <div>
-              <h2 className="text-xl font-bold text-white leading-tight">Прогноз <br/>Эффективности</h2>
-           </div>
-        </div>
-
-        {/* Premium Calculator Card */}
-        <div className="bg-[#0A0A0A] border border-zinc-800/50 rounded-[28px] overflow-hidden shadow-2xl relative mb-10">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 blur-3xl rounded-full pointer-events-none"></div>
-
-          <div className="p-6 space-y-6">
-              
-              {/* Input Group */}
-              <div className="space-y-4">
-                 <div className="bg-zinc-900/40 rounded-2xl p-4 border border-zinc-800/50">
-                    <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wide block mb-2">Трафик в месяц</label>
-                    <div className="flex items-center gap-3">
-                       <Users size={18} className="text-zinc-600"/>
-                       <input
-                          type="number"
-                          value={bizParams.users || ''}
-                          onChange={(e) => setBizParams({...bizParams, users: Math.max(0, parseInt(e.target.value) || 0)})}
-                          className="w-full bg-transparent text-white text-xl font-bold focus:outline-none placeholder:text-zinc-700"
-                          placeholder="0"
-                       />
-                    </div>
-                 </div>
-
-                 <div className="bg-zinc-900/40 rounded-2xl p-4 border border-zinc-800/50">
-                    <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wide block mb-2">Текущая конверсия (%)</label>
-                    <div className="flex items-center gap-3">
-                       <TrendingUp size={18} className="text-zinc-600"/>
-                       <input
-                          type="number"
-                          value={bizParams.currentConversion || ''}
-                          onChange={(e) => setBizParams({...bizParams, currentConversion: Math.max(0, parseFloat(e.target.value) || 0)})}
-                          className="w-full bg-transparent text-white text-xl font-bold focus:outline-none placeholder:text-zinc-700"
-                          placeholder="0"
-                       />
-                    </div>
-                 </div>
-
-                 <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-zinc-900/40 rounded-2xl p-4 border border-zinc-800/50">
-                       <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wide block mb-2">Ср. чек (₸)</label>
-                       <input
-                          type="number"
-                          value={bizParams.check || ''}
-                          onChange={(e) => setBizParams({...bizParams, check: Math.max(0, parseInt(e.target.value) || 0)})}
-                          className="w-full bg-transparent text-white text-lg font-bold focus:outline-none placeholder:text-zinc-700"
-                          placeholder="0"
-                       />
-                    </div>
-                    <div className="bg-zinc-900/40 rounded-2xl p-4 border border-zinc-800/50">
-                       <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wide block mb-2">Маржа (%)</label>
-                       <input
-                          type="number"
-                          value={bizParams.margin || ''}
-                          onChange={(e) => setBizParams({...bizParams, margin: Math.max(0, parseFloat(e.target.value) || 0)})}
-                          className="w-full bg-transparent text-white text-lg font-bold focus:outline-none placeholder:text-zinc-700"
-                          placeholder="0"
-                       />
-                    </div>
-                 </div>
-              </div>
-
-              {/* Constant */}
-              <div className="flex justify-between items-center px-2 opacity-50">
-                  <span className="text-[10px] font-bold text-zinc-500 uppercase flex items-center gap-1.5"><Lock size={10}/> Стоимость внедрения</span>
-                  <span className="text-[10px] font-bold text-white">100 000 ₸</span>
-              </div>
-
-              {/* Result Card */}
-              <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-900 to-black p-6 border border-emerald-500/20 shadow-lg">
-                 <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10"></div>
+        <div className="space-y-8 max-w-lg">
+            {/* YEAR - HUGE AND SERIF FOR REALISM */}
+            <div className="relative inline-block">
+                 <h2 className="relative z-10 text-8xl font-serif font-black italic tracking-tighter text-zinc-200 drop-shadow-2xl">
+                    {current.year}
+                 </h2>
                  
-                 <div className="relative z-10">
-                    <div className="flex justify-between items-start mb-6">
-                       <div>
-                          <div className="text-[10px] text-emerald-200/60 uppercase font-bold tracking-widest mb-1">Чистая прибыль (мес)</div>
-                          <div className="text-3xl font-bold text-white tracking-tight">{formatCurrency(totalProfit)}</div>
-                       </div>
-                       <div className="text-right">
-                          <div className="text-[10px] text-emerald-200/60 uppercase font-bold tracking-widest mb-1">ROI</div>
-                          <div className="text-3xl font-bold text-emerald-400">{roiValue > 0 ? '+' : ''}{roiDisplay}%</div>
-                       </div>
-                    </div>
-
-                    {/* Visual Bar - Saved Revenue */}
-                    <div className="bg-black/30 rounded-xl p-3 border border-white/5 backdrop-blur-sm mb-4">
-                       <div className="flex items-center justify-between mb-2">
-                          <span className="text-[10px] font-bold text-white flex items-center gap-1.5">
-                             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
-                             ВОЗВРАТ ПОТЕРЯННЫХ
-                          </span>
-                          <span className="text-xs font-bold text-emerald-400">{formatCurrency(savedRevenue)}</span>
-                       </div>
-                       <div className="w-full bg-white/10 h-1.5 rounded-full overflow-hidden">
-                          <div className="bg-emerald-500 h-full rounded-full" style={{ width: '20%' }}></div>
-                       </div>
-                       <p className="text-[9px] text-zinc-400 mt-2 leading-snug">
-                          Taipan автоматически возвращает 20% клиентов, которые ушли без покупки.
-                       </p>
-                    </div>
-                    
-                    {/* AI Analyze Button - NEW */}
-                    <button
-                       onClick={handleAIAnalysis}
-                       disabled={isAnalyzing || bizParams.users === 0}
-                       className="w-full bg-white/10 hover:bg-white/20 text-white border border-white/10 font-bold text-[10px] py-3 rounded-lg uppercase tracking-widest flex items-center justify-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed group active:scale-[0.98]"
-                    >
-                       {isAnalyzing ? (
-                         <>
-                            <Loader2 size={14} className="animate-spin text-emerald-500"/>
-                            АНАЛИЗ...
-                         </>
-                       ) : (
-                         <>
-                            <Sparkles size={14} className="text-amber-400 group-hover:rotate-12 transition-transform"/>
-                            СГЕНЕРИРОВАТЬ СТРАТЕГИЮ
-                         </>
-                       )}
-                    </button>
-
+                 {/* STAMP EFFECT */}
+                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-2 bg-red-600 rotate-[-15deg] opacity-80 mix-blend-overlay"></div>
+                 
+                 <div className="absolute top-0 right-[-20px] animate-in zoom-in duration-500 delay-300">
+                    <X size={100} className="text-red-600 opacity-90 drop-shadow-[0_0_10px_rgba(220,38,38,0.5)]" strokeWidth={3} />
                  </div>
-              </div>
-              
-              {/* AI Analysis Result Display */}
-              {aiAnalysis && (
-                 <div className="animate-in fade-in slide-in-from-top-4 mt-6 bg-[#0A0A0A] border border-emerald-500/20 rounded-[24px] p-6 shadow-2xl relative overflow-hidden">
-                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 via-transparent to-transparent"></div>
-                    <div className="flex items-center gap-2 mb-4">
-                       <BrainCircuit size={18} className="text-emerald-400"/>
-                       <h4 className="text-sm font-bold text-white uppercase tracking-wider">Стратегия Taipan AI</h4>
-                    </div>
-                    <div className="text-xs text-zinc-300 leading-relaxed whitespace-pre-line font-medium">
-                       {aiAnalysis}
-                    </div>
-                 </div>
-              )}
-              
-              <div className="text-center">
-                 <p className="text-[9px] text-zinc-600">
-                   *ROI = (Прибыль за месяц - 100 000 ₸) / 100 000 ₸ × 100%
-                 </p>
-              </div>
-
-          </div>
-        </div>
-
-        {/* Cases */}
-        <div className="mb-10">
-           <h3 className="text-white font-bold text-lg mb-4 flex items-center gap-2 px-2">
-             <Activity size={18} className="text-emerald-500"/> Кейсы
-           </h3>
-           <div className="space-y-3">
-             {PORTFOLIO.map(item => (
-               <div key={item.id} className="group relative overflow-hidden rounded-2xl bg-zinc-900/50 border border-zinc-800 p-4 hover:border-emerald-500/30 transition-all backdrop-blur-sm">
-                  <div className={`absolute inset-0 bg-gradient-to-r ${item.img} opacity-0 group-hover:opacity-100 transition-opacity`}></div>
-                  <div className="relative z-10 flex justify-between items-center">
-                      <div>
-                         <div className="text-white font-bold text-sm mb-1">{item.title}</div>
-                         <div className="text-[10px] text-zinc-500 font-bold tracking-wide uppercase bg-black/40 inline-block px-2 py-0.5 rounded border border-white/5">{item.type}</div>
-                      </div>
-                      <div className="text-right">
-                         <div className="text-emerald-500 font-bold text-lg">{item.stat}</div>
-                         <div className="text-[9px] text-zinc-600 uppercase font-bold tracking-wider">{item.statLabel}</div>
-                      </div>
-                  </div>
-               </div>
-             ))}
-           </div>
-        </div>
-
-        {/* Services */}
-        <h3 className="text-white font-bold text-lg mb-4 flex items-center gap-2 px-2">
-           <ShoppingBag size={18} className="text-emerald-500"/> Пакеты
-        </h3>
-        <div className="grid gap-4">
-           {SERVICES.map(srv => (
-             <div key={srv.id} className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-5 relative overflow-hidden backdrop-blur-sm group hover:bg-zinc-900 transition-all">
-                <div className={`absolute top-0 right-0 w-24 h-24 bg-${srv.accent === 'emerald' ? 'emerald' : 'blue'}-500/5 blur-2xl rounded-full -mr-8 -mt-8 group-hover:bg-${srv.accent === 'emerald' ? 'emerald' : 'blue'}-500/10 transition-all`}></div>
-                <div className="relative z-10">
-                   <div className="flex justify-between items-start mb-2">
-                      <div className="text-white font-bold text-sm tracking-wide">{srv.title}</div>
-                   </div>
-                   <div className="text-2xl font-bold text-white mb-2 tracking-tight">{formatCurrency(srv.price)}</div>
-                   <p className="text-zinc-500 text-xs mb-5 line-clamp-2 leading-relaxed">{srv.desc}</p>
-                   <button
-                      onClick={() => setSelectedService(srv)}
-                      className="w-full bg-white hover:bg-zinc-200 text-black font-bold text-xs py-3.5 rounded-xl uppercase tracking-widest transition-colors active:scale-[0.98]"
-                   >
-                      Подробнее
-                   </button>
+            </div>
+            
+            {/* QUOTE BLOCK */}
+            <div className="relative bg-[#111] border-l-2 border-red-800 p-6 text-left rounded-r-2xl shadow-2xl">
+                <Quote size={24} className="text-zinc-600 mb-2 fill-zinc-800" />
+                <p className="text-zinc-300 font-mono text-lg leading-relaxed italic">
+                    {current.quote}
+                </p>
+                <div className="mt-4 flex items-center gap-2">
+                    <div className="h-px flex-1 bg-zinc-800"></div>
+                    <span className="text-[10px] uppercase tracking-widest text-red-500 font-bold">Возможность упущена</span>
                 </div>
-             </div>
-           ))}
+            </div>
         </div>
-
       </div>
     </div>
   );
 };
 
-const DevView = ({ setMode }) => {
-  const [devStep, setDevStep] = useState(0); // 0: Intro, 1: Roles, 2: Loading, 3: Result
-  const [selectedRole, setSelectedRole] = useState(null);
-  const [roleAnalysis, setRoleAnalysis] = useState('');
-  
-  // Animation state for Intro (step 0)
-  const [introStep, setIntroStep] = useState(0);
 
-  useEffect(() => {
-    if (devStep === 0) {
-        // Timeline for intro animation (ms)
-        // 0: Start
-        // 1: Headline In (100ms)
-        // 2: Bit In (1000ms)
-        // 3: Bit Out (3000ms)
-        // 4: Insta In (3500ms)
-        // 5: Insta Out (5500ms)
-        // 6: WB In (6000ms)
-        // 7: WB Out (8000ms)
-        // 8: Final In (8500ms)
-        
-        const timers = [
-            setTimeout(() => setIntroStep(1), 100),
-            setTimeout(() => setIntroStep(2), 1000),
-            setTimeout(() => setIntroStep(3), 3000),
-            setTimeout(() => setIntroStep(4), 3500),
-            setTimeout(() => setIntroStep(5), 5500),
-            setTimeout(() => setIntroStep(6), 6000),
-            setTimeout(() => setIntroStep(7), 8000),
-            setTimeout(() => setIntroStep(8), 8500),
-        ];
-        return () => timers.forEach(clearTimeout);
-    } else {
-        setIntroStep(0); // Reset
-    }
-  }, [devStep]);
-  
-  const handleRoleSelect = async (role) => {
-      setSelectedRole(role);
-      setDevStep(2); // Loading step
-      
-      const prompt = `Ты - мотивационный ментор в IT-академии Taipan. 
-      Пользователь выбрал роль: "${role.title}". 
-      Объясни ему в 2-3 предложениях, почему эта роль идеально подходит для старта в разработке Telegram Mini Apps и как он сможет выйти на доход 100 000+ тенге.
-      Стиль: вдохновляющий, уверенный, "ты сможешь". Без воды.`;
+const BusinessView = ({ setMode, bizParams, setBizParams }) => {
+  const [analysisState, setAnalysisState] = useState('input'); // 'input', 'loading', 'result'
+  const [aiAnalysis, setAiAnalysis] = useState('');
 
-      const analysis = await callOpenAIAPI(prompt);
-      setRoleAnalysis(analysis);
-      setDevStep(3); // Result step
+  const traffic = Number(bizParams.users) || 0;
+  const currentConvRate = Number(bizParams.currentConversion) || 0;
+  const margin = Number(bizParams.margin) || 0;
+  const check = Number(bizParams.check) || 0;
+
+  // Calculations
+  const baseRevenue = traffic * (currentConvRate / 100) * check;
+  const baseProfit = baseRevenue * (margin / 100);
+  const lostPercent = Math.max(0, 100 - currentConvRate);
+  const lostUsers = traffic * (lostPercent / 100);
+  const lostRevenue = lostUsers * check;
+  const lostProfit = lostRevenue * (margin / 100);
+  const recoveredProfit = lostProfit * 0.20;
+
+  const handleAI = async () => {
+    setAnalysisState('loading');
+    const res = await callOpenAIAPI(`Трафик: ${traffic}, Чек: ${check}, Конверсия: ${currentConvRate}%, Маржа: ${margin}%, Упускаем: ${lostPercent}%, Можем вернуть: ${recoveredProfit}. Рассчитай эффект от внедрения Telegram Mini App.`);
+    setAiAnalysis(res);
+    setAnalysisState('result');
   };
 
-  const renderContent = () => {
-    switch(devStep) {
-        case 0:
-            return (
-                <div className="h-full flex flex-col justify-center px-6 relative overflow-hidden font-mono">
-                    {/* Background Title - Always visible after step 1 */}
-                    <div className={`absolute top-[15%] left-0 right-0 text-center transition-all duration-700 ${introStep >= 1 ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
-                        <h2 className="text-2xl font-black text-white italic tracking-tight">
-                            Telegram-шопп: <br/>
-                            <span className="text-emerald-500">Тренд на года</span> или просто хайп?
-                        </h2>
-                    </div>
+  // --- ANALYSIS LOADING VIEW ---
+  if (analysisState === 'loading') {
+    return (
+        <div className="flex flex-col h-screen bg-black text-white font-sans items-center justify-center relative overflow-hidden p-6">
+            <MeshBackground />
+            <div className="relative z-10 flex flex-col items-center text-center space-y-8 animate-in fade-in duration-700">
+                <div className="relative">
+                    <div className="absolute inset-0 bg-emerald-500 blur-2xl opacity-20 animate-pulse"></div>
+                    <BrainCircuit size={80} className="text-emerald-500 relative z-10 animate-pulse" />
+                </div>
+                <div className="space-y-2">
+                    <h2 className="text-2xl font-black italic tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-emerald-600">
+                        GEMINI АНАЛИЗИРУЕТ
+                    </h2>
+                    <p className="text-zinc-500 text-sm font-mono uppercase tracking-widest animate-pulse">Обработка показателей...</p>
+                </div>
+                <div className="flex gap-1">
+                    <div className="w-2 h-2 bg-emerald-500 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                    <div className="w-2 h-2 bg-emerald-500 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                    <div className="w-2 h-2 bg-emerald-500 rounded-full animate-bounce"></div>
+                </div>
+            </div>
+        </div>
+    );
+  }
 
-                    {/* Fading Messages Container */}
-                    <div className="h-32 flex items-center justify-center relative">
-                        {/* Bitcoin */}
-                        <div className="absolute w-full flex justify-center">
-                            <ShatterText visible={introStep === 2}>
-                                <div className="flex flex-col items-center gap-3 text-zinc-400">
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-red-500 text-4xl font-bold drop-shadow-[0_0_15px_rgba(239,68,68,0.5)]">❌</span>
-                                        <img src="https://upload.wikimedia.org/wikipedia/commons/4/46/Bitcoin.svg" alt="Bitcoin" className="h-12 w-12" />
-                                    </div>
-                                    <span className="text-lg font-medium">2009 год: <br/><span className="text-white font-bold">Bitcoin</span>, всего лишь забава</span>
-                                </div>
-                            </ShatterText>
-                        </div>
-
-                        {/* Instagram */}
-                        <div className="absolute w-full flex justify-center">
-                            <ShatterText visible={introStep === 4}>
-                                <div className="flex flex-col items-center gap-3 text-zinc-400">
-                                    <div className="flex items-center gap-2">
-                                         <span className="text-red-500 text-4xl font-bold drop-shadow-[0_0_15px_rgba(239,68,68,0.5)]">❌</span>
-                                         <img src="https://upload.wikimedia.org/wikipedia/commons/e/e7/Instagram_logo_2016.svg" alt="Instagram" className="h-12 w-12" />
-                                    </div>
-                                    <span className="text-lg font-medium">2012 год: <br/><span className="text-white font-bold">Instagram</span> не место для денег</span>
-                                </div>
-                            </ShatterText>
-                        </div>
-
-                         {/* WB and Kaspi */}
-                        <div className="absolute w-full flex justify-center">
-                            <ShatterText visible={introStep === 6}>
-                                <div className="flex flex-col items-center gap-3 text-zinc-400">
-                                    <div className="flex items-center gap-4">
-                                        <span className="text-red-500 text-4xl font-bold drop-shadow-[0_0_15px_rgba(239,68,68,0.5)]">❌</span>
-                                        <div className="flex gap-3 bg-white/5 p-3 rounded-2xl backdrop-blur-md border border-white/10">
-                                            {/* WB Logo Mockup */}
-                                            <div className="flex items-center justify-center px-3 py-1.5 bg-gradient-to-r from-fuchsia-700 to-purple-800 rounded-lg shadow-lg">
-                                                <span className="text-white font-black text-xl italic tracking-tighter">WB</span>
-                                            </div>
-                                            
-                                            {/* Kaspi Logo Mockup */}
-                                            <div className="flex items-center justify-center px-3 py-1.5 bg-red-600 rounded-lg shadow-lg">
-                                                <span className="text-white font-bold text-lg tracking-tight">Kaspi.kz</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <span className="text-lg font-medium">2019 год: <br/><span className="text-white font-bold">WB и Kaspi</span> — непонятно и не место заработка</span>
-                                </div>
-                            </ShatterText>
-                        </div>
-                    </div>
-
-                    {/* Final CTA - Centered like fading messages */}
-                    <div className={`absolute inset-0 flex items-center justify-center pointer-events-none ${introStep >= 8 ? 'z-20' : 'z-0'}`}>
-                        <div className={`w-full max-w-md px-6 text-center transition-all duration-1000 ease-out pointer-events-auto ${introStep >= 8 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'}`}>
-                             <p className="text-white text-lg font-bold mb-8 text-center leading-relaxed">
-                                2026 год: Taipan Media. <br/>
-                                <span className="text-emerald-500 text-2xl">Не упусти свой шанс.</span>
-                             </p>
-                            <button 
-                                onClick={() => setDevStep(1)}
-                                className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-4 rounded-xl uppercase tracking-widest shadow-[0_0_30px_rgba(16,185,129,0.3)] active:scale-[0.98] transition-all flex items-center justify-center gap-2 animate-pulse"
-                            >
-                                Начать Инициацию <ArrowRight size={16}/>
-                            </button>
-                        </div>
+  // --- ANALYSIS RESULT VIEW ---
+  if (analysisState === 'result') {
+      return (
+        <div className="flex flex-col h-screen bg-black text-white font-sans overflow-y-auto relative">
+            <MeshBackground />
+            <div className="relative z-10 p-6 max-w-lg mx-auto w-full min-h-screen flex flex-col">
+                <div className="flex items-center justify-between mb-8">
+                    <button onClick={() => setAnalysisState('input')} className="group flex items-center gap-2 text-zinc-500 hover:text-emerald-500 transition-colors">
+                        <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
+                        <span className="text-xs font-bold uppercase tracking-wider">Назад</span>
+                    </button>
+                    <div className="text-emerald-500 flex items-center gap-2">
+                        <Bot size={18} />
+                        <span className="text-xs font-bold uppercase">Анализ завершен</span>
                     </div>
                 </div>
-            );
-        case 1:
-            return (
-                <div className="px-4 py-8 pb-32 animate-in slide-in-from-right duration-500 font-mono">
-                     <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                        <Users size={20} className="text-emerald-500"/> Выбери свой путь
-                     </h2>
-                     <div className="grid gap-3">
-                         {DEV_ROLES.map(role => (
-                             <button 
-                                key={role.id}
-                                onClick={() => handleRoleSelect(role)}
-                                className="bg-zinc-900/50 border border-zinc-800 p-4 rounded-2xl text-left hover:border-emerald-500/50 hover:bg-zinc-900 transition-all group relative overflow-hidden active:scale-[0.98]"
-                             >
-                                 <div className="absolute inset-0 bg-emerald-500/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                                 <div className="flex justify-between items-start mb-2 relative z-10">
-                                     <div className={`p-2 rounded-lg bg-${role.color}-500/10 text-${role.color}-500`}>
-                                         {role.icon}
-                                     </div>
-                                     <ArrowRight className="text-zinc-700 group-hover:text-white transition-colors"/>
-                                 </div>
-                                 <div className="relative z-10">
-                                     <h3 className="text-white font-bold text-sm mb-1">{role.title}</h3>
-                                     <p className="text-zinc-500 text-xs leading-snug">{role.desc}</p>
-                                 </div>
-                             </button>
-                         ))}
-                     </div>
-                </div>
-            );
-        case 2:
-            return (
-                <div className="h-full flex flex-col items-center justify-center text-center px-8 animate-in fade-in duration-300 font-mono">
-                    <div className="relative mb-6">
-                        <div className="w-16 h-16 rounded-full border-2 border-emerald-500/30 border-t-emerald-500 animate-spin"></div>
-                        <div className="absolute inset-0 flex items-center justify-center">
-                            <Bot size={24} className="text-emerald-500" />
-                        </div>
+
+                <div className="flex-1 space-y-6">
+                    <div className="space-y-2">
+                         <h2 className="text-3xl font-black italic tracking-tighter">СТРАТЕГИЯ <span className="text-emerald-500">РОСТА</span></h2>
+                         <p className="text-zinc-400 text-sm">Персональный план на основе ваших данных</p>
                     </div>
-                    <div className="text-emerald-500 text-xs mb-2">PROCESSING_DATA...</div>
-                    <h3 className="text-white font-bold text-lg">Анализ психотипа</h3>
-                    <p className="text-zinc-500 text-xs mt-2">Нейросеть подбирает программу обучения...</p>
-                </div>
-            );
-        case 3:
-            return (
-                <div className="px-4 py-8 pb-32 animate-in slide-in-from-bottom duration-500 font-mono">
-                    <div className="bg-gradient-to-br from-emerald-900/20 to-black border border-emerald-500/30 rounded-[32px] p-6 relative overflow-hidden mb-6">
-                        <div className="absolute top-0 right-0 p-6 opacity-20">
-                            <ShieldCheck size={64} className="text-emerald-500"/>
-                        </div>
-                        
-                        <div className="relative z-10">
-                            <span className="inline-block px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-[10px] font-bold uppercase tracking-widest mb-4">
-                                Результат Анализа
-                            </span>
-                            <h2 className="text-2xl font-bold text-white mb-4">
-                                {selectedRole?.title}
-                            </h2>
-                            <div className="text-sm text-zinc-300 leading-relaxed font-medium bg-black/40 p-4 rounded-xl border border-white/5 backdrop-blur-md">
-                                {roleAnalysis}
+
+                    <div className="bg-[#09090b]/80 backdrop-blur-xl border border-emerald-500/30 rounded-3xl p-6 shadow-[0_0_50px_rgba(16,185,129,0.1)]">
+                        <div className="prose prose-invert prose-sm max-w-none prose-p:text-zinc-300 prose-headings:text-white prose-strong:text-emerald-400">
+                            <div className="whitespace-pre-wrap leading-relaxed">
+                                {aiAnalysis}
                             </div>
                         </div>
                     </div>
 
-                    <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 text-center">
-                        <h3 className="text-white font-bold mb-2">Академия Taipan</h3>
-                        <p className="text-zinc-400 text-xs mb-6">
-                            Мы не продаем курсы. Мы вербуем агентов.
-                            <br/>
-                            Получи доступ к закрытому чату, мануалам и первым заказам.
-                        </p>
-                        
-                        <div className="flex flex-col gap-3">
-                            <button className="w-full bg-white text-black font-bold py-3.5 rounded-xl uppercase tracking-widest text-xs hover:bg-zinc-200 transition-colors active:scale-[0.98]">
-                                Доступ: 15 000 ₸
-                            </button>
-                            <button 
-                                onClick={() => setDevStep(0)}
-                                className="text-zinc-500 text-xs hover:text-white transition-colors py-2"
-                            >
-                                Начать заново
-                            </button>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="bg-zinc-900/50 p-4 rounded-2xl border border-white/5">
+                            <div className="text-[10px] text-zinc-500 uppercase font-bold mb-1">Потенциал возврата</div>
+                            <div className="text-xl font-bold text-white">+{formatCurrency(recoveredProfit)}</div>
+                        </div>
+                        <div className="bg-zinc-900/50 p-4 rounded-2xl border border-white/5">
+                            <div className="text-[10px] text-zinc-500 uppercase font-bold mb-1">Упущенная выгода</div>
+                            <div className="text-xl font-bold text-red-500/80">{formatCurrency(lostProfit)}</div>
                         </div>
                     </div>
                 </div>
-            );
-        default:
-            return null;
-    }
-  };
 
+                <div className="mt-8 pt-6 border-t border-white/10 text-center">
+                    <p className="text-zinc-600 text-[10px] uppercase tracking-widest mb-4">Taipan Media Agency</p>
+                    <button onClick={() => setAnalysisState('input')} className="w-full bg-white text-black font-black py-4 rounded-xl hover:bg-emerald-400 transition-colors">
+                        РАССЧИТАТЬ НОВЫЙ ПРОЕКТ
+                    </button>
+                </div>
+            </div>
+        </div>
+      )
+  }
+
+  // --- INPUT VIEW (DEFAULT) ---
   return (
-    <div className="flex flex-col h-screen bg-black text-white font-sans overflow-y-auto no-scrollbar">
-       <div className="fixed inset-0 z-0 bg-[#050505]">
-         <div className="absolute top-[-10%] right-[-10%] w-[60%] h-[60%] rounded-full bg-blue-900/10 blur-[120px]"></div>
-         <div className="absolute bottom-[-10%] left-[-10%] w-[60%] h-[60%] rounded-full bg-purple-900/10 blur-[120px]"></div>
-         <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20"></div>
-      </div>
-
-      {/* Top Bar */}
-      <div className="sticky top-0 z-40 px-6 py-4 bg-[#050505]/80 backdrop-blur-md flex justify-between items-center border-b border-white/5">
-        <button onClick={() => setMode('select')} className="w-8 h-8 rounded-full bg-zinc-900 flex items-center justify-center text-white hover:bg-zinc-800 transition-colors">
-          <ChevronRight className="rotate-180" size={18}/>
+    <div className="flex flex-col h-screen bg-black text-white font-sans overflow-y-auto relative">
+      <MeshBackground />
+      {/* Navbar */}
+      <div className="sticky top-0 z-40 px-6 py-4 bg-black/80 backdrop-blur-xl flex justify-between items-center border-b border-white/5">
+        <button onClick={() => setMode('select')} className="w-8 h-8 rounded-full bg-zinc-900 flex items-center justify-center hover:bg-zinc-800 transition-colors group">
+            <ChevronRight className="rotate-180 group-hover:text-emerald-500 transition-colors" size={18}/>
         </button>
-        <span className="text-[10px] font-bold tracking-widest text-emerald-500 uppercase">Dev Модуль</span>
+        <span className="text-[10px] font-bold tracking-widest text-emerald-500 uppercase flex items-center gap-2">
+            <Activity size={12} /> Анализ Бизнеса
+        </span>
         <div className="w-8"></div>
       </div>
 
-      <div className="relative z-10 flex-1 flex flex-col max-w-md mx-auto w-full">
-         {renderContent()}
+      <div className="p-6 relative z-10 pb-32 max-w-lg mx-auto w-full">
+        {/* Header Section */}
+        <div className="mb-8 text-center">
+            <h2 className="text-3xl font-black italic tracking-tighter mb-2">
+                <span className="text-emerald-500">TAIPAN</span> ANALYTICS
+            </h2>
+            <p className="text-zinc-500 text-[10px] uppercase tracking-[0.2em]">Калькулятор упущенной прибыли</p>
+        </div>
+
+        {/* Main Card */}
+        <div className="bg-[#09090b] border border-white/10 rounded-3xl p-1 shadow-2xl overflow-hidden">
+            
+            {/* Input Section */}
+            <div className="p-6 grid grid-cols-2 gap-4 bg-zinc-900/30 rounded-t-[20px] border-b border-white/5">
+                <div className="space-y-2">
+                    <label className="text-[9px] font-bold text-zinc-500 uppercase flex items-center gap-1">
+                        <Users size={10} /> Трафик
+                    </label>
+                    <input 
+                        type="number" 
+                        value={bizParams.users} 
+                        onChange={e => setBizParams({...bizParams, users: e.target.value})} 
+                        className="w-full bg-black border border-white/10 rounded-xl px-2 py-3 text-white text-sm font-bold focus:outline-none focus:border-emerald-500/50 text-center"
+                    />
+                </div>
+                <div className="space-y-2">
+                    <label className="text-[9px] font-bold text-zinc-500 uppercase flex items-center gap-1">
+                        <Percent size={10} /> Конверсия
+                    </label>
+                    <input 
+                        type="number" 
+                        value={bizParams.currentConversion} 
+                        onChange={e => setBizParams({...bizParams, currentConversion: e.target.value})} 
+                        className="w-full bg-black border border-white/10 rounded-xl px-2 py-3 text-white text-sm font-bold focus:outline-none focus:border-emerald-500/50 text-center"
+                    />
+                </div>
+                <div className="space-y-2">
+                    <label className="text-[9px] font-bold text-zinc-500 uppercase flex items-center gap-1">
+                        <CreditCard size={10} /> Чек (₸)
+                    </label>
+                    <input 
+                        type="number" 
+                        value={bizParams.check} 
+                        onChange={e => setBizParams({...bizParams, check: e.target.value})} 
+                        className="w-full bg-black border border-white/10 rounded-xl px-2 py-3 text-white text-sm font-bold focus:outline-none focus:border-emerald-500/50 text-center"
+                    />
+                </div>
+                <div className="space-y-2">
+                    <label className="text-[9px] font-bold text-zinc-500 uppercase flex items-center gap-1">
+                        <Scale size={10} /> Маржа (%)
+                    </label>
+                    <input 
+                        type="number" 
+                        value={bizParams.margin} 
+                        onChange={e => setBizParams({...bizParams, margin: e.target.value})} 
+                        className="w-full bg-black border border-white/10 rounded-xl px-2 py-3 text-white text-sm font-bold focus:outline-none focus:border-emerald-500/50 text-center"
+                    />
+                </div>
+            </div>
+
+            {/* Result Display */}
+            <div className="relative bg-black p-6 space-y-6">
+                
+                {/* Profit Block */}
+                <div className="text-center">
+                    <div className="text-[9px] font-bold text-zinc-500 mb-1 uppercase tracking-widest">Текущая чистая прибыль</div>
+                    <div className="text-3xl font-black text-white tracking-tight">
+                        {formatCurrency(baseProfit)}
+                    </div>
+                </div>
+
+                {/* THE VOID / LOST PROFIT - AGGRESSIVE UI */}
+                <div className="relative overflow-hidden rounded-2xl bg-red-950/20 border border-red-900/30 p-5 group">
+                    <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10"></div>
+                    <div className="relative z-10 flex flex-col items-center text-center space-y-2">
+                        <div className="flex items-center gap-2 text-red-500 font-bold uppercase text-[10px] tracking-widest animate-pulse">
+                            <AlertTriangle size={12} /> Внимание
+                        </div>
+                        
+                        <div className="text-sm text-zinc-400 font-medium">
+                            Вы упускаете <span className="text-white font-bold">{lostPercent.toFixed(1)}%</span> конверсии
+                        </div>
+                        
+                        <div className="w-full h-px bg-red-900/30 my-2"></div>
+                        
+                        <div className="text-[10px] text-red-400 font-bold uppercase">В деньгах вы теряете</div>
+                        <div className="text-3xl sm:text-4xl font-black text-red-500 tracking-tighter drop-shadow-[0_0_15px_rgba(239,68,68,0.3)]">
+                            {formatCurrency(lostProfit)}
+                        </div>
+                    </div>
+                </div>
+
+                {/* THE SOLUTION / RECOVERED PROFIT */}
+                <div className="relative overflow-hidden rounded-2xl bg-emerald-900/20 border border-emerald-500/30 p-5 group animate-in slide-in-from-bottom-2">
+                    <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10"></div>
+                    <div className="relative z-10 flex flex-col items-center text-center space-y-2">
+                        <div className="flex items-center gap-2 text-emerald-400 font-bold uppercase text-[10px] tracking-widest">
+                            <RefreshCcw size={12} /> Возможность
+                        </div>
+                        
+                        <div className="text-sm text-zinc-300 font-medium leading-tight">
+                             Благодаря Telegram магазину вы сможете вернуть от <span className="text-white font-bold">20%</span> потерянных продаж
+                        </div>
+                        
+                        <div className="w-full h-px bg-emerald-900/30 my-2"></div>
+                        
+                        <div className="text-[10px] text-emerald-400/80 font-bold uppercase">Дополнительный доход</div>
+                        <div className="text-3xl sm:text-4xl font-black text-emerald-500 tracking-tighter drop-shadow-[0_0_15px_rgba(16,185,129,0.3)]">
+                            +{formatCurrency(recoveredProfit)}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Generate Button */}
+                <button 
+                    onClick={handleAI} 
+                    className="w-full bg-white text-black font-black text-xs py-4 rounded-xl uppercase tracking-widest hover:bg-emerald-400 transition-all active:scale-[0.98] flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(255,255,255,0.1)]"
+                >
+                     <Sparkles size={14} />
+                     Как забрать эти деньги?
+                </button>
+            </div>
+        </div>
+
       </div>
     </div>
   );
 };
 
-// --- MAIN APP ---
-const App = () => {
-  const [mode, setMode] = useState('splash'); // splash, select, business, dev
-  const [showChat, setShowChat] = useState(false);
-  const [bizParams, setBizParams] = useState({
-      users: 0,
-      currentConversion: 0,
-      check: 0,
-      margin: 0
-  });
+const AIChat = ({ isOpen, onClose }) => {
+  const [messages, setMessages] = useState([{ sender: 'bot', text: 'Taipan AI на связи. Чем могу помочь?' }]);
+  const [input, setInput] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
+  const endRef = useRef(null);
 
-  const handleSplashComplete = () => {
-     setMode('select');
+  useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
+
+  const send = async () => {
+    if (!input.trim()) return;
+    const msg = { sender: 'user', text: input };
+    setMessages(p => [...p, msg]);
+    setInput('');
+    setIsTyping(true);
+    const res = await callOpenAIAPI(input, messages);
+    setMessages(p => [...p, { sender: 'bot', text: res }]);
+    setIsTyping(false);
   };
 
+  if (!isOpen) return null;
+
   return (
-    <div className="bg-black min-h-screen text-white">
-       {/* Global Chat Button (Only in Business/Dev modes) */}
-       {(mode === 'business' || mode === 'dev') && (
-         <button 
-           onClick={() => setShowChat(true)}
-           className={`fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full shadow-2xl flex items-center justify-center transition-transform hover:scale-105 active:scale-95 ${mode === 'business' ? 'bg-emerald-600 shadow-emerald-900/20' : 'bg-blue-600 shadow-blue-900/20'}`}
-         >
-             <MessageSquare className="text-white" size={24} />
-         </button>
-       )}
-
-       <AIChat isOpen={showChat} onClose={() => setShowChat(false)} />
-
-       {mode === 'splash' && <TerminalSplash onComplete={handleSplashComplete} />}
-       {mode === 'select' && <SelectView setMode={setMode} />}
-       {mode === 'business' && <BusinessView setMode={setMode} bizParams={bizParams} setBizParams={setBizParams} />}
-       {mode === 'dev' && <DevView setMode={setMode} />}
+    <div className="fixed inset-0 z-[70] bg-black/95 backdrop-blur-xl flex flex-col animate-in slide-in-from-bottom-10">
+      <div className="p-4 border-b border-white/10 flex justify-between items-center bg-zinc-900/50">
+        <div className="flex items-center gap-2"><Bot size={20} className="text-emerald-500"/><span className="font-bold text-sm text-white">TAIPAN CHAT</span></div>
+        <button onClick={onClose} className="p-2 bg-zinc-800 rounded-full text-white hover:bg-zinc-700 transition-colors"><X size={20}/></button>
+      </div>
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {messages.map((m, i) => (
+          <div key={i} className={`flex ${m.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
+            <div className={`max-w-[85%] p-3 rounded-2xl text-xs sm:text-sm leading-relaxed ${m.sender === 'user' ? 'bg-emerald-600 text-white' : 'bg-zinc-800 text-zinc-300'}`}>{m.text}</div>
+          </div>
+        ))}
+        {isTyping && <div className="text-xs text-zinc-500 pl-2 flex gap-1 items-center"><Loader2 size={10} className="animate-spin"/> Taipan думает...</div>}
+        <div ref={endRef} />
+      </div>
+      <div className="p-4 bg-black flex gap-2 border-t border-white/10">
+        <input 
+            value={input} 
+            onChange={e => setInput(e.target.value)} 
+            onKeyDown={e => e.key === 'Enter' && send()} 
+            placeholder="Спроси о стратегии..." 
+            className="flex-1 bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 focus:outline-none focus:border-emerald-500 text-sm text-white transition-colors"
+        />
+        <button onClick={send} className="p-3 bg-emerald-600 rounded-xl text-white hover:bg-emerald-500 transition-colors"><Send size={18}/></button>
+      </div>
     </div>
   );
 };
 
-export default App;
- 
+// --- APP ---
+
+export default function App() {
+  const [mode, setMode] = useState('select');
+  const [loading, setLoading] = useState(true);
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [bizParams, setBizParams] = useState({ users: 0, currentConversion: 0, check: 0, margin: 0 });
+
+  if (loading) return <TerminalSplash onComplete={() => setLoading(false)} />;
+
+  return (
+    <div className="min-h-screen font-sans selection:bg-emerald-500/30 text-white bg-black">
+      {mode === 'select' && <SelectView setMode={setMode} />}
+      {mode === 'business' && <BusinessView setMode={setMode} bizParams={bizParams} setBizParams={setBizParams} />}
+      {mode === 'dev' && <DevView setMode={setMode} />}
+
+      <button 
+        onClick={() => setIsChatOpen(true)} 
+        className="fixed bottom-6 right-6 z-40 w-16 h-16 bg-white text-black rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(255,255,255,0.2)] hover:scale-110 active:scale-95 transition-all hover:bg-emerald-400 group"
+      >
+        <MessageSquare size={28} className="group-hover:rotate-12 transition-transform"/>
+      </button>
+
+      <AIChat isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
+    </div>
+  );
+}

@@ -49,21 +49,35 @@ const callOpenAIAPI = async (prompt, history = []) => {
 // --- VISUAL COMPONENTS ---
 
 const SnakeText = ({ children, className = "" }) => (
-  <span className={`font-black italic tracking-tighter ${className}`} style={{
-      // Яркая, четкая текстура зеленой чешуи
-      backgroundImage: `url('https://images.unsplash.com/photo-1620188467120-5042ed1eb5da?q=80&w=2574&auto=format&fit=crop')`, 
-      backgroundSize: 'cover',
-      backgroundPosition: 'center',
-      WebkitBackgroundClip: 'text',
-      backgroundClip: 'text',
-      color: 'transparent',
-      WebkitTextFillColor: 'transparent',
-      // Тонкая зеленая обводка для выделения формы букв
-      WebkitTextStroke: '1px rgba(16, 185, 129, 0.8)', 
-      // Тень для объема
-      filter: 'drop-shadow(0 0 15px rgba(16, 185, 129, 0.4)) contrast(1.3) brightness(1.2)',
-      display: 'inline-block'
-    }}>{children}</span>
+  <>
+    <style>
+      {`
+        @keyframes slither-skin {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }
+      `}
+    </style>
+    <span className={`font-black italic tracking-widest ${className}`} style={{
+        // Текстура: Зеленая Буш-Гадюка (очень фактурная чешуя)
+        backgroundImage: `url('https://images.unsplash.com/photo-1533748293994-683a4c44238e?q=80&w=2670&auto=format&fit=crop')`, 
+        // Размер подобран так, чтобы чешуйки были видны
+        backgroundSize: '120px', 
+        backgroundRepeat: 'repeat',
+        WebkitBackgroundClip: 'text',
+        backgroundClip: 'text',
+        color: 'transparent',
+        WebkitTextFillColor: 'transparent',
+        // Анимация движения текстуры (эффект ползущей змеи)
+        animation: 'slither-skin 10s ease-in-out infinite',
+        // Эффекты свечения и объема
+        filter: 'drop-shadow(0 0 20px rgba(16, 185, 129, 0.6)) contrast(1.6) brightness(1.2) hue-rotate(-10deg)',
+        display: 'inline-block',
+        paddingRight: '0.15em',
+        paddingBottom: '0.1em'
+      }}>{children}</span>
+  </>
 );
 
 const ScalesBackground = () => (

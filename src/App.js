@@ -140,9 +140,22 @@ const SelectView = ({ setMode }) => (
 
 // INLINE SVG COMPONENTS
 const BitcoinLogo = () => (
-  <svg viewBox="0 0 64 64" className="w-full h-full drop-shadow-xl">
-    <circle cx="32" cy="32" r="32" fill="#F7931A"/>
-    <path fill="#FFF" d="M44.5 25.8c.8-5.2-3.2-8-8.6-9.8l1.8-7-4.2-1-1.7 6.9c-1.1-.3-2.3-.5-3.4-.8l1.7-6.9-4.3-1-1.8 7.1c-.9-.2-1.8-.4-2.7-.6L19 12l-2.6 6.5s1.4.3 1.4.4c.8.2.9.6.9 1l-2.1 8.5c.1 0 .3.1.5.1-.1 0-.3 0-.4 0l-3 12c-.2.5-.7.6-1.5.4 0 0-1 .4-1 .4l-1.9 4.4 3.6.9c1 .2 2 .5 3 .8l-1.8 7.2 4.3 1 1.8-7.1c1.2.3 2.3.6 3.4.9l-1.8 7.2 4.3 1 1.8-7c7.3 1.4 12.8.8 15.1-5.8 1.9-5.3-1-8.4-4.5-10.4 3.2-.7 5.6-2.9 6.2-7.3zM37.8 40c-2 7.8-15.3 3.6-19.6 2.5l3.5-14c4.3 1.1 18.2 3.2 16.1 11.5zm1.7-16.6c-1.8 7.2-13.1 3.5-16.7 2.6l3.2-12.8c3.7.9 15.5 2.6 13.5 10.2z"/>
+  <svg viewBox="0 0 64 64" className="w-full h-full drop-shadow-xl" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stopColor="#FFD700" />
+        <stop offset="50%" stopColor="#FFC107" />
+        <stop offset="100%" stopColor="#FF8C00" />
+      </linearGradient>
+      <linearGradient id="goldGradientLight" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stopColor="#FFF7D1" />
+        <stop offset="50%" stopColor="#FFE082" />
+        <stop offset="100%" stopColor="#FFC107" />
+      </linearGradient>
+    </defs>
+    <circle cx="32" cy="32" r="30" fill="url(#goldGradient)" stroke="#FF8C00" strokeWidth="2" />
+    <circle cx="32" cy="32" r="25" fill="url(#goldGradientLight)" stroke="#FFC107" strokeWidth="1" />
+    <path fill="#FF8C00" d="M44.5 25.8c.8-5.2-3.2-8-8.6-9.8l1.8-7-4.2-1-1.7 6.9c-1.1-.3-2.3-.5-3.4-.8l1.7-6.9-4.3-1-1.8 7.1c-.9-.2-1.8-.4-2.7-.6L19 12l-2.6 6.5s1.4.3 1.4.4c.8.2.9.6.9 1l-2.1 8.5c.1 0 .3.1.5.1-.1 0-.3 0-.4 0l-3 12c-.2.5-.7.6-1.5.4 0 0-1 .4-1 .4l-1.9 4.4 3.6.9c1 .2 2 .5 3 .8l-1.8 7.2 4.3 1 1.8-7.1c1.2.3 2.3.6 3.4.9l-1.8 7.2 4.3 1 1.8-7c7.3 1.4 12.8.8 15.1-5.8 1.9-5.3-1-8.4-4.5-10.4 3.2-.7 5.6-2.9 6.2-7.3zM37.8 40c-2 7.8-15.3 3.6-19.6 2.5l3.5-14c4.3 1.1 18.2 3.2 16.1 11.5zm1.7-16.6c-1.8 7.2-13.1 3.5-16.7 2.6l3.2-12.8c3.7.9 15.5 2.6 13.5 10.2z"/>
   </svg>
 );
 
@@ -164,22 +177,28 @@ const InstagramLogo = () => (
 );
 
 const WBLogo = () => (
-  <div className="w-full h-full bg-gradient-to-br from-[#9c1c9c] to-[#5e0d5e] rounded-2xl flex items-center justify-center p-2 shadow-2xl">
-     <span className="text-white font-black italic tracking-tighter text-4xl">WB</span>
+  <div className="w-full h-full bg-gradient-to-br from-[#9c1c9c] to-[#5e0d5e] rounded-xl flex items-center justify-center p-2 shadow-2xl">
+     <span className="text-white font-black italic tracking-tighter text-2xl md:text-3xl">WB</span>
   </div>
 );
 
 const KaspiLogo = () => (
-  <div className="w-full h-full bg-[#f14635] rounded-2xl flex items-center justify-center p-1 shadow-2xl border-b-4 border-[#c0392b]">
-      <span className="text-white font-bold tracking-tight text-xl">Kaspi.kz</span>
+  <div className="w-full h-full bg-[#f14635] rounded-xl flex items-center justify-center p-1 shadow-2xl border-b-4 border-[#c0392b]">
+      <span className="text-white font-bold tracking-tight text-sm md:text-lg">Kaspi.kz</span>
   </div>
 );
 
 const TelegramLogo = () => (
-  <div className="w-full h-full bg-[#24A1DE] rounded-full flex items-center justify-center shadow-[0_0_50px_rgba(36,161,222,0.4)]">
-      <svg viewBox="0 0 24 24" className="w-2/3 h-2/3 fill-white translate-x-[-2px] translate-y-[2px]">
-        <path d="M22.2646 2.42743C22.569 2.27532 22.8837 2.47863 22.8021 2.81232L19.9814 16.5135C19.7997 17.4022 18.7381 17.7423 18.0673 17.126L14.155 13.9189L12.0622 15.9329C11.8396 16.1469 11.4787 15.9926 11.4924 15.6841L11.7509 11.2336C11.7766 10.7916 11.9687 10.3752 12.2852 10.076L17.7562 5.24432C18.0253 5.00676 17.697 4.60676 17.3879 4.80917L8.90367 10.1556C8.28335 10.5463 7.50293 10.5189 6.91037 10.2974L3.4563 9.00632C2.79379 8.75883 2.84687 7.80993 3.53569 7.63223L22.2646 2.42743Z"/>
-      </svg>
+  <div className="w-full h-full rounded-full flex items-center justify-center relative group">
+      {/* Glow Effect */}
+      <div className="absolute inset-0 bg-emerald-500 blur-[30px] opacity-40 group-hover:opacity-60 transition-opacity duration-1000 animate-pulse"></div>
+      
+      {/* Icon Container */}
+      <div className="relative z-10 w-full h-full bg-gradient-to-br from-[#2AABEE] to-[#229ED9] rounded-full flex items-center justify-center shadow-2xl border border-white/10">
+        <svg viewBox="0 0 24 24" className="w-[60%] h-[60%] fill-white translate-x-[-2px] translate-y-[1px] drop-shadow-md">
+            <path d="M22.2646 2.42743C22.569 2.27532 22.8837 2.47863 22.8021 2.81232L19.9814 16.5135C19.7997 17.4022 18.7381 17.7423 18.0673 17.126L14.155 13.9189L12.0622 15.9329C11.8396 16.1469 11.4787 15.9926 11.4924 15.6841L11.7509 11.2336C11.7766 10.7916 11.9687 10.3752 12.2852 10.076L17.7562 5.24432C18.0253 5.00676 17.697 4.60676 17.3879 4.80917L8.90367 10.1556C8.28335 10.5463 7.50293 10.5189 6.91037 10.2974L3.4563 9.00632C2.79379 8.75883 2.84687 7.80993 3.53569 7.63223L22.2646 2.42743Z"/>
+        </svg>
+      </div>
   </div>
 );
 
@@ -192,57 +211,71 @@ const DevView = ({ setMode }) => {
         year: '2009', 
         title: 'Bitcoin', 
         quote: '«Электронные фантики. Это никогда не заменит реальные деньги.»', 
-        logo: <BitcoinLogo />
+        logo: <BitcoinLogo />,
+        isPositive: false
     },
     { 
         year: '2012', 
         title: 'Instagram', 
         quote: '«Кому нужны фото еды? Там нет бизнеса, это просто игрушка.»', 
-        logo: <InstagramLogo />
+        logo: <InstagramLogo />,
+        isPositive: false
     },
     { 
         year: '2019', 
         title: 'WB и Kaspi', 
         quote: '«Люди хотят щупать товар. Маркетплейсы убьют только время.»', 
         logo: (
-            <div className="flex gap-6 w-full h-full justify-center">
-                 <div className="w-24 h-24 rotate-[-6deg] hover:rotate-0 transition-transform duration-500"><WBLogo /></div>
-                 <div className="w-24 h-24 rotate-[6deg] hover:rotate-0 transition-transform duration-500"><KaspiLogo /></div>
+            <div className="flex gap-4 w-full h-full justify-center">
+                 <div className="w-20 h-20 md:w-24 md:h-24 rotate-[-6deg] hover:rotate-0 transition-transform duration-500"><WBLogo /></div>
+                 <div className="w-20 h-20 md:w-24 md:h-24 rotate-[6deg] hover:rotate-0 transition-transform duration-500"><KaspiLogo /></div>
             </div>
-        )
+        ),
+        isPositive: false
+    },
+    { 
+        year: '2026', 
+        title: 'Telegram Магазины', 
+        quote: 'Тренд, который вам нельзя упускать.', 
+        logo: <div className="w-32 h-32 md:w-40 md:h-40 animate-[bounce_3s_infinite]"><TelegramLogo /></div>,
+        isPositive: true 
     },
   ];
 
   useEffect(() => {
-    if (step < 3) {
+    // We now have 4 steps (0, 1, 2, 3) before final screen (step 4)
+    if (step < 4) {
       setFadeState('in');
       
       const timerVisible = setTimeout(() => {
         setFadeState('visible');
       }, 500); 
 
+      // Telegram step (index 3) stays longer
+      const stayDuration = step === 3 ? 3500 : 3500; 
+
       const timerOut = setTimeout(() => {
         setFadeState('out');
-      }, 4500); // Читаем 4 секунды
+      }, 500 + stayDuration); 
 
       const timerNext = setTimeout(() => {
         setStep(prev => prev + 1);
         setFadeState('in');
-      }, 5500); 
+      }, 500 + stayDuration + 1000); 
 
       return () => { clearTimeout(timerVisible); clearTimeout(timerOut); clearTimeout(timerNext); };
     }
   }, [step]);
 
-  // --- FINAL SCREEN (STEP 3) ---
-  if (step === 3) {
+  // --- FINAL SCREEN (STEP 4) ---
+  if (step === 4) {
     return (
       <div className="flex flex-col h-screen bg-black text-white font-sans overflow-hidden relative">
         <MeshBackground />
         
         <div className="relative z-10 flex flex-col h-full p-6 animate-in zoom-in-95 duration-1000 fade-in">
            {/* Top Nav */}
-           <div className="flex justify-between items-center mb-8">
+           <div className="flex justify-between items-center mb-6 md:mb-8">
               <button onClick={() => setMode('select')} className="w-10 h-10 rounded-full bg-zinc-900/50 flex items-center justify-center border border-white/5 hover:border-emerald-500/50 transition-colors">
                   <ArrowLeft size={20} />
               </button>
@@ -252,26 +285,26 @@ const DevView = ({ setMode }) => {
            </div>
 
            {/* Content */}
-           <div className="flex-1 flex flex-col justify-center items-center max-w-md mx-auto w-full text-center space-y-10">
-              <div className="space-y-6">
+           <div className="flex-1 flex flex-col justify-center items-center max-w-md mx-auto w-full text-center space-y-6 md:space-y-10">
+              <div className="space-y-4 md:space-y-6">
                   {/* HERO HEADER */}
                   <div className="relative inline-block">
                       <div className="absolute -top-12 left-1/2 -translate-x-1/2 w-32 h-32 bg-emerald-500/20 blur-[50px] animate-pulse"></div>
-                      <div className="w-24 h-24 mx-auto mb-6 relative z-10">
+                      <div className="w-16 h-16 md:w-20 md:h-20 mx-auto mb-4 relative z-10">
                           <TelegramLogo />
                       </div>
-                      <h1 className="text-5xl font-black italic tracking-tighter leading-none mb-4">
+                      <h1 className="text-4xl md:text-5xl font-black italic tracking-tighter leading-none mb-2">
                           2026: <br/> <span className="text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]">TELEGRAM</span> <SnakeText>STORE</SnakeText>
                       </h1>
                   </div>
 
                   {/* SLOGAN */}
-                  <div className="space-y-4">
-                      <p className="text-zinc-300 font-medium text-sm leading-relaxed max-w-xs mx-auto">
+                  <div className="space-y-3 md:space-y-4">
+                      <p className="text-zinc-300 font-medium text-xs md:text-sm leading-relaxed max-w-xs mx-auto">
                           Сайты мертвы. Приложения — это дорого и сложно. 
                       </p>
-                      <div className="bg-zinc-900/50 border border-emerald-500/30 p-4 rounded-2xl backdrop-blur-sm">
-                          <p className="text-emerald-400 text-sm font-bold uppercase tracking-wide leading-relaxed">
+                      <div className="bg-zinc-900/50 border border-emerald-500/30 p-3 md:p-4 rounded-xl md:rounded-2xl backdrop-blur-sm">
+                          <p className="text-emerald-400 text-xs md:text-sm font-bold uppercase tracking-wide leading-relaxed">
                               "Твой бизнес должен быть там,<br/>где люди проводят 90% времени"
                           </p>
                       </div>
@@ -279,29 +312,29 @@ const DevView = ({ setMode }) => {
               </div>
 
               {/* BUTTONS */}
-              <div className="grid gap-4 w-full">
-                  <button className="group relative overflow-hidden bg-zinc-900 border border-zinc-800 hover:border-emerald-500/50 p-6 rounded-3xl text-left transition-all active:scale-[0.98]">
-                      <div className="absolute top-0 right-0 p-4 opacity-20 group-hover:opacity-40 transition-opacity">
-                          <ShoppingCart size={80} className="text-emerald-500 -rotate-12 translate-x-4 -translate-y-4"/>
+              <div className="grid gap-3 md:gap-4 w-full">
+                  <button className="group relative overflow-hidden bg-zinc-900 border border-zinc-800 hover:border-emerald-500/50 p-5 md:p-6 rounded-2xl md:rounded-3xl text-left transition-all active:scale-[0.98]">
+                      <div className="absolute top-0 right-0 p-3 md:p-4 opacity-20 group-hover:opacity-40 transition-opacity">
+                          <ShoppingCart size={60} className="text-emerald-500 -rotate-12 translate-x-4 -translate-y-4"/>
                       </div>
                       <div className="relative z-10">
-                          <div className="text-2xl font-bold text-white mb-1 group-hover:text-emerald-400 transition-colors">TG Магазины</div>
-                          <p className="text-xs text-zinc-500 uppercase tracking-wider font-bold">Обучение • Скрипты • Заказы</p>
+                          <div className="text-xl md:text-2xl font-bold text-white mb-1 group-hover:text-emerald-400 transition-colors">TG Магазины</div>
+                          <p className="text-[10px] md:text-xs text-zinc-500 uppercase tracking-wider font-bold">Обучение • Скрипты • Заказы</p>
                       </div>
                   </button>
 
-                  <button className="group relative overflow-hidden bg-zinc-900 border border-zinc-800 hover:border-emerald-500/50 p-6 rounded-3xl text-left transition-all active:scale-[0.98]">
-                      <div className="absolute top-0 right-0 p-4 opacity-20 group-hover:opacity-40 transition-opacity">
-                          <Rocket size={80} className="text-purple-500 -rotate-12 translate-x-4 -translate-y-4"/>
+                  <button className="group relative overflow-hidden bg-zinc-900 border border-zinc-800 hover:border-emerald-500/50 p-5 md:p-6 rounded-2xl md:rounded-3xl text-left transition-all active:scale-[0.98]">
+                      <div className="absolute top-0 right-0 p-3 md:p-4 opacity-20 group-hover:opacity-40 transition-opacity">
+                          <Rocket size={60} className="text-purple-500 -rotate-12 translate-x-4 -translate-y-4"/>
                       </div>
                       <div className="relative z-10">
-                          <div className="text-2xl font-bold text-white mb-1 group-hover:text-purple-400 transition-colors">Custom Mini Apps</div>
-                          <p className="text-xs text-zinc-500 uppercase tracking-wider font-bold">React • Node.js • Сложные боты</p>
+                          <div className="text-xl md:text-2xl font-bold text-white mb-1 group-hover:text-purple-400 transition-colors">Custom Mini Apps</div>
+                          <p className="text-[10px] md:text-xs text-zinc-500 uppercase tracking-wider font-bold">React • Node.js • Сложные боты</p>
                       </div>
                   </button>
               </div>
 
-              <div className="pt-4">
+              <div className="pt-2 md:pt-4">
                   <p className="text-[10px] text-zinc-600 uppercase tracking-widest">Доступ к базе знаний Taipan</p>
               </div>
            </div>
@@ -313,46 +346,75 @@ const DevView = ({ setMode }) => {
   // --- FADE SEQUENCE SCREENS ---
   const current = missedOpportunities[step];
   
-  let transitionClass = 'opacity-0 translate-y-4 scale-95 blur-sm'; 
-  if (fadeState === 'visible') transitionClass = 'opacity-100 translate-y-0 scale-100 blur-0';
-  if (fadeState === 'out') transitionClass = 'opacity-0 scale-105 blur-lg brightness-50';
+  // Logic for staggered entrance on positive slide (Telegram)
+  const isPositive = current.isPositive;
+
+  // Base classes for container transition
+  let containerTransition = 'opacity-0 translate-y-4 scale-95 blur-sm'; 
+  if (fadeState === 'visible') containerTransition = 'opacity-100 translate-y-0 scale-100 blur-0 duration-[800ms]';
+  if (fadeState === 'out') containerTransition = 'opacity-0 scale-105 blur-lg brightness-50 duration-[500ms]';
+
+  // Special "Smoke/Ethereal" container transition for Telegram
+  if (isPositive) {
+      if (fadeState === 'in') containerTransition = 'opacity-0'; // Start invisible
+      if (fadeState === 'visible') containerTransition = 'opacity-100 duration-1000'; // Fade in container
+      if (fadeState === 'out') containerTransition = 'opacity-0 blur-xl scale-95 duration-1000'; // Fade out container
+  }
+
+  // Styles
+  const yearColor = isPositive ? 'text-transparent bg-clip-text bg-gradient-to-b from-white to-emerald-400' : 'text-zinc-200';
+  const decorationStyle = 'no-underline'; 
+  const quoteBorder = isPositive ? 'border-l-4 border-emerald-500 bg-emerald-950/30' : 'border-l-2 border-red-800 bg-[#111]';
+  const footerText = isPositive ? 'Лови момент' : 'Возможность упущена';
+  const footerColor = isPositive ? 'text-emerald-400' : 'text-red-500';
 
   return (
-    <div className="flex flex-col h-screen bg-black text-white font-sans overflow-hidden items-center justify-center relative p-8">
+    <div className="flex flex-col h-screen bg-black text-white font-sans overflow-hidden items-center justify-center relative p-6">
       <MeshBackground />
+      
+      {/* Smoke/Aurora Effect Layer */}
+      {isPositive && fadeState === 'visible' && (
+          <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[150vw] h-[150vw] bg-emerald-500/5 blur-[100px] animate-pulse"></div>
+              <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-emerald-900/20 to-transparent"></div>
+          </div>
+      )}
       
       <div 
         key={step} 
-        className={`relative z-10 flex flex-col items-center text-center transition-all duration-[1500ms] ease-out ${transitionClass}`}
+        className={`relative z-10 flex flex-col items-center text-center transition-all ${containerTransition}`}
       >
-        <div className="mb-12 scale-125">
+        {/* LOGO AREA */}
+        <div className={`mb-8 flex items-center justify-center ${isPositive ? 'animate-in fade-in zoom-in duration-[1500ms] delay-0 fill-mode-both' : ''}`}>
             {current.logo}
         </div>
         
-        <div className="space-y-8 max-w-lg">
-            {/* YEAR - HUGE AND SERIF FOR REALISM */}
-            <div className="relative inline-block">
-                 <h2 className="relative z-10 text-8xl font-serif font-black italic tracking-tighter text-zinc-200 drop-shadow-2xl">
+        <div className="space-y-6 md:space-y-8 max-w-sm md:max-w-lg">
+            {/* YEAR */}
+            <div className={`relative inline-block ${isPositive ? 'animate-in fade-in slide-in-from-bottom-8 duration-[1500ms] delay-500 fill-mode-both' : ''}`}>
+                 <h2 className={`relative z-10 text-6xl md:text-8xl font-serif font-black italic tracking-tighter drop-shadow-2xl ${yearColor} ${decorationStyle}`}>
                     {current.year}
                  </h2>
-                 
-                 {/* STAMP EFFECT */}
-                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-2 bg-red-600 rotate-[-15deg] opacity-80 mix-blend-overlay"></div>
-                 
-                 <div className="absolute top-0 right-[-20px] animate-in zoom-in duration-500 delay-300">
-                    <X size={100} className="text-red-600 opacity-90 drop-shadow-[0_0_10px_rgba(220,38,38,0.5)]" strokeWidth={3} />
-                 </div>
             </div>
+
+            {/* TITLE (Only for Telegram Slide) */}
+            {isPositive && (
+                <div className="animate-in fade-in slide-in-from-bottom-4 duration-[1500ms] delay-1000 fill-mode-both">
+                    <h3 className="text-3xl md:text-5xl font-black text-white tracking-tighter uppercase drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]">
+                        {current.title}
+                    </h3>
+                </div>
+            )}
             
             {/* QUOTE BLOCK */}
-            <div className="relative bg-[#111] border-l-2 border-red-800 p-6 text-left rounded-r-2xl shadow-2xl">
-                <Quote size={24} className="text-zinc-600 mb-2 fill-zinc-800" />
-                <p className="text-zinc-300 font-mono text-lg leading-relaxed italic">
+            <div className={`relative p-6 text-left rounded-2xl shadow-2xl backdrop-blur-md ${quoteBorder} ${isPositive ? 'animate-in fade-in slide-in-from-bottom-8 duration-[1500ms] delay-[1500ms] fill-mode-both' : ''}`}>
+                <Quote size={20} className={`${isPositive ? 'text-emerald-500' : 'text-zinc-600'} mb-3 fill-current md:w-6 md:h-6`} />
+                <p className={`${isPositive ? 'text-white text-lg md:text-xl' : 'text-zinc-300 text-sm md:text-lg'} font-mono leading-relaxed italic`}>
                     {current.quote}
                 </p>
-                <div className="mt-4 flex items-center gap-2">
-                    <div className="h-px flex-1 bg-zinc-800"></div>
-                    <span className="text-[10px] uppercase tracking-widest text-red-500 font-bold">Возможность упущена</span>
+                <div className="mt-4 flex items-center gap-3">
+                    <div className={`h-px flex-1 ${isPositive ? 'bg-emerald-500/30' : 'bg-zinc-800'}`}></div>
+                    <span className={`text-[10px] uppercase tracking-[0.2em] ${footerColor} font-bold`}>{footerText}</span>
                 </div>
             </div>
         </div>

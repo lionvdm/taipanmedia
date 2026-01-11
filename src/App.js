@@ -6,32 +6,20 @@ import {
   ArrowRight,
   Activity,
   Lock,
-  CreditCard,
   Users,
   TrendingUp,
-  PieChart,
-  Coins,
-  RefreshCcw,
   ShoppingBag,
   Check,
-  FileText,
-  BarChart3,
-  BellRing,
   X,
   Calculator,
   Sparkles,
   Bot,
-  BrainCircuit,
   MessageSquare,
   Send,
   Loader2,
-  ArrowDownRight,
-  Terminal,
   Cpu,
   Palette,
-  Zap,
-  ShieldCheck,
-  Play
+  Zap
 } from 'lucide-react';
 
 // --- OPENAI API INTEGRATION ---
@@ -332,9 +320,6 @@ const ShatterText = ({ visible, children }) => {
             >
                 {children}
             </div>
-            
-            {/* Flash Effect */}
-            <div className={`absolute inset-0 bg-emerald-400/30 mix-blend-overlay transition-opacity duration-200 ${shatter ? 'opacity-0' : 'opacity-100'}`}></div>
          </div>
        )}
     </div>
@@ -748,7 +733,7 @@ const BusinessView = ({ setMode, bizParams, setBizParams }) => {
                  <div className="animate-in fade-in slide-in-from-top-4 mt-6 bg-[#0A0A0A] border border-emerald-500/20 rounded-[24px] p-6 shadow-2xl relative overflow-hidden">
                     <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 via-transparent to-transparent"></div>
                     <div className="flex items-center gap-2 mb-4">
-                       <BrainCircuit size={18} className="text-emerald-400"/>
+                       <Bot size={18} className="text-emerald-400"/>
                        <h4 className="text-sm font-bold text-white uppercase tracking-wider">Стратегия Taipan AI</h4>
                     </div>
                     <div className="text-xs text-zinc-300 leading-relaxed whitespace-pre-line font-medium">
@@ -1001,7 +986,7 @@ const DevView = ({ setMode }) => {
                 <div className="px-4 py-8 pb-32 animate-in slide-in-from-bottom duration-500 font-mono">
                     <div className="bg-gradient-to-br from-emerald-900/20 to-black border border-emerald-500/30 rounded-[32px] p-6 relative overflow-hidden mb-6">
                         <div className="absolute top-0 right-0 p-6 opacity-20">
-                            <ShieldCheck size={64} className="text-emerald-500"/>
+                            <Check size={64} className="text-emerald-500"/>
                         </div>
                         
                         <div className="relative z-10">

@@ -49,47 +49,30 @@ const callOpenAIAPI = async (prompt, history = []) => {
 // --- VISUAL COMPONENTS ---
 
 const SnakeText = ({ children, className = "" }) => (
-  <>
-    <style>
-      {`
-        @keyframes premium-pulse {
-          0%, 100% {
-            filter: drop-shadow(0 0 15px rgba(34, 197, 94, 0.4)) brightness(1) contrast(1.2);
-            -webkit-text-stroke: 1px rgba(34, 197, 94, 0.5);
-          }
-          50% {
-            filter: drop-shadow(0 0 30px rgba(34, 197, 94, 0.9)) brightness(1.4) contrast(1.4);
-            -webkit-text-stroke: 1.5px rgba(255, 255, 255, 0.8);
-          }
-        }
-      `}
-    </style>
-    <span className={`font-black italic tracking-widest ${className}`} style={{
-        color: '#4ade80', // Fallback
-        // Высококачественная текстура зеленой мамбы
-        backgroundImage: `url('https://images.unsplash.com/photo-1596739349887-573581db2b20?q=80&w=2574&auto=format&fit=crop')`,
-        backgroundSize: '180px', // Оптимальный размер для читаемости чешуи
-        backgroundRepeat: 'repeat',
-        backgroundPosition: 'center',
-        WebkitBackgroundClip: 'text',
-        backgroundClip: 'text',
-        WebkitTextFillColor: 'transparent',
-        // Анимация пульсации
-        animation: 'premium-pulse 3s infinite ease-in-out',
-        display: 'inline-block',
-        lineHeight: '1.1',
-        paddingRight: '0.15em',
-        paddingBottom: '0.1em' // Чтобы тень не обрезалась
-      }}>{children}</span>
-  </>
+  <span className={`font-black italic tracking-tighter ${className}`} style={{
+      // Текстура ярко-зеленой гадюки с четкой чешуей
+      backgroundImage: `url('https://images.unsplash.com/photo-1596739349887-573581db2b20?q=80&w=2574&auto=format&fit=crop')`, 
+      backgroundSize: '150%', // Масштаб чешуи
+      backgroundPosition: 'center 60%',
+      WebkitBackgroundClip: 'text',
+      backgroundClip: 'text',
+      color: 'transparent',
+      WebkitTextFillColor: 'transparent',
+      // Жесткая обводка для выделения формы букв на черном фоне
+      WebkitTextStroke: '2px #10b981', 
+      // Глубокая тень для эффекта объема и свечения
+      filter: 'drop-shadow(0 0 10px rgba(16, 185, 129, 0.6)) contrast(1.2) brightness(1.1)',
+      display: 'inline-block'
+    }}>{children}</span>
 );
 
 const ScalesBackground = () => (
   <div className="fixed inset-0 z-0 bg-[#020202] overflow-hidden">
-    {/* Hexagonal Scales Pattern - SVG Data URI for reliability */}
-    <div className="absolute inset-0 opacity-20" style={{
-        backgroundImage: `url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%2310b981' fill-opacity='0.15' fill-rule='evenodd'%3E%3Cpath d='M0 20L20 0H40L20 20H0zM20 20L40 0H60L40 20H20zM0 40L20 20H40L20 40H0z'/%3E%3C/g%3E%3C/svg%3E")`,
-        backgroundSize: '40px 40px'
+    {/* Background Texture */}
+    <div className="absolute inset-0 opacity-20 mix-blend-overlay" style={{
+        backgroundImage: `url('https://images.unsplash.com/photo-1533748293994-683a4c44238e?q=80&w=2670&auto=format&fit=crop')`,
+        backgroundSize: 'cover',
+        filter: 'grayscale(100%) contrast(1.5)'
     }}></div>
     
     {/* Venomous Glow Spots */}
@@ -143,7 +126,7 @@ const SelectView = ({ setMode }) => (
         </div>
         
         {/* SNAKE SCALE TEXT EFFECT */}
-        <h1 className="text-6xl md:text-8xl leading-none mb-6 whitespace-nowrap">
+        <h1 className="text-7xl md:text-9xl leading-none mb-6 whitespace-nowrap">
            <SnakeText>TAIPAN</SnakeText>
         </h1>
 

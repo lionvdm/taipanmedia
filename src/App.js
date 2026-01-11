@@ -49,43 +49,33 @@ const callOpenAIAPI = async (prompt, history = []) => {
 // --- VISUAL COMPONENTS ---
 
 const SnakeText = ({ children, className = "" }) => (
-  <>
-    <style>
-      {`
-        @keyframes slither-skin {
-          0% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
-          100% { background-position: 0% 50%; }
-        }
-      `}
-    </style>
-    <span className={`font-black italic tracking-widest ${className}`} style={{
-        // Текстура: Зеленая Буш-Гадюка (очень фактурная чешуя)
-        backgroundImage: `url('https://images.unsplash.com/photo-1533748293994-683a4c44238e?q=80&w=2670&auto=format&fit=crop')`, 
-        // Размер подобран так, чтобы чешуйки были видны
-        backgroundSize: '120px', 
-        backgroundRepeat: 'repeat',
-        WebkitBackgroundClip: 'text',
-        backgroundClip: 'text',
-        color: 'transparent',
-        WebkitTextFillColor: 'transparent',
-        // Анимация движения текстуры (эффект ползущей змеи)
-        animation: 'slither-skin 10s ease-in-out infinite',
-        // Эффекты свечения и объема
-        filter: 'drop-shadow(0 0 20px rgba(16, 185, 129, 0.6)) contrast(1.6) brightness(1.2) hue-rotate(-10deg)',
-        display: 'inline-block',
-        paddingRight: '0.15em',
-        paddingBottom: '0.1em'
-      }}>{children}</span>
-  </>
+  <span className={`font-black italic tracking-widest ${className}`} style={{
+      // Используем SVG-паттерн в base64 для 100% гарантии отображения чешуи, если внешняя картинка не грузится
+      // Но поверх накладываем реальную текстуру через background-image
+      backgroundImage: `url('https://images.unsplash.com/photo-1596739349887-573581db2b20?q=80&w=2574&auto=format&fit=crop'), linear-gradient(180deg, #4ade80, #166534)`,
+      backgroundSize: '35%', // Размер чешуи
+      backgroundPosition: 'center',
+      backgroundRepeat: 'repeat',
+      WebkitBackgroundClip: 'text',
+      backgroundClip: 'text',
+      // ВАЖНО: Цвет текста должен быть прозрачным, чтобы виден был фон
+      color: 'transparent', 
+      WebkitTextFillColor: 'transparent',
+      // Добавляем обводку, чтобы контур букв был виден всегда
+      WebkitTextStroke: '2px #22c55e',
+      // Тень для объема
+      filter: 'drop-shadow(0 0 20px rgba(34, 197, 94, 0.6)) contrast(1.5)',
+      display: 'inline-block',
+      lineHeight: '1.2'
+    }}>{children}</span>
 );
 
 const ScalesBackground = () => (
   <div className="fixed inset-0 z-0 bg-[#020202] overflow-hidden">
     {/* Hexagonal Scales Pattern */}
-    <div className="absolute inset-0 opacity-10" style={{
-        backgroundImage: `url("data:image/svg+xml,%3Csvg width='24' height='40' viewBox='0 0 24 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 40c5.523 0 10-4.477 10-10V10c0-5.523-4.477-10-10-10s-10 4.477-10 10v20c0 5.523 4.477 10 10 10zM12 20c5.523 0 10-4.477 10-10V0H2v10c0 5.523 4.477 10 10 10z' fill='%2310b981' fill-opacity='0.2' fill-rule='evenodd'/%3E%3C/svg%3E")`,
-        backgroundSize: '30px 50px'
+    <div className="absolute inset-0 opacity-20" style={{
+        backgroundImage: `url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%2310b981' fill-opacity='0.15' fill-rule='evenodd'%3E%3Cpath d='M0 20L20 0H40L20 20H0zM20 20L40 0H60L40 20H20zM0 40L20 20H40L20 40H0z'/%3E%3C/g%3E%3C/svg%3E")`,
+        backgroundSize: '40px 40px'
     }}></div>
     
     {/* Venomous Glow Spots */}

@@ -161,61 +161,61 @@ const TerminalSplash = ({ onComplete }) => {
 // --- VIEWS ---
 
 const SelectView = ({ setMode }) => (
-  <div className="flex flex-col min-h-screen bg-black w-full overflow-y-auto">
+  <div className="flex flex-col min-h-[100dvh] bg-black w-full overflow-y-auto">
     <GlobalStyles />
     <ScalesBackground />
-    <div className="relative z-10 flex-1 flex flex-col px-4 py-8 justify-center items-center w-full">
+    <div className="relative z-10 flex-1 flex flex-col px-4 py-6 justify-center items-center w-full">
       
       {/* Header */}
-      <div className="mb-10 flex flex-col items-center w-full animate-in fade-in slide-in-from-top-10 duration-1000">
+      <div className="mb-8 flex flex-col items-center w-full animate-in fade-in slide-in-from-top-10 duration-1000">
         
         {/* Crown Icon */}
         <div className="flex items-center gap-3 mb-6 opacity-60">
-             <div className="h-px w-10 bg-gradient-to-r from-transparent to-emerald-500"></div>
-             <Crown size={18} className="text-emerald-500 drop-shadow-[0_0_10px_rgba(16,185,129,0.5)]" strokeWidth={1.5} />
-             <div className="h-px w-10 bg-gradient-to-l from-transparent to-emerald-500"></div>
+             <div className="h-px w-8 bg-gradient-to-r from-transparent to-emerald-500"></div>
+             <Crown size={16} className="text-emerald-500 drop-shadow-[0_0_10px_rgba(16,185,129,0.5)]" strokeWidth={1.5} />
+             <div className="h-px w-8 bg-gradient-to-l from-transparent to-emerald-500"></div>
         </div>
         
-        {/* TITLE */}
-        <h1 className="emerald-pulse-glow font-cinzel text-5xl font-black tracking-widest leading-none mb-8 text-center select-none">
+        {/* TITLE - Adjusted for mobile fitting */}
+        <h1 className="emerald-pulse-glow font-cinzel text-4xl md:text-6xl font-black tracking-[0.15em] leading-none mb-8 text-center select-none">
            TAIPAN<br/>
-           <span className="text-white">MEDIA</span>
+           <span className="text-white block mt-2">MEDIA</span>
         </h1>
 
         {/* MISSION STATEMENT CONTAINER */}
-        <div className="w-full relative glass-panel p-6 rounded-sm border-t border-b border-emerald-900/30">
+        <div className="w-full relative glass-panel p-5 rounded-sm border-t border-b border-emerald-900/30">
            {/* Decorative corners */}
            <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-emerald-500/50"></div>
            <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-emerald-500/50"></div>
            <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-emerald-500/50"></div>
            <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-emerald-500/50"></div>
 
-           <div className="flex flex-col items-center gap-6 text-center">
+           <div className="flex flex-col items-center gap-5 text-center">
                {/* Main Tagline */}
-               <p className="font-cinzel text-white text-base tracking-[0.1em] font-bold text-glow leading-snug">
+               <p className="font-cinzel text-white text-sm tracking-[0.1em] font-bold text-glow leading-normal max-w-[280px]">
                  «МЫ СТРОИМ БИЗНЕС<br/>В TELEGRAM»
                </p>
                
-               <div className="w-16 h-px bg-gradient-to-r from-transparent via-emerald-500/50 to-transparent"></div>
+               <div className="w-12 h-px bg-gradient-to-r from-transparent via-emerald-500/50 to-transparent"></div>
 
                {/* Subtitles Grid */}
-               <div className="flex flex-col gap-5 w-full">
-                  <div className="flex flex-col items-center gap-2">
+               <div className="flex flex-col gap-4 w-full">
+                  <div className="flex flex-col items-center gap-1.5">
                       <div className="w-8 h-8 rounded-full bg-emerald-900/20 flex items-center justify-center border border-emerald-500/20 mb-1">
                         <Hammer size={14} className="text-emerald-400" />
                       </div>
-                      <p className="font-montserrat text-zinc-300 text-[11px] tracking-[0.05em] uppercase font-medium leading-relaxed">
-                        <span className="text-emerald-500 font-bold block mb-1">Бизнесу</span>
+                      <p className="font-montserrat text-zinc-300 text-[10px] tracking-[0.05em] uppercase font-medium leading-relaxed">
+                        <span className="text-emerald-500 font-bold block mb-0.5">Бизнесу</span>
                         даем инструмент для сверхприбыли
                       </p>
                   </div>
                   
-                  <div className="flex flex-col items-center gap-2">
+                  <div className="flex flex-col items-center gap-1.5">
                       <div className="w-8 h-8 rounded-full bg-emerald-900/20 flex items-center justify-center border border-emerald-500/20 mb-1">
                         <UserPlus size={14} className="text-emerald-400" />
                       </div>
-                      <p className="font-montserrat text-zinc-300 text-[11px] tracking-[0.05em] uppercase font-medium leading-relaxed">
-                        <span className="text-emerald-500 font-bold block mb-1">Людям</span>
+                      <p className="font-montserrat text-zinc-300 text-[10px] tracking-[0.05em] uppercase font-medium leading-relaxed">
+                        <span className="text-emerald-500 font-bold block mb-0.5">Людям</span>
                         даем профессию, чтобы этот инструмент внедрять
                       </p>
                   </div>
@@ -224,36 +224,36 @@ const SelectView = ({ setMode }) => (
         </div>
       </div>
       
-      {/* Cards - Mobile Friendly: Full Width, larger touch targets */}
-      <div className="grid gap-4 w-full">
+      {/* Cards - Compact touch targets */}
+      <div className="grid gap-3 w-full">
         <button 
             onClick={() => setMode('business')} 
-            className="group relative bg-zinc-950 border border-zinc-800 p-6 flex items-center gap-4 text-left transition-all duration-300 active:scale-[0.98] active:border-emerald-500/50"
+            className="group relative bg-zinc-950 border border-zinc-800 p-5 flex items-center gap-4 text-left transition-all duration-300 active:scale-[0.98] active:border-emerald-500/50 hover:bg-zinc-900"
         >
           <div className="absolute inset-0 bg-gradient-to-r from-emerald-900/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-          <div className="w-12 h-12 bg-zinc-900 rounded-full flex items-center justify-center shrink-0 border border-zinc-700 group-hover:border-emerald-500/50 transition-colors">
-             <Briefcase className="text-zinc-400 group-hover:text-emerald-400 transition-colors" size={20} strokeWidth={1.5} />
+          <div className="w-10 h-10 bg-zinc-900 rounded-full flex items-center justify-center shrink-0 border border-zinc-700 group-hover:border-emerald-500/50 transition-colors">
+             <Briefcase className="text-zinc-400 group-hover:text-emerald-400 transition-colors" size={18} strokeWidth={1.5} />
           </div>
           <div>
-             <h3 className="font-cinzel text-lg font-bold text-white uppercase tracking-widest group-hover:text-emerald-400 transition-colors">Империя</h3>
-             <p className="font-montserrat text-zinc-500 text-[10px] uppercase tracking-widest">Масштабирование • Власть</p>
+             <h3 className="font-cinzel text-base font-bold text-white uppercase tracking-widest group-hover:text-emerald-400 transition-colors">Империя</h3>
+             <p className="font-montserrat text-zinc-500 text-[9px] uppercase tracking-widest">Масштабирование</p>
           </div>
-          <ChevronRight className="ml-auto text-zinc-700 group-hover:text-emerald-500 transition-colors" size={20} />
+          <ChevronRight className="ml-auto text-zinc-700 group-hover:text-emerald-500 transition-colors" size={18} />
         </button>
         
         <button 
             onClick={() => setMode('dev')} 
-            className="group relative bg-zinc-950 border border-zinc-800 p-6 flex items-center gap-4 text-left transition-all duration-300 active:scale-[0.98] active:border-emerald-500/50"
+            className="group relative bg-zinc-950 border border-zinc-800 p-5 flex items-center gap-4 text-left transition-all duration-300 active:scale-[0.98] active:border-emerald-500/50 hover:bg-zinc-900"
         >
           <div className="absolute inset-0 bg-gradient-to-r from-emerald-900/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-          <div className="w-12 h-12 bg-zinc-900 rounded-full flex items-center justify-center shrink-0 border border-zinc-700 group-hover:border-emerald-500/50 transition-colors">
-             <Code className="text-zinc-400 group-hover:text-emerald-400 transition-colors" size={20} strokeWidth={1.5} />
+          <div className="w-10 h-10 bg-zinc-900 rounded-full flex items-center justify-center shrink-0 border border-zinc-700 group-hover:border-emerald-500/50 transition-colors">
+             <Code className="text-zinc-400 group-hover:text-emerald-400 transition-colors" size={18} strokeWidth={1.5} />
           </div>
           <div>
-             <h3 className="font-cinzel text-lg font-bold text-white uppercase tracking-widest group-hover:text-emerald-400 transition-colors">Создатель</h3>
-             <p className="font-montserrat text-zinc-500 text-[10px] uppercase tracking-widest">Код • Эволюция</p>
+             <h3 className="font-cinzel text-base font-bold text-white uppercase tracking-widest group-hover:text-emerald-400 transition-colors">Создатель</h3>
+             <p className="font-montserrat text-zinc-500 text-[9px] uppercase tracking-widest">Код • Эволюция</p>
           </div>
-          <ChevronRight className="ml-auto text-zinc-700 group-hover:text-emerald-500 transition-colors" size={20} />
+          <ChevronRight className="ml-auto text-zinc-700 group-hover:text-emerald-500 transition-colors" size={18} />
         </button>
       </div>
     </div>

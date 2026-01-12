@@ -48,28 +48,47 @@ const callOpenAIAPI = async (prompt, history = []) => {
 
 // --- VISUAL COMPONENTS ---
 
-const SnakeText = ({ children, className = "" }) => (
-  <span className={`font-black italic tracking-tighter ${className}`} style={{
-      color: '#4ade80',
-      textShadow: '0 0 15px rgba(74, 222, 128, 0.6), 0 0 30px rgba(74, 222, 128, 0.2)',
-      filter: 'drop-shadow(0 0 5px rgba(0,0,0,1))'
-    }}>{children}</span>
-);
-
 const ScalesBackground = () => (
-  <div className="fixed inset-0 z-0 bg-[#020202] overflow-hidden">
-    {/* Hexagonal Scales Pattern */}
-    <div className="absolute inset-0 opacity-10" style={{
-        backgroundImage: `url("data:image/svg+xml,%3Csvg width='24' height='40' viewBox='0 0 24 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 40c5.523 0 10-4.477 10-10V10c0-5.523-4.477-10-10-10s-10 4.477-10 10v20c0 5.523 4.477 10 10 10zM12 20c5.523 0 10-4.477 10-10V0H2v10c0 5.523 4.477 10 10 10z' fill='%2310b981' fill-opacity='0.2' fill-rule='evenodd'/%3E%3C/svg%3E")`,
-        backgroundSize: '30px 50px'
+  <div className="fixed inset-0 z-0 bg-black overflow-hidden flex items-center justify-center">
+    <style>
+      {`
+        @keyframes grid-move {
+          0% { background-position: 0 0; }
+          100% { background-position: 50px 50px; }
+        }
+        @keyframes pulse-glow {
+          0%, 100% { opacity: 0.15; transform: scale(1); }
+          50% { opacity: 0.3; transform: scale(1.1); }
+        }
+      `}
+    </style>
+    
+    {/* Пульсирующее ядро в центре */}
+    <div className="absolute w-[800px] h-[800px] bg-emerald-600/10 blur-[150px] rounded-full pointer-events-none animate-[pulse-glow_6s_infinite_ease-in-out]"></div>
+
+    {/* Основная движущаяся сетка */}
+    <div 
+        className="absolute inset-0"
+        style={{
+            backgroundImage: `
+                linear-gradient(to right, rgba(16, 185, 129, 0.15) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(16, 185, 129, 0.15) 1px, transparent 1px)
+            `,
+            backgroundSize: '50px 50px',
+            // Маска концентрирует сетку в центре, края уходят в полную черноту
+            maskImage: 'radial-gradient(circle at 50% 50%, black 0%, transparent 70%)',
+            WebkitMaskImage: 'radial-gradient(circle at 50% 50%, black 0%, transparent 70%)',
+            animation: 'grid-move 20s linear infinite'
+        }}
+    ></div>
+    
+    {/* Второй слой мелких деталей для глубины */}
+    <div className="absolute inset-0 pointer-events-none" style={{
+        backgroundImage: 'radial-gradient(rgba(52, 211, 153, 0.2) 1px, transparent 1px)',
+        backgroundSize: '30px 30px',
+        maskImage: 'radial-gradient(circle at 50% 50%, black 0%, transparent 50%)',
+        WebkitMaskImage: 'radial-gradient(circle at 50% 50%, black 0%, transparent 50%)',
     }}></div>
-    
-    {/* Venomous Glow Spots */}
-    <div className="absolute top-[-20%] left-[20%] w-[40%] h-[40%] bg-emerald-900/20 blur-[150px] animate-pulse"></div>
-    <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-[#064e3b] blur-[120px] opacity-30"></div>
-    
-    {/* Vignette */}
-    <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,#000000_90%)]"></div>
   </div>
 );
 
@@ -105,55 +124,78 @@ const TerminalSplash = ({ onComplete }) => {
 const SelectView = ({ setMode }) => (
   <div className="flex flex-col h-screen relative overflow-hidden font-sans bg-black">
     <ScalesBackground />
-    <div className="relative z-10 flex-1 flex flex-col p-8 justify-center items-center text-center">
+    
+    {/* Main Container - Flex Column with space distribution */}
+    <div className="relative z-10 flex-1 flex flex-col p-6 justify-between items-center text-center h-full">
       
-      {/* Header */}
-      <div className="mb-16 flex flex-col items-center animate-in fade-in slide-in-from-top-10 duration-1000">
-        <div className="inline-flex items-center gap-3 px-4 py-1 rounded-none border-x border-emerald-500/50 bg-emerald-900/10 mb-8 backdrop-blur-md">
+      {/* 1. TOP ELEMENT */}
+      <div className="mt-4 md:mt-8 inline-flex items-center gap-3 px-4 py-1 rounded-none border-x border-emerald-500/50 bg-emerald-900/10 backdrop-blur-md animate-in fade-in slide-in-from-top-4 duration-700">
            <Eye size={12} className="text-emerald-500 animate-pulse" />
            <span className="text-emerald-500 text-[10px] font-black tracking-[0.3em] uppercase">Цель захвачена</span>
+      </div>
+      
+      {/* 2. CENTER PIECE: LOGO & SLOGAN */}
+      <div className="flex-1 flex flex-col justify-center items-center w-full relative -mt-4">
+        {/* LOGO IMAGE REPLACEMENT */}
+        <div className="relative group w-full max-w-lg mx-auto flex justify-center items-center">
+            {/* Glow effect behind logo */}
+            <div className="absolute inset-0 bg-emerald-500/10 blur-[50px] group-hover:blur-[80px] transition-all duration-500 rounded-full scale-75"></div>
+            
+            <img 
+                src="https://i.ibb.co.com/s94Rn8v9/grok-image-e25c1e31-fc43-41a9-aa0d-480bdffe5c7d-1-edited-HD-carve-photos-2.png" 
+                alt="TAIPAN" 
+                className="relative z-10 w-auto object-contain drop-shadow-[0_0_25px_rgba(16,185,129,0.3)] hover:drop-shadow-[0_0_35px_rgba(16,185,129,0.5)] transition-all duration-500 hover:scale-[1.02]"
+                style={{ maxHeight: '35vh', maxWidth: '100%' }} // Ограничиваем высоту до 35% от экрана
+                onError={(e) => {
+                    // Авто-фикс типичной опечатки в домене
+                    if (e.target.src.includes('ibb.co.com')) {
+                        e.target.src = e.target.src.replace('ibb.co.com', 'ibb.co');
+                    }
+                }}
+            />
         </div>
-        
-        {/* SNAKE SCALE TEXT EFFECT */}
-        <h1 className="text-6xl md:text-8xl font-black italic tracking-tighter leading-none mb-6 whitespace-nowrap" 
-            style={{
-                backgroundImage: `url('https://images.unsplash.com/photo-1550948537-130a1ce83314?q=80&w=2072&auto=format&fit=crop')`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                filter: 'drop-shadow(0 0 20px rgba(16, 185, 129, 0.4)) contrast(1.3) brightness(1.2)'
-            }}>
-           TAIPAN
-        </h1>
 
-        <p className="text-emerald-500/60 text-xs font-mono tracking-[0.2em] max-w-md uppercase">
+        <p className="mt-6 text-emerald-500/60 text-xs font-mono tracking-[0.2em] max-w-md uppercase animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-300">
             Хищник цифрового рынка
         </p>
       </div>
       
-      {/* Cards */}
-      <div className="grid gap-6 w-full max-w-md">
+      {/* 3. BOTTOM CARDS - COMPACT HORIZONTAL LAYOUT */}
+      <div className="grid gap-4 w-full max-w-md pb-4 md:pb-8 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-500">
         <button 
             onClick={() => setMode('business')} 
-            className="group relative overflow-hidden bg-black border border-zinc-800 p-8 flex flex-col items-center text-center transition-all duration-300 hover:border-emerald-500 hover:shadow-[0_0_40px_-10px_rgba(16,185,129,0.5)] active:scale-[0.98]"
-            style={{ clipPath: 'polygon(10% 0, 100% 0, 100% 90%, 90% 100%, 0 100%, 0 10%)' }}
+            className="group relative overflow-hidden bg-black/80 border border-zinc-800 p-5 flex items-center gap-5 text-left transition-all duration-300 hover:border-emerald-500 hover:bg-emerald-950/10 active:scale-[0.98]"
+            style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)' }}
         >
+          {/* Shimmer effect */}
           <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(16,185,129,0.05)_50%,transparent_75%)] bg-[length:250%_250%] group-hover:animate-[shimmer_2s_infinite]"></div>
-          <Briefcase className="text-zinc-500 group-hover:text-emerald-400 transition-colors duration-300 mb-4" size={32} />
-          <h3 className="text-2xl font-black italic text-white uppercase tracking-tighter group-hover:text-emerald-400 transition-colors">Бизнес</h3>
-          <p className="text-zinc-600 text-[10px] mt-2 font-mono uppercase tracking-widest group-hover:text-zinc-400">Масштабирование • Охота</p>
+          
+          <div className="p-3 bg-zinc-900 rounded-sm group-hover:bg-emerald-500/20 transition-colors">
+             <Briefcase className="text-zinc-500 group-hover:text-emerald-400 transition-colors" size={20} />
+          </div>
+          <div className="flex-1">
+             <h3 className="text-xl font-black italic text-white uppercase tracking-tighter group-hover:text-emerald-400 transition-colors leading-none mb-1">Бизнес</h3>
+             <p className="text-zinc-600 text-[9px] font-mono uppercase tracking-widest group-hover:text-zinc-400">Масштабирование • Охота</p>
+          </div>
+          <ChevronRight className="text-zinc-700 group-hover:text-emerald-500 transition-colors" size={18} />
         </button>
         
         <button 
             onClick={() => setMode('dev')} 
-            className="group relative overflow-hidden bg-black border border-zinc-800 p-8 flex flex-col items-center text-center transition-all duration-300 hover:border-emerald-500 hover:shadow-[0_0_40px_-10px_rgba(16,185,129,0.5)] active:scale-[0.98]"
-            style={{ clipPath: 'polygon(10% 0, 100% 0, 100% 90%, 90% 100%, 0 100%, 0 10%)' }}
+            className="group relative overflow-hidden bg-black/80 border border-zinc-800 p-5 flex items-center gap-5 text-left transition-all duration-300 hover:border-emerald-500 hover:bg-emerald-950/10 active:scale-[0.98]"
+            style={{ clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)' }}
         >
+          {/* Shimmer effect */}
           <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(16,185,129,0.05)_50%,transparent_75%)] bg-[length:250%_250%] group-hover:animate-[shimmer_2s_infinite]"></div>
-          <Code className="text-zinc-500 group-hover:text-emerald-400 transition-colors duration-300 mb-4" size={32} />
-          <h3 className="text-2xl font-black italic text-white uppercase tracking-tighter group-hover:text-emerald-400 transition-colors">Разработчик</h3>
-          <p className="text-zinc-600 text-[10px] mt-2 font-mono uppercase tracking-widest group-hover:text-zinc-400">Код • Эволюция</p>
+
+          <div className="p-3 bg-zinc-900 rounded-sm group-hover:bg-emerald-500/20 transition-colors">
+             <Code className="text-zinc-500 group-hover:text-emerald-400 transition-colors" size={20} />
+          </div>
+          <div className="flex-1">
+             <h3 className="text-xl font-black italic text-white uppercase tracking-tighter group-hover:text-emerald-400 transition-colors leading-none mb-1">Разработчик</h3>
+             <p className="text-zinc-600 text-[9px] font-mono uppercase tracking-widest group-hover:text-zinc-400">Код • Эволюция</p>
+          </div>
+          <ChevronRight className="text-zinc-700 group-hover:text-emerald-500 transition-colors" size={18} />
         </button>
       </div>
     </div>

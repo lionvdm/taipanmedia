@@ -7,16 +7,19 @@ import {
   Send, Loader2, ArrowDownRight, Terminal, Cpu, Palette, 
   Zap, ShieldCheck, Play, ArrowUpRight, Percent, AlertTriangle,
   Scale, ArrowLeft, ShoppingCart, Rocket, Quote, Eye, Crown, Sword,
-  Hammer, UserPlus, Info
+  Hammer, UserPlus, Info, ImageIcon, Smartphone, ExternalLink, Star,
+  Menu, Search, Plus, Minus
 } from 'lucide-react';
 
 // --- STYLES & FONTS ---
 const GlobalStyles = () => (
   <style>{`
     @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700;800;900&family=Montserrat:wght@200;300;400;500;600;700;800&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
     
     .font-cinzel { font-family: 'Cinzel', serif; }
     .font-montserrat { font-family: 'Montserrat', sans-serif; }
+    .font-inter { font-family: 'Inter', sans-serif; }
     
     .text-glow { text-shadow: 0 0 20px rgba(16, 185, 129, 0.5); }
     .text-glow-red { text-shadow: 0 0 20px rgba(220, 38, 38, 0.4); }
@@ -43,6 +46,30 @@ const GlobalStyles = () => (
           0 0 15px rgba(16, 185, 129, 0.8),
           0 0 25px rgba(16, 185, 129, 0.5);
       }
+    }
+
+    /* Smoke Effects */
+    @keyframes smoke-enter {
+      0% { opacity: 0; filter: blur(15px); transform: scale(0.9) translateY(10px); }
+      100% { opacity: 1; filter: blur(0); transform: scale(1) translateY(0); }
+    }
+    @keyframes smoke-exit {
+      0% { opacity: 1; filter: blur(0); transform: scale(1) translateY(0); }
+      100% { opacity: 0; filter: blur(20px); transform: scale(1.1) translateY(-20px); }
+    }
+    
+    .smoke-enter { animation: smoke-enter 1.2s ease-out forwards; }
+    .smoke-exit { animation: smoke-exit 1s ease-in forwards; }
+
+    /* Number Pulse Effect */
+    @keyframes num-pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.05); opacity: 0.9; }
+    }
+    
+    .animate-num-pulse {
+      animation: num-pulse 2s ease-in-out infinite;
+      display: inline-block;
     }
 
     .emerald-pulse-glow {
@@ -72,82 +99,119 @@ const GlobalStyles = () => (
   `}</style>
 );
 
-// --- CONFIG & UTILS ---
-const getEnvApiKey = () => {
-  try {
-    if (typeof process !== 'undefined' && process.env) {
-        return process.env.REACT_APP_OPENAI_API_KEY || "";
-    }
-    return "";
-  } catch (e) {
-    return "";
-  }
-};
+// --- UTILS ---
 
-const apiKey = getEnvApiKey();
-
-// Используем неразрывный пробел (\u00A0) перед знаком тенге
 const formatCurrency = (val) => {
   if (!val && val !== 0) return '0\u00A0₸';
   return new Intl.NumberFormat('ru-RU').format(Math.floor(val)) + '\u00A0₸';
 };
 
-const callOpenAIAPI = async (prompt, history = []) => {
-  try {
-    if (!apiKey) {
-      await new Promise(r => setTimeout(r, 2500));
-      
-      // --- SMART FALLBACK SIMULATION ---
-      let extractedLost = "значительную сумму";
-      let extractedRecovered = "20%";
-      let extractedConv = "низкая";
-      
-      const lostMatch = prompt.match(/Расчетные потери.*?:\s*([\d\s\xa0]+)/);
-      if (lostMatch) extractedLost = lostMatch[1] + "\u00A0₸";
-      
-      const recMatch = prompt.match(/Потенциал возврата.*?:\s*([\d\s\xa0]+)/);
-      if (recMatch) extractedRecovered = recMatch[1] + "\u00A0₸";
+// --- DEMO STORE COMPONENT (Telegram Mini App Simulator) ---
+const DemoStore = ({ onClose }) => {
+  const [activeTab, setActiveTab] = useState('menu');
+  const [cart, setCart] = useState({});
+  const [notification, setNotification] = useState(null);
 
-      const convMatch = prompt.match(/Текущая конверсия:\s*([\d\.,]+)%/);
-      if (convMatch) extractedConv = convMatch[1] + "%";
+  const products = [
+    { id: 1, name: "Набор 'Шеф-Повар'", price: 24000, img: "🍳", desc: "Кастрюля 5л + Сковорода" },
+    { id: 2, name: "Сковорода WOK", price: 12500, img: "🥘", desc: "Антипригарное покрытие" },
+    { id: 3, name: "Ножи 'Самурай'", price: 8900, img: "🔪", desc: "Японская сталь, 3 шт." },
+    { id: 4, name: "Чайник Vintage", price: 15000, img: "🫖", desc: "Эмаль, свисток, 3л" },
+  ];
 
-      return `✨ ОТЧЕТ GEMINI BUSINESS
+  const addToCart = (id) => {
+    setCart(prev => ({ ...prev, [id]: (prev[id] || 0) + 1 }));
+    showNotification("Добавлено в корзину");
+  };
 
-1. АУДИТ
-При конверсии ${extractedConv} вы ежемесячно теряете около ${extractedLost}. Основная причина — сложность покупки. Клиенты уходят из-за переходов на сайт и забытых паролей.
+  const showNotification = (text) => {
+    setNotification(text);
+    setTimeout(() => setNotification(null), 2000);
+  };
 
-2. СТРАТЕГИЯ ВОЗВРАТА
-Внедрение Telegram Web App вернет минимум ${extractedRecovered} чистой прибыли:
+  const cartTotal = Object.entries(cart).reduce((sum, [id, qty]) => {
+    const product = products.find(p => p.id === parseInt(id));
+    return sum + (product ? product.price * qty : 0);
+  }, 0);
 
-• Web App: Магазин открывается прямо в чате. Покупка в 2 клика.
-• Авторизация: Клиент уже вошел в Telegram, никаких SMS.
-• Push-уведомления: Бесплатный возврат клиентов (Retention).
-• Скорость: Мгновенная загрузка даже на слабом интернете.
+  const cartCount = Object.values(cart).reduce((a, b) => a + b, 0);
 
-3. ИТОГ
-Мы устраним технические барьеры и направим этот денежный поток в вашу кассу.`;
-    }
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-300">
+      <div className="w-full max-w-sm bg-[#1c1c1e] h-[80vh] rounded-[30px] overflow-hidden flex flex-col shadow-2xl relative border border-zinc-700">
+        
+        {/* Fake Status Bar */}
+        <div className="h-10 bg-[#1c1c1e] flex items-end justify-between px-6 pb-2 text-white text-xs select-none">
+           <span>9:41</span>
+           <div className="flex gap-1.5">
+             <div className="w-4 h-2.5 bg-white rounded-sm"></div>
+             <div className="w-0.5 h-2.5 bg-white/30 rounded-sm"></div>
+           </div>
+        </div>
 
-    const messages = history.map(msg => ({
-      role: msg.sender === 'user' ? 'user' : 'assistant',
-      content: msg.text
-    }));
-    
-    messages.unshift({
-        role: "system",
-        content: "Ты — бизнес-аналитик GEMINI Business. Твой тон: экспертный, убедительный, технологичный, жесткий. Ты специализируешься на Telegram E-commerce. Твоя задача — анализировать введенные пользователем цифры и предлагать конкретную стратегию через внедрение Telegram Web App магазина. Структурируй ответ четко, с заголовками. ВАЖНО: Не используй markdown-разметку (звездочки **, решетки ##), пиши чистый текст с отступами."
-    });
+        {/* Header */}
+        <div className="bg-[#1c1c1e] p-4 flex items-center justify-between border-b border-white/10 relative z-10">
+           <div className="flex items-center gap-3">
+              <button onClick={onClose} className="text-[#007aff] font-inter text-base">Закрыть</button>
+           </div>
+           <div className="font-inter font-semibold text-white">Kastrylka Bot</div>
+           <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center text-white text-xs font-bold">...</div>
+        </div>
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-        body: JSON.stringify({ model: "gpt-4o", messages: [...messages, {role: 'user', content: prompt}], temperature: 0.7 }),
-    });
-    const data = await response.json();
-    let cleanContent = data.choices?.[0]?.message?.content || "Связь с GEMINI Business прервана.";
-    cleanContent = cleanContent.replace(/\*\*/g, "").replace(/\[|\]/g, "");
-    return cleanContent;
-  } catch (e) { return "Ошибка нейроинтерфейса."; }
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto bg-black text-white p-4 font-inter relative">
+           
+           {/* Notification */}
+           {notification && (
+             <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-emerald-500 text-white px-4 py-2 rounded-full text-xs font-medium shadow-lg animate-in slide-in-from-top-5 fade-in duration-300 z-50">
+               {notification}
+             </div>
+           )}
+
+           {/* Stories / Banners */}
+           <div className="flex gap-3 overflow-x-auto pb-4 mb-2 no-scrollbar">
+              <div className="w-24 h-32 bg-gradient-to-br from-emerald-500 to-teal-700 rounded-xl flex-shrink-0 flex items-end p-2 text-xs font-bold">Скидки</div>
+              <div className="w-24 h-32 bg-gradient-to-br from-purple-500 to-indigo-700 rounded-xl flex-shrink-0 flex items-end p-2 text-xs font-bold">Новинки</div>
+              <div className="w-24 h-32 bg-gradient-to-br from-orange-500 to-red-700 rounded-xl flex-shrink-0 flex items-end p-2 text-xs font-bold">Хиты</div>
+           </div>
+
+           <h2 className="text-xl font-bold mb-4">Популярное</h2>
+           
+           <div className="grid grid-cols-2 gap-3 pb-20">
+              {products.map(p => (
+                <div key={p.id} className="bg-[#1c1c1e] rounded-xl p-3 flex flex-col gap-2">
+                   <div className="w-full aspect-square bg-zinc-800 rounded-lg flex items-center justify-center text-4xl">
+                      {p.img}
+                   </div>
+                   <div className="text-sm font-semibold">{p.name}</div>
+                   <div className="text-[10px] text-zinc-400">{p.desc}</div>
+                   <div className="mt-auto flex justify-between items-center">
+                      <div className="text-emerald-400 font-bold text-sm">{p.price.toLocaleString()} ₸</div>
+                      <button 
+                        onClick={() => addToCart(p.id)}
+                        className="w-7 h-7 bg-[#007aff] rounded-full flex items-center justify-center text-white hover:bg-blue-500 active:scale-90 transition-all"
+                      >
+                        <Plus size={16} />
+                      </button>
+                   </div>
+                </div>
+              ))}
+           </div>
+        </div>
+
+        {/* Main Button (Telegram Style) */}
+        {cartCount > 0 && (
+           <div className="absolute bottom-4 left-4 right-4 animate-in slide-in-from-bottom-10 duration-300">
+              <button className="w-full bg-[#007aff] text-white font-inter font-semibold py-3 rounded-xl flex justify-between px-4 active:scale-[0.98] transition-transform shadow-lg shadow-blue-900/20">
+                 <span>Оформить заказ</span>
+                 <span>{cartTotal.toLocaleString()} ₸</span>
+              </button>
+           </div>
+        )}
+
+      </div>
+    </div>
+  );
 };
 
 // --- VISUAL COMPONENTS ---
@@ -351,25 +415,25 @@ const DevView = ({ setMode }) => {
     { 
         year: '2009', 
         title: 'Bitcoin', 
-        quote: 'Цифровые фантики. Игрушка для гиков.', // Cleaned
-        logo: <BitcoinLogo />,
+        quote: 'Цифровые фантики. Игрушка для гиков.', 
+        logo: <div className="w-32 h-32 md:w-48 md:h-48"><BitcoinLogo /></div>,
         isPositive: false
     },
     { 
         year: '2012', 
         title: 'Instagram', 
-        quote: 'Фото еды? В этом нет денег.', // Cleaned
-        logo: <InstagramLogo />,
+        quote: 'Фото еды? В этом нет денег.', 
+        logo: <div className="w-32 h-32 md:w-48 md:h-48"><InstagramLogo /></div>,
         isPositive: false
     },
     { 
         year: '2019', 
         title: 'Маркетплейсы', 
-        quote: 'Люди хотят щупать. Интернет не для продаж.', // Cleaned
+        quote: 'Люди хотят щупать. Интернет не для продаж.', 
         logo: (
             <div className="flex gap-4 w-full h-full justify-center items-center">
-                 <div className="w-16 h-16"><WildberriesLogo /></div>
-                 <div className="w-16 h-16"><KaspiLogo /></div>
+                 <div className="w-16 h-16 md:w-24 md:h-24"><WildberriesLogo /></div>
+                 <div className="w-16 h-16 md:w-24 md:h-24"><KaspiLogo /></div>
             </div>
         ),
         isPositive: false
@@ -377,8 +441,8 @@ const DevView = ({ setMode }) => {
     { 
         year: '2026', 
         title: 'ТЕЛЕГРАМ', 
-        quote: 'Экосистема нового мирового порядка. Твой ход.', // Cleaned
-        logo: <div className="w-32 h-32 md:w-40 md:h-40 animate-pulse"><TelegramLogo /></div>,
+        quote: 'Экосистема нового мирового порядка. Твой ход.', 
+        logo: <div className="w-32 h-32 md:w-48 md:h-48 animate-pulse"><TelegramLogo /></div>,
         isPositive: true 
     },
   ];
@@ -420,7 +484,7 @@ const DevView = ({ setMode }) => {
               <div className="space-y-4 flex flex-col items-center">
                   <div className="relative inline-block group">
                       <div className="absolute inset-0 bg-emerald-500/10 blur-[60px] animate-pulse"></div>
-                      <div className="w-20 h-20 mx-auto mb-4 relative z-10 group-hover:scale-105 transition-transform duration-700 ease-out">
+                      <div className="w-24 h-24 md:w-32 md:h-32 lg:w-40 lg:h-40 mx-auto mb-6 relative z-10 group-hover:scale-105 transition-transform duration-700 ease-out">
                           <TelegramLogo />
                       </div>
                       <h1 className="font-cinzel text-4xl font-black tracking-wide leading-none mb-1 text-white">
@@ -514,10 +578,12 @@ const DevView = ({ setMode }) => {
 };
 
 
-const BusinessView = ({ setMode, bizParams, setBizParams }) => {
+const BusinessView = ({ setMode, bizParams, setBizParams, onOpenChat }) => {
   const [analysisState, setAnalysisState] = useState('input');
-  const [aiAnalysis, setAiAnalysis] = useState('');
   const [activeTooltip, setActiveTooltip] = useState(null); // State for annotations
+  const [slideIndex, setSlideIndex] = useState(0);
+  const [slidePhase, setSlidePhase] = useState('in'); // in, visible, out
+  const [showDemo, setShowDemo] = useState(false);
 
   const traffic = Number(bizParams.users) || 0;
   const currentConvRate = Number(bizParams.currentConversion) || 0;
@@ -530,36 +596,22 @@ const BusinessView = ({ setMode, bizParams, setBizParams }) => {
   const lostProfit = (traffic * (lostPercent / 100) * check) * (margin / 100);
   const recoveredProfit = lostProfit * 0.20;
 
-  const handleAI = async () => {
+  const startAnalysis = async () => {
     setAnalysisState('loading');
-    const prompt = `
-      Анализируй эти данные клиента:
-      - Трафик (потенциальные клиенты): ${traffic}
-      - Текущая конверсия: ${currentConvRate}%
-      - Средний чек: ${check}
-      - Маржа: ${margin}%
-      
-      Расчетные потери (упущенная прибыль): ${lostProfit}
-      Потенциал возврата (20% от упущенного): ${recoveredProfit}
-
-      Твоя задача — разработать стратегию возврата этих денег, используя ИСКЛЮЧИТЕЛЬНО сильные стороны Telegram-магазина (Web App).
-      
-      В стратегии обязательно используй:
-      1. Web App интерфейс (покупка в 2 клика внутри Telegram без перехода на сайты).
-      2. Push-уведомления (бесплатная альтернатива SMS для возврата клиентов).
-      3. Отсутствие регистрации (авторизация по ID Telegram).
-      4. Скорость работы (Telegram кеширует данные, магазин летает даже при плохом интернете).
-
-      Структура ответа:
-      1. КРАТКИЙ АУДИТ: Почему текущие показатели (${currentConvRate}%) — это "дыра" в бюджете.
-      2. СТРАТЕГИЯ GEMINI: Как конкретно Telegram-магазин увеличит конверсию и вернет ${recoveredProfit} прибыли. Привяжи функционал Telegram к цифрам.
-      
-      Стиль: Gemini Business. Экспертный, жесткий, опирающийся на данные. Без воды.
-    `;
-    const res = await callOpenAIAPI(prompt);
-    setAiAnalysis(res);
-    setAnalysisState('result');
+    setTimeout(() => {
+        setAnalysisState('result');
+        setSlideIndex(0);
+        setSlidePhase('in');
+    }, 2000); // Имитация анализа 2 секунды
   };
+
+  // МЕСТО ДЛЯ ВАШИХ ИЗОБРАЖЕНИЙ (Замените ссылки на свои)
+  const metricImages = [
+    "https://placehold.co/400x300/000000/10B981?text=Трафик+Инфо", // Картинка для Трафика
+    "https://placehold.co/400x300/000000/10B981?text=Конверсия+Инфо", // Картинка для Конверсии
+    "https://placehold.co/400x300/000000/10B981?text=Средний+Чек", // Картинка для Среднего чека
+    "https://placehold.co/400x300/000000/10B981?text=Маржа+Инфо"  // Картинка для Маржи
+  ];
 
   // Data with annotations
   const metrics = [
@@ -568,30 +620,177 @@ const BusinessView = ({ setMode, bizParams, setBizParams }) => {
         icon: Users, 
         val: bizParams.users, 
         set: (v) => setBizParams({...bizParams, users: v}),
-        desc: "Количество потенциальных клиентов, заходящих в ваш магазин за месяц." 
+        imageIndex: 0
     },
     { 
         label: 'КОНВЕРСИЯ', 
         icon: Percent, 
         val: bizParams.currentConversion, 
         set: (v) => setBizParams({...bizParams, currentConversion: v}),
-        desc: "Процент посетителей, которые совершили покупку. Ваша точность удара." 
+        imageIndex: 1
     },
     { 
         label: 'СРЕДНИЙ ЧЕК', 
         icon: Coins, 
         val: bizParams.check, 
         set: (v) => setBizParams({...bizParams, check: v}),
-        desc: "Средняя сумма, которую оставляет один клиент за раз." 
+        imageIndex: 2
     },
     { 
         label: 'МАРЖА', 
         icon: Scale, 
         val: bizParams.margin, 
         set: (v) => setBizParams({...bizParams, margin: v}),
-        desc: "Чистая прибыль с продажи в процентах. Ваша реальная сила." 
+        imageIndex: 3
     },
   ];
+
+  const analysisSlides = [
+      {
+          title: "УТЕЧКА ТРАФИКА",
+          val: `${lostPercent.toFixed(0)}%`,
+          sub: "Посетителей уходят без покупки",
+          desc: "«Вы платите за 100% трафика, но 70% ваших денег сгорает в Direct из-за \"человеческого фактора\"»",
+          color: "text-red-600",
+          glow: "text-glow-red"
+      },
+      {
+          title: "ФИНАНСОВЫЕ ПОТЕРИ",
+          val: formatCurrency(lostProfit),
+          sub: "Ваша упущенная чистая прибыль ежемесячно",
+          desc: "Эти деньги могли быть в вашей кассе уже сегодня, если бы процесс продажи был автоматизирован.",
+          color: "text-red-600",
+          glow: "text-glow-red"
+      },
+      {
+          title: "РЫНОК TELEGRAM",
+          val: "+400%",
+          sub: "Ежегодный рост продаж в мессенджере",
+          desc: "«Пока вы сомневаетесь, покупают ли здесь люди, ваши конкуренты уже оформляют заказы. Telegram стал новым Amazon — быстрее, ближе и без лишних кликов».",
+          color: "text-white",
+          glow: "text-glow"
+      },
+      {
+          title: "РЕШЕНИЕ: ТЕЛЕГРАМ-МАГАЗИН",
+          val: formatCurrency(recoveredProfit),
+          sub: "Минимальный возврат при внедрении",
+          desc: "«Мы не ломаем ваши процессы, мы внедряем Telegram-магазин как мощный рычаг, который автоматически возвращает от 20% потерянной чистой прибыли».",
+          color: "text-emerald-500",
+          glow: "text-glow"
+      }
+  ];
+
+  const solutionSlides = [
+      {
+          title: "ИИ-АЛГОРИТМЫ",
+          val: "+30%",
+          sub: "К СРЕДНЕМУ ЧЕКУ",
+          desc: "Система сама анализирует товары и предлагает блоки «С этим покупают». Рост выручки без участия менеджера и затрат на трафик.",
+          color: "text-purple-400",
+          glow: "text-glow"
+      },
+      {
+          title: "БЕСПЛАТНЫЙ РЕТАРГЕТИНГ",
+          val: "90%",
+          sub: "OPEN RATE РАССЫЛОК",
+          desc: "Убийца платной рекламы. Умные уведомления приходят прямо в личку, превращая разовую покупку в LTV (пожизненную ценность).",
+          color: "text-emerald-400",
+          glow: "text-glow"
+      },
+      {
+          title: "АВТОНОМНАЯ КАССА",
+          val: "24/7",
+          sub: "БИЗНЕС В КАРМАНЕ",
+          desc: "Интеграция с платежами и доступ в 2 клика. Магазин продает, пока вы спите. Никакого ожидания в Direct и «человеческого фактора».",
+          color: "text-emerald-400",
+          glow: "text-glow"
+      }
+  ];
+
+  const allSlides = [...analysisSlides, ...solutionSlides];
+
+  useEffect(() => {
+    if (analysisState === 'result') {
+      if (slideIndex < allSlides.length - 1) {
+         setSlidePhase('in');
+         
+         const hideTimer = setTimeout(() => {
+             setSlidePhase('out');
+         }, 5000); 
+
+         const nextTimer = setTimeout(() => {
+             setSlideIndex(prev => prev + 1);
+             setSlidePhase('in'); 
+         }, 6000); 
+
+         return () => { clearTimeout(hideTimer); clearTimeout(nextTimer); };
+      } else {
+         setSlidePhase('in');
+      }
+    }
+  }, [analysisState, slideIndex, allSlides.length]);
+
+  // Show Demo Store Modal
+  if (showDemo) {
+    return (
+        <div className="flex flex-col h-screen bg-black text-white font-montserrat overflow-y-auto relative w-full">
+            <GlobalStyles />
+            <ScalesBackground />
+            <DemoStore onClose={() => setShowDemo(false)} />
+        </div>
+    );
+  }
+
+  if (analysisState === 'reviews') {
+      return (
+        <div className="flex flex-col h-screen bg-black text-white font-montserrat overflow-y-auto relative w-full">
+            <GlobalStyles />
+            <ScalesBackground />
+            
+            <div className="sticky top-0 z-40 px-4 py-3 bg-black/80 backdrop-blur-xl flex justify-between items-center border-b border-zinc-900">
+                <button onClick={() => setAnalysisState('input')} className="w-8 h-8 flex items-center justify-center hover:text-emerald-500 transition-colors">
+                    <X size={20}/>
+                </button>
+                <span className="text-[10px] font-bold tracking-[0.2em] text-emerald-500 uppercase animate-pulse font-cinzel">
+                    Кейсы
+                </span>
+                <div className="w-8"></div>
+            </div>
+
+            <div className="relative z-10 p-6 max-w-lg mx-auto w-full flex flex-col justify-center items-center min-h-[80vh] animate-in slide-in-from-bottom-10 fade-in duration-700">
+                
+                <h2 className="text-2xl font-cinzel font-black tracking-wide text-white mb-8 text-center">
+                    РЕАЛЬНЫЕ <span className="text-emerald-500 text-glow">РЕЗУЛЬТАТЫ</span>
+                </h2>
+
+                <div className="w-full bg-zinc-900/40 border border-zinc-800 p-2 backdrop-blur-md rounded-lg mb-8 relative group overflow-hidden hover:border-emerald-500/50 transition-all duration-300">
+                    <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/50 z-10"></div>
+                    {/* Updated with user provided screenshot */}
+                    <img 
+                        src="https://i.ibb.co.com/3mNHQCWd/Gemini-Generated-Image-71b25a71b25a71b2.png" 
+                        alt="Отзыв клиента" 
+                        className="w-full h-auto object-cover rounded opacity-90 group-hover:opacity-100 transition-opacity"
+                    />
+                    <div className="absolute bottom-3 right-3 z-20">
+                        <div className="bg-black/70 backdrop-blur-sm px-2 py-1 rounded border border-emerald-500/30 text-[9px] text-emerald-500 font-bold uppercase tracking-widest flex items-center gap-1">
+                            <Star size={10} fill="currentColor" />
+                            Проверено
+                        </div>
+                    </div>
+                </div>
+
+                <button 
+                    onClick={() => setShowDemo(true)}
+                    className="w-full bg-white text-black font-cinzel font-black py-4 uppercase tracking-[0.2em] hover:bg-emerald-400 transition-all active:scale-[0.98] text-xs flex items-center justify-center gap-2 group text-center shadow-[0_0_30px_rgba(255,255,255,0.1)] hover:shadow-[0_0_40px_rgba(16,185,129,0.3)] rounded-sm"
+                >
+                    Смотреть живой проект
+                    <ExternalLink size={14} className="group-hover:translate-x-1 transition-transform" />
+                </button>
+
+            </div>
+        </div>
+      );
+  }
 
   if (analysisState === 'loading') {
     return (
@@ -604,7 +803,9 @@ const BusinessView = ({ setMode, bizParams, setBizParams }) => {
                     <BrainCircuit size={64} className="text-emerald-500 relative z-10 animate-bounce" strokeWidth={1} />
                 </div>
                 <div>
-                    <h2 className="text-2xl font-cinzel font-bold tracking-widest text-white mb-2">НЕЙРОСКАН</h2>
+                    <h2 className="text-xl md:text-2xl font-cinzel font-bold tracking-wide text-white mb-4 uppercase leading-snug">
+                        Проводим анализ<br/>вашего бизнеса
+                    </h2>
                     <div className="flex flex-col gap-1 items-center">
                         <p className="text-emerald-600 text-[10px] font-bold uppercase tracking-[0.3em]">Поиск уязвимостей...</p>
                         <div className="h-0.5 w-20 bg-zinc-800 rounded-full overflow-hidden mt-2">
@@ -618,54 +819,54 @@ const BusinessView = ({ setMode, bizParams, setBizParams }) => {
   }
 
   if (analysisState === 'result') {
+      const slide = allSlides[slideIndex];
+      const isLast = slideIndex === allSlides.length - 1;
+
       return (
-        <div className="flex flex-col h-screen bg-black text-white font-montserrat overflow-y-auto relative w-full">
+        <div className="flex flex-col h-screen bg-black text-white font-montserrat overflow-y-auto relative w-full justify-center">
             <GlobalStyles />
             <ScalesBackground />
-            <div className="relative z-10 p-4 max-w-lg mx-auto w-full min-h-screen flex flex-col">
-                <div className="flex items-center justify-between mb-6">
-                    <button onClick={() => setAnalysisState('input')} className="group flex items-center gap-2 text-zinc-500 hover:text-white transition-colors">
-                        <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
-                        <span className="text-[10px] font-bold uppercase tracking-wider">Назад</span>
-                    </button>
-                    <div className="text-emerald-500 border border-emerald-900/50 px-2 py-1 bg-emerald-950/30 text-[9px] font-bold uppercase tracking-widest font-cinzel">
-                        План готов
+            
+            <div className="relative z-10 p-6 max-w-lg mx-auto w-full flex flex-col items-center">
+                
+                {/* Slide Content with Smoke Animation */}
+                <div 
+                    className={`w-full text-center ${slidePhase === 'out' ? 'smoke-exit' : 'smoke-enter'}`} 
+                    key={`${analysisState}-${slideIndex}`} // Unique key forces re-render for animation
+                >
+                    {/* Value FIRST */}
+                    <div className={`text-6xl md:text-7xl font-cinzel font-black tracking-wide mb-4 ${slide.color} ${slide.glow} animate-num-pulse`}>
+                        {slide.val}
+                    </div>
+
+                    {/* Title SECOND */}
+                    <h3 className="text-sm font-bold text-zinc-500 uppercase tracking-[0.3em] mb-2">{slide.title}</h3>
+                    
+                    {/* Subtitle */}
+                    <p className="text-xs md:text-sm font-bold text-white uppercase tracking-wider mb-6 border-b border-zinc-800 pb-4 inline-block">
+                        {slide.sub}
+                    </p>
+
+                    <div className="bg-zinc-900/40 border border-zinc-800 p-6 backdrop-blur-md relative overflow-hidden mb-8">
+                        <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-transparent via-emerald-500/50 to-transparent"></div>
+                        <p className="text-zinc-300 text-xs leading-relaxed font-montserrat">
+                            {slide.desc}
+                        </p>
                     </div>
                 </div>
 
-                <div className="flex-1 space-y-6">
-                    <div className="text-center space-y-1">
-                         <h2 className="text-3xl font-cinzel font-black tracking-wider text-white">ПЛАН <span className="text-emerald-500 text-glow">ВОЗВРАТА ПОТЕРЬ</span></h2>
+                {/* Controls - Only on Last Slide */}
+                {isLast && (
+                    <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-500">
+                        <button 
+                            onClick={() => setAnalysisState('reviews')}
+                            className="w-full bg-white text-black font-cinzel font-black py-4 uppercase tracking-[0.2em] hover:bg-emerald-400 transition-all active:scale-[0.98] text-xs flex items-center justify-center gap-2 group"
+                        >
+                            Посмотреть примеры
+                        </button>
                     </div>
-
-                    <div className="bg-zinc-900/20 border-l-2 border-emerald-500 p-4 backdrop-blur-md relative overflow-hidden">
-                        <div className="absolute top-0 right-0 p-2 opacity-10">
-                            <Quote size={30} className="text-emerald-500"/>
-                        </div>
-                        <div className="prose prose-invert prose-sm max-w-none prose-p:text-zinc-300 prose-headings:text-white prose-strong:text-emerald-400">
-                            <div className="whitespace-pre-wrap leading-relaxed font-montserrat text-xs tracking-wide">
-                                {aiAnalysis}
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3">
-                        <div className="bg-zinc-900/30 p-4 border border-zinc-800 text-center transition-all hover:border-emerald-500/50 group active:scale-[0.98]">
-                            <div className="text-[9px] text-zinc-500 uppercase font-bold mb-1 tracking-widest">Верните от 20%</div>
-                            <div className="text-lg font-cinzel font-bold text-emerald-500 group-hover:text-glow transition-all whitespace-nowrap">+{formatCurrency(recoveredProfit)}</div>
-                        </div>
-                        <div className="bg-zinc-900/30 p-4 border border-zinc-800 text-center transition-all hover:border-red-900/50 group active:scale-[0.98]">
-                            <div className="text-[9px] text-zinc-500 uppercase font-bold mb-1 tracking-widest">Сейчас теряется</div>
-                            <div className="text-lg font-cinzel font-bold text-red-700 group-hover:text-red-600 transition-all whitespace-nowrap">{formatCurrency(lostProfit)}</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="mt-6 pt-4 border-t border-zinc-900/50 text-center pb-6">
-                    <button onClick={() => setAnalysisState('input')} className="w-full bg-white text-black font-cinzel font-black py-3 uppercase tracking-[0.2em] hover:bg-emerald-400 transition-all active:scale-[0.98] text-xs">
-                        НОВАЯ ОХОТА
-                    </button>
-                </div>
+                )}
+                
             </div>
         </div>
       )
@@ -711,15 +912,20 @@ const BusinessView = ({ setMode, bizParams, setBizParams }) => {
                                 className="flex items-center justify-center gap-1.5 w-full text-[9px] font-bold text-zinc-500 uppercase tracking-[0.1em] hover:text-emerald-500 transition-colors font-cinzel mb-1"
                             >
                                 <item.icon size={12} className="opacity-70" /> {item.label}
-                                <Info size={10} className="text-zinc-700 hover:text-emerald-400 transition-colors" />
+                                <ImageIcon size={10} className="text-zinc-700 hover:text-emerald-400 transition-colors" />
                             </button>
                             
-                            {/* Annotation Popover */}
+                            {/* Annotation Popover (IMAGE) */}
                             {activeTooltip === i && (
-                                <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-40 bg-zinc-950 border border-emerald-500/30 p-2 rounded shadow-[0_0_20px_rgba(0,0,0,0.8)] z-20 animate-in fade-in zoom-in-95 duration-200">
-                                    <p className="text-[9px] text-zinc-300 font-montserrat leading-relaxed normal-case text-center">
-                                        {item.desc}
-                                    </p>
+                                <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-48 bg-zinc-950 border border-emerald-500/30 p-1 rounded shadow-[0_0_20px_rgba(0,0,0,0.8)] z-20 animate-in fade-in zoom-in-95 duration-200 overflow-hidden">
+                                    <div className="w-full aspect-[4/3] bg-zinc-900 relative">
+                                        <img 
+                                            src={metricImages[item.imageIndex]} 
+                                            alt={item.label}
+                                            className="w-full h-full object-cover opacity-90 hover:opacity-100 transition-opacity"
+                                        />
+                                        <div className="absolute inset-0 border border-white/5 pointer-events-none"></div>
+                                    </div>
                                     <div className="absolute bottom-[-4px] left-1/2 -translate-x-1/2 w-2 h-2 bg-zinc-950 border-r border-b border-emerald-500/30 rotate-45"></div>
                                 </div>
                             )}
@@ -762,7 +968,7 @@ const BusinessView = ({ setMode, bizParams, setBizParams }) => {
                     </div>
 
                     <button 
-                        onClick={handleAI} 
+                        onClick={startAnalysis} 
                         className="w-full bg-emerald-600 text-black font-cinzel font-black text-xs py-4 uppercase tracking-[0.2em] hover:bg-emerald-500 transition-all hover:shadow-[0_0_30px_rgba(16,185,129,0.3)] active:scale-[0.98]"
                     >
                           ПРЕКРАТИТЬ УТЕЧКУ ПРОДАЖ
@@ -778,20 +984,18 @@ const BusinessView = ({ setMode, bizParams, setBizParams }) => {
 const AIChat = ({ isOpen, onClose }) => {
   const [messages, setMessages] = useState([{ sender: 'bot', text: 'Оракул слушает. Говори.' }]);
   const [input, setInput] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
   const endRef = useRef(null);
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
 
-  const send = async () => {
+  const send = () => {
     if (!input.trim()) return;
     const msg = { sender: 'user', text: input };
     setMessages(p => [...p, msg]);
     setInput('');
-    setIsTyping(true);
-    const res = await callOpenAIAPI(input, messages);
-    setMessages(p => [...p, { sender: 'bot', text: res }]);
-    setIsTyping(false);
+    setTimeout(() => {
+        setMessages(p => [...p, { sender: 'bot', text: "Система в автономном режиме. Обратитесь к оператору." }]);
+    }, 1000);
   };
 
   if (!isOpen) return null;
@@ -813,7 +1017,6 @@ const AIChat = ({ isOpen, onClose }) => {
             </div>
           </div>
         ))}
-        {isTyping && <div className="text-[10px] text-emerald-500/50 pl-2 animate-pulse uppercase tracking-widest font-cinzel">Анализ данных...</div>}
         <div ref={endRef} />
       </div>
       <div className="p-5 bg-black border-t border-zinc-800 flex gap-4">
@@ -844,7 +1047,7 @@ export default function App() {
     <div className="min-h-screen font-sans selection:bg-emerald-500/30 selection:text-white text-white bg-black w-full">
       <GlobalStyles />
       {mode === 'select' && <SelectView setMode={setMode} />}
-      {mode === 'business' && <BusinessView setMode={setMode} bizParams={bizParams} setBizParams={setBizParams} />}
+      {mode === 'business' && <BusinessView setMode={setMode} bizParams={bizParams} setBizParams={setBizParams} onOpenChat={setIsChatOpen} />}
       {mode === 'dev' && <DevView setMode={setMode} />}
 
       <button 

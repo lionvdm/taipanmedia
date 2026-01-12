@@ -7,7 +7,7 @@ import {
   Send, Loader2, ArrowDownRight, Terminal, Cpu, Palette, 
   Zap, ShieldCheck, Play, ArrowUpRight, Percent, AlertTriangle,
   Scale, ArrowLeft, ShoppingCart, Rocket, Quote, Eye, Crown, Sword,
-  Hammer, UserPlus
+  Hammer, UserPlus, Info
 } from 'lucide-react';
 
 // --- STYLES & FONTS ---
@@ -19,7 +19,7 @@ const GlobalStyles = () => (
     .font-montserrat { font-family: 'Montserrat', sans-serif; }
     
     .text-glow { text-shadow: 0 0 20px rgba(16, 185, 129, 0.5); }
-    .text-glow-gold { text-shadow: 0 0 20px rgba(234, 179, 8, 0.4); }
+    .text-glow-red { text-shadow: 0 0 20px rgba(220, 38, 38, 0.4); }
     
     .animate-shimmer {
       background: linear-gradient(to right, transparent 0%, rgba(255,255,255,0.1) 50%, transparent 100%);
@@ -32,19 +32,16 @@ const GlobalStyles = () => (
       to { background-position: -200% 0; }
     }
 
-    /* Refined Green Pulse - Sharper, "Electric" look */
     @keyframes green-pulse {
       0%, 100% { 
         text-shadow: 
           0 0 5px rgba(16, 185, 129, 0.5),
-          0 0 10px rgba(16, 185, 129, 0.3),
-          0 0 20px rgba(16, 185, 129, 0.1);
+          0 0 10px rgba(16, 185, 129, 0.3);
       }
       50% { 
         text-shadow: 
-          0 0 10px rgba(16, 185, 129, 0.8),
-          0 0 20px rgba(16, 185, 129, 0.5),
-          0 0 40px rgba(16, 185, 129, 0.2);
+          0 0 15px rgba(16, 185, 129, 0.8),
+          0 0 25px rgba(16, 185, 129, 0.5);
       }
     }
 
@@ -56,14 +53,22 @@ const GlobalStyles = () => (
     /* Glass Panel */
     .glass-panel {
       background: rgba(0, 0, 0, 0.6);
-      backdrop-filter: blur(8px);
+      backdrop-filter: blur(12px);
       border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
     }
 
     /* Mobile scrollbar adjustments */
     ::-webkit-scrollbar { width: 4px; }
     ::-webkit-scrollbar-track { background: #000; }
     ::-webkit-scrollbar-thumb { background: #064e3b; border-radius: 2px; }
+
+    /* Hide number input spinners */
+    input[type=number]::-webkit-inner-spin-button, 
+    input[type=number]::-webkit-outer-spin-button { 
+      -webkit-appearance: none; 
+      margin: 0; 
+    }
   `}</style>
 );
 
@@ -81,29 +86,67 @@ const getEnvApiKey = () => {
 
 const apiKey = getEnvApiKey();
 
-const formatCurrency = (val) => new Intl.NumberFormat('ru-RU').format(Math.floor(val)) + ' ₸';
+// Используем неразрывный пробел (\u00A0) перед знаком тенге
+const formatCurrency = (val) => {
+  if (!val && val !== 0) return '0\u00A0₸';
+  return new Intl.NumberFormat('ru-RU').format(Math.floor(val)) + '\u00A0₸';
+};
 
 const callOpenAIAPI = async (prompt, history = []) => {
   try {
     if (!apiKey) {
       await new Promise(r => setTimeout(r, 2500));
-      return "🐍 [TAIPAN ORACLE]:\n\n1. **ДИАГНОЗ**: Твоя воронка истекает кровью. Потери 25% на этапе удержания.\n2. **ЯД**: Внедрение геймификации впрыснет азарт и повысит LTV на 18%.\n3. **ДОБЫЧА**: +1.5 млн ₸ чистой прибыли. Забирай своё.";
+      
+      // --- SMART FALLBACK SIMULATION ---
+      let extractedLost = "значительную сумму";
+      let extractedRecovered = "20%";
+      let extractedConv = "низкая";
+      
+      const lostMatch = prompt.match(/Расчетные потери.*?:\s*([\d\s\xa0]+)/);
+      if (lostMatch) extractedLost = lostMatch[1] + "\u00A0₸";
+      
+      const recMatch = prompt.match(/Потенциал возврата.*?:\s*([\d\s\xa0]+)/);
+      if (recMatch) extractedRecovered = recMatch[1] + "\u00A0₸";
+
+      const convMatch = prompt.match(/Текущая конверсия:\s*([\d\.,]+)%/);
+      if (convMatch) extractedConv = convMatch[1] + "%";
+
+      return `✨ ОТЧЕТ GEMINI BUSINESS
+
+1. АУДИТ
+При конверсии ${extractedConv} вы ежемесячно теряете около ${extractedLost}. Основная причина — сложность покупки. Клиенты уходят из-за переходов на сайт и забытых паролей.
+
+2. СТРАТЕГИЯ ВОЗВРАТА
+Внедрение Telegram Web App вернет минимум ${extractedRecovered} чистой прибыли:
+
+• Web App: Магазин открывается прямо в чате. Покупка в 2 клика.
+• Авторизация: Клиент уже вошел в Telegram, никаких SMS.
+• Push-уведомления: Бесплатный возврат клиентов (Retention).
+• Скорость: Мгновенная загрузка даже на слабом интернете.
+
+3. ИТОГ
+Мы устраним технические барьеры и направим этот денежный поток в вашу кассу.`;
     }
+
     const messages = history.map(msg => ({
       role: msg.sender === 'user' ? 'user' : 'assistant',
       content: msg.text
     }));
+    
     messages.unshift({
         role: "system",
-        content: "Ты — AI-ассистент Taipan Media. Тон: элитный, хищный, доминирующий. Ты — советник императора цифрового рынка. Используй метафоры власти, охоты, экспансии."
+        content: "Ты — бизнес-аналитик GEMINI Business. Твой тон: экспертный, убедительный, технологичный, жесткий. Ты специализируешься на Telegram E-commerce. Твоя задача — анализировать введенные пользователем цифры и предлагать конкретную стратегию через внедрение Telegram Web App магазина. Структурируй ответ четко, с заголовками. ВАЖНО: Не используй markdown-разметку (звездочки **, решетки ##), пиши чистый текст с отступами."
     });
+
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
         body: JSON.stringify({ model: "gpt-4o", messages: [...messages, {role: 'user', content: prompt}], temperature: 0.7 }),
     });
     const data = await response.json();
-    return data.choices?.[0]?.message?.content || "Связь с оракулом прервана.";
+    let cleanContent = data.choices?.[0]?.message?.content || "Связь с GEMINI Business прервана.";
+    cleanContent = cleanContent.replace(/\*\*/g, "").replace(/\[|\]/g, "");
+    return cleanContent;
   } catch (e) { return "Ошибка нейроинтерфейса."; }
 };
 
@@ -111,7 +154,7 @@ const callOpenAIAPI = async (prompt, history = []) => {
 
 const ScalesBackground = () => (
   <div className="fixed inset-0 z-0 bg-[#050505] overflow-hidden pointer-events-none">
-    {/* Texture - Slightly more visible on mobile for depth */}
+    {/* Texture */}
     <div className="absolute inset-0 opacity-[0.05]" style={{
         backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
     }}></div>
@@ -176,7 +219,7 @@ const SelectView = ({ setMode }) => (
              <div className="h-px w-8 bg-gradient-to-l from-transparent to-emerald-500"></div>
         </div>
         
-        {/* TITLE - Adjusted for mobile fitting */}
+        {/* TITLE */}
         <h1 className="emerald-pulse-glow font-cinzel text-4xl md:text-6xl font-black tracking-[0.15em] leading-none mb-8 text-center select-none">
            TAIPAN<br/>
            <span className="text-white block mt-2">MEDIA</span>
@@ -191,14 +234,12 @@ const SelectView = ({ setMode }) => (
            <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-emerald-500/50"></div>
 
            <div className="flex flex-col items-center gap-5 text-center">
-               {/* Main Tagline */}
                <p className="font-cinzel text-white text-sm tracking-[0.1em] font-bold text-glow leading-normal max-w-[280px]">
-                 «МЫ СТРОИМ БИЗНЕС<br/>В TELEGRAM»
+                 МЫ СТРОИМ БИЗНЕС<br/>В TELEGRAM
                </p>
                
                <div className="w-12 h-px bg-gradient-to-r from-transparent via-emerald-500/50 to-transparent"></div>
 
-               {/* Subtitles Grid */}
                <div className="flex flex-col gap-4 w-full">
                   <div className="flex flex-col items-center gap-1.5">
                       <div className="w-8 h-8 rounded-full bg-emerald-900/20 flex items-center justify-center border border-emerald-500/20 mb-1">
@@ -262,7 +303,6 @@ const SelectView = ({ setMode }) => (
 
 // --- NEW DEV VIEW LOGIC ---
 
-// INLINE SVG COMPONENTS
 const BitcoinLogo = () => (
   <svg viewBox="0 0 64 64" className="w-full h-full drop-shadow-[0_0_15px_rgba(255,215,0,0.5)]" xmlns="http://www.w3.org/2000/svg">
     <circle cx="32" cy="32" r="30" fill="#000" stroke="#FFD700" strokeWidth="1" />
@@ -276,6 +316,20 @@ const InstagramLogo = () => (
     <path fill="none" stroke="currentColor" strokeWidth="1.5" d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" className="text-zinc-500"/>
     <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" className="text-zinc-500"/>
   </svg>
+);
+
+const WildberriesLogo = () => (
+  <div className="w-full h-full rounded-2xl bg-gradient-to-br from-[#cb11ab] to-[#481173] flex items-center justify-center shadow-lg relative group overflow-hidden">
+    <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity"></div>
+    <span className="font-sans font-black text-white text-2xl tracking-tighter">WB</span>
+  </div>
+);
+
+const KaspiLogo = () => (
+  <div className="w-full h-full rounded-2xl bg-[#f14635] flex items-center justify-center shadow-lg relative group overflow-hidden">
+    <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity"></div>
+    <span className="font-sans font-black text-white text-3xl">K</span>
+  </div>
 );
 
 const TelegramLogo = () => (
@@ -297,24 +351,25 @@ const DevView = ({ setMode }) => {
     { 
         year: '2009', 
         title: 'Bitcoin', 
-        quote: '«Цифровые фантики. Игрушка для гиков.»', 
+        quote: 'Цифровые фантики. Игрушка для гиков.', // Cleaned
         logo: <BitcoinLogo />,
         isPositive: false
     },
     { 
         year: '2012', 
         title: 'Instagram', 
-        quote: '«Фото еды? В этом нет денег.»', 
+        quote: 'Фото еды? В этом нет денег.', // Cleaned
         logo: <InstagramLogo />,
         isPositive: false
     },
     { 
         year: '2019', 
         title: 'Маркетплейсы', 
-        quote: '«Люди хотят щупать. Интернет не для продаж.»', 
+        quote: 'Люди хотят щупать. Интернет не для продаж.', // Cleaned
         logo: (
             <div className="flex gap-4 w-full h-full justify-center items-center">
-                 <ShoppingBag size={60} strokeWidth={1} className="text-zinc-600"/>
+                 <div className="w-16 h-16"><WildberriesLogo /></div>
+                 <div className="w-16 h-16"><KaspiLogo /></div>
             </div>
         ),
         isPositive: false
@@ -322,7 +377,7 @@ const DevView = ({ setMode }) => {
     { 
         year: '2026', 
         title: 'ТЕЛЕГРАМ', 
-        quote: 'Экосистема нового мирового порядка. Твой ход.', 
+        quote: 'Экосистема нового мирового порядка. Твой ход.', // Cleaned
         logo: <div className="w-32 h-32 md:w-40 md:h-40 animate-pulse"><TelegramLogo /></div>,
         isPositive: true 
     },
@@ -462,6 +517,7 @@ const DevView = ({ setMode }) => {
 const BusinessView = ({ setMode, bizParams, setBizParams }) => {
   const [analysisState, setAnalysisState] = useState('input');
   const [aiAnalysis, setAiAnalysis] = useState('');
+  const [activeTooltip, setActiveTooltip] = useState(null); // State for annotations
 
   const traffic = Number(bizParams.users) || 0;
   const currentConvRate = Number(bizParams.currentConversion) || 0;
@@ -476,10 +532,66 @@ const BusinessView = ({ setMode, bizParams, setBizParams }) => {
 
   const handleAI = async () => {
     setAnalysisState('loading');
-    const res = await callOpenAIAPI(`Трафик: ${traffic}, Чек: ${check}, Конверсия: ${currentConvRate}%, Маржа: ${margin}%, Упускаем: ${lostPercent}%, Можем вернуть: ${recoveredProfit}. Рассчитай эффект.`);
+    const prompt = `
+      Анализируй эти данные клиента:
+      - Трафик (потенциальные клиенты): ${traffic}
+      - Текущая конверсия: ${currentConvRate}%
+      - Средний чек: ${check}
+      - Маржа: ${margin}%
+      
+      Расчетные потери (упущенная прибыль): ${lostProfit}
+      Потенциал возврата (20% от упущенного): ${recoveredProfit}
+
+      Твоя задача — разработать стратегию возврата этих денег, используя ИСКЛЮЧИТЕЛЬНО сильные стороны Telegram-магазина (Web App).
+      
+      В стратегии обязательно используй:
+      1. Web App интерфейс (покупка в 2 клика внутри Telegram без перехода на сайты).
+      2. Push-уведомления (бесплатная альтернатива SMS для возврата клиентов).
+      3. Отсутствие регистрации (авторизация по ID Telegram).
+      4. Скорость работы (Telegram кеширует данные, магазин летает даже при плохом интернете).
+
+      Структура ответа:
+      1. КРАТКИЙ АУДИТ: Почему текущие показатели (${currentConvRate}%) — это "дыра" в бюджете.
+      2. СТРАТЕГИЯ GEMINI: Как конкретно Telegram-магазин увеличит конверсию и вернет ${recoveredProfit} прибыли. Привяжи функционал Telegram к цифрам.
+      
+      Стиль: Gemini Business. Экспертный, жесткий, опирающийся на данные. Без воды.
+    `;
+    const res = await callOpenAIAPI(prompt);
     setAiAnalysis(res);
     setAnalysisState('result');
   };
+
+  // Data with annotations
+  const metrics = [
+    { 
+        label: 'ТРАФИК', 
+        icon: Users, 
+        val: bizParams.users, 
+        set: (v) => setBizParams({...bizParams, users: v}),
+        desc: "Количество потенциальных клиентов, заходящих в ваш магазин за месяц." 
+    },
+    { 
+        label: 'КОНВЕРСИЯ', 
+        icon: Percent, 
+        val: bizParams.currentConversion, 
+        set: (v) => setBizParams({...bizParams, currentConversion: v}),
+        desc: "Процент посетителей, которые совершили покупку. Ваша точность удара." 
+    },
+    { 
+        label: 'СРЕДНИЙ ЧЕК', 
+        icon: Coins, 
+        val: bizParams.check, 
+        set: (v) => setBizParams({...bizParams, check: v}),
+        desc: "Средняя сумма, которую оставляет один клиент за раз." 
+    },
+    { 
+        label: 'МАРЖА', 
+        icon: Scale, 
+        val: bizParams.margin, 
+        set: (v) => setBizParams({...bizParams, margin: v}),
+        desc: "Чистая прибыль с продажи в процентах. Ваша реальная сила." 
+    },
+  ];
 
   if (analysisState === 'loading') {
     return (
@@ -517,13 +629,13 @@ const BusinessView = ({ setMode, bizParams, setBizParams }) => {
                         <span className="text-[10px] font-bold uppercase tracking-wider">Назад</span>
                     </button>
                     <div className="text-emerald-500 border border-emerald-900/50 px-2 py-1 bg-emerald-950/30 text-[9px] font-bold uppercase tracking-widest font-cinzel">
-                        Диагноз готов
+                        План готов
                     </div>
                 </div>
 
                 <div className="flex-1 space-y-6">
                     <div className="text-center space-y-1">
-                         <h2 className="text-3xl font-cinzel font-black tracking-wider text-white">ПЛАН <span className="text-emerald-500 text-glow">ЗАХВАТА</span></h2>
+                         <h2 className="text-3xl font-cinzel font-black tracking-wider text-white">ПЛАН <span className="text-emerald-500 text-glow">ВОЗВРАТА ПОТЕРЬ</span></h2>
                     </div>
 
                     <div className="bg-zinc-900/20 border-l-2 border-emerald-500 p-4 backdrop-blur-md relative overflow-hidden">
@@ -539,12 +651,12 @@ const BusinessView = ({ setMode, bizParams, setBizParams }) => {
 
                     <div className="grid grid-cols-2 gap-3">
                         <div className="bg-zinc-900/30 p-4 border border-zinc-800 text-center transition-all hover:border-emerald-500/50 group active:scale-[0.98]">
-                            <div className="text-[9px] text-zinc-500 uppercase font-bold mb-1 tracking-widest">Потенциал</div>
-                            <div className="text-lg font-cinzel font-bold text-emerald-500 group-hover:text-glow transition-all">+{formatCurrency(recoveredProfit)}</div>
+                            <div className="text-[9px] text-zinc-500 uppercase font-bold mb-1 tracking-widest">Верните от 20%</div>
+                            <div className="text-lg font-cinzel font-bold text-emerald-500 group-hover:text-glow transition-all whitespace-nowrap">+{formatCurrency(recoveredProfit)}</div>
                         </div>
                         <div className="bg-zinc-900/30 p-4 border border-zinc-800 text-center transition-all hover:border-red-900/50 group active:scale-[0.98]">
-                            <div className="text-[9px] text-zinc-500 uppercase font-bold mb-1 tracking-widest">Кровопотеря</div>
-                            <div className="text-lg font-cinzel font-bold text-red-700 group-hover:text-red-600 transition-all">{formatCurrency(lostProfit)}</div>
+                            <div className="text-[9px] text-zinc-500 uppercase font-bold mb-1 tracking-widest">Сейчас теряется</div>
+                            <div className="text-lg font-cinzel font-bold text-red-700 group-hover:text-red-600 transition-all whitespace-nowrap">{formatCurrency(lostProfit)}</div>
                         </div>
                     </div>
                 </div>
@@ -580,7 +692,7 @@ const BusinessView = ({ setMode, bizParams, setBizParams }) => {
             <h2 className="text-3xl font-cinzel font-black tracking-wide mb-2 text-white leading-tight">
                 АУДИТ <span className="text-emerald-600 text-glow block text-2xl mt-1">УПУЩЕННОЙ ПРИБЫЛИ</span>
             </h2>
-            <p className="text-zinc-500 text-[9px] uppercase tracking-[0.3em] font-medium">Калькулятор упущенного доминирования</p>
+            <p className="text-zinc-500 text-[9px] uppercase tracking-[0.3em] font-medium">Сколько вы теряете без нашего магазина</p>
         </div>
 
         <div className="relative">
@@ -591,17 +703,27 @@ const BusinessView = ({ setMode, bizParams, setBizParams }) => {
             <div className="absolute -bottom-1 -right-1 w-3 h-3 border-b border-r border-emerald-500/50"></div>
 
             <div className="p-px bg-zinc-900/30 backdrop-blur-sm border border-zinc-800">
-                <div className="p-4 grid grid-cols-2 gap-x-4 gap-y-6">
-                    {[
-                        { label: 'ТРАФИК', icon: Users, val: bizParams.users, set: (v) => setBizParams({...bizParams, users: v}) },
-                        { label: 'КОНВЕРСИЯ', icon: Percent, val: bizParams.currentConversion, set: (v) => setBizParams({...bizParams, currentConversion: v}) },
-                        { label: 'СРЕДНИЙ ЧЕК', icon: Coins, val: bizParams.check, set: (v) => setBizParams({...bizParams, check: v}) },
-                        { label: 'МАРЖА', icon: Scale, val: bizParams.margin, set: (v) => setBizParams({...bizParams, margin: v}) },
-                    ].map((item, i) => (
-                        <div key={i} className="space-y-2 flex flex-col items-center text-center group">
-                            <label className="text-[9px] font-bold text-zinc-500 uppercase flex items-center justify-center gap-1.5 w-full tracking-[0.1em] group-hover:text-emerald-500 transition-colors font-cinzel">
+                <div className="p-4 grid grid-cols-2 gap-x-4 gap-y-8">
+                    {metrics.map((item, i) => (
+                        <div key={i} className="relative flex flex-col items-center text-center group">
+                            <button 
+                                onClick={() => setActiveTooltip(activeTooltip === i ? null : i)}
+                                className="flex items-center justify-center gap-1.5 w-full text-[9px] font-bold text-zinc-500 uppercase tracking-[0.1em] hover:text-emerald-500 transition-colors font-cinzel mb-1"
+                            >
                                 <item.icon size={12} className="opacity-70" /> {item.label}
-                            </label>
+                                <Info size={10} className="text-zinc-700 hover:text-emerald-400 transition-colors" />
+                            </button>
+                            
+                            {/* Annotation Popover */}
+                            {activeTooltip === i && (
+                                <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-40 bg-zinc-950 border border-emerald-500/30 p-2 rounded shadow-[0_0_20px_rgba(0,0,0,0.8)] z-20 animate-in fade-in zoom-in-95 duration-200">
+                                    <p className="text-[9px] text-zinc-300 font-montserrat leading-relaxed normal-case text-center">
+                                        {item.desc}
+                                    </p>
+                                    <div className="absolute bottom-[-4px] left-1/2 -translate-x-1/2 w-2 h-2 bg-zinc-950 border-r border-b border-emerald-500/30 rotate-45"></div>
+                                </div>
+                            )}
+
                             <input 
                                 type="number" 
                                 value={item.val} 
@@ -616,21 +738,25 @@ const BusinessView = ({ setMode, bizParams, setBizParams }) => {
                 <div className="bg-black/50 p-6 space-y-6 border-t border-zinc-800 mt-2">
                     <div className="text-center">
                         <div className="text-[9px] font-bold text-zinc-600 mb-1 uppercase tracking-[0.2em]">Текущий доход</div>
-                        <div className="text-2xl font-cinzel font-bold text-white tracking-wide">
+                        <div className="text-2xl font-cinzel font-bold text-white tracking-wide whitespace-nowrap overflow-hidden text-ellipsis">
                             {formatCurrency(baseProfit)}
                         </div>
                     </div>
 
                     <div className="relative bg-red-950/10 border-l-2 border-red-900 p-4">
-                        <div className="flex flex-col items-center text-center space-y-1">
+                        <div className="flex flex-col items-center text-center space-y-3">
                             <div className="flex items-center gap-2 text-red-600 font-bold uppercase text-[9px] tracking-[0.2em] animate-pulse">
-                                <AlertTriangle size={12} /> Утечка капитала
+                                <AlertTriangle size={12} /> Внимание
                             </div>
                             <div className="text-[9px] text-zinc-500">
-                                Упущенный трафик: <span className="text-zinc-300 font-bold">{lostPercent.toFixed(1)}%</span>
+                                Упущенный трафик и конверсия: <span className="text-zinc-300 font-bold">{lostPercent.toFixed(1)}%</span>
                             </div>
-                            <div className="text-2xl font-cinzel font-bold text-red-800 opacity-90">
-                                {formatCurrency(lostProfit)}
+                            
+                            <div className="flex flex-col items-center w-full">
+                                <span className="text-[9px] text-zinc-500 mb-1">В деньгах вы недополучаете:</span>
+                                <div className="text-2xl font-cinzel font-bold text-red-600 text-glow-red opacity-90 whitespace-nowrap overflow-hidden text-ellipsis w-full">
+                                    {formatCurrency(lostProfit)}
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -639,7 +765,7 @@ const BusinessView = ({ setMode, bizParams, setBizParams }) => {
                         onClick={handleAI} 
                         className="w-full bg-emerald-600 text-black font-cinzel font-black text-xs py-4 uppercase tracking-[0.2em] hover:bg-emerald-500 transition-all hover:shadow-[0_0_30px_rgba(16,185,129,0.3)] active:scale-[0.98]"
                     >
-                          ЗАПУСТИТЬ ПРОТОКОЛ
+                          ПРЕКРАТИТЬ УТЕЧКУ ПРОДАЖ
                     </button>
                 </div>
             </div>

@@ -49,46 +49,24 @@ const callOpenAIAPI = async (prompt, history = []) => {
 // --- VISUAL COMPONENTS ---
 
 const ScalesBackground = () => (
-  <div className="fixed inset-0 z-0 bg-black overflow-hidden flex items-center justify-center">
-    <style>
-      {`
-        @keyframes grid-move {
-          0% { background-position: 0 0; }
-          100% { background-position: 50px 50px; }
-        }
-        @keyframes pulse-glow {
-          0%, 100% { opacity: 0.15; transform: scale(1); }
-          50% { opacity: 0.3; transform: scale(1.1); }
-        }
-      `}
-    </style>
-    
-    {/* Пульсирующее ядро в центре */}
-    <div className="absolute w-[800px] h-[800px] bg-emerald-600/10 blur-[150px] rounded-full pointer-events-none animate-[pulse-glow_6s_infinite_ease-in-out]"></div>
-
-    {/* Основная движущаяся сетка */}
+  <div className="fixed inset-0 z-0 bg-[#050505] overflow-hidden flex items-center justify-center">
+    {/* Реалистичная текстура змеиной кожи на фоне */}
     <div 
-        className="absolute inset-0"
+        className="absolute inset-0 opacity-40"
         style={{
-            backgroundImage: `
-                linear-gradient(to right, rgba(16, 185, 129, 0.15) 1px, transparent 1px),
-                linear-gradient(to bottom, rgba(16, 185, 129, 0.15) 1px, transparent 1px)
-            `,
-            backgroundSize: '50px 50px',
-            // Маска концентрирует сетку в центре, края уходят в полную черноту
-            maskImage: 'radial-gradient(circle at 50% 50%, black 0%, transparent 70%)',
-            WebkitMaskImage: 'radial-gradient(circle at 50% 50%, black 0%, transparent 70%)',
-            animation: 'grid-move 20s linear infinite'
+            backgroundImage: `url('https://images.unsplash.com/photo-1533748293994-683a4c44238e?q=80&w=2670&auto=format&fit=crop')`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            // Делаем текстуру темной, зеленоватой и контрастной
+            filter: 'contrast(1.4) brightness(0.3) sepia(0.5) hue-rotate(90deg) saturate(1.5)',
         }}
     ></div>
     
-    {/* Второй слой мелких деталей для глубины */}
-    <div className="absolute inset-0 pointer-events-none" style={{
-        backgroundImage: 'radial-gradient(rgba(52, 211, 153, 0.2) 1px, transparent 1px)',
-        backgroundSize: '30px 30px',
-        maskImage: 'radial-gradient(circle at 50% 50%, black 0%, transparent 50%)',
-        WebkitMaskImage: 'radial-gradient(circle at 50% 50%, black 0%, transparent 50%)',
-    }}></div>
+    {/* Легкий эффект дыхания (пульсация света) */}
+    <div className="absolute inset-0 bg-emerald-900/10 mix-blend-overlay animate-[pulse_8s_infinite]"></div>
+
+    {/* Виньетка, чтобы края уходили в полную темноту, а центр был подсвечен */}
+    <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_20%,#000000_100%)]"></div>
   </div>
 );
 

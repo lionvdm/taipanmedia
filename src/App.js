@@ -8,7 +8,7 @@ import {
   Zap, ShieldCheck, Play, ArrowUpRight, Percent, AlertTriangle,
   Scale, ArrowLeft, ShoppingCart, Rocket, Quote, Eye, Crown, Sword,
   Hammer, UserPlus, Info, ImageIcon, Smartphone, ExternalLink, Star,
-  Menu, Search, Plus, Minus
+  Menu, Search, Plus, Minus, Heart
 } from 'lucide-react';
 
 // --- STYLES & FONTS ---
@@ -106,113 +106,46 @@ const formatCurrency = (val) => {
   return new Intl.NumberFormat('ru-RU').format(Math.floor(val)) + '\u00A0₸';
 };
 
-// --- DEMO STORE COMPONENT (Telegram Mini App Simulator) ---
-const DemoStore = ({ onClose }) => {
-  const [activeTab, setActiveTab] = useState('menu');
-  const [cart, setCart] = useState({});
-  const [notification, setNotification] = useState(null);
-
-  const products = [
-    { id: 1, name: "Набор 'Шеф-Повар'", price: 24000, img: "🍳", desc: "Кастрюля 5л + Сковорода" },
-    { id: 2, name: "Сковорода WOK", price: 12500, img: "🥘", desc: "Антипригарное покрытие" },
-    { id: 3, name: "Ножи 'Самурай'", price: 8900, img: "🔪", desc: "Японская сталь, 3 шт." },
-    { id: 4, name: "Чайник Vintage", price: 15000, img: "🫖", desc: "Эмаль, свисток, 3л" },
-  ];
-
-  const addToCart = (id) => {
-    setCart(prev => ({ ...prev, [id]: (prev[id] || 0) + 1 }));
-    showNotification("Добавлено в корзину");
-  };
-
-  const showNotification = (text) => {
-    setNotification(text);
-    setTimeout(() => setNotification(null), 2000);
-  };
-
-  const cartTotal = Object.entries(cart).reduce((sum, [id, qty]) => {
-    const product = products.find(p => p.id === parseInt(id));
-    return sum + (product ? product.price * qty : 0);
-  }, 0);
-
-  const cartCount = Object.values(cart).reduce((a, b) => a + b, 0);
-
+// --- PROJECT GALLERY COMPONENT ---
+const ProjectGallery = ({ onClose }) => {
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-300">
-      <div className="w-full max-w-sm bg-[#1c1c1e] h-[80vh] rounded-[30px] overflow-hidden flex flex-col shadow-2xl relative border border-zinc-700">
+    <div className="fixed inset-0 z-[70] flex flex-col bg-black/95 backdrop-blur-xl animate-in fade-in duration-300 overflow-y-auto">
+        {/* Header with Close Button */}
+        <div className="sticky top-0 z-50 px-4 py-4 flex justify-between items-center bg-black/80 border-b border-zinc-800 backdrop-blur-md">
+             <span className="text-white font-cinzel font-bold text-sm tracking-widest">Проект Romantic</span>
+             <button onClick={onClose} className="p-2 bg-zinc-900 rounded-full text-zinc-400 hover:text-white border border-zinc-800 transition-colors">
+                <X size={20} />
+             </button>
+        </div>
         
-        {/* Fake Status Bar */}
-        <div className="h-10 bg-[#1c1c1e] flex items-end justify-between px-6 pb-2 text-white text-xs select-none">
-           <span>9:41</span>
-           <div className="flex gap-1.5">
-             <div className="w-4 h-2.5 bg-white rounded-sm"></div>
-             <div className="w-0.5 h-2.5 bg-white/30 rounded-sm"></div>
-           </div>
-        </div>
-
-        {/* Header */}
-        <div className="bg-[#1c1c1e] p-4 flex items-center justify-between border-b border-white/10 relative z-10">
-           <div className="flex items-center gap-3">
-              <button onClick={onClose} className="text-[#007aff] font-inter text-base">Закрыть</button>
-           </div>
-           <div className="font-inter font-semibold text-white">Kastrylka Bot</div>
-           <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center text-white text-xs font-bold">...</div>
-        </div>
-
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto bg-black text-white p-4 font-inter relative">
-           
-           {/* Notification */}
-           {notification && (
-             <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-emerald-500 text-white px-4 py-2 rounded-full text-xs font-medium shadow-lg animate-in slide-in-from-top-5 fade-in duration-300 z-50">
-               {notification}
+        {/* Scrollable Content */}
+        <div className="flex-1 p-4 md:p-8 flex flex-col md:flex-row gap-6 items-center justify-center min-h-0">
+             <div className="relative group w-full max-w-md md:w-1/2">
+                <div className="absolute inset-0 bg-emerald-500/10 blur-2xl rounded-full opacity-20 group-hover:opacity-40 transition-opacity"></div>
+                <img 
+                    src="https://i.ibb.co.com/XrZ5NWf9/5418267021511692476-1.jpg" 
+                    alt="Скриншот проекта 1" 
+                    className="relative z-10 w-full h-auto rounded-2xl border border-zinc-800 shadow-2xl"
+                />
              </div>
-           )}
-
-           {/* Stories / Banners */}
-           <div className="flex gap-3 overflow-x-auto pb-4 mb-2 no-scrollbar">
-              <div className="w-24 h-32 bg-gradient-to-br from-emerald-500 to-teal-700 rounded-xl flex-shrink-0 flex items-end p-2 text-xs font-bold">Скидки</div>
-              <div className="w-24 h-32 bg-gradient-to-br from-purple-500 to-indigo-700 rounded-xl flex-shrink-0 flex items-end p-2 text-xs font-bold">Новинки</div>
-              <div className="w-24 h-32 bg-gradient-to-br from-orange-500 to-red-700 rounded-xl flex-shrink-0 flex items-end p-2 text-xs font-bold">Хиты</div>
-           </div>
-
-           <h2 className="text-xl font-bold mb-4">Популярное</h2>
-           
-           <div className="grid grid-cols-2 gap-3 pb-20">
-              {products.map(p => (
-                <div key={p.id} className="bg-[#1c1c1e] rounded-xl p-3 flex flex-col gap-2">
-                   <div className="w-full aspect-square bg-zinc-800 rounded-lg flex items-center justify-center text-4xl">
-                      {p.img}
-                   </div>
-                   <div className="text-sm font-semibold">{p.name}</div>
-                   <div className="text-[10px] text-zinc-400">{p.desc}</div>
-                   <div className="mt-auto flex justify-between items-center">
-                      <div className="text-emerald-400 font-bold text-sm">{p.price.toLocaleString()} ₸</div>
-                      <button 
-                        onClick={() => addToCart(p.id)}
-                        className="w-7 h-7 bg-[#007aff] rounded-full flex items-center justify-center text-white hover:bg-blue-500 active:scale-90 transition-all"
-                      >
-                        <Plus size={16} />
-                      </button>
-                   </div>
-                </div>
-              ))}
-           </div>
+             
+             <div className="relative group w-full max-w-md md:w-1/2">
+                <div className="absolute inset-0 bg-purple-500/10 blur-2xl rounded-full opacity-20 group-hover:opacity-40 transition-opacity"></div>
+                <img 
+                    src="https://i.ibb.co.com/WppgK3t5/5418267021511692477.jpg" 
+                    alt="Скриншот проекта 2" 
+                    className="relative z-10 w-full h-auto rounded-2xl border border-zinc-800 shadow-2xl"
+                />
+             </div>
         </div>
-
-        {/* Main Button (Telegram Style) */}
-        {cartCount > 0 && (
-           <div className="absolute bottom-4 left-4 right-4 animate-in slide-in-from-bottom-10 duration-300">
-              <button className="w-full bg-[#007aff] text-white font-inter font-semibold py-3 rounded-xl flex justify-between px-4 active:scale-[0.98] transition-transform shadow-lg shadow-blue-900/20">
-                 <span>Оформить заказ</span>
-                 <span>{cartTotal.toLocaleString()} ₸</span>
-              </button>
-           </div>
-        )}
-
-      </div>
+        
+        <div className="p-6 text-center text-zinc-500 text-xs font-montserrat uppercase tracking-widest pb-10">
+            Реальный интерфейс магазина
+        </div>
     </div>
   );
 };
+
 
 // --- VISUAL COMPONENTS ---
 
@@ -584,6 +517,8 @@ const BusinessView = ({ setMode, bizParams, setBizParams, onOpenChat }) => {
   const [slideIndex, setSlideIndex] = useState(0);
   const [slidePhase, setSlidePhase] = useState('in'); // in, visible, out
   const [showDemo, setShowDemo] = useState(false);
+  const [selectedFeature, setSelectedFeature] = useState(null); // New state for modal
+  const [showProjectScreenshots, setShowProjectScreenshots] = useState(false);
 
   const traffic = Number(bizParams.users) || 0;
   const currentConvRate = Number(bizParams.currentConversion) || 0;
@@ -611,6 +546,34 @@ const BusinessView = ({ setMode, bizParams, setBizParams, onOpenChat }) => {
     "https://placehold.co/400x300/000000/10B981?text=Конверсия+Инфо", // Картинка для Конверсии
     "https://placehold.co/400x300/000000/10B981?text=Средний+Чек", // Картинка для Среднего чека
     "https://placehold.co/400x300/000000/10B981?text=Маржа+Инфо"  // Картинка для Маржи
+  ];
+
+  // Feature Data
+  const features = [
+      {
+          id: 1,
+          icon: BrainCircuit,
+          title: "ИИ-алгоритмы чека",
+          shortDesc: "Система анализирует корзину и предлагает 'С этим покупают'. Рост среднего чека на 20–30% без участия менеджера.",
+          fullTitle: "Технологии Amazon и Wildberries теперь в вашем приложении",
+          fullDesc: "Встроенный ИИ анализирует корзину клиента и мгновенно предлагает товары, которые покупают с этим чаще всего.\n\nТочное попадание: Рекомендации на основе реального опыта тысяч пользователей.\n\nПолная автоматизация: Система продает сама, без участия менеджеров.\n\nРост прибыли: Средний чек увеличивается до 30%"
+      },
+      {
+          id: 2,
+          icon: BellRing,
+          title: "Бесплатный ретаргетинг",
+          shortDesc: "Привлечение клиента стоит дорого, но 70% уходят без покупки. Мы превращаем эти потери в вашу прибыль.", // Simplified for card
+          fullTitle: "Бесплатные рассылки всем клиентам",
+          fullDesc: "Привлечение клиента стоит дорого, но 70% уходят без покупки. Мы превращаем эти потери в вашу прибыль с помощью автоматических сценариев в Telegram.\n\n• Возврат «брошенных» корзин: ИИ мягко напоминает клиенту о товаре и закрывает сделку.\n• Повторные продажи: Система сама прогревает базу акциями и новинками, превращая разовых покупателей в постоянных.\n• Работа на автопилоте: Вы один раз подключаете уведомления, а они «дожимают» продажи 24/7."
+      },
+      {
+          id: 3,
+          icon: CreditCard,
+          title: "Автономная касса 24/7",
+          shortDesc: "Магазин на автопилоте: продажи без вашего участия 24/7. Забудьте о ручных продажах в Direct. Система сама ведет клиента от выбора товара до оплаты, пока вы отдыхаете.", // Simplified for card
+          fullTitle: "Продажи без вашего участия 24/7",
+          fullDesc: "Забудьте о ручных продажах в Direct. Система сама ведет клиента от выбора товара до оплаты, пока вы отдыхаете.\n\n• Автоплатежи: Мгновенная оплата через Robokassa или счет в Kaspi. Без реквизитов в чатах и ожидания подтверждения.\n• Мгновенные уведомления: Информация о заказе падает сразу в Telegram. Всё под контролем без лишних переписок.\n• Работа на результат: Вы просыпаетесь с деньгами на счету, а не с горой неотвеченных сообщений"
+      }
   ];
 
   // Data with annotations
@@ -645,12 +608,12 @@ const BusinessView = ({ setMode, bizParams, setBizParams, onOpenChat }) => {
     },
   ];
 
-  const analysisSlides = [
+  const slides = [
       {
           title: "УТЕЧКА ТРАФИКА",
           val: `${lostPercent.toFixed(0)}%`,
           sub: "Посетителей уходят без покупки",
-          desc: "«Вы платите за 100% трафика, но 70% ваших денег сгорает в Direct из-за \"человеческого фактора\"»",
+          desc: `«Вы платите за 100% трафика, но ${lostPercent.toFixed(0)}% ваших денег сгорает в Direct из-за "человеческого фактора"»`,
           color: "text-red-600",
           glow: "text-glow-red"
       },
@@ -680,38 +643,9 @@ const BusinessView = ({ setMode, bizParams, setBizParams, onOpenChat }) => {
       }
   ];
 
-  const solutionSlides = [
-      {
-          title: "ИИ-АЛГОРИТМЫ",
-          val: "+30%",
-          sub: "К СРЕДНЕМУ ЧЕКУ",
-          desc: "Система сама анализирует товары и предлагает блоки «С этим покупают». Рост выручки без участия менеджера и затрат на трафик.",
-          color: "text-purple-400",
-          glow: "text-glow"
-      },
-      {
-          title: "БЕСПЛАТНЫЙ РЕТАРГЕТИНГ",
-          val: "90%",
-          sub: "OPEN RATE РАССЫЛОК",
-          desc: "Убийца платной рекламы. Умные уведомления приходят прямо в личку, превращая разовую покупку в LTV (пожизненную ценность).",
-          color: "text-emerald-400",
-          glow: "text-glow"
-      },
-      {
-          title: "АВТОНОМНАЯ КАССА",
-          val: "24/7",
-          sub: "БИЗНЕС В КАРМАНЕ",
-          desc: "Интеграция с платежами и доступ в 2 клика. Магазин продает, пока вы спите. Никакого ожидания в Direct и «человеческого фактора».",
-          color: "text-emerald-400",
-          glow: "text-glow"
-      }
-  ];
-
-  const allSlides = [...analysisSlides, ...solutionSlides];
-
   useEffect(() => {
     if (analysisState === 'result') {
-      if (slideIndex < allSlides.length - 1) {
+      if (slideIndex < slides.length - 1) {
          setSlidePhase('in');
          
          const hideTimer = setTimeout(() => {
@@ -728,9 +662,124 @@ const BusinessView = ({ setMode, bizParams, setBizParams, onOpenChat }) => {
          setSlidePhase('in');
       }
     }
-  }, [analysisState, slideIndex, allSlides.length]);
+  }, [analysisState, slideIndex, slides.length]);
 
-  // Show Demo Store Modal
+  if (analysisState === 'presentation') {
+      return (
+        <div className="flex flex-col h-screen bg-black text-white font-montserrat overflow-y-auto relative w-full">
+            <GlobalStyles />
+            <ScalesBackground />
+            
+            <div className="sticky top-0 z-40 px-4 py-3 bg-black/80 backdrop-blur-xl flex justify-between items-center border-b border-zinc-900">
+                <button onClick={() => setAnalysisState('input')} className="w-8 h-8 flex items-center justify-center hover:text-emerald-500 transition-colors">
+                    <X size={20}/>
+                </button>
+                <span className="text-[10px] font-bold tracking-[0.2em] text-emerald-500 uppercase animate-pulse font-cinzel">
+                    Презентация
+                </span>
+                <div className="w-8"></div>
+            </div>
+
+            <div className="relative z-10 p-6 max-w-lg mx-auto w-full flex flex-col space-y-8 pb-32 animate-in slide-in-from-bottom-10 fade-in duration-700">
+                
+                <div className="text-center space-y-4">
+                    <div className="w-20 h-20 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto border border-emerald-500/50 shadow-[0_0_30px_rgba(16,185,129,0.2)]">
+                        <ShoppingBag size={32} className="text-emerald-400" />
+                    </div>
+                    <h2 className="text-2xl font-cinzel font-black tracking-wide text-white leading-tight">
+                        МАГАЗИН БУДУЩЕГО<br/>
+                        <span className="text-emerald-500 text-glow">В TELEGRAM</span>
+                    </h2>
+                    <p className="text-zinc-400 text-xs font-montserrat leading-relaxed max-w-xs mx-auto">
+                        Забудьте о сложных сайтах. Мы переносим весь ритейл в мессенджер #1.
+                    </p>
+                </div>
+
+                <div className="space-y-4">
+                    {features.map((feature) => (
+                        <button 
+                            key={feature.id}
+                            onClick={() => setSelectedFeature(feature)}
+                            className="w-full bg-zinc-900/40 border border-zinc-800 p-5 backdrop-blur-sm hover:border-emerald-500/30 transition-all duration-300 group text-left active:scale-[0.98]"
+                        >
+                            <div className="flex items-start gap-4">
+                                <div className="w-10 h-10 bg-zinc-950 rounded-lg flex items-center justify-center shrink-0 border border-zinc-800 group-hover:border-emerald-500/50 transition-colors">
+                                    <feature.icon size={20} className="text-emerald-500" />
+                                </div>
+                                <div>
+                                    <h3 className="font-cinzel font-bold text-white text-sm mb-1 group-hover:text-emerald-400 transition-colors">{feature.title}</h3>
+                                    <p className="text-zinc-400 text-[10px] leading-relaxed">
+                                        {feature.shortDesc}
+                                    </p>
+                                </div>
+                                <div className="ml-auto self-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <Info size={16} className="text-zinc-500" />
+                                </div>
+                            </div>
+                        </button>
+                    ))}
+                </div>
+
+                <button 
+                    onClick={() => setAnalysisState('reviews')}
+                    className="w-full bg-white text-black font-cinzel font-black py-4 uppercase tracking-[0.2em] hover:bg-emerald-400 transition-all active:scale-[0.98] text-xs shadow-[0_0_30px_rgba(255,255,255,0.1)]"
+                >
+                    Наши клиенты
+                </button>
+
+            </div>
+
+            {/* FEATURE DETAIL MODAL */}
+            {selectedFeature && (
+                <div className="fixed inset-0 z-[60] bg-black/90 backdrop-blur-md flex items-center justify-center p-6 animate-in fade-in duration-200">
+                    <div className="w-full max-w-sm bg-zinc-900 border border-emerald-500/30 p-6 rounded-2xl relative shadow-[0_0_50px_rgba(16,185,129,0.1)] animate-in zoom-in-95 duration-300">
+                        <button 
+                            onClick={() => setSelectedFeature(null)}
+                            className="absolute top-4 right-4 text-zinc-500 hover:text-white transition-colors"
+                        >
+                            <X size={24} />
+                        </button>
+                        
+                        <div className="w-12 h-12 bg-emerald-900/30 rounded-full flex items-center justify-center mb-4 border border-emerald-500/30">
+                            <selectedFeature.icon size={24} className="text-emerald-400" />
+                        </div>
+
+                        <h3 className="font-cinzel font-bold text-xl text-white mb-2">{selectedFeature.fullTitle}</h3>
+                        <p className="font-montserrat text-xs text-zinc-400 leading-relaxed mb-6 whitespace-pre-wrap">
+                            {selectedFeature.fullDesc}
+                        </p>
+
+                        <button 
+                            onClick={() => setSelectedFeature(null)}
+                            className="w-full bg-emerald-600 text-black font-cinzel font-bold py-3 text-xs uppercase tracking-wider hover:bg-emerald-500 transition-colors"
+                        >
+                            Понятно
+                        </button>
+                    </div>
+                </div>
+            )}
+        </div>
+      );
+  }
+
+  // Show Project Screenshots Modal
+  if (showProjectScreenshots) {
+    return (
+        <div className="fixed inset-0 z-[80] bg-black/95 backdrop-blur-xl flex flex-col p-4 animate-in fade-in duration-300 overflow-y-auto">
+             <div className="flex justify-end mb-4">
+                 <button onClick={() => setShowProjectScreenshots(false)} className="p-2 text-zinc-400 hover:text-white bg-zinc-900 rounded-full border border-zinc-800 transition-colors">
+                    <X size={24} />
+                 </button>
+             </div>
+             <div className="flex-1 flex flex-col md:flex-row gap-4 items-center justify-center pb-10">
+                 <img src="https://i.ibb.co.com/XrZ5NWf9/5418267021511692476-1.jpg" className="w-full md:w-[45%] rounded-xl shadow-2xl border border-zinc-800 object-contain" alt="Screen 1"/>
+                 <img src="https://i.ibb.co.com/WppgK3t5/5418267021511692477.jpg" className="w-full md:w-[45%] rounded-xl shadow-2xl border border-zinc-800 object-contain" alt="Screen 2"/>
+             </div>
+        </div>
+    );
+  }
+
+  // Show Demo Store Modal (kept for fallback)
   if (showDemo) {
     return (
         <div className="flex flex-col h-screen bg-black text-white font-montserrat overflow-y-auto relative w-full">
@@ -763,27 +812,36 @@ const BusinessView = ({ setMode, bizParams, setBizParams, onOpenChat }) => {
                     РЕАЛЬНЫЕ <span className="text-emerald-500 text-glow">РЕЗУЛЬТАТЫ</span>
                 </h2>
 
-                <div className="w-full bg-zinc-900/40 border border-zinc-800 p-2 backdrop-blur-md rounded-lg mb-8 relative group overflow-hidden hover:border-emerald-500/50 transition-all duration-300">
-                    <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/50 z-10"></div>
-                    {/* Updated with user provided screenshot */}
-                    <img 
-                        src="https://i.ibb.co.com/3mNHQCWd/Gemini-Generated-Image-71b25a71b25a71b2.png" 
-                        alt="Отзыв клиента" 
-                        className="w-full h-auto object-cover rounded opacity-90 group-hover:opacity-100 transition-opacity"
-                    />
-                    <div className="absolute bottom-3 right-3 z-20">
-                        <div className="bg-black/70 backdrop-blur-sm px-2 py-1 rounded border border-emerald-500/30 text-[9px] text-emerald-500 font-bold uppercase tracking-widest flex items-center gap-1">
-                            <Star size={10} fill="currentColor" />
-                            Проверено
+                {/* Updated review card content based on prompt */}
+                <div className="w-full bg-zinc-900/40 border border-zinc-800 p-6 backdrop-blur-md rounded-lg mb-8 relative overflow-hidden">
+                    <div className="flex items-center gap-3 mb-4">
+                        <img 
+                            src="https://i.ibb.co.com/6JnC7FFr/i.webp" 
+                            alt="Romantic Logo" 
+                            className="w-10 h-10 rounded-full object-cover border border-white/10"
+                        />
+                        <div>
+                            <div className="font-bold text-white text-sm">Romantic Shymkent</div>
+                            <div className="text-[10px] text-pink-500 font-bold uppercase tracking-widest">Telegram-магазин цветов</div>
                         </div>
+                    </div>
+                    <p className="text-zinc-300 text-xs leading-relaxed italic mb-4">
+                        "Процесс покупки цветов стал проще, клиенты перестали ждать пока менеджеры отправят фото букетов, и просто выбирали цветы в каталоге.
+                        <br/><br/>
+                        Умные алгоритмы стали сами предлагать к букетам мягкие игрушки, бенто-торты и шары, благодаря чему средний чек стал выше."
+                    </p>
+                    <div className="h-px w-full bg-zinc-800 mb-4"></div>
+                    <div className="flex justify-between items-center text-[10px] text-zinc-500 uppercase tracking-widest">
+                        <span>Рост доп. продаж:</span>
+                        <span className="text-white font-bold text-emerald-400">+42%</span>
                     </div>
                 </div>
 
                 <button 
-                    onClick={() => setShowDemo(true)}
+                    onClick={() => setShowProjectScreenshots(true)}
                     className="w-full bg-white text-black font-cinzel font-black py-4 uppercase tracking-[0.2em] hover:bg-emerald-400 transition-all active:scale-[0.98] text-xs flex items-center justify-center gap-2 group text-center shadow-[0_0_30px_rgba(255,255,255,0.1)] hover:shadow-[0_0_40px_rgba(16,185,129,0.3)] rounded-sm"
                 >
-                    Смотреть живой проект
+                    Посмотреть проект
                     <ExternalLink size={14} className="group-hover:translate-x-1 transition-transform" />
                 </button>
 
@@ -819,14 +877,13 @@ const BusinessView = ({ setMode, bizParams, setBizParams, onOpenChat }) => {
   }
 
   if (analysisState === 'result') {
-      const slide = allSlides[slideIndex];
-      const isLast = slideIndex === allSlides.length - 1;
+      const slide = slides[slideIndex];
+      const isLast = slideIndex === slides.length - 1;
 
       return (
         <div className="flex flex-col h-screen bg-black text-white font-montserrat overflow-y-auto relative w-full justify-center">
             <GlobalStyles />
             <ScalesBackground />
-            
             <div className="relative z-10 p-6 max-w-lg mx-auto w-full flex flex-col items-center">
                 
                 {/* Slide Content with Smoke Animation */}
@@ -859,10 +916,10 @@ const BusinessView = ({ setMode, bizParams, setBizParams, onOpenChat }) => {
                 {isLast && (
                     <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-500">
                         <button 
-                            onClick={() => setAnalysisState('reviews')}
+                            onClick={() => setAnalysisState('presentation')}
                             className="w-full bg-white text-black font-cinzel font-black py-4 uppercase tracking-[0.2em] hover:bg-emerald-400 transition-all active:scale-[0.98] text-xs flex items-center justify-center gap-2 group"
                         >
-                            Посмотреть примеры
+                            Узнать подробнее
                         </button>
                     </div>
                 )}

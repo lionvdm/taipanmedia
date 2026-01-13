@@ -46,12 +46,12 @@
             left: 0;
             width: 100%;
             height: 100%;
-            /* Снизил прозрачность, чтобы не резало глаза */
             opacity: 0.08; 
-            z-index: 0; /* Переместил под сетку */
+            z-index: 0; 
             mix-blend-mode: screen;
         }
 
+        /* Исправленный класс сетки (удалены дубликаты) */
         .tech-grid {
             position: absolute;
             inset: 0;
@@ -62,33 +62,7 @@
             mask-image: radial-gradient(circle at 50% 30%, black 30%, transparent 100%);
             -webkit-mask-image: radial-gradient(circle at 50% 30%, black 30%, transparent 100%);
             pointer-events: none;
-            z-index: 1; /* Сетка теперь выше матрицы */
-        }
-
-        .tech-grid {
-            position: absolute;
-            inset: 0;
-            background-image: 
-                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-            background-size: 50px 50px;
-            mask-image: radial-gradient(circle at 50% 30%, black 30%, transparent 100%);
-            -webkit-mask-image: radial-gradient(circle at 50% 30%, black 30%, transparent 100%);
-            pointer-events: none;
-            z-index: 0; /* Опустил ниже матрицы */
-        }
-
-        .tech-grid {
-            position: absolute;
-            inset: 0;
-            background-image: 
-                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-            background-size: 50px 50px;
-            mask-image: radial-gradient(circle at 50% 30%, black 30%, transparent 100%);
-            -webkit-mask-image: radial-gradient(circle at 50% 30%, black 30%, transparent 100%);
-            pointer-events: none;
-            z-index: 1; /* Above matrix */
+            z-index: 1; /* Сетка поверх матрицы */
         }
 
         .tech-glow {
@@ -410,7 +384,7 @@
         let width = canvas.width = window.innerWidth;
         let height = canvas.height = window.innerHeight;
 
-        const columns = Math.floor(width / 20); 
+        let columns = Math.floor(width / 20); 
         const drops = [];
 
         // Initialize drops
@@ -442,9 +416,21 @@
             }
         }
 
+        // Handle resize properly
         window.addEventListener('resize', () => {
             width = canvas.width = window.innerWidth;
             height = canvas.height = window.innerHeight;
+            
+            // Re-calculate columns
+            const newColumns = Math.floor(width / 20);
+            
+            // If new columns are more, fill drops array
+            if (newColumns > columns) {
+                for (let i = columns; i < newColumns; i++) {
+                    drops[i] = Math.random() * -100;
+                }
+            }
+            columns = newColumns;
         });
 
         setInterval(drawMatrix, 50);

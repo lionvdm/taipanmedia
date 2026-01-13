@@ -1,1120 +1,454 @@
-import React, { useState, useEffect, useRef } from 'react';
-import {
-  Briefcase, Code, ChevronRight, ArrowRight, Activity, Lock, 
-  CreditCard, Users, TrendingUp, PieChart, Coins, RefreshCcw, 
-  ShoppingBag, Check, FileText, BarChart3, BellRing, X, 
-  Calculator, Sparkles, Bot, BrainCircuit, MessageSquare, 
-  Send, Loader2, ArrowDownRight, Terminal, Cpu, Palette, 
-  Zap, ShieldCheck, Play, ArrowUpRight, Percent, AlertTriangle,
-  Scale, ArrowLeft, ShoppingCart, Rocket, Quote, Eye, Crown, Sword,
-  Hammer, UserPlus, Info, ImageIcon, Smartphone, ExternalLink, Star,
-  Menu, Search, Plus, Minus, Heart
-} from 'lucide-react';
-
-// --- STYLES & FONTS ---
-const GlobalStyles = () => (
-  <style>{`
-    @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700;800;900&family=Montserrat:wght@200;300;400;500;600;700;800&display=swap');
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Taipan Media | Elite</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Fonts: Marcellus (Luxury Serif) and Outfit (Premium Sans) -->
+    <link href="https://fonts.googleapis.com/css2?family=Marcellus&family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
     
-    .font-cinzel { font-family: 'Cinzel', serif; }
-    .font-montserrat { font-family: 'Montserrat', sans-serif; }
-    .font-inter { font-family: 'Inter', sans-serif; }
-    
-    .text-glow { text-shadow: 0 0 20px rgba(16, 185, 129, 0.5); }
-    .text-glow-red { text-shadow: 0 0 20px rgba(220, 38, 38, 0.4); }
-    
-    .animate-shimmer {
-      background: linear-gradient(to right, transparent 0%, rgba(255,255,255,0.1) 50%, transparent 100%);
-      background-size: 200% 100%;
-      animation: shimmer 3s infinite linear;
-    }
-    
-    @keyframes shimmer {
-      from { background-position: 200% 0; }
-      to { background-position: -200% 0; }
-    }
+    <style>
+        :root {
+            /* Premium Neon Emerald */
+            --taipan-emerald: #00FF9D; 
+            --taipan-dark: #050505;
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --glass-bg: rgba(10, 10, 10, 0.6);
+        }
 
-    @keyframes green-pulse {
-      0%, 100% { 
-        text-shadow: 
-          0 0 5px rgba(16, 185, 129, 0.5),
-          0 0 10px rgba(16, 185, 129, 0.3);
-      }
-      50% { 
-        text-shadow: 
-          0 0 15px rgba(16, 185, 129, 0.8),
-          0 0 25px rgba(16, 185, 129, 0.5);
-      }
-    }
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--taipan-dark);
+            color: #ffffff;
+            overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
 
-    /* Smoke Effects */
-    @keyframes smoke-enter {
-      0% { opacity: 0; filter: blur(15px); transform: scale(0.9) translateY(10px); }
-      100% { opacity: 1; filter: blur(0); transform: scale(1) translateY(0); }
-    }
-    @keyframes smoke-exit {
-      0% { opacity: 1; filter: blur(0); transform: scale(1) translateY(0); }
-      100% { opacity: 0; filter: blur(20px); transform: scale(1.1) translateY(-20px); }
-    }
-    
-    .smoke-enter { animation: smoke-enter 1.2s ease-out forwards; }
-    .smoke-exit { animation: smoke-exit 1s ease-in forwards; }
+        h1, h2, h3, .font-display {
+            font-family: 'Marcellus', serif;
+            letter-spacing: 0.05em;
+        }
 
-    /* Number Pulse Effect */
-    @keyframes num-pulse {
-      0%, 100% { transform: scale(1); opacity: 1; }
-      50% { transform: scale(1.05); opacity: 0.9; }
-    }
-    
-    .animate-num-pulse {
-      animation: num-pulse 2s ease-in-out infinite;
-      display: inline-block;
-    }
+        /* --- TECH BACKGROUND --- */
+        .tech-bg {
+            position: fixed;
+            inset: 0;
+            background-color: #020202;
+            z-index: -2;
+            overflow: hidden;
+        }
 
-    .emerald-pulse-glow {
-      color: #ffffff;
-      animation: green-pulse 3s ease-in-out infinite;
-    }
+        #matrixCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            /* Снизил прозрачность, чтобы не резало глаза */
+            opacity: 0.08; 
+            z-index: 0; /* Переместил под сетку */
+            mix-blend-mode: screen;
+        }
 
-    /* Glass Panel */
-    .glass-panel {
-      background: rgba(0, 0, 0, 0.6);
-      backdrop-filter: blur(12px);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-    }
+        .tech-grid {
+            position: absolute;
+            inset: 0;
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            mask-image: radial-gradient(circle at 50% 30%, black 30%, transparent 100%);
+            -webkit-mask-image: radial-gradient(circle at 50% 30%, black 30%, transparent 100%);
+            pointer-events: none;
+            z-index: 1; /* Сетка теперь выше матрицы */
+        }
 
-    /* Mobile scrollbar adjustments */
-    ::-webkit-scrollbar { width: 4px; }
-    ::-webkit-scrollbar-track { background: #000; }
-    ::-webkit-scrollbar-thumb { background: #064e3b; border-radius: 2px; }
+        .tech-grid {
+            position: absolute;
+            inset: 0;
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            mask-image: radial-gradient(circle at 50% 30%, black 30%, transparent 100%);
+            -webkit-mask-image: radial-gradient(circle at 50% 30%, black 30%, transparent 100%);
+            pointer-events: none;
+            z-index: 0; /* Опустил ниже матрицы */
+        }
 
-    /* Hide number input spinners */
-    input[type=number]::-webkit-inner-spin-button, 
-    input[type=number]::-webkit-outer-spin-button { 
-      -webkit-appearance: none; 
-      margin: 0; 
-    }
-  `}</style>
-);
+        .tech-grid {
+            position: absolute;
+            inset: 0;
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            mask-image: radial-gradient(circle at 50% 30%, black 30%, transparent 100%);
+            -webkit-mask-image: radial-gradient(circle at 50% 30%, black 30%, transparent 100%);
+            pointer-events: none;
+            z-index: 1; /* Above matrix */
+        }
 
-// --- UTILS ---
+        .tech-glow {
+            position: absolute;
+            top: -100px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 600px;
+            height: 400px;
+            background: radial-gradient(ellipse at center, rgba(0, 255, 157, 0.15) 0%, transparent 70%);
+            filter: blur(80px);
+            pointer-events: none;
+            z-index: 2;
+        }
 
-const formatCurrency = (val) => {
-  if (!val && val !== 0) return '0\u00A0₸';
-  return new Intl.NumberFormat('ru-RU').format(Math.floor(val)) + '\u00A0₸';
-};
+        .scanline {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom, transparent 0%, rgba(0, 255, 157, 0.03) 50%, transparent 100%);
+            background-size: 100% 200%;
+            animation: scan 8s linear infinite;
+            pointer-events: none;
+            z-index: 3;
+        }
 
-// --- PROJECT GALLERY COMPONENT ---
-const ProjectGallery = ({ onClose }) => {
-  return (
-    <div className="fixed inset-0 z-[70] flex flex-col bg-black/95 backdrop-blur-xl animate-in fade-in duration-300 overflow-y-auto">
-        {/* Header with Close Button */}
-        <div className="sticky top-0 z-50 px-4 py-4 flex justify-between items-center bg-black/80 border-b border-zinc-800 backdrop-blur-md">
-             <span className="text-white font-cinzel font-bold text-sm tracking-widest">Проект Romantic</span>
-             <button onClick={onClose} className="p-2 bg-zinc-900 rounded-full text-zinc-400 hover:text-white border border-zinc-800 transition-colors">
-                <X size={20} />
-             </button>
-        </div>
+        @keyframes scan {
+            0% { background-position: 0% -100%; }
+            100% { background-position: 0% 200%; }
+        }
+
+        /* Premium Glass Card */
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+            transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+            position: relative;
+            overflow: hidden;
+            z-index: 10;
+        }
+
+        .glass-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0, 255, 157, 0.05), transparent);
+            transition: 0.5s;
+        }
+
+        .glass-card:active::before, .glass-card:hover::before {
+            left: 100%;
+        }
+
+        .glass-card:active {
+            transform: scale(0.98);
+        }
+
+        /* Text Effects */
+        .text-metallic {
+            background: linear-gradient(180deg, #FFFFFF 0%, #D8D8D8 50%, #8E8E8E 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.8));
+            position: relative;
+            z-index: 10;
+        }
         
-        {/* Scrollable Content */}
-        <div className="flex-1 p-4 md:p-8 flex flex-col md:flex-row gap-6 items-center justify-center min-h-0">
-             <div className="relative group w-full max-w-md md:w-1/2">
-                <div className="absolute inset-0 bg-emerald-500/10 blur-2xl rounded-full opacity-20 group-hover:opacity-40 transition-opacity"></div>
-                <img 
-                    src="https://i.ibb.co.com/XrZ5NWf9/5418267021511692476-1.jpg" 
-                    alt="Скриншот проекта 1" 
-                    className="relative z-10 w-full h-auto rounded-2xl border border-zinc-800 shadow-2xl"
-                />
-             </div>
-             
-             <div className="relative group w-full max-w-md md:w-1/2">
-                <div className="absolute inset-0 bg-purple-500/10 blur-2xl rounded-full opacity-20 group-hover:opacity-40 transition-opacity"></div>
-                <img 
-                    src="https://i.ibb.co.com/WppgK3t5/5418267021511692477.jpg" 
-                    alt="Скриншот проекта 2" 
-                    className="relative z-10 w-full h-auto rounded-2xl border border-zinc-800 shadow-2xl"
-                />
-             </div>
-        </div>
+        /* EMERALD GLOW BEHIND Text */
+        .emerald-text {
+            position: relative;
+            display: inline-block;
+        }
         
-        <div className="p-6 text-center text-zinc-500 text-xs font-montserrat uppercase tracking-widest pb-10">
-            Реальный интерфейс магазина
-        </div>
-    </div>
-  );
-};
-
-
-// --- VISUAL COMPONENTS ---
-
-const ScalesBackground = () => (
-  <div className="fixed inset-0 z-0 bg-[#050505] overflow-hidden pointer-events-none">
-    {/* Texture */}
-    <div className="absolute inset-0 opacity-[0.05]" style={{
-        backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-    }}></div>
-    
-    {/* Glows */}
-    <div className="absolute top-[20%] left-[50%] -translate-x-1/2 w-[90%] h-[50%] bg-emerald-900/10 blur-[80px] rounded-full"></div>
-    <div className="absolute bottom-0 w-full h-[40%] bg-gradient-to-t from-black to-transparent"></div>
-    <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,transparent_0%,#000000_85%)]"></div>
-  </div>
-);
-
-const TerminalSplash = ({ onComplete }) => {
-  const [lines, setLines] = useState([]);
-  useEffect(() => {
-    const sequence = [
-      { text: "INIT PREDATOR PROTOCOL...", delay: 200 },
-      { text: "LOADING VENOM...", delay: 800 },
-      { text: "TAIPAN MEDIA: READY.", delay: 1500, color: "text-emerald-500 font-bold text-glow" },
-    ];
-    let timeouts = [];
-    sequence.forEach(({ text, delay, color }, i) => {
-      const t = setTimeout(() => {
-        setLines(prev => [...prev, { text, color }]);
-        if (i === sequence.length - 1) setTimeout(onComplete, 800);
-      }, delay);
-      timeouts.push(t);
-    });
-    return () => timeouts.forEach(clearTimeout);
-  }, [onComplete]);
-
-  return (
-    <div className="fixed inset-0 bg-black z-[100] flex flex-col justify-center items-center p-6 font-cinzel text-xs tracking-[0.2em] uppercase">
-      <GlobalStyles />
-      <div className="w-full max-w-xs space-y-4">
-        {lines.map((line, i) => (
-          <div key={i} className={`flex items-center gap-3 ${line.color || "text-zinc-600"}`}>
-             <div className="w-1.5 h-1.5 bg-current rotate-45 shrink-0"></div>
-             {line.text}
-          </div>
-        ))}
-        <div className="h-px w-24 bg-emerald-900/50 mt-8 animate-pulse"></div>
-      </div>
-    </div>
-  );
-};
-
-// --- VIEWS ---
-
-const SelectView = ({ setMode }) => (
-  <div className="flex flex-col min-h-[100dvh] bg-black w-full overflow-y-auto">
-    <GlobalStyles />
-    <ScalesBackground />
-    <div className="relative z-10 flex-1 flex flex-col px-4 py-6 justify-center items-center w-full">
-      
-      {/* Header */}
-      <div className="mb-8 flex flex-col items-center w-full animate-in fade-in slide-in-from-top-10 duration-1000">
-        
-        {/* Crown Icon */}
-        <div className="flex items-center gap-3 mb-6 opacity-60">
-             <div className="h-px w-8 bg-gradient-to-r from-transparent to-emerald-500"></div>
-             <Crown size={16} className="text-emerald-500 drop-shadow-[0_0_10px_rgba(16,185,129,0.5)]" strokeWidth={1.5} />
-             <div className="h-px w-8 bg-gradient-to-l from-transparent to-emerald-500"></div>
-        </div>
-        
-        {/* TITLE */}
-        <h1 className="emerald-pulse-glow font-cinzel text-4xl md:text-6xl font-black tracking-[0.15em] leading-none mb-8 text-center select-none">
-           TAIPAN<br/>
-           <span className="text-white block mt-2">MEDIA</span>
-        </h1>
-
-        {/* MISSION STATEMENT CONTAINER */}
-        <div className="w-full relative glass-panel p-5 rounded-sm border-t border-b border-emerald-900/30">
-           {/* Decorative corners */}
-           <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-emerald-500/50"></div>
-           <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-emerald-500/50"></div>
-           <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-emerald-500/50"></div>
-           <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-emerald-500/50"></div>
-
-           <div className="flex flex-col items-center gap-5 text-center">
-               <p className="font-cinzel text-white text-sm tracking-[0.1em] font-bold text-glow leading-normal max-w-[280px]">
-                 МЫ СТРОИМ БИЗНЕС<br/>В TELEGRAM
-               </p>
-               
-               <div className="w-12 h-px bg-gradient-to-r from-transparent via-emerald-500/50 to-transparent"></div>
-
-               <div className="flex flex-col gap-4 w-full">
-                  <div className="flex flex-col items-center gap-1.5">
-                      <div className="w-8 h-8 rounded-full bg-emerald-900/20 flex items-center justify-center border border-emerald-500/20 mb-1">
-                        <Hammer size={14} className="text-emerald-400" />
-                      </div>
-                      <p className="font-montserrat text-zinc-300 text-[10px] tracking-[0.05em] uppercase font-medium leading-relaxed">
-                        <span className="text-emerald-500 font-bold block mb-0.5">Бизнесу</span>
-                        даем инструмент для сверхприбыли
-                      </p>
-                  </div>
-                  
-                  <div className="flex flex-col items-center gap-1.5">
-                      <div className="w-8 h-8 rounded-full bg-emerald-900/20 flex items-center justify-center border border-emerald-500/20 mb-1">
-                        <UserPlus size={14} className="text-emerald-400" />
-                      </div>
-                      <p className="font-montserrat text-zinc-300 text-[10px] tracking-[0.05em] uppercase font-medium leading-relaxed">
-                        <span className="text-emerald-500 font-bold block mb-0.5">Людям</span>
-                        даем профессию, чтобы этот инструмент внедрять
-                      </p>
-                  </div>
-               </div>
-           </div>
-        </div>
-      </div>
-      
-      {/* Cards - Compact touch targets */}
-      <div className="grid gap-3 w-full">
-        <button 
-            onClick={() => setMode('business')} 
-            className="group relative bg-zinc-950 border border-zinc-800 p-5 flex items-center gap-4 text-left transition-all duration-300 active:scale-[0.98] active:border-emerald-500/50 hover:bg-zinc-900"
-        >
-          <div className="absolute inset-0 bg-gradient-to-r from-emerald-900/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-          <div className="w-10 h-10 bg-zinc-900 rounded-full flex items-center justify-center shrink-0 border border-zinc-700 group-hover:border-emerald-500/50 transition-colors">
-             <Briefcase className="text-zinc-400 group-hover:text-emerald-400 transition-colors" size={18} strokeWidth={1.5} />
-          </div>
-          <div>
-             <h3 className="font-cinzel text-base font-bold text-white uppercase tracking-widest group-hover:text-emerald-400 transition-colors">Империя</h3>
-             <p className="font-montserrat text-zinc-500 text-[9px] uppercase tracking-widest">Масштабирование</p>
-          </div>
-          <ChevronRight className="ml-auto text-zinc-700 group-hover:text-emerald-500 transition-colors" size={18} />
-        </button>
-        
-        <button 
-            onClick={() => setMode('dev')} 
-            className="group relative bg-zinc-950 border border-zinc-800 p-5 flex items-center gap-4 text-left transition-all duration-300 active:scale-[0.98] active:border-emerald-500/50 hover:bg-zinc-900"
-        >
-          <div className="absolute inset-0 bg-gradient-to-r from-emerald-900/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-          <div className="w-10 h-10 bg-zinc-900 rounded-full flex items-center justify-center shrink-0 border border-zinc-700 group-hover:border-emerald-500/50 transition-colors">
-             <Code className="text-zinc-400 group-hover:text-emerald-400 transition-colors" size={18} strokeWidth={1.5} />
-          </div>
-          <div>
-             <h3 className="font-cinzel text-base font-bold text-white uppercase tracking-widest group-hover:text-emerald-400 transition-colors">Создатель</h3>
-             <p className="font-montserrat text-zinc-500 text-[9px] uppercase tracking-widest">Код • Эволюция</p>
-          </div>
-          <ChevronRight className="ml-auto text-zinc-700 group-hover:text-emerald-500 transition-colors" size={18} />
-        </button>
-      </div>
-    </div>
-  </div>
-);
-
-// --- NEW DEV VIEW LOGIC ---
-
-const BitcoinLogo = () => (
-  <svg viewBox="0 0 64 64" className="w-full h-full drop-shadow-[0_0_15px_rgba(255,215,0,0.5)]" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="32" cy="32" r="30" fill="#000" stroke="#FFD700" strokeWidth="1" />
-    <path fill="#FFD700" d="M44.5 25.8c.8-5.2-3.2-8-8.6-9.8l1.8-7-4.2-1-1.7 6.9c-1.1-.3-2.3-.5-3.4-.8l1.7-6.9-4.3-1-1.8 7.1c-.9-.2-1.8-.4-2.7-.6L19 12l-2.6 6.5s1.4.3 1.4.4c.8.2.9.6.9 1l-2.1 8.5c.1 0 .3.1.5.1-.1 0-.3 0-.4 0l-3 12c-.2.5-.7.6-1.5.4 0 0-1 .4-1 .4l-1.9 4.4 3.6.9c1 .2 2 .5 3 .8l-1.8 7.2 4.3 1 1.8-7.1c1.2.3 2.3.6 3.4.9l-1.8 7.2 4.3 1 1.8-7c7.3 1.4 12.8.8 15.1-5.8 1.9-5.3-1-8.4-4.5-10.4 3.2-.7 5.6-2.9 6.2-7.3zM37.8 40c-2 7.8-15.3 3.6-19.6 2.5l3.5-14c4.3 1.1 18.2 3.2 16.1 11.5zm1.7-16.6c-1.8 7.2-13.1 3.5-16.7 2.6l3.2-12.8c3.7.9 15.5 2.6 13.5 10.2z"/>
-  </svg>
-);
-
-const InstagramLogo = () => (
-  <svg viewBox="0 0 24 24" className="w-full h-full drop-shadow-xl grayscale hover:grayscale-0 transition-all">
-    <rect x="2" y="2" width="20" height="20" rx="6" ry="6" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-zinc-500" />
-    <path fill="none" stroke="currentColor" strokeWidth="1.5" d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" className="text-zinc-500"/>
-    <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" className="text-zinc-500"/>
-  </svg>
-);
-
-const WildberriesLogo = () => (
-  <div className="w-full h-full rounded-2xl bg-gradient-to-br from-[#cb11ab] to-[#481173] flex items-center justify-center shadow-lg relative group overflow-hidden">
-    <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity"></div>
-    <span className="font-sans font-black text-white text-2xl tracking-tighter">WB</span>
-  </div>
-);
-
-const KaspiLogo = () => (
-  <div className="w-full h-full rounded-2xl bg-[#f14635] flex items-center justify-center shadow-lg relative group overflow-hidden">
-    <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity"></div>
-    <span className="font-sans font-black text-white text-3xl">K</span>
-  </div>
-);
-
-const TelegramLogo = () => (
-  <div className="w-full h-full rounded-full flex items-center justify-center relative group">
-      <div className="absolute inset-0 bg-emerald-500 blur-[50px] opacity-20 group-hover:opacity-100 transition-opacity duration-200 animate-pulse"></div>
-      <div className="relative z-10 w-full h-full bg-black rounded-full flex items-center justify-center border border-emerald-500 shadow-[0_0_30px_#10b981]">
-        <svg viewBox="0 0 24 24" className="w-[50%] h-[50%] fill-emerald-500 translate-x-[-2px] translate-y-[1px]">
-            <path d="M22.2646 2.42743C22.569 2.27532 22.8837 2.47863 22.8021 2.81232L19.9814 16.5135C19.7997 17.4022 18.7381 17.7423 18.0673 17.126L14.155 13.9189L12.0622 15.9329C11.8396 16.1469 11.4787 15.9926 11.4924 15.6841L11.7509 11.2336C11.7766 10.7916 11.9687 10.3752 12.2852 10.076L17.7562 5.24432C18.0253 5.00676 17.697 4.60676 17.3879 4.80917L8.90367 10.1556C8.28335 10.5463 7.50293 10.5189 6.91037 10.2974L3.4563 9.00632C2.79379 8.75883 2.84687 7.80993 3.53569 7.63223L22.2646 2.42743Z"/>
-        </svg>
-      </div>
-  </div>
-);
-
-const DevView = ({ setMode }) => {
-  const [step, setStep] = useState(0);
-  const [fadeState, setFadeState] = useState('in');
-
-  const missedOpportunities = [
-    { 
-        year: '2009', 
-        title: 'Bitcoin', 
-        quote: 'Цифровые фантики. Игрушка для гиков.', 
-        logo: <div className="w-32 h-32 md:w-48 md:h-48"><BitcoinLogo /></div>,
-        isPositive: false
-    },
-    { 
-        year: '2012', 
-        title: 'Instagram', 
-        quote: 'Фото еды? В этом нет денег.', 
-        logo: <div className="w-32 h-32 md:w-48 md:h-48"><InstagramLogo /></div>,
-        isPositive: false
-    },
-    { 
-        year: '2019', 
-        title: 'Маркетплейсы', 
-        quote: 'Люди хотят щупать. Интернет не для продаж.', 
-        logo: (
-            <div className="flex gap-4 w-full h-full justify-center items-center">
-                 <div className="w-16 h-16 md:w-24 md:h-24"><WildberriesLogo /></div>
-                 <div className="w-16 h-16 md:w-24 md:h-24"><KaspiLogo /></div>
-            </div>
-        ),
-        isPositive: false
-    },
-    { 
-        year: '2026', 
-        title: 'ТЕЛЕГРАМ', 
-        quote: 'Экосистема нового мирового порядка. Твой ход.', 
-        logo: <div className="w-32 h-32 md:w-48 md:h-48 animate-pulse"><TelegramLogo /></div>,
-        isPositive: true 
-    },
-  ];
-
-  useEffect(() => {
-    if (step < 4) {
-      setFadeState('in');
-      const timerVisible = setTimeout(() => setFadeState('visible'), 500); 
-      const stayDuration = step === 3 ? 3500 : 3500; 
-      const timerOut = setTimeout(() => setFadeState('out'), 500 + stayDuration); 
-      const timerNext = setTimeout(() => {
-        setStep(prev => prev + 1);
-        setFadeState('in');
-      }, 500 + stayDuration + 1000); 
-      return () => { clearTimeout(timerVisible); clearTimeout(timerOut); clearTimeout(timerNext); };
-    }
-  }, [step]);
-
-  // --- FINAL SCREEN (STEP 4) ---
-  if (step === 4) {
-    return (
-      <div className="flex flex-col h-screen bg-black text-white overflow-hidden relative w-full font-montserrat">
-        <GlobalStyles />
-        <ScalesBackground />
-        
-        <div className="relative z-10 flex flex-col h-full p-4 animate-in zoom-in-95 duration-1000 fade-in w-full">
-           {/* Top Nav */}
-           <div className="flex justify-between items-center mb-6">
-              <button onClick={() => setMode('select')} className="w-10 h-10 bg-black border border-zinc-800 flex items-center justify-center hover:border-emerald-500 hover:text-emerald-500 transition-colors">
-                  <ArrowLeft size={18} />
-              </button>
-              <div className="px-3 py-1 border border-emerald-900/50 bg-emerald-950/20 text-[9px] font-bold text-emerald-500 uppercase tracking-[0.2em] backdrop-blur-sm font-cinzel">
-                  Система Активна
-              </div>
-           </div>
-
-           {/* Content */}
-           <div className="flex-1 flex flex-col justify-center items-center w-full text-center space-y-6">
-              <div className="space-y-4 flex flex-col items-center">
-                  <div className="relative inline-block group">
-                      <div className="absolute inset-0 bg-emerald-500/10 blur-[60px] animate-pulse"></div>
-                      <div className="w-24 h-24 md:w-32 md:h-32 lg:w-40 lg:h-40 mx-auto mb-6 relative z-10 group-hover:scale-105 transition-transform duration-700 ease-out">
-                          <TelegramLogo />
-                      </div>
-                      <h1 className="font-cinzel text-4xl font-black tracking-wide leading-none mb-1 text-white">
-                          2026: <br/> <span className="text-emerald-500 text-glow">TG</span> МАРКЕТ
-                      </h1>
-                  </div>
-
-                  <div className="space-y-4 flex flex-col items-center w-full">
-                      <p className="text-zinc-400 font-montserrat text-[10px] uppercase tracking-[0.15em] leading-relaxed whitespace-nowrap mx-auto border-b border-zinc-800 pb-3">
-                          Сайты — прошлое. Приложения — долго.
-                      </p>
-                      <div className="w-full bg-gradient-to-r from-transparent via-zinc-900 to-transparent p-px">
-                        <div className="bg-black/40 backdrop-blur-md p-4 relative overflow-hidden text-center">
-                             <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-emerald-500/50 to-transparent"></div>
-                             <div className="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-emerald-500/50 to-transparent"></div>
-                             <Quote className="mx-auto text-emerald-800 mb-1 opacity-50" size={14}/>
-                             <p className="text-emerald-400 text-xs font-bold uppercase tracking-wide leading-relaxed font-cinzel">
-                                "Охоться там,<br/>где жертва проводит 90% жизни"
-                            </p>
-                        </div>
-                      </div>
-                  </div>
-              </div>
-
-              {/* BUTTONS */}
-              <div className="grid gap-3 w-full">
-                  <button className="group relative bg-zinc-900/30 border border-zinc-800 hover:border-emerald-500/50 p-4 text-left transition-all duration-300 active:scale-[0.98]">
-                      <div className="absolute inset-y-0 left-0 w-1 bg-emerald-500 scale-y-0 group-hover:scale-y-100 transition-transform duration-300 origin-bottom"></div>
-                      <div className="flex justify-between items-center">
-                          <div>
-                            <div className="text-base font-bold font-cinzel text-white mb-0.5 group-hover:text-emerald-400 transition-colors tracking-wide">TG Магазины</div>
-                            <p className="text-[9px] text-zinc-500 uppercase tracking-widest font-medium font-montserrat">Скрипты • Внедрение</p>
-                          </div>
-                          <ShoppingCart className="text-zinc-600 group-hover:text-emerald-500 transition-colors" size={18} strokeWidth={1.5}/>
-                      </div>
-                  </button>
-
-                  <button className="group relative bg-zinc-900/30 border border-zinc-800 hover:border-purple-500/50 p-4 text-left transition-all duration-300 active:scale-[0.98]">
-                      <div className="absolute inset-y-0 left-0 w-1 bg-purple-600 scale-y-0 group-hover:scale-y-100 transition-transform duration-300 origin-bottom"></div>
-                      <div className="flex justify-between items-center">
-                          <div>
-                            <div className="text-base font-bold font-cinzel text-white mb-0.5 group-hover:text-purple-400 transition-colors tracking-wide">Нейро-Боты</div>
-                            <p className="text-[9px] text-zinc-500 uppercase tracking-widest font-medium font-montserrat">AI • Автоматизация</p>
-                          </div>
-                          <BrainCircuit className="text-zinc-600 group-hover:text-purple-500 transition-colors" size={18} strokeWidth={1.5}/>
-                      </div>
-                  </button>
-              </div>
-           </div>
-        </div>
-      </div>
-    );
-  }
-
-  // --- FADE SCREENS ---
-  const current = missedOpportunities[step];
-  const isPositive = current.isPositive;
-  
-  let containerTransition = 'opacity-0 translate-y-8 scale-95 blur-sm'; 
-  if (fadeState === 'visible') containerTransition = 'opacity-100 translate-y-0 scale-100 blur-0 duration-[700ms] ease-out';
-  if (fadeState === 'out') containerTransition = 'opacity-0 scale-105 blur-md brightness-50 duration-[500ms] ease-in';
-
-  // Styles
-  const yearColor = isPositive ? 'text-emerald-500 text-glow' : 'text-zinc-600';
-  const quoteBorder = isPositive ? 'border-emerald-500 bg-emerald-950/10' : 'border-red-900/30 bg-red-950/5';
-  const footerText = isPositive ? 'ЦЕЛЬ ЗАХВАЧЕНА' : 'ЦЕЛЬ УПУЩЕНА';
-  const footerColor = isPositive ? 'text-emerald-500' : 'text-red-900';
-
-  return (
-    <div className="flex flex-col h-screen bg-black text-white font-montserrat overflow-hidden items-center justify-center relative p-6 w-full">
-      <GlobalStyles />
-      <ScalesBackground />
-      <div key={step} className={`relative z-10 flex flex-col items-center text-center transition-all ${containerTransition}`}>
-        <div className="mb-8 scale-100">{current.logo}</div>
-        <div className="space-y-6 flex flex-col items-center">
-            <h2 className={`text-7xl font-cinzel font-black tracking-tighter ${yearColor}`}>
-                {current.year}
-            </h2>
-            <div className={`relative p-6 text-center backdrop-blur-md border-y ${quoteBorder} max-w-[280px]`}>
-                <p className={`${isPositive ? 'text-white' : 'text-zinc-500'} text-sm font-cinzel font-bold uppercase leading-normal`}>
-                    {current.quote}
-                </p>
-                <div className="mt-4 flex justify-center">
-                    <span className={`text-[9px] uppercase tracking-[0.4em] ${footerColor} font-bold border-b border-current pb-1`}>{footerText}</span>
-                </div>
-            </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-
-const BusinessView = ({ setMode, bizParams, setBizParams, onOpenChat }) => {
-  const [analysisState, setAnalysisState] = useState('input');
-  const [activeTooltip, setActiveTooltip] = useState(null); // State for annotations
-  const [slideIndex, setSlideIndex] = useState(0);
-  const [slidePhase, setSlidePhase] = useState('in'); // in, visible, out
-  const [showDemo, setShowDemo] = useState(false);
-  const [selectedFeature, setSelectedFeature] = useState(null); // New state for modal
-  const [showProjectScreenshots, setShowProjectScreenshots] = useState(false);
-
-  const traffic = Number(bizParams.users) || 0;
-  const currentConvRate = Number(bizParams.currentConversion) || 0;
-  const margin = Number(bizParams.margin) || 0;
-  const check = Number(bizParams.check) || 0;
-
-  const baseRevenue = traffic * (currentConvRate / 100) * check;
-  const baseProfit = baseRevenue * (margin / 100);
-  const lostPercent = Math.max(0, 100 - currentConvRate);
-  const lostProfit = (traffic * (lostPercent / 100) * check) * (margin / 100);
-  const recoveredProfit = lostProfit * 0.20;
-
-  const startAnalysis = async () => {
-    setAnalysisState('loading');
-    setTimeout(() => {
-        setAnalysisState('result');
-        setSlideIndex(0);
-        setSlidePhase('in');
-    }, 2000); // Имитация анализа 2 секунды
-  };
-
-  // МЕСТО ДЛЯ ВАШИХ ИЗОБРАЖЕНИЙ (Замените ссылки на свои)
-  const metricImages = [
-    "https://placehold.co/400x300/000000/10B981?text=Трафик+Инфо", // Картинка для Трафика
-    "https://placehold.co/400x300/000000/10B981?text=Конверсия+Инфо", // Картинка для Конверсии
-    "https://placehold.co/400x300/000000/10B981?text=Средний+Чек", // Картинка для Среднего чека
-    "https://placehold.co/400x300/000000/10B981?text=Маржа+Инфо"  // Картинка для Маржи
-  ];
-
-  // Feature Data
-  const features = [
-      {
-          id: 1,
-          icon: BrainCircuit,
-          title: "ИИ-алгоритмы чека",
-          shortDesc: "Система анализирует корзину и предлагает 'С этим покупают'. Рост среднего чека на 20–30% без участия менеджера.",
-          fullTitle: "Технологии Amazon и Wildberries теперь в вашем приложении",
-          fullDesc: "Встроенный ИИ анализирует корзину клиента и мгновенно предлагает товары, которые покупают с этим чаще всего.\n\nТочное попадание: Рекомендации на основе реального опыта тысяч пользователей.\n\nПолная автоматизация: Система продает сама, без участия менеджеров.\n\nРост прибыли: Средний чек увеличивается до 30%"
-      },
-      {
-          id: 2,
-          icon: BellRing,
-          title: "Бесплатный ретаргетинг",
-          shortDesc: "Привлечение клиента стоит дорого, но 70% уходят без покупки. Мы превращаем эти потери в вашу прибыль.", // Simplified for card
-          fullTitle: "Бесплатные рассылки всем клиентам",
-          fullDesc: "Привлечение клиента стоит дорого, но 70% уходят без покупки. Мы превращаем эти потери в вашу прибыль с помощью автоматических сценариев в Telegram.\n\n• Возврат «брошенных» корзин: ИИ мягко напоминает клиенту о товаре и закрывает сделку.\n• Повторные продажи: Система сама прогревает базу акциями и новинками, превращая разовых покупателей в постоянных.\n• Работа на автопилоте: Вы один раз подключаете уведомления, а они «дожимают» продажи 24/7."
-      },
-      {
-          id: 3,
-          icon: CreditCard,
-          title: "Автономная касса 24/7",
-          shortDesc: "Магазин на автопилоте: продажи без вашего участия 24/7. Забудьте о ручных продажах в Direct. Система сама ведет клиента от выбора товара до оплаты, пока вы отдыхаете.", // Simplified for card
-          fullTitle: "Продажи без вашего участия 24/7",
-          fullDesc: "Забудьте о ручных продажах в Direct. Система сама ведет клиента от выбора товара до оплаты, пока вы отдыхаете.\n\n• Автоплатежи: Мгновенная оплата через Robokassa или счет в Kaspi. Без реквизитов в чатах и ожидания подтверждения.\n• Мгновенные уведомления: Информация о заказе падает сразу в Telegram. Всё под контролем без лишних переписок.\n• Работа на результат: Вы просыпаетесь с деньгами на счету, а не с горой неотвеченных сообщений"
-      }
-  ];
-
-  // Data with annotations
-  const metrics = [
-    { 
-        label: 'ТРАФИК', 
-        icon: Users, 
-        val: bizParams.users, 
-        set: (v) => setBizParams({...bizParams, users: v}),
-        imageIndex: 0
-    },
-    { 
-        label: 'КОНВЕРСИЯ', 
-        icon: Percent, 
-        val: bizParams.currentConversion, 
-        set: (v) => setBizParams({...bizParams, currentConversion: v}),
-        imageIndex: 1
-    },
-    { 
-        label: 'СРЕДНИЙ ЧЕК', 
-        icon: Coins, 
-        val: bizParams.check, 
-        set: (v) => setBizParams({...bizParams, check: v}),
-        imageIndex: 2
-    },
-    { 
-        label: 'МАРЖА', 
-        icon: Scale, 
-        val: bizParams.margin, 
-        set: (v) => setBizParams({...bizParams, margin: v}),
-        imageIndex: 3
-    },
-  ];
-
-  const slides = [
-      {
-          title: "УТЕЧКА ТРАФИКА",
-          val: `${lostPercent.toFixed(0)}%`,
-          sub: "Посетителей уходят без покупки",
-          desc: `«Вы платите за 100% трафика, но ${lostPercent.toFixed(0)}% ваших денег сгорает в Direct из-за "человеческого фактора"»`,
-          color: "text-red-600",
-          glow: "text-glow-red"
-      },
-      {
-          title: "ФИНАНСОВЫЕ ПОТЕРИ",
-          val: formatCurrency(lostProfit),
-          sub: "Ваша упущенная чистая прибыль ежемесячно",
-          desc: "Эти деньги могли быть в вашей кассе уже сегодня, если бы процесс продажи был автоматизирован.",
-          color: "text-red-600",
-          glow: "text-glow-red"
-      },
-      {
-          title: "РЫНОК TELEGRAM",
-          val: "+400%",
-          sub: "Ежегодный рост продаж в мессенджере",
-          desc: "«Пока вы сомневаетесь, покупают ли здесь люди, ваши конкуренты уже оформляют заказы. Telegram стал новым Amazon — быстрее, ближе и без лишних кликов».",
-          color: "text-white",
-          glow: "text-glow"
-      },
-      {
-          title: "РЕШЕНИЕ: ТЕЛЕГРАМ-МАГАЗИН",
-          val: formatCurrency(recoveredProfit),
-          sub: "Минимальный возврат при внедрении",
-          desc: "«Мы не ломаем ваши процессы, мы внедряем Telegram-магазин как мощный рычаг, который автоматически возвращает от 20% потерянной чистой прибыли».",
-          color: "text-emerald-500",
-          glow: "text-glow"
-      }
-  ];
-
-  useEffect(() => {
-    if (analysisState === 'result') {
-      if (slideIndex < slides.length - 1) {
-         setSlidePhase('in');
-         
-         const hideTimer = setTimeout(() => {
-             setSlidePhase('out');
-         }, 5000); 
-
-         const nextTimer = setTimeout(() => {
-             setSlideIndex(prev => prev + 1);
-             setSlidePhase('in'); 
-         }, 6000); 
-
-         return () => { clearTimeout(hideTimer); clearTimeout(nextTimer); };
-      } else {
-         setSlidePhase('in');
-      }
-    }
-  }, [analysisState, slideIndex, slides.length]);
-
-  if (analysisState === 'presentation') {
-      return (
-        <div className="flex flex-col h-screen bg-black text-white font-montserrat overflow-y-auto relative w-full">
-            <GlobalStyles />
-            <ScalesBackground />
+        .emerald-text::before {
+            content: attr(data-text);
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
             
-            <div className="sticky top-0 z-40 px-4 py-3 bg-black/80 backdrop-blur-xl flex justify-between items-center border-b border-zinc-900">
-                <button onClick={() => setAnalysisState('input')} className="w-8 h-8 flex items-center justify-center hover:text-emerald-500 transition-colors">
-                    <X size={20}/>
-                </button>
-                <span className="text-[10px] font-bold tracking-[0.2em] text-emerald-500 uppercase animate-pulse font-cinzel">
-                    Презентация
-                </span>
-                <div className="w-8"></div>
-            </div>
-
-            <div className="relative z-10 p-6 max-w-lg mx-auto w-full flex flex-col space-y-8 pb-32 animate-in slide-in-from-bottom-10 fade-in duration-700">
-                
-                <div className="text-center space-y-4">
-                    <div className="w-20 h-20 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto border border-emerald-500/50 shadow-[0_0_30px_rgba(16,185,129,0.2)]">
-                        <ShoppingBag size={32} className="text-emerald-400" />
-                    </div>
-                    <h2 className="text-2xl font-cinzel font-black tracking-wide text-white leading-tight">
-                        МАГАЗИН БУДУЩЕГО<br/>
-                        <span className="text-emerald-500 text-glow">В TELEGRAM</span>
-                    </h2>
-                    <p className="text-zinc-400 text-xs font-montserrat leading-relaxed max-w-xs mx-auto">
-                        Забудьте о сложных сайтах. Мы переносим весь ритейл в мессенджер #1.
-                    </p>
-                </div>
-
-                <div className="space-y-4">
-                    {features.map((feature) => (
-                        <button 
-                            key={feature.id}
-                            onClick={() => setSelectedFeature(feature)}
-                            className="w-full bg-zinc-900/40 border border-zinc-800 p-5 backdrop-blur-sm hover:border-emerald-500/30 transition-all duration-300 group text-left active:scale-[0.98]"
-                        >
-                            <div className="flex items-start gap-4">
-                                <div className="w-10 h-10 bg-zinc-950 rounded-lg flex items-center justify-center shrink-0 border border-zinc-800 group-hover:border-emerald-500/50 transition-colors">
-                                    <feature.icon size={20} className="text-emerald-500" />
-                                </div>
-                                <div>
-                                    <h3 className="font-cinzel font-bold text-white text-sm mb-1 group-hover:text-emerald-400 transition-colors">{feature.title}</h3>
-                                    <p className="text-zinc-400 text-[10px] leading-relaxed">
-                                        {feature.shortDesc}
-                                    </p>
-                                </div>
-                                <div className="ml-auto self-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <Info size={16} className="text-zinc-500" />
-                                </div>
-                            </div>
-                        </button>
-                    ))}
-                </div>
-
-                <button 
-                    onClick={() => setAnalysisState('reviews')}
-                    className="w-full bg-white text-black font-cinzel font-black py-4 uppercase tracking-[0.2em] hover:bg-emerald-400 transition-all active:scale-[0.98] text-xs shadow-[0_0_30px_rgba(255,255,255,0.1)]"
-                >
-                    Наши клиенты
-                </button>
-
-            </div>
-
-            {/* FEATURE DETAIL MODAL */}
-            {selectedFeature && (
-                <div className="fixed inset-0 z-[60] bg-black/90 backdrop-blur-md flex items-center justify-center p-6 animate-in fade-in duration-200">
-                    <div className="w-full max-w-sm bg-zinc-900 border border-emerald-500/30 p-6 rounded-2xl relative shadow-[0_0_50px_rgba(16,185,129,0.1)] animate-in zoom-in-95 duration-300">
-                        <button 
-                            onClick={() => setSelectedFeature(null)}
-                            className="absolute top-4 right-4 text-zinc-500 hover:text-white transition-colors"
-                        >
-                            <X size={24} />
-                        </button>
-                        
-                        <div className="w-12 h-12 bg-emerald-900/30 rounded-full flex items-center justify-center mb-4 border border-emerald-500/30">
-                            <selectedFeature.icon size={24} className="text-emerald-400" />
-                        </div>
-
-                        <h3 className="font-cinzel font-bold text-xl text-white mb-2">{selectedFeature.fullTitle}</h3>
-                        <p className="font-montserrat text-xs text-zinc-400 leading-relaxed mb-6 whitespace-pre-wrap">
-                            {selectedFeature.fullDesc}
-                        </p>
-
-                        <button 
-                            onClick={() => setSelectedFeature(null)}
-                            className="w-full bg-emerald-600 text-black font-cinzel font-bold py-3 text-xs uppercase tracking-wider hover:bg-emerald-500 transition-colors"
-                        >
-                            Понятно
-                        </button>
-                    </div>
-                </div>
-            )}
-        </div>
-      );
-  }
-
-  // Show Project Screenshots Modal
-  if (showProjectScreenshots) {
-    return (
-        <div className="fixed inset-0 z-[80] bg-black/95 backdrop-blur-xl flex flex-col p-4 animate-in fade-in duration-300 overflow-y-auto">
-             <div className="flex justify-end mb-4">
-                 <button onClick={() => setShowProjectScreenshots(false)} className="p-2 text-zinc-400 hover:text-white bg-zinc-900 rounded-full border border-zinc-800 transition-colors">
-                    <X size={24} />
-                 </button>
-             </div>
-             <div className="flex-1 flex flex-col md:flex-row gap-4 items-center justify-center pb-10">
-                 <img src="https://i.ibb.co.com/XrZ5NWf9/5418267021511692476-1.jpg" className="w-full md:w-[45%] rounded-xl shadow-2xl border border-zinc-800 object-contain" alt="Screen 1"/>
-                 <img src="https://i.ibb.co.com/WppgK3t5/5418267021511692477.jpg" className="w-full md:w-[45%] rounded-xl shadow-2xl border border-zinc-800 object-contain" alt="Screen 2"/>
-             </div>
-        </div>
-    );
-  }
-
-  // Show Demo Store Modal (kept for fallback)
-  if (showDemo) {
-    return (
-        <div className="flex flex-col h-screen bg-black text-white font-montserrat overflow-y-auto relative w-full">
-            <GlobalStyles />
-            <ScalesBackground />
-            <DemoStore onClose={() => setShowDemo(false)} />
-        </div>
-    );
-  }
-
-  if (analysisState === 'reviews') {
-      return (
-        <div className="flex flex-col h-screen bg-black text-white font-montserrat overflow-y-auto relative w-full">
-            <GlobalStyles />
-            <ScalesBackground />
+            background: linear-gradient(
+                90deg, 
+                var(--taipan-emerald),
+                #00C2CB, 
+                #00FF88,
+                var(--taipan-emerald)
+            );
+            background-size: 300% 100%;
             
-            <div className="sticky top-0 z-40 px-4 py-3 bg-black/80 backdrop-blur-xl flex justify-between items-center border-b border-zinc-900">
-                <button onClick={() => setAnalysisState('input')} className="w-8 h-8 flex items-center justify-center hover:text-emerald-500 transition-colors">
-                    <X size={20}/>
-                </button>
-                <span className="text-[10px] font-bold tracking-[0.2em] text-emerald-500 uppercase animate-pulse font-cinzel">
-                    Кейсы
-                </span>
-                <div className="w-8"></div>
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent; 
+            
+            filter: blur(12px); 
+            opacity: 0.9;
+            
+            animation: emerald-flow 4s linear infinite;
+        }
+
+        @keyframes emerald-flow {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 100% 50%; }
+        }
+
+        .taipan-accent {
+            color: var(--taipan-emerald);
+            text-shadow: 0 0 15px rgba(0, 255, 157, 0.3);
+        }
+
+        /* Custom Scrollbar for Web */
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #000;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #222;
+            border-radius: 2px;
+        }
+
+        /* Modal Animation */
+        .modal-enter {
+            animation: modalSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        @keyframes modalSlideUp {
+            from { transform: translateY(100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col relative">
+
+    <!-- Tech Background -->
+    <div class="tech-bg">
+        <canvas id="matrixCanvas"></canvas>
+        <div class="tech-grid"></div>
+        <div class="tech-glow"></div>
+        <div class="scanline"></div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="flex-grow px-4 pb-8 z-10 flex flex-col justify-center max-w-lg mx-auto w-full">
+        
+        <!-- Hero Text -->
+        <div class="mb-12 text-center">
+            <div class="relative inline-block mb-3">
+                <h1 class="text-3xl md:text-5xl font-bold leading-none text-metallic font-display tracking-widest emerald-text" data-text="TAIPAN MEDIA">
+                    TAIPAN MEDIA
+                </h1>
             </div>
-
-            <div className="relative z-10 p-6 max-w-lg mx-auto w-full flex flex-col justify-center items-center min-h-[80vh] animate-in slide-in-from-bottom-10 fade-in duration-700">
-                
-                <h2 className="text-2xl font-cinzel font-black tracking-wide text-white mb-8 text-center">
-                    РЕАЛЬНЫЕ <span className="text-emerald-500 text-glow">РЕЗУЛЬТАТЫ</span>
-                </h2>
-
-                {/* Updated review card content based on prompt */}
-                <div className="w-full bg-zinc-900/40 border border-zinc-800 p-6 backdrop-blur-md rounded-lg mb-8 relative overflow-hidden">
-                    <div className="flex items-center gap-3 mb-4">
-                        <img 
-                            src="https://i.ibb.co.com/6JnC7FFr/i.webp" 
-                            alt="Romantic Logo" 
-                            className="w-10 h-10 rounded-full object-cover border border-white/10"
-                        />
-                        <div>
-                            <div className="font-bold text-white text-sm">Romantic Shymkent</div>
-                            <div className="text-[10px] text-pink-500 font-bold uppercase tracking-widest">Telegram-магазин цветов</div>
-                        </div>
-                    </div>
-                    <p className="text-zinc-300 text-xs leading-relaxed italic mb-4">
-                        "Процесс покупки цветов стал проще, клиенты перестали ждать пока менеджеры отправят фото букетов, и просто выбирали цветы в каталоге.
-                        <br/><br/>
-                        Умные алгоритмы стали сами предлагать к букетам мягкие игрушки, бенто-торты и шары, благодаря чему средний чек стал выше."
-                    </p>
-                    <div className="h-px w-full bg-zinc-800 mb-4"></div>
-                    <div className="flex justify-between items-center text-[10px] text-zinc-500 uppercase tracking-widest">
-                        <span>Рост доп. продаж:</span>
-                        <span className="text-white font-bold text-emerald-400">+42%</span>
-                    </div>
-                </div>
-
-                <button 
-                    onClick={() => setShowProjectScreenshots(true)}
-                    className="w-full bg-white text-black font-cinzel font-black py-4 uppercase tracking-[0.2em] hover:bg-emerald-400 transition-all active:scale-[0.98] text-xs flex items-center justify-center gap-2 group text-center shadow-[0_0_30px_rgba(255,255,255,0.1)] hover:shadow-[0_0_40px_rgba(16,185,129,0.3)] rounded-sm"
-                >
-                    Посмотреть проект
-                    <ExternalLink size={14} className="group-hover:translate-x-1 transition-transform" />
-                </button>
-
-            </div>
+            
+            <p class="text-metallic text-[10px] md:text-xs uppercase tracking-[0.4em] font-medium opacity-80 mt-1">
+                Цифровые технологии
+            </p>
         </div>
-      );
-  }
 
-  if (analysisState === 'loading') {
-    return (
-        <div className="flex flex-col h-screen bg-black text-white font-montserrat items-center justify-center relative overflow-hidden p-6 w-full">
-            <GlobalStyles />
-            <ScalesBackground />
-            <div className="relative z-10 flex flex-col items-center text-center space-y-8">
-                <div className="relative">
-                    <div className="absolute inset-0 bg-emerald-500/20 blur-xl animate-pulse"></div>
-                    <BrainCircuit size={64} className="text-emerald-500 relative z-10 animate-bounce" strokeWidth={1} />
-                </div>
-                <div>
-                    <h2 className="text-xl md:text-2xl font-cinzel font-bold tracking-wide text-white mb-4 uppercase leading-snug">
-                        Проводим анализ<br/>вашего бизнеса
-                    </h2>
-                    <div className="flex flex-col gap-1 items-center">
-                        <p className="text-emerald-600 text-[10px] font-bold uppercase tracking-[0.3em]">Поиск уязвимостей...</p>
-                        <div className="h-0.5 w-20 bg-zinc-800 rounded-full overflow-hidden mt-2">
-                             <div className="h-full bg-emerald-500 animate-shimmer w-full"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-  }
-
-  if (analysisState === 'result') {
-      const slide = slides[slideIndex];
-      const isLast = slideIndex === slides.length - 1;
-
-      return (
-        <div className="flex flex-col h-screen bg-black text-white font-montserrat overflow-y-auto relative w-full justify-center">
-            <GlobalStyles />
-            <ScalesBackground />
-            <div className="relative z-10 p-6 max-w-lg mx-auto w-full flex flex-col items-center">
+        <!-- Grid Layout -->
+        <div class="grid grid-cols-2 gap-3 mb-3">
+            
+            <!-- Card 1: Telegram Shop -->
+            <div class="glass-card rounded-2xl p-5 flex flex-col items-center justify-center text-center h-64 cursor-pointer group relative overflow-hidden" onclick="openModal('Telegram Shop')">
+                <div class="absolute inset-0 bg-gradient-to-b from-[var(--taipan-emerald)]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                 
-                {/* Slide Content with Smoke Animation */}
-                <div 
-                    className={`w-full text-center ${slidePhase === 'out' ? 'smoke-exit' : 'smoke-enter'}`} 
-                    key={`${analysisState}-${slideIndex}`} // Unique key forces re-render for animation
-                >
-                    {/* Value FIRST */}
-                    <div className={`text-6xl md:text-7xl font-cinzel font-black tracking-wide mb-4 ${slide.color} ${slide.glow} animate-num-pulse`}>
-                        {slide.val}
-                    </div>
-
-                    {/* Title SECOND */}
-                    <h3 className="text-sm font-bold text-zinc-500 uppercase tracking-[0.3em] mb-2">{slide.title}</h3>
+                <div class="mb-6 p-4 rounded-full bg-white/5 border border-white/5 text-zinc-300 group-hover:text-[var(--taipan-emerald)] group-hover:border-[var(--taipan-emerald)]/30 group-hover:shadow-[0_0_20px_rgba(0,255,157,0.2)] group-hover:scale-110 transition-all duration-300 relative z-10">
+                    <i data-lucide="shopping-bag" class="w-8 h-8"></i>
+                </div>
+                
+                <div class="relative z-10">
+                    <h3 class="text-lg font-display uppercase leading-tight mb-3 text-zinc-100 group-hover:text-white">Telegram<br>Магазин</h3>
+                    <p class="text-[10px] text-zinc-500 uppercase tracking-widest mb-4 font-semibold">Автоматизация<br>Продаж 24/7</p>
                     
-                    {/* Subtitle */}
-                    <p className="text-xs md:text-sm font-bold text-white uppercase tracking-wider mb-6 border-b border-zinc-800 pb-4 inline-block">
-                        {slide.sub}
-                    </p>
-
-                    <div className="bg-zinc-900/40 border border-zinc-800 p-6 backdrop-blur-md relative overflow-hidden mb-8">
-                        <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-transparent via-emerald-500/50 to-transparent"></div>
-                        <p className="text-zinc-300 text-xs leading-relaxed font-montserrat">
-                            {slide.desc}
-                        </p>
+                    <div class="inline-flex items-center text-[9px] font-bold uppercase tracking-[0.2em] text-[var(--taipan-emerald)] opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300">
+                        Заказать <i data-lucide="arrow-right" class="w-3 h-3 ml-1"></i>
                     </div>
                 </div>
+            </div>
 
-                {/* Controls - Only on Last Slide */}
-                {isLast && (
-                    <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-500">
-                        <button 
-                            onClick={() => setAnalysisState('presentation')}
-                            className="w-full bg-white text-black font-cinzel font-black py-4 uppercase tracking-[0.2em] hover:bg-emerald-400 transition-all active:scale-[0.98] text-xs flex items-center justify-center gap-2 group"
-                        >
-                            Узнать подробнее
-                        </button>
-                    </div>
-                )}
+            <!-- Card 2: Education -->
+            <div class="glass-card rounded-2xl p-5 flex flex-col items-center justify-center text-center h-64 cursor-pointer group relative overflow-hidden" onclick="openModal('Education')">
+                <div class="absolute inset-0 bg-gradient-to-b from-[var(--taipan-emerald)]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+
+                <div class="mb-6 p-4 rounded-full bg-white/5 border border-white/5 text-zinc-300 group-hover:text-[var(--taipan-emerald)] group-hover:border-[var(--taipan-emerald)]/30 group-hover:shadow-[0_0_20px_rgba(0,255,157,0.2)] group-hover:scale-110 transition-all duration-300 relative z-10">
+                    <i data-lucide="graduation-cap" class="w-8 h-8"></i>
+                </div>
                 
-            </div>
-        </div>
-      )
-  }
-
-  // --- INPUT VIEW ---
-  return (
-    <div className="flex flex-col h-screen bg-black text-white font-montserrat overflow-y-auto relative w-full">
-      <GlobalStyles />
-      <ScalesBackground />
-      
-      <div className="sticky top-0 z-40 px-4 py-3 bg-black/80 backdrop-blur-xl flex justify-between items-center border-b border-zinc-900">
-        <button onClick={() => setMode('select')} className="w-8 h-8 flex items-center justify-center hover:text-emerald-500 transition-colors">
-            <ChevronRight className="rotate-180" size={20}/>
-        </button>
-        <span className="text-[10px] font-bold tracking-[0.2em] text-emerald-500 uppercase animate-pulse font-cinzel">
-            Анализатор
-        </span>
-        <div className="w-8"></div>
-      </div>
-
-      <div className="p-4 relative z-10 pb-32 max-w-lg mx-auto w-full">
-        <div className="mb-8 text-center">
-            <h2 className="text-3xl font-cinzel font-black tracking-wide mb-2 text-white leading-tight">
-                АУДИТ <span className="text-emerald-600 text-glow block text-2xl mt-1">УПУЩЕННОЙ ПРИБЫЛИ</span>
-            </h2>
-            <p className="text-zinc-500 text-[9px] uppercase tracking-[0.3em] font-medium">Сколько вы теряете без нашего магазина</p>
-        </div>
-
-        <div className="relative">
-            {/* Corner Accents */}
-            <div className="absolute -top-1 -left-1 w-3 h-3 border-t border-l border-emerald-500/50"></div>
-            <div className="absolute -top-1 -right-1 w-3 h-3 border-t border-r border-emerald-500/50"></div>
-            <div className="absolute -bottom-1 -left-1 w-3 h-3 border-b border-l border-emerald-500/50"></div>
-            <div className="absolute -bottom-1 -right-1 w-3 h-3 border-b border-r border-emerald-500/50"></div>
-
-            <div className="p-px bg-zinc-900/30 backdrop-blur-sm border border-zinc-800">
-                <div className="p-4 grid grid-cols-2 gap-x-4 gap-y-8">
-                    {metrics.map((item, i) => (
-                        <div key={i} className="relative flex flex-col items-center text-center group">
-                            <button 
-                                onClick={() => setActiveTooltip(activeTooltip === i ? null : i)}
-                                className="flex items-center justify-center gap-1.5 w-full text-[9px] font-bold text-zinc-500 uppercase tracking-[0.1em] hover:text-emerald-500 transition-colors font-cinzel mb-1"
-                            >
-                                <item.icon size={12} className="opacity-70" /> {item.label}
-                                <ImageIcon size={10} className="text-zinc-700 hover:text-emerald-400 transition-colors" />
-                            </button>
-                            
-                            {/* Annotation Popover (IMAGE) */}
-                            {activeTooltip === i && (
-                                <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-48 bg-zinc-950 border border-emerald-500/30 p-1 rounded shadow-[0_0_20px_rgba(0,0,0,0.8)] z-20 animate-in fade-in zoom-in-95 duration-200 overflow-hidden">
-                                    <div className="w-full aspect-[4/3] bg-zinc-900 relative">
-                                        <img 
-                                            src={metricImages[item.imageIndex]} 
-                                            alt={item.label}
-                                            className="w-full h-full object-cover opacity-90 hover:opacity-100 transition-opacity"
-                                        />
-                                        <div className="absolute inset-0 border border-white/5 pointer-events-none"></div>
-                                    </div>
-                                    <div className="absolute bottom-[-4px] left-1/2 -translate-x-1/2 w-2 h-2 bg-zinc-950 border-r border-b border-emerald-500/30 rotate-45"></div>
-                                </div>
-                            )}
-
-                            <input 
-                                type="number" 
-                                value={item.val} 
-                                onChange={e => item.set(e.target.value)} 
-                                className="w-full bg-transparent border-b border-zinc-800 py-1.5 text-white text-lg font-cinzel font-bold focus:outline-none focus:border-emerald-500 text-center transition-all placeholder-zinc-800"
-                                placeholder="0"
-                            />
-                        </div>
-                    ))}
-                </div>
-
-                <div className="bg-black/50 p-6 space-y-6 border-t border-zinc-800 mt-2">
-                    <div className="text-center">
-                        <div className="text-[9px] font-bold text-zinc-600 mb-1 uppercase tracking-[0.2em]">Текущий доход</div>
-                        <div className="text-2xl font-cinzel font-bold text-white tracking-wide whitespace-nowrap overflow-hidden text-ellipsis">
-                            {formatCurrency(baseProfit)}
-                        </div>
+                <div class="relative z-10">
+                    <h3 class="text-lg font-display uppercase leading-tight mb-3 text-zinc-100 group-hover:text-white">Обучение<br>Dev</h3>
+                    <p class="text-[10px] text-zinc-500 uppercase tracking-widest mb-4 font-semibold">Стань профи<br>Разработки</p>
+                    
+                     <div class="inline-flex items-center text-[9px] font-bold uppercase tracking-[0.2em] text-[var(--taipan-emerald)] opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300">
+                        Начать <i data-lucide="arrow-right" class="w-3 h-3 ml-1"></i>
                     </div>
-
-                    <div className="relative bg-red-950/10 border-l-2 border-red-900 p-4">
-                        <div className="flex flex-col items-center text-center space-y-3">
-                            <div className="flex items-center gap-2 text-red-600 font-bold uppercase text-[9px] tracking-[0.2em] animate-pulse">
-                                <AlertTriangle size={12} /> Внимание
-                            </div>
-                            <div className="text-[9px] text-zinc-500">
-                                Упущенный трафик и конверсия: <span className="text-zinc-300 font-bold">{lostPercent.toFixed(1)}%</span>
-                            </div>
-                            
-                            <div className="flex flex-col items-center w-full">
-                                <span className="text-[9px] text-zinc-500 mb-1">В деньгах вы недополучаете:</span>
-                                <div className="text-2xl font-cinzel font-bold text-red-600 text-glow-red opacity-90 whitespace-nowrap overflow-hidden text-ellipsis w-full">
-                                    {formatCurrency(lostProfit)}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <button 
-                        onClick={startAnalysis} 
-                        className="w-full bg-emerald-600 text-black font-cinzel font-black text-xs py-4 uppercase tracking-[0.2em] hover:bg-emerald-500 transition-all hover:shadow-[0_0_30px_rgba(16,185,129,0.3)] active:scale-[0.98]"
-                    >
-                          ПРЕКРАТИТЬ УТЕЧКУ ПРОДАЖ
-                    </button>
                 </div>
             </div>
+
         </div>
-      </div>
-    </div>
-  );
-};
 
-const AIChat = ({ isOpen, onClose }) => {
-  const [messages, setMessages] = useState([{ sender: 'bot', text: 'Оракул слушает. Говори.' }]);
-  const [input, setInput] = useState('');
-  const endRef = useRef(null);
-
-  useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
-
-  const send = () => {
-    if (!input.trim()) return;
-    const msg = { sender: 'user', text: input };
-    setMessages(p => [...p, msg]);
-    setInput('');
-    setTimeout(() => {
-        setMessages(p => [...p, { sender: 'bot', text: "Система в автономном режиме. Обратитесь к оператору." }]);
-    }, 1000);
-  };
-
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 z-[70] bg-black/95 backdrop-blur-xl flex flex-col animate-in slide-in-from-bottom-10 font-montserrat">
-      <div className="p-5 border-b border-zinc-800 flex justify-between items-center bg-black/50">
-        <div className="flex items-center gap-3">
-             <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-             <span className="font-cinzel font-bold text-xs uppercase tracking-[0.2em] text-white">Viper Link</span>
-        </div>
-        <button onClick={onClose} className="p-2 text-zinc-500 hover:text-white transition-colors"><X size={24} strokeWidth={1}/></button>
-      </div>
-      <div className="flex-1 overflow-y-auto p-6 space-y-6">
-        {messages.map((m, i) => (
-          <div key={i} className={`flex ${m.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[85%] p-4 text-xs font-medium tracking-wide border ${m.sender === 'user' ? 'bg-emerald-900/10 border-emerald-900 text-emerald-100' : 'bg-zinc-900/50 border-zinc-800 text-zinc-300'}`}>
-                {m.text}
+        <!-- Card 3: Mini App -->
+        <div class="glass-card rounded-2xl p-4 relative cursor-pointer group flex items-center justify-center h-20" onclick="openModal('Mini App')">
+            <div class="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--taipan-emerald)_0%,_transparent_100%)] opacity-0 group-hover:opacity-[0.05] transition-opacity duration-500 pointer-events-none"></div>
+            
+            <div class="flex items-center gap-4">
+                <div class="p-2 rounded-lg bg-white/5 border border-white/10 text-[var(--taipan-emerald)] shadow-[0_0_10px_rgba(0,255,157,0.05)]">
+                    <i data-lucide="smartphone" class="w-5 h-5"></i>
+                </div>
+                
+                <div class="flex flex-col items-center">
+                   <h3 class="text-sm font-display font-bold uppercase tracking-wide text-white group-hover:text-[var(--taipan-emerald)] transition-colors">Mini App</h3>
+                   <p class="text-[9px] text-zinc-500 uppercase tracking-wider font-semibold">Разработка под ключ</p>
+                </div>
             </div>
-          </div>
-        ))}
-        <div ref={endRef} />
-      </div>
-      <div className="p-5 bg-black border-t border-zinc-800 flex gap-4">
-        <input 
-            value={input} 
-            onChange={e => setInput(e.target.value)} 
-            onKeyDown={e => e.key === 'Enter' && send()} 
-            placeholder="Приказ..." 
-            className="flex-1 bg-zinc-900/50 border border-zinc-800 px-6 py-4 focus:outline-none focus:border-emerald-900 text-sm text-white placeholder-zinc-700 font-montserrat tracking-wide"
-        />
-        <button onClick={send} className="px-6 bg-emerald-700 text-white hover:bg-emerald-600 transition-colors"><Send size={20} strokeWidth={1.5}/></button>
-      </div>
+            
+            <div class="absolute right-5 text-[var(--taipan-emerald)] opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all">
+                <i data-lucide="chevron-right" class="w-5 h-5"></i>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="text-center py-6 text-zinc-700 text-[9px] uppercase tracking-[0.2em] z-10 font-bold">
+        Taipan Media Corp &copy; 2024
+    </footer>
+
+    <!-- Bottom Sheet Modal -->
+    <div id="orderModal" class="fixed inset-0 z-[100] hidden">
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-sm transition-opacity opacity-0" id="modalBackdrop" onclick="closeModal()"></div>
+        
+        <div class="absolute bottom-0 left-0 w-full bg-[#0F0F0F] rounded-t-[30px] border-t border-white/10 p-6 transform translate-y-full transition-transform duration-300 flex flex-col items-center text-center" id="modalContent">
+            
+            <div class="w-12 h-1 bg-zinc-800 rounded-full mb-8"></div>
+
+            <h2 class="text-2xl font-bold font-display uppercase text-white mb-2">Оформить</h2>
+            <p class="text-xs text-zinc-500 uppercase tracking-wider mb-8">Выбрано: <span id="modalType" class="text-[var(--taipan-emerald)]"></span></p>
+
+            <form onsubmit="submitForm(event)" class="space-y-4 w-full">
+                <div class="space-y-1">
+                    <input type="text" required class="w-full bg-[#050505] border border-white/10 rounded-xl text-white p-4 text-sm text-center focus:outline-none focus:border-[var(--taipan-emerald)] focus:shadow-[0_0_15px_rgba(0,255,157,0.1)] transition-all placeholder-zinc-700 font-medium font-sans" placeholder="Ваше Имя">
+                </div>
+                
+                <div class="space-y-1">
+                    <input type="text" required class="w-full bg-[#050505] border border-white/10 rounded-xl text-white p-4 text-sm text-center focus:outline-none focus:border-[var(--taipan-emerald)] focus:shadow-[0_0_15px_rgba(0,255,157,0.1)] transition-all placeholder-zinc-700 font-medium font-sans" placeholder="@username">
+                </div>
+
+                <button type="submit" class="w-full bg-[var(--taipan-emerald)] text-black font-extrabold uppercase tracking-widest py-4 rounded-xl text-xs mt-6 hover:bg-[#00e08b] transition-colors shadow-[0_0_20px_rgba(0,255,157,0.4)] font-sans">
+                    Отправить
+                </button>
+            </form>
+            <div class="h-6"></div> 
+        </div>
     </div>
-  );
-};
 
-// --- APP ---
-
-export default function App() {
-  const [mode, setMode] = useState('select');
-  const [loading, setLoading] = useState(true);
-  const [isChatOpen, setIsChatOpen] = useState(false);
-  const [bizParams, setBizParams] = useState({ users: 0, currentConversion: 0, check: 0, margin: 0 });
-
-  if (loading) return <TerminalSplash onComplete={() => setLoading(false)} />;
-
-  return (
-    <div className="min-h-screen font-sans selection:bg-emerald-500/30 selection:text-white text-white bg-black w-full">
-      <GlobalStyles />
-      {mode === 'select' && <SelectView setMode={setMode} />}
-      {mode === 'business' && <BusinessView setMode={setMode} bizParams={bizParams} setBizParams={setBizParams} onOpenChat={setIsChatOpen} />}
-      {mode === 'dev' && <DevView setMode={setMode} />}
-
-      <button 
-        onClick={() => setIsChatOpen(true)} 
-        className="fixed bottom-8 right-8 z-40 w-16 h-16 bg-emerald-700 text-white flex items-center justify-center shadow-[0_0_40px_rgba(16,185,129,0.4)] hover:scale-110 active:scale-95 transition-all hover:bg-emerald-500 group rounded-full"
-      >
-        <MessageSquare size={26} className="group-hover:rotate-12 transition-transform" strokeWidth={1.5}/>
-      </button>
-
-      <AIChat isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
+    <!-- Toast -->
+    <div id="toast" class="fixed top-6 left-1/2 -translate-x-1/2 bg-white/10 backdrop-blur-xl border border-[var(--taipan-emerald)]/30 text-white px-6 py-3 rounded-full text-xs font-bold uppercase tracking-wider shadow-[0_0_30px_rgba(0,0,0,0.5)] opacity-0 pointer-events-none flex items-center gap-2 z-[110] transition-all transform -translate-y-4">
+        <span class="w-2 h-2 rounded-full bg-[var(--taipan-emerald)] shadow-[0_0_5px_var(--taipan-emerald)]"></span>
+        Заявка принята
     </div>
-  );
-}
+
+    <script>
+        lucide.createIcons();
+
+        const modal = document.getElementById('orderModal');
+        const modalBackdrop = document.getElementById('modalBackdrop');
+        const modalContent = document.getElementById('modalContent');
+        const modalTypeSpan = document.getElementById('modalType');
+        const toast = document.getElementById('toast');
+
+        function openModal(type) {
+            modalTypeSpan.textContent = type;
+            modal.classList.remove('hidden');
+            
+            setTimeout(() => {
+                modalBackdrop.classList.remove('opacity-0');
+                modalContent.classList.remove('translate-y-full');
+            }, 10);
+        }
+
+        function closeModal() {
+            modalBackdrop.classList.add('opacity-0');
+            modalContent.classList.add('translate-y-full');
+            
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
+
+        function submitForm(e) {
+            e.preventDefault();
+            closeModal();
+            
+            setTimeout(() => {
+                toast.classList.remove('opacity-0', '-translate-y-4');
+                toast.classList.add('translate-y-0');
+                
+                setTimeout(() => {
+                    toast.classList.add('opacity-0', '-translate-y-4');
+                    toast.classList.remove('translate-y-0');
+                }, 3000);
+            }, 300);
+
+            e.target.reset();
+        }
+
+        // --- Matrix Animation Script ---
+        const canvas = document.getElementById('matrixCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let width = canvas.width = window.innerWidth;
+        let height = canvas.height = window.innerHeight;
+
+        const columns = Math.floor(width / 20); 
+        const drops = [];
+
+        // Initialize drops
+        for (let i = 0; i < columns; i++) {
+            drops[i] = Math.random() * -100;
+        }
+
+        const chars = "TAIPAN0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+        function drawMatrix() {
+            // Уменьшил затемнение следа, чтобы хвосты были длиннее
+            ctx.fillStyle = 'rgba(2, 2, 2, 0.03)'; 
+            ctx.fillRect(0, 0, width, height);
+
+            // Updated to Emerald Color
+            ctx.fillStyle = '#00FF9D'; 
+            ctx.font = '16px monospace'; // Немного увеличил шрифт
+
+            for (let i = 0; i < drops.length; i++) {
+                const text = chars.charAt(Math.floor(Math.random() * chars.length));
+                
+                ctx.fillText(text, i * 20, drops[i] * 20);
+
+                if (drops[i] * 20 > height && Math.random() > 0.98) {
+                    drops[i] = 0;
+                }
+
+                drops[i]++;
+            }
+        }
+
+        window.addEventListener('resize', () => {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        });
+
+        setInterval(drawMatrix, 50);
+
+    </script>
+</body>
+</html>

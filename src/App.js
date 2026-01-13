@@ -46,12 +46,12 @@
             left: 0;
             width: 100%;
             height: 100%;
-            opacity: 0.08; 
-            z-index: 0; 
-            mix-blend-mode: screen;
+            /* Оптимальная прозрачность: видно, но не отвлекает */
+            opacity: 0.15; 
+            z-index: 1; /* Матрица ПОВЕРХ сетки, чтобы не было "квадратов" */
+            pointer-events: none;
         }
 
-        /* Исправленный класс сетки (удалены дубликаты) */
         .tech-grid {
             position: absolute;
             inset: 0;
@@ -62,7 +62,7 @@
             mask-image: radial-gradient(circle at 50% 30%, black 30%, transparent 100%);
             -webkit-mask-image: radial-gradient(circle at 50% 30%, black 30%, transparent 100%);
             pointer-events: none;
-            z-index: 1; /* Сетка поверх матрицы */
+            z-index: 0; /* Сетка на заднем плане */
         }
 
         .tech-glow {

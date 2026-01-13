@@ -46,9 +46,9 @@
             left: 0;
             width: 100%;
             height: 100%;
-            /* Оптимальная прозрачность: видно, но не отвлекает */
-            opacity: 0.15; 
-            z-index: 1; /* Матрица ПОВЕРХ сетки, чтобы не было "квадратов" */
+            /* ИСПРАВЛЕНО: Оптимальная видимость */
+            opacity: 0.12; 
+            z-index: 1; /* Слой ПОВЕРХ сетки */
             pointer-events: none;
         }
 
@@ -59,10 +59,12 @@
                 linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
                 linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
             background-size: 50px 50px;
-            mask-image: radial-gradient(circle at 50% 30%, black 30%, transparent 100%);
-            -webkit-mask-image: radial-gradient(circle at 50% 30%, black 30%, transparent 100%);
+            /* ИСПРАВЛЕНО: Сетка стала намного мягче, чтобы не спорить с матрицей */
+            opacity: 0.3;
+            mask-image: radial-gradient(circle at 50% 30%, black 20%, transparent 80%);
+            -webkit-mask-image: radial-gradient(circle at 50% 30%, black 20%, transparent 80%);
             pointer-events: none;
-            z-index: 0; /* Сетка на заднем плане */
+            z-index: 0; /* Слой ПОД матрицей */
         }
 
         .tech-glow {

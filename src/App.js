@@ -2,11 +2,12 @@ import React, { useState, useEffect, useRef } from 'react';
 
 /**
  * Taipan Media - Elite React Application
- * CORRECTION: Visual Centering using Negative Right Margins.
- * * Issue: Padding-left shifted content to the right.
- * * Fix: Reverting to negative margin-right (mr).
- * Logic: Letter-spacing adds invisible space at the end. 
- * mr-[-tracking] removes this space from layout flow, enabling true centering.
+ * VISUAL UPDATE: Fixed Centering in Telegram Badge.
+ * * User Report: "YOUR CHANCE TO ENTER HISTORY IS NOT CENTERED".
+ * * Issue: `pl-[0.3em]` was overriding the `px-6` (1.5rem) padding-left, causing the text to shift far left.
+ * * Fix: Removed `px-6` and `pl-[0.3em]`. Applied explicit `pl-7 pr-6`.
+ * * Math: pl-7 (28px) - pr-6 (24px) = 4px extra left padding. 
+ * * This perfectly balances the 0.3em (3.6px) letter-spacing on the right.
  */
 
 // --- Internal Icon Components ---
@@ -77,52 +78,140 @@ const CheckCircle2 = ({ className }) => (
 // --- Brand Logos components ---
 
 const BrandLogos = {
-  Bitcoin: () => (
-    <div className="flex flex-col items-center animate-in fade-in zoom-in duration-1000">
-      <svg viewBox="0 0 24 24" fill="#F7931A" className="w-16 h-16 mb-4 drop-shadow-[0_0_15px_rgba(247,147,26,0.3)] opacity-60">
-        <path d="M23.638 14.904c-1.602 6.43-8.113 10.34-14.542 8.736C2.67 22.05-1.244 15.556.358 9.126 1.96 2.695 8.47-1.216 14.9-.388c6.426 1.602 10.34 8.09 8.738 15.292zM18.106 10.12c.264-1.765-1.08-2.71-2.914-3.344l.596-2.39-1.454-.362-.58 2.33c-.382-.096-.776-.186-1.166-.273l.586-2.355-1.454-.362-.596 2.39c-.316-.072-.625-.144-.925-.218l.002-.008-2.007-.502-.388 1.55s1.08.247 1.057.263c.59.147.696.537.678.847l-.68 2.73c.04.01.094.026.152.05-.054-.014-.112-.03-.17-.044l-1.103 4.426c-.072.178-.254.445-.664.343.014.02-1.057-.263-1.057-.263l-.723 1.67 1.894.474c.35.088.694.18 1.034.266l-.604 2.43 1.452.362.598-2.396c.396.108.783.21 1.16.307l-.592 2.38 1.454.363.604-2.43c2.482.47 4.35.28 5.136-1.965.634-1.808-.032-2.852-1.336-3.535 1.03-.238 1.81-.916 2.02-2.31zM14.47 14.524c-.45 1.81-3.5 0.83-4.484.588l.8-3.212c.983.244 4.14.726 3.684 2.624zm.45-4.44c-.41 1.644-2.96.81-3.774.606l.724-2.912c.814.204 3.468.583 3.05 2.306z"/>
-      </svg>
-      <p className="text-[#F7931A] font-black text-xl tracking-tighter">2009: BITCOIN</p>
-      <div className="mt-2 text-center px-6">
-        <p className="text-zinc-400 text-[11px] leading-tight font-medium">«Пока ты думал, что это фантики...»</p>
-        <p className="text-white text-[10px] uppercase font-bold tracking-widest mt-1 text-[#F7931A]">Другие стали миллионерами</p>
+  Bitcoin: ({ isActive }) => {
+    const [isMissed, setIsMissed] = useState(false);
+
+    useEffect(() => {
+      if (isActive) {
+        setIsMissed(false);
+        const timer = setTimeout(() => setIsMissed(true), 1500);
+        return () => clearTimeout(timer);
+      }
+    }, [isActive]);
+
+    return (
+      <div className={`flex flex-col items-center animate-in fade-in zoom-in duration-1000 relative ${isMissed ? 'animate-[glitch_0.6s_linear]' : ''}`}>
+        <svg 
+          viewBox="0 0 24 24" 
+          fill="#F7931A" 
+          className={`w-16 h-16 mb-4 transition-all duration-1000 ${isMissed ? 'opacity-30 grayscale' : 'opacity-80 drop-shadow-[0_0_15px_rgba(247,147,26,0.5)]'}`}
+        > 
+          <path d="M23.638 14.904c-1.602 6.43-8.113 10.34-14.542 8.736C2.67 22.05-1.244 15.556.358 9.126 1.96 2.695 8.47-1.216 14.9-.388c6.426 1.602 10.34 8.09 8.738 15.292zM18.106 10.12c.264-1.765-1.08-2.71-2.914-3.344l.596-2.39-1.454-.362-.58 2.33c-.382-.096-.776-.186-1.166-.273l.586-2.355-1.454-.362-.596 2.39c-.316-.072-.625-.144-.925-.218l.002-.008-2.007-.502-.388 1.55s1.08.247 1.057.263c.59.147.696.537.678.847l-.68 2.73c.04.01.094.026.152.05-.054-.014-.112-.03-.17-.044l-1.103 4.426c-.072.178-.254.445-.664.343.014.02-1.057-.263-1.057-.263l-.723 1.67 1.894.474c.35.088.694.18 1.034.266l-.604 2.43 1.452.362.598-2.396c.396.108.783.21 1.16.307l-.592 2.38 1.454.363.604-2.43c2.482.47 4.35.28 5.136-1.965.634-1.808-.032-2.852-1.336-3.535 1.03-.238 1.81-.916 2.02-2.31zM14.47 14.524c-.45 1.81-3.5 0.83-4.484.588l.8-3.212c.983.244 4.14.726 3.684 2.624zm.45-4.44c-.41 1.644-2.96.81-3.774.606l.724-2.912c.814.204 3.468.583 3.05 2.306z"/>
+        </svg>
+        
+        <div className="relative">
+          <p className={`font-['Chakra_Petch'] font-black text-xl tracking-tighter transition-all duration-700 ${isMissed ? 'text-zinc-600 line-through decoration-red-600/80 decoration-[3px]' : 'text-[#F7931A]'}`}>
+            2009: BITCOIN
+          </p>
+          
+          <div className={`absolute -top-3 -right-8 rotate-[15deg] border-2 border-red-600/60 text-red-600 text-[8px] font-black uppercase px-2 py-0.5 rounded-sm bg-red-900/10 backdrop-blur-sm transition-all duration-500 transform ${isMissed ? 'opacity-100 scale-100 animate-pulse' : 'opacity-0 scale-150'}`}>
+            УПУЩЕНО
+          </div>
+        </div>
+
+        <div className="mt-2 text-center px-6">
+          <p className="text-zinc-500 text-[11px] leading-tight font-medium">«Пока ты думал, что это фантики...»</p>
+          <p className={`text-[10px] uppercase font-bold tracking-widest mt-1 transition-colors duration-700 ${isMissed ? 'text-zinc-700' : 'text-white'}`}>
+            Другие стали миллионерами
+          </p>
+        </div>
       </div>
-    </div>
-  ),
-  Instagram: () => (
-    <div className="flex flex-col items-center animate-in fade-in zoom-in duration-1000">
-      <svg viewBox="0 0 24 24" fill="none" stroke="#E1306C" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-16 h-16 mb-4 drop-shadow-[0_0_15px_rgba(225,48,108,0.3)] opacity-60">
-        <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
-        <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
-        <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
-      </svg>
-      <p className="text-[#E1306C] font-black text-xl tracking-tighter">2012: INSTAGRAM</p>
-      <div className="mt-2 text-center px-6">
-        <p className="text-zinc-400 text-[11px] leading-tight font-medium">«Пока ты просто выкладывал еду...»</p>
-        <p className="text-white text-[10px] uppercase font-bold tracking-widest mt-1 text-[#E1306C]">Другие построили империи</p>
+    );
+  },
+
+  Instagram: ({ isActive }) => {
+    const [isMissed, setIsMissed] = useState(false);
+
+    useEffect(() => {
+      if (isActive) {
+        setIsMissed(false);
+        const timer = setTimeout(() => setIsMissed(true), 1500);
+        return () => clearTimeout(timer);
+      }
+    }, [isActive]);
+
+    return (
+      <div className={`flex flex-col items-center animate-in fade-in zoom-in duration-1000 relative ${isMissed ? 'animate-[glitch_0.6s_linear]' : ''}`}>
+        <svg 
+          viewBox="0 0 24 24" 
+          fill="none" 
+          stroke="#E1306C" 
+          strokeWidth="1.5" 
+          strokeLinecap="round" 
+          strokeLinejoin="round" 
+          className={`w-16 h-16 mb-4 transition-all duration-1000 ${isMissed ? 'opacity-30 grayscale' : 'opacity-80 drop-shadow-[0_0_15px_rgba(225,48,108,0.5)]'}`}
+        >
+          <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+          <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+          <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+        </svg>
+        
+        <div className="relative">
+          <p className={`font-['Chakra_Petch'] font-black text-xl tracking-tighter transition-all duration-700 ${isMissed ? 'text-zinc-600 line-through decoration-red-600/80 decoration-[3px]' : 'text-[#E1306C]'}`}>
+            2012: INSTAGRAM
+          </p>
+          
+          <div className={`absolute -top-3 -right-8 rotate-[15deg] border-2 border-red-600/60 text-red-600 text-[8px] font-black uppercase px-2 py-0.5 rounded-sm bg-red-900/10 backdrop-blur-sm transition-all duration-500 transform ${isMissed ? 'opacity-100 scale-100 animate-pulse' : 'opacity-0 scale-150'}`}>
+            УПУЩЕНО
+          </div>
+        </div>
+
+        <div className="mt-2 text-center px-6">
+          <p className="text-zinc-500 text-[11px] leading-tight font-medium">«Пока ты просто выкладывал еду...»</p>
+          <p className={`text-[10px] uppercase font-bold tracking-widest mt-1 transition-colors duration-700 ${isMissed ? 'text-zinc-700' : 'text-white'}`}>
+            Другие построили империи
+          </p>
+        </div>
       </div>
-    </div>
-  ),
-  Marketplaces: () => (
-    <div className="flex flex-col items-center animate-in fade-in zoom-in duration-1000">
-      <div className="flex gap-3 mb-4 items-center opacity-60">
-        <span className="text-4xl font-black italic text-purple-500">WB</span>
-        <span className="text-3xl font-bold text-red-600">Kaspi</span>
+    );
+  },
+
+  Marketplaces: ({ isActive }) => {
+    const [isMissed, setIsMissed] = useState(false);
+
+    useEffect(() => {
+      if (isActive) {
+        setIsMissed(false);
+        const timer = setTimeout(() => setIsMissed(true), 1500);
+        return () => clearTimeout(timer);
+      }
+    }, [isActive]);
+
+    return (
+      <div className={`flex flex-col items-center animate-in fade-in zoom-in duration-1000 relative ${isMissed ? 'animate-[glitch_0.6s_linear]' : ''}`}>
+        <div className={`flex gap-3 mb-4 items-center transition-all duration-1000 ${isMissed ? 'opacity-30 grayscale' : 'opacity-80'}`}>
+          <span className="text-4xl font-black italic text-purple-500">WB</span>
+          <span className="text-3xl font-bold text-red-600">Kaspi</span>
+        </div>
+        
+        <div className="relative">
+          <p className={`font-['Chakra_Petch'] font-black text-xl tracking-tighter transition-all duration-700 ${isMissed ? 'text-zinc-600 line-through decoration-red-600/80 decoration-[3px]' : 'text-white'}`}>
+            2019: МАРКЕТПЛЕЙСЫ
+          </p>
+          
+          <div className={`absolute -top-3 -right-8 rotate-[15deg] border-2 border-red-600/60 text-red-600 text-[8px] font-black uppercase px-2 py-0.5 rounded-sm bg-red-900/10 backdrop-blur-sm transition-all duration-500 transform ${isMissed ? 'opacity-100 scale-100 animate-pulse' : 'opacity-0 scale-150'}`}>
+            УПУЩЕНО
+          </div>
+        </div>
+
+        <div className="mt-2 text-center px-6">
+          <p className="text-zinc-500 text-[11px] leading-tight font-medium">«Пока ты боялся логистики...»</p>
+          <p className={`text-[10px] uppercase font-bold tracking-widest mt-1 transition-colors duration-700 ${isMissed ? 'text-zinc-700' : 'text-white'}`}>
+            Другие захватили рынок
+          </p>
+        </div>
       </div>
-      <p className="text-white font-black text-xl tracking-tighter">2019: МАРКЕТПЛЕЙСЫ</p>
-      <div className="mt-2 text-center px-6">
-        <p className="text-zinc-400 text-[11px] leading-tight font-medium">«Пока ты боялся логистики...»</p>
-        <p className="text-white text-[10px] uppercase font-bold tracking-widest mt-1">Другие захватили рынок</p>
-      </div>
-    </div>
-  ),
-  Telegram: () => (
+    );
+  },
+
+  Telegram: ({ isActive }) => (
     <div className="flex flex-col items-center animate-in fade-in zoom-in duration-1000">
       <svg viewBox="0 0 24 24" fill="#0088cc" className="w-20 h-20 mb-4 drop-shadow-[0_0_25px_rgba(0,136,204,0.5)]">
         <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.2-.08-.06-.19-.04-.27-.02-.11.02-1.93 1.23-5.46 3.62-.51.35-.98.53-1.4.52-.46-.01-1.35-.26-2.01-.48-.81-.27-1.45-.42-1.39-.89.03-.24.36-.49.99-.75 3.88-1.69 6.47-2.8 7.76-3.32 3.69-1.5 4.45-1.76 4.95-1.77.11 0 .36.03.52.16.13.1.17.24.18.33.01.07.02.24.01.4z"/>
       </svg>
-      <p className="text-white font-black text-2xl tracking-[0.1em]">2026: TELEGRAM STORE</p>
-      <p className="text-[#00FF9D] text-[12px] uppercase tracking-[0.3em] pl-[0.3em] mt-3 font-bold bg-[#00FF9D]/10 border border-[#00FF9D]/30 px-6 py-2 rounded-full shadow-[0_0_15px_rgba(0,255,157,0.2)]">
+      <p className="text-white font-black text-2xl tracking-[0.1em] font-['Chakra_Petch']">2026: TELEGRAM STORE</p>
+      {/* FIXED: Removed 'pl-[0.3em]', changed px-6 to pl-7 pr-6 to balance the 0.3em (approx 4px) tracking */}
+      <p className="text-[#00FF9D] text-[12px] uppercase tracking-[0.3em] mt-3 font-bold bg-[#00FF9D]/10 border border-[#00FF9D]/30 pl-7 pr-6 py-2 rounded-full shadow-[0_0_15px_rgba(0,255,157,0.2)]">
         Твой шанс войти в историю
       </p>
     </div>
@@ -137,10 +226,10 @@ const App = () => {
   const [activeSlide, setActiveSlide] = useState(0);
    
   const slides = [
-    <BrandLogos.Bitcoin />,
-    <BrandLogos.Instagram />,
-    <BrandLogos.Marketplaces />,
-    <BrandLogos.Telegram />
+    BrandLogos.Bitcoin,
+    BrandLogos.Instagram,
+    BrandLogos.Marketplaces,
+    BrandLogos.Telegram
   ];
 
   useEffect(() => {
@@ -213,8 +302,8 @@ const App = () => {
 
   return (
     <div className="min-h-screen bg-[#050505] text-white font-sans selection:bg-[#00FF9D]/30 relative overflow-hidden flex flex-col">
-      {/* Premium Font Syne */}
-      <link href="https://fonts.googleapis.com/css2?family=Syne:wght@800&family=Outfit:wght@400;700&display=swap" rel="stylesheet" />
+      {/* Premium Font Syne + Chakra Petch */}
+      <link href="https://fonts.googleapis.com/css2?family=Syne:wght@800&family=Outfit:wght@400;700&family=Chakra+Petch:wght@700&display=swap" rel="stylesheet" />
         
       {/* Background */}
       <div className="fixed inset-0 z-0 pointer-events-none">
@@ -237,14 +326,14 @@ const App = () => {
             {/* MAIN HEADER: PERFECTLY CENTERED */}
             <div className="mb-14 w-full text-center">
               <h1 
-                className="font-['Syne'] font-[800] uppercase tracking-[0.15em] whitespace-nowrap overflow-visible relative block w-full text-center"
+                className="font-['Chakra_Petch'] font-[700] uppercase tracking-[0.15em] whitespace-nowrap overflow-visible relative block w-full text-center"
                 style={{ 
                     fontSize: 'clamp(1.5rem, 8.5vw, 3.5rem)',
                     textShadow: '0 0 20px rgba(0,255,157,0.3)',
                     color: '#ffffff'
                 }}
               >
-                {/* Fixed Strategy: Remove left padding, use negative right margin to eat the trailing space */}
+                {/* FIXED: Re-added mr-[-0.15em] to exactly match tracking-[0.15em] */}
                 <span className="relative inline-block mr-[-0.15em]">
                     TAIPAN MEDIA
                     {/* Ghost/Glow Text */}
@@ -295,7 +384,8 @@ const App = () => {
 
             <div className="flex-grow flex flex-col items-center justify-center space-y-10 w-full">
               <div className="text-center px-4 w-full">
-                <h2 className="text-4xl font-black tracking-tighter uppercase mb-2 font-['Syne']">Упущенные<br/><span className="text-[#00FF9D]">Возможности</span></h2>
+                {/* CHANGED FONT HERE to Chakra_Petch to match main header */}
+                <h2 className="text-4xl font-black tracking-tighter uppercase mb-2 font-['Chakra_Petch']">Упущенные<br/><span className="text-[#00FF9D]">Возможности</span></h2>
                 <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] mr-[-0.3em] font-bold">История твоих сомнений</p>
               </div>
 
@@ -307,12 +397,12 @@ const App = () => {
                    <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-[#00FF9D]/10 rounded-full blur-[60px] animate-[smokeDrift_8s_infinite_reverse]" />
                  </div>
                  
-                 {slides.map((logo, idx) => (
+                 {slides.map((SlideComponent, idx) => (
                    <div key={idx} className={`absolute inset-0 flex items-center justify-center transition-all duration-[1200ms] ease-in-out transform ${activeSlide === idx ? 'opacity-100 scale-100 blur-0' : 'opacity-0 scale-75 blur-3xl'}`}>
                      <div className="relative w-full text-center">
                         <div className="absolute inset-0 bg-white/5 blur-3xl rounded-full transform scale-150 left-1/2 -translate-x-1/2" />
                         <div className="relative z-10">
-                          {logo}
+                          <SlideComponent isActive={activeSlide === idx} />
                         </div>
                      </div>
                    </div>
@@ -362,16 +452,21 @@ const App = () => {
 
       <style>{`
         .glass-card {
-            background: rgba(10, 10, 10, 0.6);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(0, 255, 157, 0.08); 
-            box-shadow: 0 0 4px rgba(0, 255, 157, 0.05), 0 4px 30px rgba(0, 0, 0, 0.5);
+            /* FIXED: Crystal Clear Transparency */
+            background: transparent;
+            backdrop-filter: blur(2px);
+            -webkit-backdrop-filter: blur(2px);
+            /* Keeping the thin tech border */
+            border: 1px solid rgba(0, 255, 157, 0.15); 
+            /* Removed shadow to make it truly flat and transparent */
+            box-shadow: none;
             transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
         }
         .glass-card:hover {
-            border-color: rgba(0, 255, 157, 0.3);
-            box-shadow: 0 0 8px rgba(0, 255, 157, 0.15);
+            /* Slight reaction on hover */
+            background: rgba(0, 255, 157, 0.02);
+            border-color: rgba(0, 255, 157, 0.4);
+            box-shadow: 0 0 20px rgba(0, 255, 157, 0.1);
         }
         @keyframes contourPulse {
           0% { filter: drop-shadow(0 0 2px rgba(0, 255, 157, 0.4)); opacity: 0.8; }
@@ -383,6 +478,20 @@ const App = () => {
           33% { transform: translate(15px, -15px) scale(1.1); opacity: 0.6; }
           66% { transform: translate(-10px, 10px) scale(0.9); opacity: 0.4; }
           100% { transform: translate(0, 0) scale(1); opacity: 0.3; }
+        }
+        /* Aggressive Glitch Animation - Signal Noise Style */
+        @keyframes glitch {
+          0% { transform: translate(0) skew(0deg); opacity: 1; filter: none; }
+          10% { transform: translate(-2px, 1px) skew(-2deg); opacity: 0.8; filter: brightness(1.5); }
+          20% { transform: translate(2px, -1px) skew(2deg); opacity: 1; }
+          30% { transform: translate(-1px, 2px) skew(0deg); opacity: 0.8; filter: contrast(2); }
+          40% { transform: translate(1px, -2px) skew(0deg); opacity: 1; }
+          50% { transform: translate(-1px, 0) skew(-5deg); opacity: 0.3; filter: brightness(0.5); } /* Drop out */
+          60% { transform: translate(1px, 0) skew(5deg); opacity: 1; }
+          70% { transform: translate(0, 1px) skew(0deg); opacity: 0.8; }
+          80% { transform: translate(0, -1px) skew(0deg); opacity: 1; filter: contrast(1.5); }
+          90% { transform: translate(-1px, 1px) skew(0deg); opacity: 0.9; }
+          100% { transform: translate(0) skew(0deg); opacity: 1; filter: none; }
         }
       `}</style>
     </div>

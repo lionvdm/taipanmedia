@@ -1,17 +1,81 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { 
-  GraduationCap, 
-  ArrowRight, 
-  ChevronLeft, 
-  CheckCircle2
-} from 'lucide-react';
 
 /**
  * Taipan Media - Elite React Application
- * Исправление: Идеальное центрирование заголовка и оптимизация стилей.
+ * CORRECTION: Visual Centering using Negative Right Margins.
+ * * Issue: Padding-left shifted content to the right.
+ * * Fix: Reverting to negative margin-right (mr).
+ * Logic: Letter-spacing adds invisible space at the end. 
+ * mr-[-tracking] removes this space from layout flow, enabling true centering.
  */
 
-// Компоненты логотипов с текстом о "сожалениях"
+// --- Internal Icon Components ---
+
+const GraduationCap = ({ className }) => (
+  <svg 
+    xmlns="http://www.w3.org/2000/svg" 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    stroke="currentColor" 
+    strokeWidth="2" 
+    strokeLinecap="round" 
+    strokeLinejoin="round" 
+    className={className}
+  >
+    <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+    <path d="M6 12v5c3 3 9 3 12 0v-5" />
+  </svg>
+);
+
+const ArrowRight = ({ className }) => (
+  <svg 
+    xmlns="http://www.w3.org/2000/svg" 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    stroke="currentColor" 
+    strokeWidth="2" 
+    strokeLinecap="round" 
+    strokeLinejoin="round" 
+    className={className}
+  >
+    <path d="M5 12h14" />
+    <path d="m12 5 7 7-7 7" />
+  </svg>
+);
+
+const ChevronLeft = ({ className }) => (
+  <svg 
+    xmlns="http://www.w3.org/2000/svg" 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    stroke="currentColor" 
+    strokeWidth="2" 
+    strokeLinecap="round" 
+    strokeLinejoin="round" 
+    className={className}
+  >
+    <path d="m15 18-6-6 6-6" />
+  </svg>
+);
+
+const CheckCircle2 = ({ className }) => (
+  <svg 
+    xmlns="http://www.w3.org/2000/svg" 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    stroke="currentColor" 
+    strokeWidth="2" 
+    strokeLinecap="round" 
+    strokeLinejoin="round" 
+    className={className}
+  >
+    <circle cx="12" cy="12" r="10" />
+    <path d="m9 12 2 2 4-4" />
+  </svg>
+);
+
+// --- Brand Logos components ---
+
 const BrandLogos = {
   Bitcoin: () => (
     <div className="flex flex-col items-center animate-in fade-in zoom-in duration-1000">
@@ -58,7 +122,7 @@ const BrandLogos = {
         <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.2-.08-.06-.19-.04-.27-.02-.11.02-1.93 1.23-5.46 3.62-.51.35-.98.53-1.4.52-.46-.01-1.35-.26-2.01-.48-.81-.27-1.45-.42-1.39-.89.03-.24.36-.49.99-.75 3.88-1.69 6.47-2.8 7.76-3.32 3.69-1.5 4.45-1.76 4.95-1.77.11 0 .36.03.52.16.13.1.17.24.18.33.01.07.02.24.01.4z"/>
       </svg>
       <p className="text-white font-black text-2xl tracking-[0.1em]">2026: TELEGRAM STORE</p>
-      <p className="text-[#00FF9D] text-[12px] uppercase tracking-[0.3em] mt-3 font-bold bg-[#00FF9D]/10 border border-[#00FF9D]/30 px-6 py-2 rounded-full shadow-[0_0_15px_rgba(0,255,157,0.2)]">
+      <p className="text-[#00FF9D] text-[12px] uppercase tracking-[0.3em] pl-[0.3em] mt-3 font-bold bg-[#00FF9D]/10 border border-[#00FF9D]/30 px-6 py-2 rounded-full shadow-[0_0_15px_rgba(0,255,157,0.2)]">
         Твой шанс войти в историю
       </p>
     </div>
@@ -71,7 +135,7 @@ const App = () => {
   const [modalType, setModalType] = useState('');
   const [showToast, setShowToast] = useState(false);
   const [activeSlide, setActiveSlide] = useState(0);
-  
+   
   const slides = [
     <BrandLogos.Bitcoin />,
     <BrandLogos.Instagram />,
@@ -149,10 +213,10 @@ const App = () => {
 
   return (
     <div className="min-h-screen bg-[#050505] text-white font-sans selection:bg-[#00FF9D]/30 relative overflow-hidden flex flex-col">
-      {/* Премиальный шрифт Syne */}
+      {/* Premium Font Syne */}
       <link href="https://fonts.googleapis.com/css2?family=Syne:wght@800&family=Outfit:wght@400;700&display=swap" rel="stylesheet" />
-      
-      {/* Фон */}
+        
+      {/* Background */}
       <div className="fixed inset-0 z-0 pointer-events-none">
         <div className="absolute inset-0 bg-[#020202] -z-20" />
         <div className="absolute inset-0 opacity-20 -z-10" 
@@ -170,7 +234,7 @@ const App = () => {
         {currentView === 'main' ? (
           <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 flex flex-col items-center">
             
-            {/* ГЛАВНЫЙ ЗАГОЛОВОК: ЦЕНТРИРОВАН */}
+            {/* MAIN HEADER: PERFECTLY CENTERED */}
             <div className="mb-14 w-full text-center">
               <h1 
                 className="font-['Syne'] font-[800] uppercase tracking-[0.15em] whitespace-nowrap overflow-visible relative block w-full text-center"
@@ -180,15 +244,20 @@ const App = () => {
                     color: '#ffffff'
                 }}
               >
-                TAIPAN MEDIA
-                <span className="absolute inset-0 -z-10 opacity-40 blur-[12px] animate-pulse text-[#00FF9D]">
-                  TAIPAN MEDIA
+                {/* Fixed Strategy: Remove left padding, use negative right margin to eat the trailing space */}
+                <span className="relative inline-block mr-[-0.15em]">
+                    TAIPAN MEDIA
+                    {/* Ghost/Glow Text */}
+                    <span className="absolute inset-0 -z-10 opacity-40 blur-[12px] animate-pulse text-[#00FF9D]">
+                      TAIPAN MEDIA
+                    </span>
                 </span>
               </h1>
               
               <div className="flex items-center justify-center gap-4 mt-3 w-full">
                 <div className="h-[1px] flex-1 max-w-[40px] bg-gradient-to-r from-transparent to-zinc-700"></div>
-                <p className="text-[10px] uppercase tracking-[0.6em] text-zinc-500 font-bold whitespace-nowrap">Digital Agency</p>
+                {/* Fixed centering for Digital Agency: tracking-0.6em needs mr-[-0.6em] */}
+                <p className="text-[10px] uppercase tracking-[0.6em] mr-[-0.6em] text-zinc-500 font-bold whitespace-nowrap">Digital Agency</p>
                 <div className="h-[1px] flex-1 max-w-[40px] bg-gradient-to-l from-transparent to-zinc-700"></div>
               </div>
             </div>
@@ -227,10 +296,10 @@ const App = () => {
             <div className="flex-grow flex flex-col items-center justify-center space-y-10 w-full">
               <div className="text-center px-4 w-full">
                 <h2 className="text-4xl font-black tracking-tighter uppercase mb-2 font-['Syne']">Упущенные<br/><span className="text-[#00FF9D]">Возможности</span></h2>
-                <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] font-bold">История твоих сомнений</p>
+                <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] mr-[-0.3em] font-bold">История твоих сомнений</p>
               </div>
 
-              {/* СЕКЦИЯ С ДЫМОМ И ЛОГОТИПАМИ */}
+              {/* SMOKE SECTION & LOGOS */}
               <div className="relative w-full h-[380px] flex items-center justify-center overflow-hidden rounded-[40px] bg-white/5 border border-white/5 shadow-2xl">
                  <div className="absolute inset-0 overflow-hidden pointer-events-none">
                    <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.05)_0%,transparent_70%)] animate-[smokeDrift_10s_infinite]" />
@@ -250,8 +319,9 @@ const App = () => {
                  ))}
               </div>
 
-              <div className="text-center max-w-xs px-6">
-                <p className="text-zinc-500 text-[12px] font-bold uppercase tracking-widest animate-pulse">
+              <div className="text-center w-full px-6 flex justify-center">
+                {/* Fixed centering: tracking-widest (0.1em) needs mr-[-0.1em] */}
+                <p className="text-zinc-500 text-[12px] font-bold uppercase tracking-widest mr-[-0.1em] animate-pulse whitespace-nowrap">
                    Не стань историей упущенных шансов
                 </p>
               </div>
@@ -264,9 +334,9 @@ const App = () => {
         )}
       </div>
 
-      <footer className="relative z-10 text-center py-8 text-zinc-700 text-[9px] uppercase tracking-[0.15em] font-bold">Данный mini app был создан <span className="text-zinc-500">TAIPAN MEDIA GROUP</span></footer>
+      <footer className="relative z-10 text-center py-8 text-zinc-700 text-[9px] uppercase tracking-[0.15em] mr-[-0.15em] font-bold">Данный mini app был создан <span className="text-zinc-500">TAIPAN MEDIA GROUP</span></footer>
 
-      {/* Модальное окно */}
+      {/* Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-end justify-center px-4">
           <div className="absolute inset-0 bg-black/80 backdrop-blur-md animate-in fade-in duration-300" onClick={closeModal} />

@@ -8,49 +8,58 @@ import {
 
 /**
  * Taipan Media - Elite React Application
- * Обновление: Убран текстовый блок в обучении, изменен текст кнопки на "Стань тем кто успел".
+ * Исправление: Идеальное центрирование заголовка и оптимизация стилей.
  */
 
-// Компоненты логотипов для визуального ряда
+// Компоненты логотипов с текстом о "сожалениях"
 const BrandLogos = {
   Bitcoin: () => (
     <div className="flex flex-col items-center animate-in fade-in zoom-in duration-1000">
-      <svg viewBox="0 0 24 24" fill="#F7931A" className="w-20 h-20 mb-4 drop-shadow-[0_0_15px_rgba(247,147,26,0.3)]">
+      <svg viewBox="0 0 24 24" fill="#F7931A" className="w-16 h-16 mb-4 drop-shadow-[0_0_15px_rgba(247,147,26,0.3)] opacity-60">
         <path d="M23.638 14.904c-1.602 6.43-8.113 10.34-14.542 8.736C2.67 22.05-1.244 15.556.358 9.126 1.96 2.695 8.47-1.216 14.9-.388c6.426 1.602 10.34 8.09 8.738 15.292zM18.106 10.12c.264-1.765-1.08-2.71-2.914-3.344l.596-2.39-1.454-.362-.58 2.33c-.382-.096-.776-.186-1.166-.273l.586-2.355-1.454-.362-.596 2.39c-.316-.072-.625-.144-.925-.218l.002-.008-2.007-.502-.388 1.55s1.08.247 1.057.263c.59.147.696.537.678.847l-.68 2.73c.04.01.094.026.152.05-.054-.014-.112-.03-.17-.044l-1.103 4.426c-.072.178-.254.445-.664.343.014.02-1.057-.263-1.057-.263l-.723 1.67 1.894.474c.35.088.694.18 1.034.266l-.604 2.43 1.452.362.598-2.396c.396.108.783.21 1.16.307l-.592 2.38 1.454.363.604-2.43c2.482.47 4.35.28 5.136-1.965.634-1.808-.032-2.852-1.336-3.535 1.03-.238 1.81-.916 2.02-2.31zM14.47 14.524c-.45 1.81-3.5 0.83-4.484.588l.8-3.212c.983.244 4.14.726 3.684 2.624zm.45-4.44c-.41 1.644-2.96.81-3.774.606l.724-2.912c.814.204 3.468.583 3.05 2.306z"/>
       </svg>
       <p className="text-[#F7931A] font-black text-xl tracking-tighter">2009: BITCOIN</p>
-      <p className="text-zinc-500 text-[10px] uppercase tracking-widest mt-1">«Всего лишь забава»</p>
+      <div className="mt-2 text-center px-6">
+        <p className="text-zinc-400 text-[11px] leading-tight font-medium">«Пока ты думал, что это фантики...»</p>
+        <p className="text-white text-[10px] uppercase font-bold tracking-widest mt-1 text-[#F7931A]">Другие стали миллионерами</p>
+      </div>
     </div>
   ),
   Instagram: () => (
     <div className="flex flex-col items-center animate-in fade-in zoom-in duration-1000">
-      <svg viewBox="0 0 24 24" fill="none" stroke="#E1306C" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-20 h-20 mb-4 drop-shadow-[0_0_15px_rgba(225,48,108,0.3)]">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#E1306C" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-16 h-16 mb-4 drop-shadow-[0_0_15px_rgba(225,48,108,0.3)] opacity-60">
         <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
         <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
         <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
       </svg>
       <p className="text-[#E1306C] font-black text-xl tracking-tighter">2012: INSTAGRAM</p>
-      <p className="text-zinc-500 text-[10px] uppercase tracking-widest mt-1">«Не место для денег»</p>
+      <div className="mt-2 text-center px-6">
+        <p className="text-zinc-400 text-[11px] leading-tight font-medium">«Пока ты просто выкладывал еду...»</p>
+        <p className="text-white text-[10px] uppercase font-bold tracking-widest mt-1 text-[#E1306C]">Другие построили империи</p>
+      </div>
     </div>
   ),
   Marketplaces: () => (
     <div className="flex flex-col items-center animate-in fade-in zoom-in duration-1000">
-      <div className="flex gap-4 mb-4 items-center">
-        <span className="text-5xl font-black italic text-purple-500 drop-shadow-[0_0_15px_rgba(168,85,247,0.3)]">WB</span>
-        <span className="text-4xl font-bold text-red-600 drop-shadow-[0_0_15px_rgba(220,38,38,0.3)]">Kaspi</span>
+      <div className="flex gap-3 mb-4 items-center opacity-60">
+        <span className="text-4xl font-black italic text-purple-500">WB</span>
+        <span className="text-3xl font-bold text-red-600">Kaspi</span>
       </div>
       <p className="text-white font-black text-xl tracking-tighter">2019: МАРКЕТПЛЕЙСЫ</p>
-      <p className="text-zinc-500 text-[10px] uppercase tracking-widest mt-1">«Непонятно и сложно»</p>
+      <div className="mt-2 text-center px-6">
+        <p className="text-zinc-400 text-[11px] leading-tight font-medium">«Пока ты боялся логистики...»</p>
+        <p className="text-white text-[10px] uppercase font-bold tracking-widest mt-1">Другие захватили рынок</p>
+      </div>
     </div>
   ),
   Telegram: () => (
     <div className="flex flex-col items-center animate-in fade-in zoom-in duration-1000">
-      <svg viewBox="0 0 24 24" fill="#0088cc" className="w-24 h-24 mb-4 drop-shadow-[0_0_25px_rgba(0,136,204,0.5)]">
+      <svg viewBox="0 0 24 24" fill="#0088cc" className="w-20 h-20 mb-4 drop-shadow-[0_0_25px_rgba(0,136,204,0.5)]">
         <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.2-.08-.06-.19-.04-.27-.02-.11.02-1.93 1.23-5.46 3.62-.51.35-.98.53-1.4.52-.46-.01-1.35-.26-2.01-.48-.81-.27-1.45-.42-1.39-.89.03-.24.36-.49.99-.75 3.88-1.69 6.47-2.8 7.76-3.32 3.69-1.5 4.45-1.76 4.95-1.77.11 0 .36.03.52.16.13.1.17.24.18.33.01.07.02.24.01.4z"/>
       </svg>
       <p className="text-white font-black text-2xl tracking-[0.1em]">2026: TELEGRAM STORE</p>
-      <p className="text-[#00FF9D] text-[12px] uppercase tracking-[0.3em] mt-3 font-bold bg-[#00FF9D]/10 border border-[#00FF9D]/30 px-6 py-2 rounded-full shadow-[0_0_15px_rgba(0,255,157,0.1)]">
-        То что нельзя упустить
+      <p className="text-[#00FF9D] text-[12px] uppercase tracking-[0.3em] mt-3 font-bold bg-[#00FF9D]/10 border border-[#00FF9D]/30 px-6 py-2 rounded-full shadow-[0_0_15px_rgba(0,255,157,0.2)]">
+        Твой шанс войти в историю
       </p>
     </div>
   )
@@ -74,7 +83,7 @@ const App = () => {
     if (currentView === 'education') {
       const timer = setInterval(() => {
         setActiveSlide((prev) => (prev + 1) % slides.length);
-      }, 4000);
+      }, 4500);
       return () => clearInterval(timer);
     }
   }, [currentView]);
@@ -140,7 +149,7 @@ const App = () => {
 
   return (
     <div className="min-h-screen bg-[#050505] text-white font-sans selection:bg-[#00FF9D]/30 relative overflow-hidden flex flex-col">
-      {/* Импорт премиального шрифта Syne */}
+      {/* Премиальный шрифт Syne */}
       <link href="https://fonts.googleapis.com/css2?family=Syne:wght@800&family=Outfit:wght@400;700&display=swap" rel="stylesheet" />
       
       {/* Фон */}
@@ -159,11 +168,12 @@ const App = () => {
 
       <div className="relative z-10 flex-grow flex flex-col max-w-lg mx-auto w-full px-4 pt-10 pb-8">
         {currentView === 'main' ? (
-          <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
-            {/* Заголовок: шрифт Syne, одна строка, адаптивный размер */}
-            <div className="mb-14 text-center px-2">
+          <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 flex flex-col items-center">
+            
+            {/* ГЛАВНЫЙ ЗАГОЛОВОК: ЦЕНТРИРОВАН */}
+            <div className="mb-14 w-full text-center">
               <h1 
-                className="font-['Syne'] font-[800] uppercase tracking-[0.15em] whitespace-nowrap overflow-visible relative inline-block w-full text-center"
+                className="font-['Syne'] font-[800] uppercase tracking-[0.15em] whitespace-nowrap overflow-visible relative block w-full text-center"
                 style={{ 
                     fontSize: 'clamp(1.5rem, 8.5vw, 3.5rem)',
                     textShadow: '0 0 20px rgba(0,255,157,0.3)',
@@ -175,14 +185,15 @@ const App = () => {
                   TAIPAN MEDIA
                 </span>
               </h1>
-              <div className="flex items-center justify-center gap-4 mt-2">
-                <div className="h-[1px] w-8 bg-gradient-to-r from-transparent to-zinc-700"></div>
-                <p className="text-[10px] uppercase tracking-[0.6em] text-zinc-500 font-bold">Digital Agency</p>
-                <div className="h-[1px] w-8 bg-gradient-to-l from-transparent to-zinc-700"></div>
+              
+              <div className="flex items-center justify-center gap-4 mt-3 w-full">
+                <div className="h-[1px] flex-1 max-w-[40px] bg-gradient-to-r from-transparent to-zinc-700"></div>
+                <p className="text-[10px] uppercase tracking-[0.6em] text-zinc-500 font-bold whitespace-nowrap">Digital Agency</p>
+                <div className="h-[1px] flex-1 max-w-[40px] bg-gradient-to-l from-transparent to-zinc-700"></div>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 mb-4">
+            <div className="grid grid-cols-2 gap-4 mb-4 w-full">
               <div onClick={() => openModal('Telegram Shop')} className="group relative glass-card rounded-3xl p-6 h-64 flex flex-col items-center justify-center text-center cursor-pointer">
                 <div className="mb-6 text-zinc-400 group-hover:text-[#00FF9D] transition-all duration-300">
                   <TelegramLogoMain className="w-12 h-12 animate-[contourPulse_3s_ease-in-out_infinite]" />
@@ -202,25 +213,25 @@ const App = () => {
               </div>
             </div>
 
-            <div onClick={() => openModal('Mini App')} className="group relative glass-card rounded-3xl p-6 flex flex-col items-center justify-center cursor-pointer text-center">
+            <div onClick={() => openModal('Mini App')} className="group relative glass-card rounded-3xl p-6 flex flex-col items-center justify-center cursor-pointer text-center w-full">
               <h3 className="text-lg font-bold uppercase tracking-widest mb-2 group-hover:text-[#00FF9D] transition-colors">MINI APP</h3>
               <p className="text-[10px] text-zinc-500 uppercase tracking-widest group-hover:text-white transition-colors">Заказать для своего бизнеса</p>
             </div>
           </div>
         ) : (
-          <div className="animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col h-full">
-            <button onClick={() => setCurrentView('main')} className="flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-6 hover:opacity-70 transition-all w-fit">
+          <div className="animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col h-full items-center">
+            <button onClick={() => setCurrentView('main')} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-6 hover:opacity-70 transition-all w-fit">
               <ChevronLeft className="w-4 h-4 mr-1" /> Назад
             </button>
 
-            <div className="flex-grow flex flex-col items-center justify-center space-y-12">
-              <div className="text-center">
+            <div className="flex-grow flex flex-col items-center justify-center space-y-10 w-full">
+              <div className="text-center px-4 w-full">
                 <h2 className="text-4xl font-black tracking-tighter uppercase mb-2 font-['Syne']">Упущенные<br/><span className="text-[#00FF9D]">Возможности</span></h2>
-                <div className="h-1 w-24 bg-[#00FF9D] mx-auto opacity-50" />
+                <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] font-bold">История твоих сомнений</p>
               </div>
 
               {/* СЕКЦИЯ С ДЫМОМ И ЛОГОТИПАМИ */}
-              <div className="relative w-full h-80 flex items-center justify-center overflow-hidden rounded-[40px] bg-white/5 border border-white/5 shadow-2xl">
+              <div className="relative w-full h-[380px] flex items-center justify-center overflow-hidden rounded-[40px] bg-white/5 border border-white/5 shadow-2xl">
                  <div className="absolute inset-0 overflow-hidden pointer-events-none">
                    <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.05)_0%,transparent_70%)] animate-[smokeDrift_10s_infinite]" />
                    <div className="absolute -top-20 -left-20 w-64 h-64 bg-white/10 rounded-full blur-[60px] animate-[smokeDrift_12s_infinite]" />
@@ -229,8 +240,8 @@ const App = () => {
                  
                  {slides.map((logo, idx) => (
                    <div key={idx} className={`absolute inset-0 flex items-center justify-center transition-all duration-[1200ms] ease-in-out transform ${activeSlide === idx ? 'opacity-100 scale-100 blur-0' : 'opacity-0 scale-75 blur-3xl'}`}>
-                     <div className="relative">
-                        <div className="absolute inset-0 bg-white/5 blur-3xl rounded-full transform scale-150" />
+                     <div className="relative w-full text-center">
+                        <div className="absolute inset-0 bg-white/5 blur-3xl rounded-full transform scale-150 left-1/2 -translate-x-1/2" />
                         <div className="relative z-10">
                           {logo}
                         </div>
@@ -239,11 +250,14 @@ const App = () => {
                  ))}
               </div>
 
-              {/* Текстовый блок убран по запросу пользователя */}
+              <div className="text-center max-w-xs px-6">
+                <p className="text-zinc-500 text-[12px] font-bold uppercase tracking-widest animate-pulse">
+                   Не стань историей упущенных шансов
+                </p>
+              </div>
             </div>
 
-            {/* Кнопка с обновленным текстом */}
-            <button onClick={() => openModal('Join Education')} className="w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-6 rounded-3xl shadow-[0_5px_30px_rgba(0,255,157,0.3)] hover:scale-[1.02] active:scale-[0.98] transition-all mt-10 text-xs">
+            <button onClick={() => openModal('Join Education')} className="w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-6 rounded-3xl shadow-[0_5px_30px_rgba(0,255,157,0.3)] hover:scale-[1.02] active:scale-[0.98] transition-all mt-8 text-xs">
                Стань тем кто успел
             </button>
           </div>

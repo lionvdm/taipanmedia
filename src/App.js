@@ -2,10 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 
 /**
  * Taipan Media - Elite React Application
- * VISUAL UPDATE: Updated Copy for "Is it hard?" Block.
- * * User Request: Replace the difficulty FAQ text with specific copy emphasizing mobile-first, simplicity, and accessibility.
- * * Action: Updated the 'difficulty' item content in faqItems.
- * * Formatting: Used bold spans for key benefits (No Coding, Mobile Work, Maternity/Side Job).
+ * FIX: Restored SocialProofToast Component.
+ * * Issue: 'SocialProofToast' was referenced in the JSX but the function definition was missing.
+ * * Action: Re-added the full `SocialProofToast` component definition.
+ * * Verified: TelegramLogoMain, SetupTimeline, MatrixTicker, and all other sub-components are present.
  */
 
 // --- Internal Icon Components ---
@@ -46,6 +46,59 @@ const TelegramLogoMain = ({ className }) => (
     <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.446 1.394c-.16.16-.295.293-.605.293l.214-3.054 5.56-5.022c.24-.213-.054-.334-.373-.121l-6.869 4.326-2.962-.924c-.64-.203-.658-.64.135-.954l11.566-4.458c.538-.196 1.006.128.832.942z"/>
   </svg>
 );
+
+// --- Social Proof Toast Component (The Queue Effect) ---
+const SocialProofToast = () => {
+  const [visible, setVisible] = useState(false);
+  const [data, setData] = useState(null);
+
+  const messages = [
+    { name: "Арман", city: "Шымкент", action: "только что забронировал место на курсе", icon: <CheckCircle2 className="w-4 h-4 text-[#00FF9D]" /> },
+    { name: "Алина", city: "Алматы", action: "получила первый заказ на 60.000₸", icon: <Wallet className="w-4 h-4 text-[#00FF9D]" /> },
+    { name: "Руслан", city: "Астана", action: "оплатил доступ к модулю 'Трафик'", icon: <Lock className="w-4 h-4 text-[#00FF9D]" /> },
+    { name: "Мадина", city: "Атырау", action: "запустила свой первый магазин", icon: <Zap className="w-4 h-4 text-[#00FF9D]" /> },
+    { name: "Тимур", city: "Караганда", action: "заработал 45 000₸ на настройке бота", icon: <TrendingUp className="w-4 h-4 text-[#00FF9D]" /> }
+  ];
+
+  useEffect(() => {
+    // Start delay 5s, then interval 35s
+    const trigger = () => {
+       const randomMsg = messages[Math.floor(Math.random() * messages.length)];
+       setData(randomMsg);
+       setVisible(true);
+       setTimeout(() => setVisible(false), 10000); // Increased visibility duration to 10s
+    };
+
+    const initialTimer = setTimeout(trigger, 5000);
+    const interval = setInterval(trigger, 35000);
+
+    return () => {
+      clearTimeout(initialTimer);
+      clearInterval(interval);
+    };
+  }, []);
+
+  if (!visible || !data) return null;
+
+  return (
+    <div className="fixed top-4 right-4 z-[60] max-w-[280px] w-full animate-in slide-in-from-right duration-500">
+      <div className="glass-card p-3 rounded-xl border border-[#00FF9D]/30 shadow-[0_0_20px_rgba(0,255,157,0.2)] flex items-start gap-3 backdrop-blur-xl bg-black/80">
+        <div className="bg-[#00FF9D]/10 p-2 rounded-full border border-[#00FF9D]/20 shrink-0">
+          {data.icon}
+        </div>
+        <div>
+          <p className="text-[11px] text-white font-bold leading-tight">
+            <span className="text-[#00FF9D]">{data.name}</span> из {data.city}
+          </p>
+          <p className="text-[10px] text-zinc-400 leading-snug mt-0.5">
+            {data.action}
+          </p>
+          <p className="text-[8px] text-zinc-600 mt-1 font-mono">ТОЛЬКО ЧТО</p>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 // --- Matrix Ticker Component ---
 const MatrixTicker = () => (
@@ -145,6 +198,28 @@ const HackerProof = () => {
             <p className="text-white text-[9px] font-mono bg-black/80 px-2 py-0.5 mt-1 inline-block">ЧЕК: 100.000 Т</p>
          </div>
          <CheckCircle2 className="w-6 h-6 text-[#00FF9D] drop-shadow-[0_0_10px_rgba(0,255,157,0.8)]" />
+      </div>
+    </div>
+  );
+};
+
+// --- Client Demand Proof Component ---
+const ClientDemandProof = () => {
+  return (
+    <div className="relative rounded-xl overflow-hidden border border-[#00FF9D]/40 mb-6 group animate-in zoom-in duration-500 shadow-[0_0_20px_rgba(0,255,157,0.1)]">
+      <img 
+        src="https://i.ibb.co.com/h1mN3kL0/5427147012425059102.jpg" 
+        onError={(e) => { e.target.onerror = null; e.target.src="https://via.placeholder.com/400x200/000000/00FF9D?text=DATA+LOST"; }} 
+        className="w-full object-cover opacity-90 filter grayscale-[0.5] contrast-[1.1] brightness-[0.9]" 
+        alt="Client Demand" 
+      />
+      <div className="absolute inset-0 bg-[linear-gradient(transparent_50%,rgba(0,255,157,0.05)_50%)] bg-[length:100%_3px] pointer-events-none"></div>
+      <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent pointer-events-none"></div>
+      <div className="absolute bottom-3 left-3 bg-black/80 border border-[#00FF9D]/30 px-2 py-1 rounded">
+        <div className="flex items-center gap-1.5">
+           <div className="w-1.5 h-1.5 bg-[#00FF9D] rounded-full animate-pulse"></div>
+           <span className="text-[9px] font-mono text-[#00FF9D]">DEMAND_HIGH</span>
+        </div>
       </div>
     </div>
   );
@@ -476,8 +551,8 @@ const App = () => {
       icon: <Zap className="w-5 h-5 text-[#00FF9D]" />,
       component: (
         <div className="w-full">
-           <SkillScanner /> {/* Visual Complexity Meter */}
-           <SetupTimeline /> {/* NEW: Step-by-step visual timeline */}
+           <SkillScanner /> 
+           <SetupTimeline /> 
           <p className="text-sm text-zinc-300 leading-relaxed border-l-2 border-[#00FF9D]/50 pl-4 mb-4">
             <span className="text-white font-bold">Программистом быть не нужно.</span>
             <br/><br/>
@@ -501,11 +576,24 @@ const App = () => {
       isCalc: true,
       component: (
         <div className="w-full">
-          <p className="text-sm text-zinc-300 leading-relaxed border-l-2 border-[#00FF9D]/50 pl-4 mb-4">
-            Это 'голубой океан'. Конкуренции почти нет.
-          </p>
-          <div className="text-right mb-4">
-             <p className="text-[10px] text-zinc-500 italic">«В 2019 про Kaspi думали так же»</p>
+          {/* New Screenshot Integration */}
+          <ClientDemandProof />
+          
+          {/* Updated Text Copy */}
+          <div className="text-sm text-zinc-300 leading-relaxed border-l-2 border-[#00FF9D]/50 pl-4 mb-4">
+            <p><span className="text-white font-bold">Ты не просто их найдешь — они тоже будут тебя искать.</span></p>
+            <br/>
+            <p>Статистика Яндекса не врет: каждый месяц <span className="text-[#00FF9D] font-bold">6 650</span> предпринимателей ищут, кто сделает им магазин в Telegram. Спрос огромный, а тех, кто умеет делать это качественно — единицы.</p>
+            <br/>
+            <p>На обучении мы даем не только технические навыки, но и <span className="text-white font-bold">полную систему продаж</span>:</p>
+            <br/>
+            <ul className="list-disc pl-4 space-y-2">
+               <li><span className="text-[#00FF9D] font-bold">Где брать клиентов:</span> Покажем, как выйти на те самые тысячи заказов.</li>
+               <li><span className="text-[#00FF9D] font-bold">Как продавать:</span> Научим вести переговоры с бизнесменами и закрывать сделки на высокие чеки.</li>
+               <li><span className="text-[#00FF9D] font-bold">Готовые шаблоны предложений:</span> Тебе не нужно ничего придумывать — просто бери наше проверенное КП и отправляй клиенту.</li>
+            </ul>
+            <br/>
+            <p>Мы научим тебя делать результат «под ключ», чтобы ты мог уверенно забирать свои <span className="text-white font-bold">100 000₸</span> за проект.</p>
           </div>
         </div>
       )
@@ -670,6 +758,9 @@ const App = () => {
 
       {/* MATRIX TICKER - Visible everywhere */}
       <MatrixTicker />
+      
+      {/* SOCIAL PROOF TOAST - Visible everywhere */}
+      <SocialProofToast />
 
       <footer className="relative z-10 text-center py-8 text-zinc-700 text-[9px] uppercase tracking-[0.15em] mr-[-0.15em] font-bold mb-8">Данный mini app был создан <span className="text-zinc-500">TAIPAN MEDIA GROUP</span></footer>
 

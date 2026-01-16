@@ -2,235 +2,387 @@ import React, { useState, useEffect, useRef } from 'react';
 
 /**
  * Taipan Media - Elite React Application
- * VISUAL UPDATE: Fixed Centering in Telegram Badge.
- * * User Report: "YOUR CHANCE TO ENTER HISTORY IS NOT CENTERED".
- * * Issue: `pl-[0.3em]` was overriding the `px-6` (1.5rem) padding-left, causing the text to shift far left.
- * * Fix: Removed `px-6` and `pl-[0.3em]`. Applied explicit `pl-7 pr-6`.
- * * Math: pl-7 (28px) - pr-6 (24px) = 4px extra left padding. 
- * * This perfectly balances the 0.3em (3.6px) letter-spacing on the right.
+ * VISUAL UPDATE: Updated Copy for "Is it hard?" Block.
+ * * User Request: Replace the difficulty FAQ text with specific copy emphasizing mobile-first, simplicity, and accessibility.
+ * * Action: Updated the 'difficulty' item content in faqItems.
+ * * Formatting: Used bold spans for key benefits (No Coding, Mobile Work, Maternity/Side Job).
  */
 
 // --- Internal Icon Components ---
 
 const GraduationCap = ({ className }) => (
-  <svg 
-    xmlns="http://www.w3.org/2000/svg" 
-    viewBox="0 0 24 24" 
-    fill="none" 
-    stroke="currentColor" 
-    strokeWidth="2" 
-    strokeLinecap="round" 
-    strokeLinejoin="round" 
-    className={className}
-  >
-    <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
-    <path d="M6 12v5c3 3 9 3 12 0v-5" />
-  </svg>
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M22 10v6M2 10l10-5 10 5-10 5z" /><path d="M6 12v5c3 3 9 3 12 0v-5" /></svg>
 );
-
 const ArrowRight = ({ className }) => (
-  <svg 
-    xmlns="http://www.w3.org/2000/svg" 
-    viewBox="0 0 24 24" 
-    fill="none" 
-    stroke="currentColor" 
-    strokeWidth="2" 
-    strokeLinecap="round" 
-    strokeLinejoin="round" 
-    className={className}
-  >
-    <path d="M5 12h14" />
-    <path d="m12 5 7 7-7 7" />
-  </svg>
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>
 );
-
 const ChevronLeft = ({ className }) => (
-  <svg 
-    xmlns="http://www.w3.org/2000/svg" 
-    viewBox="0 0 24 24" 
-    fill="none" 
-    stroke="currentColor" 
-    strokeWidth="2" 
-    strokeLinecap="round" 
-    strokeLinejoin="round" 
-    className={className}
-  >
-    <path d="m15 18-6-6 6-6" />
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m15 18-6-6 6-6" /></svg>
+);
+const CheckCircle2 = ({ className }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10" /><path d="m9 12 2 2 4-4" /></svg>
+);
+const Lock = ({ className }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect width="18" height="11" x="3" y="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+);
+const HelpCircle = ({ className }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10" /><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /><path d="M12 17h.01" /></svg>
+);
+const TrendingUp = ({ className }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="23 6 13.5 15.5 8.5 10.5 1 18" /><polyline points="17 6 23 6 23 12" /></svg>
+);
+const Wallet = ({ className }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4" /><path d="M4 6v12c0 1.1.9 2 2 2h14v-4" /><path d="M18 12a2 2 0 0 0-2 2c0 1.1.9 2 2 2h4v-4h-4z" /></svg>
+);
+const X = ({ className }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+);
+const Zap = ({ className }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></svg>
+);
+
+const TelegramLogoMain = ({ className }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.446 1.394c-.16.16-.295.293-.605.293l.214-3.054 5.56-5.022c.24-.213-.054-.334-.373-.121l-6.869 4.326-2.962-.924c-.64-.203-.658-.64.135-.954l11.566-4.458c.538-.196 1.006.128.832.942z"/>
   </svg>
 );
 
-const CheckCircle2 = ({ className }) => (
-  <svg 
-    xmlns="http://www.w3.org/2000/svg" 
-    viewBox="0 0 24 24" 
-    fill="none" 
-    stroke="currentColor" 
-    strokeWidth="2" 
-    strokeLinecap="round" 
-    strokeLinejoin="round" 
-    className={className}
-  >
-    <circle cx="12" cy="12" r="10" />
-    <path d="m9 12 2 2 4-4" />
-  </svg>
+// --- Matrix Ticker Component ---
+const MatrixTicker = () => (
+  <div className="fixed bottom-0 left-0 w-full bg-black/90 border-t border-[#00FF9D]/20 py-3 overflow-hidden z-50 backdrop-blur-md">
+    <div className="animate-marquee whitespace-nowrap flex gap-12">
+      {[
+        "[СИСТЕМА]: Алматы — бронь подтверждена",
+        "[ОПЛАТА]: 150,000 ₸ (Разработка)",
+        "[НОВОЕ]: Заказ TG Shop (Астана)",
+        "[ОБУЧЕНИЕ]: +1 на поток PRO",
+        "[ТРАНЗАКЦИЯ]: 45,000 ₸ успешно"
+      ].map((text, i) => (
+        <span key={i} className="text-[#00FF9D] font-mono text-[11px] uppercase tracking-wider opacity-90">
+          {text}
+        </span>
+      ))}
+       {[
+        "[СИСТЕМА]: Алматы — бронь подтверждена",
+        "[ОПЛАТА]: 150,000 ₸ (Разработка)",
+        "[НОВОЕ]: Заказ TG Shop (Астана)",
+        "[ОБУЧЕНИЕ]: +1 на поток PRO",
+        "[ТРАНЗАКЦИЯ]: 45,000 ₸ успешно"
+      ].map((text, i) => (
+        <span key={`dup-${i}`} className="text-[#00FF9D] font-mono text-[11px] uppercase tracking-wider opacity-90">
+          {text}
+        </span>
+      ))}
+    </div>
+  </div>
+);
+
+// --- Profit Calculator Component ---
+const ProfitCalculator = () => {
+  const [price, setPrice] = useState(50000);
+  const [clients, setClients] = useState(2);
+  const profit = price * clients;
+
+  return (
+    <div className="w-full mt-6 animate-in slide-in-from-bottom duration-500 border-t border-[#00FF9D]/20 pt-6">
+      <div className="flex justify-between text-[10px] text-zinc-500 mb-2 uppercase tracking-wider font-bold">
+        <span>Цена за магазин</span>
+        <span className="text-[#00FF9D]">{price.toLocaleString()} ₸</span>
+      </div>
+      <input 
+        type="range" 
+        min="30000" 
+        max="150000" 
+        step="5000" 
+        value={price} 
+        onChange={(e) => setPrice(Number(e.target.value))}
+        className="w-full h-1 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-[#00FF9D] mb-6"
+      />
+      
+      <div className="flex justify-between text-[10px] text-zinc-500 mb-2 uppercase tracking-wider font-bold">
+        <span>Клиентов в месяц</span>
+        <span className="text-[#00FF9D]">{clients}</span>
+      </div>
+      <input 
+        type="range" 
+        min="1" 
+        max="10" 
+        step="1" 
+        value={clients} 
+        onChange={(e) => setClients(Number(e.target.value))}
+        className="w-full h-1 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-[#00FF9D] mb-6"
+      />
+
+      <div className="bg-[#00FF9D]/10 border border-[#00FF9D]/30 p-4 rounded-2xl text-center">
+        <p className="text-[10px] text-zinc-400 uppercase tracking-widest mb-1">Твоя упущенная выгода</p>
+        <p className="text-2xl font-black text-white font-['Chakra_Petch'] animate-pulse">
+          {profit.toLocaleString()} ₸ <span className="text-[12px] text-zinc-500 font-sans font-normal">/ мес</span>
+        </p>
+      </div>
+    </div>
+  );
+};
+
+// --- Hacker Proof Component ---
+const HackerProof = () => {
+  return (
+    <div className="relative rounded-xl overflow-hidden border border-[#00FF9D]/40 mb-6 group animate-in zoom-in duration-500 shadow-[0_0_20px_rgba(0,255,157,0.1)]">
+      {/* Hacker Filters */}
+      <img 
+        src="https://i.ibb.co.com/FdhqGvD/2025-11-09-113228-fotor-20251109143545.jpg" 
+        onError={(e) => { e.target.onerror = null; e.target.src="https://via.placeholder.com/400x200/000000/00FF9D?text=EVIDENCE+LOST"; }} 
+        className="w-full object-cover opacity-90 filter grayscale contrast-[1.1] brightness-[0.8] sepia-[1] hue-rotate-[50deg] saturate-[2.5]" 
+        alt="Encrypted Proof" 
+      />
+      {/* Scanline Overlay */}
+      <div className="absolute inset-0 bg-[linear-gradient(transparent_50%,rgba(0,255,157,0.1)_50%)] bg-[length:100%_4px] pointer-events-none"></div>
+      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-black/20 pointer-events-none"></div>
+      
+      {/* Data Overlay */}
+      <div className="absolute bottom-3 left-3 right-3 flex justify-between items-end z-10">
+         <div>
+            <p className="text-[#00FF9D] text-[10px] font-black font-mono bg-black/80 px-2 py-0.5 inline-block border-l-2 border-[#00FF9D]">VIRGINIA GOLD</p>
+            <p className="text-white text-[9px] font-mono bg-black/80 px-2 py-0.5 mt-1 inline-block">ЧЕК: 100.000 Т</p>
+         </div>
+         <CheckCircle2 className="w-6 h-6 text-[#00FF9D] drop-shadow-[0_0_10px_rgba(0,255,157,0.8)]" />
+      </div>
+    </div>
+  );
+};
+
+// --- Skill Scanner Component ---
+const SkillScanner = () => (
+  <div className="w-full bg-[#0A0A0A] rounded-xl border border-[#00FF9D]/20 p-4 mb-6 relative overflow-hidden animate-in slide-in-from-bottom duration-500">
+    <div className="flex items-center justify-between mb-4 border-b border-zinc-800 pb-2">
+       <div className="flex items-center gap-2">
+         <div className="w-1.5 h-1.5 rounded-full bg-[#00FF9D] animate-pulse"></div>
+         <span className="text-[10px] font-mono text-[#00FF9D] tracking-widest">СИСТЕМНЫЙ_АНАЛИЗ</span>
+       </div>
+       <span className="text-[9px] text-zinc-600 font-mono">v.2.0.4</span>
+    </div>
+
+    <div className="space-y-4">
+      {/* Metric 1 */}
+      <div>
+        <div className="flex justify-between text-[10px] font-mono mb-1">
+          <span className="text-zinc-400">НАВЫКИ (КОДИНГ)</span>
+          <span className="text-zinc-600">НЕ ТРЕБУЕТСЯ</span>
+        </div>
+        <div className="w-full h-1 bg-zinc-900 rounded-full">
+           <div className="w-[0%] h-full bg-red-500 rounded-full"></div>
+        </div>
+      </div>
+
+      {/* Metric 2 */}
+      <div>
+        <div className="flex justify-between text-[10px] font-mono mb-1">
+          <span className="text-zinc-400">ВРЕМЯ НАСТРОЙКИ</span>
+          <span className="text-[#00FF9D]">~45 МИН</span>
+        </div>
+        <div className="w-full h-1 bg-zinc-900 rounded-full">
+           <div className="w-[15%] h-full bg-[#00FF9D] rounded-full shadow-[0_0_8px_#00FF9D] animate-[widthGrow_1s_ease-out]"></div>
+        </div>
+      </div>
+
+      {/* Metric 3 */}
+      <div>
+        <div className="flex justify-between text-[10px] font-mono mb-1">
+          <span className="text-zinc-400">АВТОМАТИЗАЦИЯ</span>
+          <span className="text-[#00FF9D]">90%</span>
+        </div>
+        <div className="w-full h-1 bg-zinc-900 rounded-full">
+           <div className="w-[90%] h-full bg-[#00FF9D] rounded-full shadow-[0_0_8px_#00FF9D] animate-[widthGrow_1.5s_ease-out]"></div>
+        </div>
+      </div>
+    </div>
+    
+    <div className="mt-4 p-2 bg-[#00FF9D]/5 rounded border border-[#00FF9D]/10 text-center">
+       <p className="text-[9px] text-[#00FF9D] font-black tracking-widest uppercase">ВЕРДИКТ: ИДЕАЛЬНО ДЛЯ НОВИЧКОВ</p>
+    </div>
+  </div>
+);
+
+// --- Setup Timeline Component ---
+const SetupTimeline = () => {
+  const steps = [
+    { title: "ШАГ 1: ТОКЕН", time: "~ 2 МИН", desc: "Создайте бота. Вставьте токен. Магазин запущен." },
+    { title: "ШАГ 2: ТОВАРЫ", time: "~ 4 МИН", desc: "Добавьте товары вручную или загрузите через Excel/XML." },
+    { title: "ШАГ 3: ОПЛАТА", time: "~ 2.5 МИН", desc: "Подключите карты, крипту или СБП. Работает из коробки." },
+    { title: "ШАГ 4: ДОСТАВКА", time: "~ 1.5 МИН", desc: "Настройте зоны доставки или самовывоз." }
+  ];
+
+  return (
+    <div className="w-full pl-2 mb-4 animate-in slide-in-from-bottom duration-500">
+      <div className="flex items-center justify-between mb-6">
+         <span className="text-[10px] text-[#00FF9D] font-mono tracking-widest border border-[#00FF9D]/30 px-2 py-1 rounded">ПРОТОКОЛ ЗАПУСКА</span>
+         <span className="text-[10px] text-zinc-500 font-mono">TOTAL: ~10 МИН</span>
+      </div>
+
+      <div className="relative border-l border-[#00FF9D]/20 ml-2 space-y-6">
+        {steps.map((step, i) => (
+          <div key={i} className="relative pl-6 group">
+             {/* Glowing Node */}
+             <div className="absolute -left-[5px] top-1 w-2.5 h-2.5 bg-[#050505] border border-[#00FF9D] rounded-full group-hover:bg-[#00FF9D] group-hover:shadow-[0_0_10px_#00FF9D] transition-all"></div>
+             
+             <div className="flex justify-between items-start">
+               <div>
+                 <h4 className="text-sm font-bold text-white font-['Chakra_Petch'] leading-none mb-1 group-hover:text-[#00FF9D] transition-colors">{step.title}</h4>
+                 <p className="text-[11px] text-zinc-400 leading-snug max-w-[220px]">{step.desc}</p>
+               </div>
+               <span className="text-[9px] font-mono text-[#00FF9D]/70 bg-[#00FF9D]/5 px-1.5 py-0.5 rounded ml-2 whitespace-nowrap">{step.time}</span>
+             </div>
+          </div>
+        ))}
+        
+        {/* Final Block */}
+        <div className="relative pl-6 mt-8">
+           <div className="absolute -left-[7px] top-1 w-3.5 h-3.5 bg-[#00FF9D] rounded-full animate-pulse shadow-[0_0_15px_#00FF9D]"></div>
+           <div className="bg-[#00FF9D]/10 border border-[#00FF9D]/30 p-3 rounded-lg">
+              <h4 className="text-sm font-black text-[#00FF9D] uppercase tracking-wider mb-1">МАГАЗИН ГОТОВ</h4>
+              <p className="text-[10px] text-zinc-300 leading-snug">Можно запускать трафик и получать прибыль. Система работает автономно.</p>
+           </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+
+// --- Authentic Yandex Wordstat Graph ---
+const WordstatGraph = () => (
+  <div className="w-full bg-[#1c1c1e] rounded-xl border border-zinc-700 overflow-hidden mb-6 font-sans shadow-xl">
+    <div className="bg-[#242426] px-4 py-3 border-b border-zinc-700 flex justify-between items-center">
+      <div>
+        <div className="flex items-center gap-1.5">
+           <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+           <span className="text-[11px] text-zinc-300 font-bold">История запросов (Яндекс Вордстат)</span>
+        </div>
+        <p className="text-[13px] text-white mt-0.5 font-medium">«телеграм магазин»</p>
+      </div>
+      <div className="text-right">
+        <p className="text-[9px] text-zinc-500 uppercase tracking-wider">Всего показов</p>
+        <p className="text-[16px] font-bold text-white">6 650</p>
+      </div>
+    </div>
+
+    {/* Real Screenshot Container */}
+    <div className="relative w-full h-auto group">
+      <img 
+        src="https://i.ibb.co.com/Y7WjS1Tc/2026-01-16-014054.png" 
+        alt="Real Wordstat Data"
+        className="w-full h-auto object-cover opacity-90 group-hover:opacity-100 transition-opacity duration-300"
+        onError={(e) => { 
+            e.target.onerror = null; 
+            e.target.src="https://via.placeholder.com/600x300/1c1c1e/00FF9D?text=WORDSTAT+DATA"; 
+        }}
+      />
+      {/* Overlay to blend light screenshots into dark theme initially */}
+      <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors pointer-events-none"></div>
+    </div>
+  </div>
 );
 
 // --- Brand Logos components ---
-
 const BrandLogos = {
   Bitcoin: ({ isActive }) => {
     const [isMissed, setIsMissed] = useState(false);
-
     useEffect(() => {
       if (isActive) {
         setIsMissed(false);
-        const timer = setTimeout(() => setIsMissed(true), 1500);
+        const timer = setTimeout(() => {
+          setIsMissed(true);
+          if (navigator.vibrate) navigator.vibrate(50);
+        }, 1500);
         return () => clearTimeout(timer);
       }
     }, [isActive]);
-
     return (
       <div className={`flex flex-col items-center animate-in fade-in zoom-in duration-1000 relative ${isMissed ? 'animate-[glitch_0.6s_linear]' : ''}`}>
-        <svg 
-          viewBox="0 0 24 24" 
-          fill="#F7931A" 
-          className={`w-16 h-16 mb-4 transition-all duration-1000 ${isMissed ? 'opacity-30 grayscale' : 'opacity-80 drop-shadow-[0_0_15px_rgba(247,147,26,0.5)]'}`}
-        > 
-          <path d="M23.638 14.904c-1.602 6.43-8.113 10.34-14.542 8.736C2.67 22.05-1.244 15.556.358 9.126 1.96 2.695 8.47-1.216 14.9-.388c6.426 1.602 10.34 8.09 8.738 15.292zM18.106 10.12c.264-1.765-1.08-2.71-2.914-3.344l.596-2.39-1.454-.362-.58 2.33c-.382-.096-.776-.186-1.166-.273l.586-2.355-1.454-.362-.596 2.39c-.316-.072-.625-.144-.925-.218l.002-.008-2.007-.502-.388 1.55s1.08.247 1.057.263c.59.147.696.537.678.847l-.68 2.73c.04.01.094.026.152.05-.054-.014-.112-.03-.17-.044l-1.103 4.426c-.072.178-.254.445-.664.343.014.02-1.057-.263-1.057-.263l-.723 1.67 1.894.474c.35.088.694.18 1.034.266l-.604 2.43 1.452.362.598-2.396c.396.108.783.21 1.16.307l-.592 2.38 1.454.363.604-2.43c2.482.47 4.35.28 5.136-1.965.634-1.808-.032-2.852-1.336-3.535 1.03-.238 1.81-.916 2.02-2.31zM14.47 14.524c-.45 1.81-3.5 0.83-4.484.588l.8-3.212c.983.244 4.14.726 3.684 2.624zm.45-4.44c-.41 1.644-2.96.81-3.774.606l.724-2.912c.814.204 3.468.583 3.05 2.306z"/>
-        </svg>
-        
+        <svg viewBox="0 0 24 24" fill="#F7931A" className={`w-16 h-16 mb-4 transition-all duration-1000 ${isMissed ? 'opacity-30 grayscale' : 'opacity-80 drop-shadow-[0_0_15px_rgba(247,147,26,0.5)]'}`}><path d="M23.638 14.904c-1.602 6.43-8.113 10.34-14.542 8.736C2.67 22.05-1.244 15.556.358 9.126 1.96 2.695 8.47-1.216 14.9-.388c6.426 1.602 10.34 8.09 8.738 15.292zM18.106 10.12c.264-1.765-1.08-2.71-2.914-3.344l.596-2.39-1.454-.362-.58 2.33c-.382-.096-.776-.186-1.166-.273l.586-2.355-1.454-.362-.596 2.39c-.316-.072-.625-.144-.925-.218l.002-.008-2.007-.502-.388 1.55s1.08.247 1.057.263c.59.147.696.537.678.847l-.68 2.73c.04.01.094.026.152.05-.054-.014-.112-.03-.17-.044l-1.103 4.426c-.072.178-.254.445-.664.343.014.02-1.057-.263-1.057-.263l-.723 1.67 1.894.474c.35.088.694.18 1.034.266l-.604 2.43 1.452.362.598-2.396c.396.108.783.21 1.16.307l-.592 2.38 1.454.363.604-2.43c2.482.47 4.35.28 5.136-1.965.634-1.808-.032-2.852-1.336-3.535 1.03-.238 1.81-.916 2.02-2.31zM14.47 14.524c-.45 1.81-3.5 0.83-4.484.588l.8-3.212c.983.244 4.14.726 3.684 2.624zm.45-4.44c-.41 1.644-2.96.81-3.774.606l.724-2.912c.814.204 3.468.583 3.05 2.306z"/></svg>
         <div className="relative">
-          <p className={`font-['Chakra_Petch'] font-black text-xl tracking-tighter transition-all duration-700 ${isMissed ? 'text-zinc-600 line-through decoration-red-600/80 decoration-[3px]' : 'text-[#F7931A]'}`}>
-            2009: BITCOIN
-          </p>
-          
-          <div className={`absolute -top-3 -right-8 rotate-[15deg] border-2 border-red-600/60 text-red-600 text-[8px] font-black uppercase px-2 py-0.5 rounded-sm bg-red-900/10 backdrop-blur-sm transition-all duration-500 transform ${isMissed ? 'opacity-100 scale-100 animate-pulse' : 'opacity-0 scale-150'}`}>
-            УПУЩЕНО
-          </div>
+          <p className={`font-['Chakra_Petch'] font-black text-xl tracking-tighter transition-all duration-700 ${isMissed ? 'text-zinc-600 line-through decoration-red-600/80 decoration-[3px]' : 'text-[#F7931A]'}`}>2009: BITCOIN</p>
+          <div className={`absolute -top-3 -right-8 rotate-[15deg] border-2 border-red-600/60 text-red-600 text-[8px] font-black uppercase px-2 py-0.5 rounded-sm bg-red-900/10 backdrop-blur-sm transition-all duration-500 transform ${isMissed ? 'opacity-100 scale-100 animate-pulse' : 'opacity-0 scale-150'}`}>УПУЩЕНО</div>
         </div>
-
         <div className="mt-2 text-center px-6">
           <p className="text-zinc-500 text-[11px] leading-tight font-medium">«Пока ты думал, что это фантики...»</p>
-          <p className={`text-[10px] uppercase font-bold tracking-widest mt-1 transition-colors duration-700 ${isMissed ? 'text-zinc-700' : 'text-white'}`}>
-            Другие стали миллионерами
-          </p>
+          <p className={`text-[10px] uppercase font-bold tracking-widest mt-1 transition-colors duration-700 ${isMissed ? 'text-zinc-700' : 'text-white'}`}>Другие стали миллионерами</p>
         </div>
       </div>
     );
   },
-
   Instagram: ({ isActive }) => {
     const [isMissed, setIsMissed] = useState(false);
-
     useEffect(() => {
       if (isActive) {
         setIsMissed(false);
-        const timer = setTimeout(() => setIsMissed(true), 1500);
+        const timer = setTimeout(() => {
+          setIsMissed(true);
+          if (navigator.vibrate) navigator.vibrate(50);
+        }, 1500);
         return () => clearTimeout(timer);
       }
     }, [isActive]);
-
     return (
       <div className={`flex flex-col items-center animate-in fade-in zoom-in duration-1000 relative ${isMissed ? 'animate-[glitch_0.6s_linear]' : ''}`}>
-        <svg 
-          viewBox="0 0 24 24" 
-          fill="none" 
-          stroke="#E1306C" 
-          strokeWidth="1.5" 
-          strokeLinecap="round" 
-          strokeLinejoin="round" 
-          className={`w-16 h-16 mb-4 transition-all duration-1000 ${isMissed ? 'opacity-30 grayscale' : 'opacity-80 drop-shadow-[0_0_15px_rgba(225,48,108,0.5)]'}`}
-        >
-          <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
-          <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
-          <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
-        </svg>
-        
+        <svg viewBox="0 0 24 24" fill="none" stroke="#E1306C" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={`w-16 h-16 mb-4 transition-all duration-1000 ${isMissed ? 'opacity-30 grayscale' : 'opacity-80 drop-shadow-[0_0_15px_rgba(225,48,108,0.5)]'}`}><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
         <div className="relative">
-          <p className={`font-['Chakra_Petch'] font-black text-xl tracking-tighter transition-all duration-700 ${isMissed ? 'text-zinc-600 line-through decoration-red-600/80 decoration-[3px]' : 'text-[#E1306C]'}`}>
-            2012: INSTAGRAM
-          </p>
-          
-          <div className={`absolute -top-3 -right-8 rotate-[15deg] border-2 border-red-600/60 text-red-600 text-[8px] font-black uppercase px-2 py-0.5 rounded-sm bg-red-900/10 backdrop-blur-sm transition-all duration-500 transform ${isMissed ? 'opacity-100 scale-100 animate-pulse' : 'opacity-0 scale-150'}`}>
-            УПУЩЕНО
-          </div>
+          <p className={`font-['Chakra_Petch'] font-black text-xl tracking-tighter transition-all duration-700 ${isMissed ? 'text-zinc-600 line-through decoration-red-600/80 decoration-[3px]' : 'text-[#E1306C]'}`}>2012: INSTAGRAM</p>
+          <div className={`absolute -top-3 -right-8 rotate-[15deg] border-2 border-red-600/60 text-red-600 text-[8px] font-black uppercase px-2 py-0.5 rounded-sm bg-red-900/10 backdrop-blur-sm transition-all duration-500 transform ${isMissed ? 'opacity-100 scale-100 animate-pulse' : 'opacity-0 scale-150'}`}>УПУЩЕНО</div>
         </div>
-
         <div className="mt-2 text-center px-6">
           <p className="text-zinc-500 text-[11px] leading-tight font-medium">«Пока ты просто выкладывал еду...»</p>
-          <p className={`text-[10px] uppercase font-bold tracking-widest mt-1 transition-colors duration-700 ${isMissed ? 'text-zinc-700' : 'text-white'}`}>
-            Другие построили империи
-          </p>
+          <p className={`text-[10px] uppercase font-bold tracking-widest mt-1 transition-colors duration-700 ${isMissed ? 'text-zinc-700' : 'text-white'}`}>Другие построили империи</p>
         </div>
       </div>
     );
   },
-
   Marketplaces: ({ isActive }) => {
     const [isMissed, setIsMissed] = useState(false);
-
     useEffect(() => {
       if (isActive) {
         setIsMissed(false);
-        const timer = setTimeout(() => setIsMissed(true), 1500);
+        const timer = setTimeout(() => {
+          setIsMissed(true);
+          if (navigator.vibrate) navigator.vibrate(50);
+        }, 1500);
         return () => clearTimeout(timer);
       }
     }, [isActive]);
-
     return (
       <div className={`flex flex-col items-center animate-in fade-in zoom-in duration-1000 relative ${isMissed ? 'animate-[glitch_0.6s_linear]' : ''}`}>
-        <div className={`flex gap-3 mb-4 items-center transition-all duration-1000 ${isMissed ? 'opacity-30 grayscale' : 'opacity-80'}`}>
-          <span className="text-4xl font-black italic text-purple-500">WB</span>
-          <span className="text-3xl font-bold text-red-600">Kaspi</span>
-        </div>
-        
+        <div className={`flex gap-3 mb-4 items-center transition-all duration-1000 ${isMissed ? 'opacity-30 grayscale' : 'opacity-80'}`}><span className="text-4xl font-black italic text-purple-500">WB</span><span className="text-3xl font-bold text-red-600">Kaspi</span></div>
         <div className="relative">
-          <p className={`font-['Chakra_Petch'] font-black text-xl tracking-tighter transition-all duration-700 ${isMissed ? 'text-zinc-600 line-through decoration-red-600/80 decoration-[3px]' : 'text-white'}`}>
-            2019: МАРКЕТПЛЕЙСЫ
-          </p>
-          
-          <div className={`absolute -top-3 -right-8 rotate-[15deg] border-2 border-red-600/60 text-red-600 text-[8px] font-black uppercase px-2 py-0.5 rounded-sm bg-red-900/10 backdrop-blur-sm transition-all duration-500 transform ${isMissed ? 'opacity-100 scale-100 animate-pulse' : 'opacity-0 scale-150'}`}>
-            УПУЩЕНО
-          </div>
+          <p className={`font-['Chakra_Petch'] font-black text-xl tracking-tighter transition-all duration-700 ${isMissed ? 'text-zinc-600 line-through decoration-red-600/80 decoration-[3px]' : 'text-white'}`}>2019: МАРКЕТПЛЕЙСЫ</p>
+          <div className={`absolute -top-3 -right-8 rotate-[15deg] border-2 border-red-600/60 text-red-600 text-[8px] font-black uppercase px-2 py-0.5 rounded-sm bg-red-900/10 backdrop-blur-sm transition-all duration-500 transform ${isMissed ? 'opacity-100 scale-100 animate-pulse' : 'opacity-0 scale-150'}`}>УПУЩЕНО</div>
         </div>
-
         <div className="mt-2 text-center px-6">
           <p className="text-zinc-500 text-[11px] leading-tight font-medium">«Пока ты боялся логистики...»</p>
-          <p className={`text-[10px] uppercase font-bold tracking-widest mt-1 transition-colors duration-700 ${isMissed ? 'text-zinc-700' : 'text-white'}`}>
-            Другие захватили рынок
-          </p>
+          <p className={`text-[10px] uppercase font-bold tracking-widest mt-1 transition-colors duration-700 ${isMissed ? 'text-zinc-700' : 'text-white'}`}>Другие захватили рынок</p>
         </div>
       </div>
     );
   },
-
   Telegram: ({ isActive }) => (
     <div className="flex flex-col items-center animate-in fade-in zoom-in duration-1000">
-      <svg viewBox="0 0 24 24" fill="#0088cc" className="w-20 h-20 mb-4 drop-shadow-[0_0_25px_rgba(0,136,204,0.5)]">
-        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.2-.08-.06-.19-.04-.27-.02-.11.02-1.93 1.23-5.46 3.62-.51.35-.98.53-1.4.52-.46-.01-1.35-.26-2.01-.48-.81-.27-1.45-.42-1.39-.89.03-.24.36-.49.99-.75 3.88-1.69 6.47-2.8 7.76-3.32 3.69-1.5 4.45-1.76 4.95-1.77.11 0 .36.03.52.16.13.1.17.24.18.33.01.07.02.24.01.4z"/>
-      </svg>
+      <svg viewBox="0 0 24 24" fill="#0088cc" className="w-20 h-20 mb-4 drop-shadow-[0_0_25px_rgba(0,136,204,0.5)]"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.446 1.394c-.16.16-.295.293-.605.293l.214-3.054 5.56-5.022c.24-.213-.054-.334-.373-.121l-6.869 4.326-2.962-.924c-.64-.203-.658-.64.135-.954l11.566-4.458c.538-.196 1.006.128.832.942z"/></svg>
       <p className="text-white font-black text-2xl tracking-[0.1em] font-['Chakra_Petch']">2026: TELEGRAM STORE</p>
-      {/* FIXED: Removed 'pl-[0.3em]', changed px-6 to pl-7 pr-6 to balance the 0.3em (approx 4px) tracking */}
-      <p className="text-[#00FF9D] text-[12px] uppercase tracking-[0.3em] mt-3 font-bold bg-[#00FF9D]/10 border border-[#00FF9D]/30 pl-7 pr-6 py-2 rounded-full shadow-[0_0_15px_rgba(0,255,157,0.2)]">
-        Твой шанс войти в историю
-      </p>
+      <p className="text-[#00FF9D] text-[12px] uppercase tracking-[0.3em] pl-[0.3em] mt-3 font-bold bg-[#00FF9D]/10 border border-[#00FF9D]/30 pl-7 pr-6 py-2 rounded-full shadow-[0_0_15px_rgba(0,255,157,0.2)]">Твой шанс войти в историю</p>
     </div>
   )
 };
 
 const App = () => {
-  const [currentView, setCurrentView] = useState('main');
+  const [currentView, setCurrentView] = useState('main'); // 'main', 'education', 'faq', 'program'
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalType, setModalType] = useState('');
   const [showToast, setShowToast] = useState(false);
   const [activeSlide, setActiveSlide] = useState(0);
+  
+  // State for FAQ Modal
+  const [activeFaq, setActiveFaq] = useState(null);
+  const [showCalculator, setShowCalculator] = useState(false);
    
-  const slides = [
-    BrandLogos.Bitcoin,
-    BrandLogos.Instagram,
-    BrandLogos.Marketplaces,
-    BrandLogos.Telegram
-  ];
+  const slides = [BrandLogos.Bitcoin, BrandLogos.Instagram, BrandLogos.Marketplaces, BrandLogos.Telegram];
 
   useEffect(() => {
     if (currentView === 'education') {
@@ -249,14 +401,12 @@ const App = () => {
     const ctx = canvas.getContext('2d');
     let width, height, columns, drops = [];
     const chars = "TAIPAN0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-
     const initMatrix = () => {
       width = canvas.width = window.innerWidth;
       height = canvas.height = window.innerHeight;
       columns = Math.floor(width / 20);
       drops = Array(columns).fill(0).map(() => Math.random() * -100);
     };
-
     const drawMatrix = () => {
       ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
       ctx.fillRect(0, 0, width, height);
@@ -269,164 +419,261 @@ const App = () => {
         drops[i]++;
       }
     };
-
     initMatrix();
     const interval = setInterval(drawMatrix, 50);
     window.addEventListener('resize', initMatrix);
-    return () => {
-      clearInterval(interval);
-      window.removeEventListener('resize', initMatrix);
-    };
+    return () => { clearInterval(interval); window.removeEventListener('resize', initMatrix); };
   }, []);
 
-  const openModal = (type) => {
-    setModalType(type);
-    setIsModalOpen(true);
-  };
-
+  const openModal = (type) => { setModalType(type); setIsModalOpen(true); };
   const closeModal = () => setIsModalOpen(false);
+  const handleSubmit = (e) => { e.preventDefault(); closeModal(); setShowToast(true); setTimeout(() => setShowToast(false), 3000); e.target.reset(); };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    closeModal();
-    setShowToast(true);
-    setTimeout(() => setShowToast(false), 3000);
-    e.target.reset();
+  // FAQ Items Data
+  const faqItems = [
+    {
+      id: 'stats',
+      question: "Это вообще покупают?",
+      icon: <TrendingUp className="w-5 h-5 text-[#00FF9D]" />,
+      component: (
+        <div className="w-full">
+          <WordstatGraph />
+          <h3 className="text-white font-bold mb-3 uppercase tracking-wide text-sm font-['Chakra_Petch'] leading-tight">
+            6 650 человек ищут тебя. Как долго ты будешь их игнорировать?
+          </h3>
+          <p className="text-sm text-zinc-300 leading-relaxed border-l-2 border-[#00FF9D]/50 pl-4 mb-4">
+            Это официальная статистика Яндекса: <span className="text-[#00FF9D] font-bold">6 650</span> прямых запросов на ТГ-магазины в месяц. 
+            <br/><br/>
+            Пока ты ищешь «подходящий момент», наши ученики уже забирают эти чеки по <span className="text-white font-bold">100 000₸</span>, просто потому что они оказались на связи.
+            <br/><br/>
+            Мы даем тебе все инструменты и доступ к этому потоку. Твой результат — это просто вопрос того, возьмешь ли ты готовую систему и начнешь ли по ней работать. 
+            <br/><br/>
+            <span className="text-[#00FF9D] italic font-medium">Рынок платит тем, кто действует, а не тем, кто наблюдает.</span>
+          </p>
+        </div>
+      )
+    },
+    {
+      id: 'proof',
+      question: "А это реально работает?",
+      icon: <Lock className="w-5 h-5 text-[#00FF9D]" />,
+      component: (
+        <div className="w-full">
+          <HackerProof />
+          <p className="text-sm text-zinc-300 leading-relaxed border-l-2 border-[#00FF9D]/50 pl-4 mb-2">
+            Пока ты сомневаешься, <span className="text-[#00FF9D] font-bold">Карашаш</span> прошла наше обучение и уже забирает свои <span className="text-white font-bold">100 000₸</span>.
+            <br/><br/>
+            На скриншоте — результат её работы. Она просто взяла знания, которые мы даём, и закрыла одного из <span className="text-[#00FF9D] font-bold">6 650</span> горячих клиентов в Яндексе. Ей не нужен был «подходящий момент», ей нужна была рабочая система.
+            <br/><br/>
+            <span className="text-white italic">Рынок пустой. Деньги на столе. Ты следующий или так и будешь смотреть на чужие чеки?</span>
+          </p>
+        </div>
+      )
+    },
+    {
+      id: 'difficulty',
+      question: "А сложно это делать?",
+      icon: <Zap className="w-5 h-5 text-[#00FF9D]" />,
+      component: (
+        <div className="w-full">
+           <SkillScanner /> {/* Visual Complexity Meter */}
+           <SetupTimeline /> {/* NEW: Step-by-step visual timeline */}
+          <p className="text-sm text-zinc-300 leading-relaxed border-l-2 border-[#00FF9D]/50 pl-4 mb-4">
+            <span className="text-white font-bold">Программистом быть не нужно.</span>
+            <br/><br/>
+            Собрать такой магазин проще, чем выложить пост в Инстаграм. Мы даем всё готовое: ты просто расставляешь блоки по местам за один вечер.
+            <br/><br/>
+            <span className="text-[#00FF9D] font-bold">Работай с телефона:</span> Не нужен компьютер, всё настраивается прямо в смартфоне.
+            <br/><br/>
+            <span className="text-[#00FF9D] font-bold">Для декрета или совмещения:</span> Занимайся этим, пока ребенок спит или после основной работы.
+            <br/><br/>
+            <span className="text-[#00FF9D] font-bold">Просто и понятно:</span> Если умеешь переписываться в Telegram — ты справишься.
+            <br/><br/>
+            <span className="text-white font-bold italic">Хватит смотреть на чужие чеки. Заходи и делай свои.</span>
+          </p>
+        </div>
+      )
+    },
+    {
+      id: 'calc',
+      question: "Найду ли я клиентов?",
+      icon: <Wallet className="w-5 h-5 text-[#00FF9D]" />,
+      isCalc: true,
+      component: (
+        <div className="w-full">
+          <p className="text-sm text-zinc-300 leading-relaxed border-l-2 border-[#00FF9D]/50 pl-4 mb-4">
+            Это 'голубой океан'. Конкуренции почти нет.
+          </p>
+          <div className="text-right mb-4">
+             <p className="text-[10px] text-zinc-500 italic">«В 2019 про Kaspi думали так же»</p>
+          </div>
+        </div>
+      )
+    }
+  ];
+
+  const handleFaqClick = (item) => {
+    setActiveFaq(item);
+    setShowCalculator(false);
   };
 
-  const TelegramLogoMain = ({ className }) => (
-    <svg viewBox="-2 -2 28 28" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.161c-.18 1.897-.962 6.502-1.359 8.627-.168.9-.5 1.201-.82 1.23-.697.064-1.226-.461-1.901-.903-1.056-.692-1.653-1.123-2.678-1.799-1.185-.781-.417-1.21.258-1.911.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.139-5.062 3.345-.479.329-.913.489-1.302.481-.428-.008-1.252-.241-1.865-.44-.751-.244-1.349-.374-1.297-.789.027-.216.324-.437.893-.663 3.498-1.524 5.831-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.477-1.635.099-.002.321.023.465.141.119.098.152.228.166.319.014.093.03.3.023.48z"/>
-    </svg>
-  );
+  const closeFaq = () => {
+    setActiveFaq(null);
+    setShowCalculator(false);
+  };
 
   return (
     <div className="min-h-screen bg-[#050505] text-white font-sans selection:bg-[#00FF9D]/30 relative overflow-hidden flex flex-col">
-      {/* Premium Font Syne + Chakra Petch */}
       <link href="https://fonts.googleapis.com/css2?family=Syne:wght@800&family=Outfit:wght@400;700&family=Chakra+Petch:wght@700&display=swap" rel="stylesheet" />
         
       {/* Background */}
       <div className="fixed inset-0 z-0 pointer-events-none">
         <div className="absolute inset-0 bg-[#020202] -z-20" />
-        <div className="absolute inset-0 opacity-20 -z-10" 
-             style={{
-               backgroundImage: `linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px)`,
-               backgroundSize: '50px 50px',
-               maskImage: 'radial-gradient(circle at 50% 30%, black 40%, transparent 100%)',
-               WebkitMaskImage: 'radial-gradient(circle at 50% 30%, black 40%, transparent 100%)'
-             }} />
+        <div className="absolute inset-0 opacity-20 -z-10" style={{ backgroundImage: `linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px)`, backgroundSize: '50px 50px', maskImage: 'radial-gradient(circle at 50% 30%, black 40%, transparent 100%)', WebkitMaskImage: 'radial-gradient(circle at 50% 30%, black 40%, transparent 100%)' }} />
         <canvas ref={canvasRef} className="absolute inset-0 opacity-30 mix-blend-screen" />
         <div className="absolute top-[-100px] left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-[radial-gradient(ellipse_at_center,rgba(0,255,157,0.1)_0%,transparent_70%)] blur-[80px]" />
       </div>
 
-      <div className="relative z-10 flex-grow flex flex-col max-w-lg mx-auto w-full px-4 pt-10 pb-8">
-        {currentView === 'main' ? (
+      <div className="relative z-10 flex-grow flex flex-col max-w-lg mx-auto w-full px-4 pt-10 pb-20"> {/* pb-20 for ticker space */}
+        
+        {currentView === 'main' && (
           <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 flex flex-col items-center">
-            
-            {/* MAIN HEADER: PERFECTLY CENTERED */}
             <div className="mb-14 w-full text-center">
-              <h1 
-                className="font-['Chakra_Petch'] font-[700] uppercase tracking-[0.15em] whitespace-nowrap overflow-visible relative block w-full text-center"
-                style={{ 
-                    fontSize: 'clamp(1.5rem, 8.5vw, 3.5rem)',
-                    textShadow: '0 0 20px rgba(0,255,157,0.3)',
-                    color: '#ffffff'
-                }}
-              >
-                {/* FIXED: Re-added mr-[-0.15em] to exactly match tracking-[0.15em] */}
-                <span className="relative inline-block mr-[-0.15em]">
-                    TAIPAN MEDIA
-                    {/* Ghost/Glow Text */}
-                    <span className="absolute inset-0 -z-10 opacity-40 blur-[12px] animate-pulse text-[#00FF9D]">
-                      TAIPAN MEDIA
-                    </span>
-                </span>
+              <h1 className="font-['Chakra_Petch'] font-[700] uppercase tracking-[0.15em] whitespace-nowrap overflow-visible relative block w-full text-center" style={{ fontSize: 'clamp(1.5rem, 8.5vw, 3.5rem)', textShadow: '0 0 20px rgba(0,255,157,0.3)', color: '#ffffff' }}>
+                <span className="relative inline-block mr-[-0.15em]">TAIPAN MEDIA<span className="absolute inset-0 -z-10 opacity-40 blur-[12px] animate-pulse text-[#00FF9D]">TAIPAN MEDIA</span></span>
               </h1>
-              
               <div className="flex items-center justify-center gap-4 mt-3 w-full">
                 <div className="h-[1px] flex-1 max-w-[40px] bg-gradient-to-r from-transparent to-zinc-700"></div>
-                {/* Fixed centering for Digital Agency: tracking-0.6em needs mr-[-0.6em] */}
                 <p className="text-[10px] uppercase tracking-[0.6em] mr-[-0.6em] text-zinc-500 font-bold whitespace-nowrap">Digital Agency</p>
                 <div className="h-[1px] flex-1 max-w-[40px] bg-gradient-to-l from-transparent to-zinc-700"></div>
               </div>
             </div>
-
             <div className="grid grid-cols-2 gap-4 mb-4 w-full">
               <div onClick={() => openModal('Telegram Shop')} className="group relative glass-card rounded-3xl p-6 h-64 flex flex-col items-center justify-center text-center cursor-pointer">
-                <div className="mb-6 text-zinc-400 group-hover:text-[#00FF9D] transition-all duration-300">
-                  <TelegramLogoMain className="w-12 h-12 animate-[contourPulse_3s_ease-in-out_infinite]" />
-                </div>
+                <div className="mb-6 text-zinc-400 group-hover:text-[#00FF9D] transition-all duration-300"><TelegramLogoMain className="w-12 h-12 animate-[contourPulse_3s_ease-in-out_infinite]" /></div>
                 <h3 className="text-lg font-bold uppercase tracking-wide mb-2 leading-tight">Telegram<br/>Магазин</h3>
                 <p className="text-[9px] text-zinc-500 uppercase tracking-widest mb-4">Бизнес продает 24/7</p>
                 <div className="flex items-center text-[10px] text-[#00FF9D] opacity-0 group-hover:opacity-100 transition-all font-bold tracking-wider">ЗАКАЗАТЬ <ArrowRight className="w-3 h-3 ml-1" /></div>
               </div>
-
               <div onClick={() => setCurrentView('education')} className="group relative glass-card rounded-3xl p-6 h-64 flex flex-col items-center justify-center text-center cursor-pointer">
-                <div className="mb-6 text-zinc-400 group-hover:text-[#00FF9D] transition-all duration-300">
-                  <GraduationCap className="w-12 h-12 animate-[contourPulse_3s_ease-in-out_infinite]" />
-                </div>
+                <div className="mb-6 text-zinc-400 group-hover:text-[#00FF9D] transition-all duration-300"><GraduationCap className="w-12 h-12 animate-[contourPulse_3s_ease-in-out_infinite]" /></div>
                 <h3 className="text-lg font-bold uppercase tracking-widest mb-2 leading-tight">ОБУЧЕНИЕ</h3>
                 <p className="text-[9px] text-zinc-500 uppercase tracking-widest mb-4 leading-relaxed px-2 text-zinc-500">Твой шанс в Telegram</p>
                 <div className="flex items-center text-[10px] text-[#00FF9D] opacity-0 group-hover:opacity-100 transition-all font-bold tracking-wider">УЗНАТЬ <ArrowRight className="w-3 h-3 ml-1" /></div>
               </div>
             </div>
-
             <div onClick={() => openModal('Mini App')} className="group relative glass-card rounded-3xl p-6 flex flex-col items-center justify-center cursor-pointer text-center w-full">
               <h3 className="text-lg font-bold uppercase tracking-widest mb-2 group-hover:text-[#00FF9D] transition-colors">MINI APP</h3>
               <p className="text-[10px] text-zinc-500 uppercase tracking-widest group-hover:text-white transition-colors">Заказать для своего бизнеса</p>
             </div>
           </div>
-        ) : (
-          <div className="animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col h-full items-center">
-            <button onClick={() => setCurrentView('main')} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-6 hover:opacity-70 transition-all w-fit">
-              <ChevronLeft className="w-4 h-4 mr-1" /> Назад
-            </button>
+        )}
 
+        {currentView === 'education' && (
+          <div className="animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col h-full items-center">
+            <button onClick={() => setCurrentView('main')} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-6 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
             <div className="flex-grow flex flex-col items-center justify-center space-y-10 w-full">
               <div className="text-center px-4 w-full">
-                {/* CHANGED FONT HERE to Chakra_Petch to match main header */}
                 <h2 className="text-4xl font-black tracking-tighter uppercase mb-2 font-['Chakra_Petch']">Упущенные<br/><span className="text-[#00FF9D]">Возможности</span></h2>
                 <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] mr-[-0.3em] font-bold">История твоих сомнений</p>
               </div>
-
-              {/* SMOKE SECTION & LOGOS */}
               <div className="relative w-full h-[380px] flex items-center justify-center overflow-hidden rounded-[40px] bg-white/5 border border-white/5 shadow-2xl">
                  <div className="absolute inset-0 overflow-hidden pointer-events-none">
                    <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.05)_0%,transparent_70%)] animate-[smokeDrift_10s_infinite]" />
                    <div className="absolute -top-20 -left-20 w-64 h-64 bg-white/10 rounded-full blur-[60px] animate-[smokeDrift_12s_infinite]" />
                    <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-[#00FF9D]/10 rounded-full blur-[60px] animate-[smokeDrift_8s_infinite_reverse]" />
                  </div>
-                 
                  {slides.map((SlideComponent, idx) => (
                    <div key={idx} className={`absolute inset-0 flex items-center justify-center transition-all duration-[1200ms] ease-in-out transform ${activeSlide === idx ? 'opacity-100 scale-100 blur-0' : 'opacity-0 scale-75 blur-3xl'}`}>
                      <div className="relative w-full text-center">
                         <div className="absolute inset-0 bg-white/5 blur-3xl rounded-full transform scale-150 left-1/2 -translate-x-1/2" />
-                        <div className="relative z-10">
-                          <SlideComponent isActive={activeSlide === idx} />
-                        </div>
+                        <div className="relative z-10"><SlideComponent isActive={activeSlide === idx} /></div>
                      </div>
                    </div>
                  ))}
               </div>
-
               <div className="text-center w-full px-6 flex justify-center">
-                {/* Fixed centering: tracking-widest (0.1em) needs mr-[-0.1em] */}
-                <p className="text-zinc-500 text-[12px] font-bold uppercase tracking-widest mr-[-0.1em] animate-pulse whitespace-nowrap">
-                   Не стань историей упущенных шансов
-                </p>
+                <p className="text-zinc-500 text-[12px] font-bold uppercase tracking-widest mr-[-0.1em] animate-pulse whitespace-nowrap">Не стань историей упущенных шансов</p>
               </div>
             </div>
+            <button onClick={() => setCurrentView('faq')} className="w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-6 rounded-3xl shadow-[0_5px_30px_rgba(0,255,157,0.3)] hover:scale-[1.02] active:scale-[0.98] transition-all mt-8 text-xs">Стань тем кто успел</button>
+          </div>
+        )}
 
-            <button onClick={() => openModal('Join Education')} className="w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-6 rounded-3xl shadow-[0_5px_30px_rgba(0,255,157,0.3)] hover:scale-[1.02] active:scale-[0.98] transition-all mt-8 text-xs">
-               Стань тем кто успел
-            </button>
+        {/* REFACTORED FAQ SECTION: Minimal List + Fullscreen Modal */}
+        {currentView === 'faq' && (
+          <div className="animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col h-full">
+            <button onClick={() => setCurrentView('education')} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-6 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
+            <div className="flex-grow flex flex-col items-center w-full space-y-6">
+              <div className="text-center px-4 w-full mb-4">
+                <h2 className="text-3xl font-black tracking-tighter uppercase mb-2 font-['Chakra_Petch']">ГЛАВНЫЕ<br/><span className="text-[#00FF9D]">ФАКТЫ</span></h2>
+                <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] mr-[-0.3em] font-bold">Почему это работает</p>
+              </div>
+              <div className="w-full space-y-4">
+                {faqItems.map((item) => (
+                  <div 
+                    key={item.id} 
+                    onClick={() => handleFaqClick(item)}
+                    className="glass-card rounded-2xl p-5 flex items-center justify-between group cursor-pointer hover:bg-white/5 hover:border-[#00FF9D]/30 transition-all"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="bg-[#00FF9D]/10 p-2 rounded-full border border-[#00FF9D]/20">
+                        {item.icon}
+                      </div>
+                      <h4 className="text-sm font-bold text-white group-hover:text-[#00FF9D] transition-colors">{item.question}</h4>
+                    </div>
+                    <ArrowRight className="w-4 h-4 text-zinc-500 group-hover:text-[#00FF9D] transition-colors" />
+                  </div>
+                ))}
+              </div>
+            </div>
+            <button onClick={() => setCurrentView('program')} className="w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-6 rounded-3xl shadow-[0_5px_30px_rgba(0,255,157,0.3)] hover:scale-[1.02] active:scale-[0.98] transition-all mt-8 text-xs">Смотреть программу</button>
+          </div>
+        )}
+
+        {currentView === 'program' && (
+          <div className="animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col h-full">
+            <button onClick={() => setCurrentView('faq')} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-6 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
+            <div className="flex-grow flex flex-col items-center w-full space-y-6">
+              <div className="text-center px-4 w-full mb-4">
+                <h2 className="text-3xl font-black tracking-tighter uppercase mb-2 font-['Chakra_Petch']">ПРОТОКОЛ<br/><span className="text-[#00FF9D]">TAIPAN</span></h2>
+                <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] mr-[-0.3em] font-bold">Система доминирования</p>
+              </div>
+              <div className="w-full space-y-3">
+                {[
+                  { title: "Модуль 1: Анализ", desc: "Поиск связок и ниш", locked: false },
+                  { title: "Модуль 2: Структура", desc: "Создание Mini App", locked: false },
+                  { title: "Модуль 3: Трафик", desc: "Залив аудитории", locked: false },
+                  { title: "Модуль 4: Масштаб", desc: "Секретный уровень", locked: true }
+                ].map((item, i) => (
+                  <div key={i} className="glass-card rounded-2xl p-5 flex items-center justify-between group cursor-pointer hover:bg-white/5 transition-all">
+                    <div className="flex items-center gap-4">
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${item.locked ? 'bg-zinc-900 text-zinc-600' : 'bg-[#00FF9D]/10 text-[#00FF9D]'}`}>{item.locked ? <Lock className="w-4 h-4" /> : <CheckCircle2 className="w-5 h-5" />}</div>
+                      <div className="text-left">
+                        <h4 className={`text-sm font-bold uppercase tracking-wider ${item.locked ? 'text-zinc-600' : 'text-white'}`}>{item.title}</h4>
+                        <p className="text-[10px] text-zinc-500">{item.desc}</p>
+                      </div>
+                    </div>
+                    {!item.locked && <ArrowRight className="w-4 h-4 text-zinc-600 group-hover:text-[#00FF9D] transition-colors" />}
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="mt-8 w-full glass-card p-6 rounded-3xl text-center border border-[#00FF9D]/20">
+              <p className="text-[10px] text-zinc-400 uppercase tracking-widest mb-2">Доступ к закрытому каналу</p>
+              <div className="text-2xl font-black text-white mb-4 font-['Chakra_Petch']">19 990 ₽ <span className="text-zinc-600 text-lg line-through decoration-red-600 decoration-2 ml-2">45 000 ₽</span></div>
+              <button onClick={() => openModal('Buy Course')} className="w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-4 rounded-xl shadow-[0_0_20px_rgba(0,255,157,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs">Забрать доступ</button>
+            </div>
           </div>
         )}
       </div>
 
-      <footer className="relative z-10 text-center py-8 text-zinc-700 text-[9px] uppercase tracking-[0.15em] mr-[-0.15em] font-bold">Данный mini app был создан <span className="text-zinc-500">TAIPAN MEDIA GROUP</span></footer>
+      {/* MATRIX TICKER - Visible everywhere */}
+      <MatrixTicker />
 
-      {/* Modal */}
+      <footer className="relative z-10 text-center py-8 text-zinc-700 text-[9px] uppercase tracking-[0.15em] mr-[-0.15em] font-bold mb-8">Данный mini app был создан <span className="text-zinc-500">TAIPAN MEDIA GROUP</span></footer>
+
+      {/* LEAD GEN MODAL */}
       {isModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-end justify-center px-4">
           <div className="absolute inset-0 bg-black/80 backdrop-blur-md animate-in fade-in duration-300" onClick={closeModal} />
@@ -443,6 +690,40 @@ const App = () => {
         </div>
       )}
 
+      {/* FAQ CONTENT MODAL (NEW) */}
+      {activeFaq && (
+        <div className="fixed inset-0 z-[100] flex items-end justify-center px-4">
+          {/* Backdrop Blur */}
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-lg animate-in fade-in duration-300" onClick={closeFaq} />
+          {/* Content Card */}
+          <div className="relative w-full max-w-lg bg-[#050505] rounded-t-[30px] border-t border-[#00FF9D]/30 p-8 transform translate-y-0 animate-in slide-in-from-bottom duration-300 shadow-[0_-10px_50px_rgba(0,255,157,0.15)] flex flex-col max-h-[85vh] overflow-y-auto">
+            <div className="w-12 h-1.5 bg-zinc-800 rounded-full mx-auto mb-6 cursor-pointer" onClick={closeFaq} />
+            <div className="flex items-center gap-3 mb-6">
+               <div className="p-2 rounded-full bg-[#00FF9D]/10 text-[#00FF9D]">{activeFaq.icon}</div>
+               <h2 className="text-xl font-bold font-['Chakra_Petch'] leading-tight">{activeFaq.question}</h2>
+            </div>
+            
+            {/* Dynamic Content */}
+            <div className="mb-4">{activeFaq.component}</div>
+
+            {/* Special Calculator Logic */}
+            {activeFaq.isCalc && !showCalculator && (
+               <button 
+                 onClick={() => setShowCalculator(true)}
+                 className="w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-4 rounded-xl shadow-[0_0_15px_rgba(0,255,157,0.3)] animate-pulse hover:scale-[1.02] transition-all text-xs"
+               >
+                 РАССЧИТАТЬ ПРИБЫЛЬ
+               </button>
+            )}
+            
+            {/* Show Calculator if activated */}
+            {activeFaq.isCalc && showCalculator && <ProfitCalculator />}
+
+            <button onClick={closeFaq} className="absolute top-6 right-6 text-zinc-500 hover:text-white"><X className="w-6 h-6" /></button>
+          </div>
+        </div>
+      )}
+
       {showToast && (
         <div className="fixed top-10 left-1/2 -translate-x-1/2 z-[110] bg-zinc-900 border border-[#00FF9D]/30 px-6 py-3 rounded-full flex items-center gap-3 shadow-2xl animate-in zoom-in duration-300">
           <CheckCircle2 className="w-4 h-4 text-[#00FF9D]" />
@@ -452,18 +733,14 @@ const App = () => {
 
       <style>{`
         .glass-card {
-            /* FIXED: Crystal Clear Transparency */
             background: transparent;
             backdrop-filter: blur(2px);
             -webkit-backdrop-filter: blur(2px);
-            /* Keeping the thin tech border */
             border: 1px solid rgba(0, 255, 157, 0.15); 
-            /* Removed shadow to make it truly flat and transparent */
             box-shadow: none;
             transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
         }
         .glass-card:hover {
-            /* Slight reaction on hover */
             background: rgba(0, 255, 157, 0.02);
             border-color: rgba(0, 255, 157, 0.4);
             box-shadow: 0 0 20px rgba(0, 255, 157, 0.1);
@@ -479,19 +756,36 @@ const App = () => {
           66% { transform: translate(-10px, 10px) scale(0.9); opacity: 0.4; }
           100% { transform: translate(0, 0) scale(1); opacity: 0.3; }
         }
-        /* Aggressive Glitch Animation - Signal Noise Style */
         @keyframes glitch {
           0% { transform: translate(0) skew(0deg); opacity: 1; filter: none; }
           10% { transform: translate(-2px, 1px) skew(-2deg); opacity: 0.8; filter: brightness(1.5); }
           20% { transform: translate(2px, -1px) skew(2deg); opacity: 1; }
           30% { transform: translate(-1px, 2px) skew(0deg); opacity: 0.8; filter: contrast(2); }
           40% { transform: translate(1px, -2px) skew(0deg); opacity: 1; }
-          50% { transform: translate(-1px, 0) skew(-5deg); opacity: 0.3; filter: brightness(0.5); } /* Drop out */
+          50% { transform: translate(-1px, 0) skew(-5deg); opacity: 0.3; filter: brightness(0.5); }
           60% { transform: translate(1px, 0) skew(5deg); opacity: 1; }
           70% { transform: translate(0, 1px) skew(0deg); opacity: 0.8; }
           80% { transform: translate(0, -1px) skew(0deg); opacity: 1; filter: contrast(1.5); }
           90% { transform: translate(-1px, 1px) skew(0deg); opacity: 0.9; }
           100% { transform: translate(0) skew(0deg); opacity: 1; filter: none; }
+        }
+        @keyframes heightGrow {
+          from { height: 0; }
+        }
+        @keyframes marquee {
+          0% { transform: translateX(0%); }
+          100% { transform: translateX(-50%); }
+        }
+        .animate-marquee {
+          animation: marquee 20s linear infinite;
+        }
+        @keyframes scan {
+            0% { top: 0%; opacity: 0; }
+            50% { opacity: 1; }
+            100% { top: 100%; opacity: 0; }
+        }
+        @keyframes widthGrow {
+          from { width: 0; }
         }
       `}</style>
     </div>

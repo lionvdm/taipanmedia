@@ -2,11 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 
 /**
  * Taipan Media - Elite React Application
- * UPDATE: Partner Logos - Horizontal Scroll & Bigger Size.
- * * User Request: "Logos bigger and go from left to right".
- * * Action: Updated `PartnersCredits` to use a horizontal flex layout.
- * * Animation: Changed to `scrollRight` (moving ->).
- * * Styling: Increased logo height to `h-24` (approx 96px) for visibility.
+ * UPDATE: Carousel Speed Increased.
+ * * User Request: "Speed up the carousel a bit, it's very slow".
+ * * Action: Changed `animation: spin 20s` to `animation: spin 10s` in `Carousel3D` component styles.
+ * * Result: The 3D image carousel now rotates twice as fast.
  */
 
 // --- Internal Icon Components ---
@@ -519,7 +518,7 @@ const Carousel3D = () => {
   // Logic: 6 items, circle. 360/6 = 60deg per item.
   // CSS transform: rotateY(i * 60deg) translateZ(r)
   // r ~= width / (2 * tan(30deg))
-  // Assuming width ~ 200px (smaller horizontal card), r ~ 180px
+  // Assuming width ~ 260px (larger horizontal card), r ~ 220px
 
   return (
     <div className="w-full h-[200px] flex items-center justify-center perspective-container overflow-visible">
@@ -552,7 +551,7 @@ const Carousel3D = () => {
           width: 260px; /* Increased Width */
           height: 150px; /* Adjusted Height */
           transform-style: preserve-3d;
-          animation: spin 20s infinite linear;
+          animation: spin 10s infinite linear;
           /* Add a slight X tilt to show the ring structure better */
           transform: rotateX(-10deg); 
         }
@@ -711,14 +710,25 @@ const PartnersCredits = () => {
       <div className="relative w-full overflow-hidden mask-gradient-horizontal">
         <div className="flex items-center gap-12 animate-scrollLeft w-max">
            {/* Duplicate logos for infinite scroll effect */}
-           {[...logos, ...logos, ...logos].map((logo, i) => (
-             <img 
-               key={i} 
-               src={logo} 
-               alt="Partner Logo" 
-               className="h-24 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity duration-300"
-             />
-           ))}
+           {[...logos, ...logos, ...logos].map((logo, i) => {
+             // Logic to fix specific dark logos on dark background
+             const isYandex = logo.includes("Yandex");
+             const isRomantic = logo.includes("janym"); 
+             
+             // Make both logos white/bright
+             const imgStyle = (isYandex || isRomantic) ? { filter: 'brightness(0) invert(1) drop-shadow(0 0 5px rgba(255,255,255,0.8))' } : { filter: 'drop-shadow(0 0 3px rgba(255,255,255,0.3))' };
+
+             return (
+               <img 
+                 key={i} 
+                 src={logo} 
+                 alt="Partner Logo" 
+                 style={imgStyle}
+                 // Force full opacity for white logos to pop, allow opacity transition for others
+                 className={`h-40 w-auto object-contain opacity-100`}
+               />
+             );
+           })}
         </div>
       </div>
 

@@ -2,12 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 
 /**
  * Taipan Media - Elite React Application
- * VISUAL UPDATE: Detailed Program Modules.
- * * User Request: Update Program modules with specific copy including "Why it's easy" sections.
- * * Action: 
- * 1. Refactored the 'program' view data structure to include title, subtitle, desc, and 'easy' explanation.
- * 2. Updated the card layout in 'program' view to accommodate the richer content (subtitle, description, and 'easy' block).
- * 3. Kept the visual style consistent (Glassmorphism, Neon accents).
+ * FIX: Text Transition Timing & Styling.
+ * * User Request: "White text lingers for half a second when switching, shouldn't happen."
+ * * Issue: When phase switched to 'out', the `isDimmed/isGray` flag turned false, causing the text to transition back to full opacity/white color WHILE fading out container.
+ * * Fix: Included `phase === 'out'` in the `isDimmed/isGray` conditions in all status components.
+ * * Tweak: Accelerated fade-out duration (1s -> 0.8s) for snappier transitions.
  */
 
 // --- Internal Icon Components ---
@@ -48,64 +47,15 @@ const Target = ({ className }) => (
 const Bell = ({ className }) => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" /><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" /></svg>
 );
+const Search = ({ className }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>
+);
 
 const TelegramLogoMain = ({ className }) => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" className={className}>
     <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.446 1.394c-.16.16-.295.293-.605.293l.214-3.054 5.56-5.022c.24-.213-.054-.334-.373-.121l-6.869 4.326-2.962-.924c-.64-.203-.658-.64.135-.954l11.566-4.458c.538-.196 1.006.128.832.942z"/>
   </svg>
 );
-
-// --- Social Proof Toast Component (The Queue Effect) ---
-const SocialProofToast = () => {
-  const [visible, setVisible] = useState(false);
-  const [data, setData] = useState(null);
-
-  const messages = [
-    { name: "Арман", city: "Шымкента", action: "только что забронировал место на курсе", icon: <CheckCircle2 className="w-4 h-4 text-[#00FF9D]" /> },
-    { name: "Алина", city: "Алматы", action: "получила первый заказ на 60.000₸", icon: <Wallet className="w-4 h-4 text-[#00FF9D]" /> },
-    { name: "Руслан", city: "Астаны", action: "оплатил доступ к модулю 'Трафик'", icon: <Lock className="w-4 h-4 text-[#00FF9D]" /> },
-    { name: "Мадина", city: "Атырау", action: "запустила свой первый магазин", icon: <Zap className="w-4 h-4 text-[#00FF9D]" /> },
-    { name: "Тимур", city: "Караганды", action: "заработал 45 000₸ на настройке бота", icon: <TrendingUp className="w-4 h-4 text-[#00FF9D]" /> }
-  ];
-
-  useEffect(() => {
-    const trigger = () => {
-       const randomMsg = messages[Math.floor(Math.random() * messages.length)];
-       setData(randomMsg);
-       setVisible(true);
-       setTimeout(() => setVisible(false), 10000); 
-    };
-
-    const initialTimer = setTimeout(trigger, 5000);
-    const interval = setInterval(trigger, 35000);
-
-    return () => {
-      clearTimeout(initialTimer);
-      clearInterval(interval);
-    };
-  }, []);
-
-  if (!visible || !data) return null;
-
-  return (
-    <div className="fixed top-4 right-4 z-[60] max-w-[280px] w-full animate-in slide-in-from-right duration-500">
-      <div className="glass-card p-3 rounded-xl border border-[#00FF9D]/30 shadow-[0_0_20px_rgba(0,255,157,0.2)] flex items-start gap-3 backdrop-blur-xl bg-black/80">
-        <div className="bg-[#00FF9D]/10 p-2 rounded-full border border-[#00FF9D]/20 shrink-0">
-          {data.icon}
-        </div>
-        <div>
-          <p className="text-[11px] text-white font-bold leading-tight">
-            <span className="text-[#00FF9D]">{data.name}</span> из {data.city}
-          </p>
-          <p className="text-[10px] text-zinc-400 leading-snug mt-0.5">
-            {data.action}
-          </p>
-          <p className="text-[8px] text-zinc-600 mt-1 font-mono">ТОЛЬКО ЧТО</p>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 // --- Matrix Ticker Component ---
 const MatrixTicker = () => (
@@ -136,77 +86,6 @@ const MatrixTicker = () => (
     </div>
   </div>
 );
-
-// --- Live Order Feed Component ---
-const LiveOrderFeed = () => {
-  const [orders, setOrders] = useState([
-    { title: "Магазин одежды (TG)", budget: "120 000 ₸", time: "1 мин" },
-    { title: "Доставка суши (Бот)", budget: "70 000 ₸", time: "2 мин" },
-    { title: "Вейп шоп (Каталог)", budget: "85 000 ₸", time: "4 мин" }
-  ]);
-
-  useEffect(() => {
-    const templates = [
-      { t: "Магазин кроссовок", b: 140000 },
-      { t: "Доставка цветов", b: 90000 },
-      { t: "Салон красоты (Запись)", b: 65000 },
-      { t: "Автозапчасти (Поиск)", b: 150000 },
-      { t: "Онлайн школа (LMS)", b: 200000 },
-      { t: "Кофейня (Меню)", b: 60000 }
-    ];
-
-    const interval = setInterval(() => {
-      const random = templates[Math.floor(Math.random() * templates.length)];
-      const newOrder = {
-        title: random.t,
-        budget: `${random.b.toLocaleString()} ₸`,
-        time: "только что"
-      };
-      
-      setOrders(prev => [newOrder, ...prev.slice(0, 3)]); 
-      if (navigator.vibrate) navigator.vibrate(20); 
-    }, 2500); 
-
-    return () => clearInterval(interval);
-  }, []);
-
-  return (
-    <div className="w-full bg-[#0A0A0A] rounded-xl border border-[#00FF9D]/30 p-4 mb-6 relative overflow-hidden">
-      <div className="flex items-center justify-between mb-4 border-b border-[#00FF9D]/20 pb-2">
-         <div className="flex items-center gap-2">
-           <div className="relative">
-             <div className="w-2 h-2 rounded-full bg-red-500 animate-ping absolute top-0 left-0"></div>
-             <div className="w-2 h-2 rounded-full bg-red-500 relative"></div>
-           </div>
-           <span className="text-[10px] font-mono text-white tracking-widest uppercase">LIVE_ORDERS (REAL-TIME)</span>
-         </div>
-         <span className="text-[9px] text-[#00FF9D] font-mono animate-pulse">CONNECTION_SECURE</span>
-      </div>
-
-      <div className="space-y-3">
-        {orders.map((order, i) => (
-          <div key={i} className="flex justify-between items-center animate-in slide-in-from-left duration-300">
-             <div className="flex items-center gap-3">
-               <div className="bg-[#00FF9D]/10 p-1.5 rounded-full">
-                 <Bell className="w-3 h-3 text-[#00FF9D]" />
-               </div>
-               <div className="flex flex-col">
-                 <span className="text-[11px] font-bold text-white leading-tight">{order.title}</span>
-                 <span className="text-[9px] text-zinc-500 font-mono">Запрос на разработку</span>
-               </div>
-             </div>
-             <div className="text-right">
-               <div className="text-[#00FF9D] font-bold font-['Chakra_Petch'] text-sm">{order.budget}</div>
-               <div className="text-[8px] text-zinc-600 font-mono">{order.time}</div>
-             </div>
-          </div>
-        ))}
-      </div>
-      
-      <div className="absolute bottom-0 left-0 w-full h-8 bg-gradient-to-t from-[#0A0A0A] to-transparent pointer-events-none"></div>
-    </div>
-  );
-};
 
 // --- Profit Calculator Component ---
 const ProfitCalculator = () => {
@@ -254,52 +133,119 @@ const ProfitCalculator = () => {
   );
 };
 
-// --- Hacker Proof Component ---
+// --- Hacker Proof Component (Zoomable) ---
 const HackerProof = () => {
+  const [isExpanded, setIsExpanded] = useState(false);
+
   return (
-    <div className="relative rounded-xl overflow-hidden border border-[#00FF9D]/40 mb-6 group animate-in zoom-in duration-500 shadow-[0_0_20px_rgba(0,255,157,0.1)]">
-      {/* Hacker Filters */}
-      <img 
-        src="https://i.ibb.co.com/FdhqGvD/2025-11-09-113228-fotor-20251109143545.jpg" 
-        onError={(e) => { e.target.onerror = null; e.target.src="https://via.placeholder.com/400x200/000000/00FF9D?text=EVIDENCE+LOST"; }} 
-        className="w-full object-cover opacity-90 filter grayscale contrast-[1.1] brightness-[0.8] sepia-[1] hue-rotate-[50deg] saturate-[2.5]" 
-        alt="Encrypted Proof" 
-      />
-      {/* Scanline Overlay */}
-      <div className="absolute inset-0 bg-[linear-gradient(transparent_50%,rgba(0,255,157,0.1)_50%)] bg-[length:100%_4px] pointer-events-none"></div>
-      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-black/20 pointer-events-none"></div>
-      
-      {/* Data Overlay */}
-      <div className="absolute bottom-3 left-3 right-3 flex justify-between items-end z-10">
-         <div>
-            <p className="text-[#00FF9D] text-[10px] font-black font-mono bg-black/80 px-2 py-0.5 inline-block border-l-2 border-[#00FF9D]">VIRGINIA GOLD</p>
-            <p className="text-white text-[9px] font-mono bg-black/80 px-2 py-0.5 mt-1 inline-block">ЧЕК: 100.000 Т</p>
-         </div>
-         <CheckCircle2 className="w-6 h-6 text-[#00FF9D] drop-shadow-[0_0_10px_rgba(0,255,157,0.8)]" />
+    <>
+      <div 
+        className="relative rounded-xl overflow-hidden border border-[#00FF9D]/40 mb-6 group animate-in zoom-in duration-500 shadow-[0_0_20px_rgba(0,255,157,0.1)] cursor-zoom-in"
+        onClick={(e) => {
+           e.stopPropagation();
+           setIsExpanded(true);
+        }}
+      >
+        <img 
+          src="https://i.ibb.co.com/FdhqGvD/2025-11-09-113228-fotor-20251109143545.jpg" 
+          onError={(e) => { e.target.onerror = null; e.target.src="https://via.placeholder.com/400x200/000000/00FF9D?text=EVIDENCE+LOST"; }} 
+          className="w-full object-cover opacity-90 filter grayscale contrast-[1.1] brightness-[0.8] sepia-[1] hue-rotate-[50deg] saturate-[2.5]" 
+          alt="Encrypted Proof" 
+        />
+        {/* Zoom Hint */}
+        <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-md rounded-full p-1.5 opacity-60 group-hover:opacity-100 transition-opacity border border-[#00FF9D]/30">
+          <Search className="w-3 h-3 text-[#00FF9D]" />
+        </div>
+
+        <div className="absolute inset-0 bg-[linear-gradient(transparent_50%,rgba(0,255,157,0.1)_50%)] bg-[length:100%_4px] pointer-events-none"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-black/20 pointer-events-none"></div>
+        
+        <div className="absolute bottom-3 left-3 right-3 flex justify-between items-end z-10">
+           <div>
+              <p className="text-[#00FF9D] text-[10px] font-black font-mono bg-black/80 px-2 py-0.5 inline-block border-l-2 border-[#00FF9D]">VIRGINIA GOLD</p>
+              <p className="text-white text-[9px] font-mono bg-black/80 px-2 py-0.5 mt-1 inline-block">ЧЕК: 100.000 Т</p>
+           </div>
+           <CheckCircle2 className="w-6 h-6 text-[#00FF9D] drop-shadow-[0_0_10px_rgba(0,255,157,0.8)]" />
+        </div>
       </div>
-    </div>
+
+      {/* Expanded View */}
+      {isExpanded && (
+        <div 
+          className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 animate-in fade-in duration-300"
+          onClick={(e) => {
+             e.stopPropagation();
+             setIsExpanded(false);
+          }}
+        >
+          <div className="relative w-full max-w-2xl">
+             <img 
+               src="https://i.ibb.co.com/FdhqGvD/2025-11-09-113228-fotor-20251109143545.jpg" 
+               className="w-full h-auto rounded-lg border border-[#00FF9D]/50 shadow-[0_0_50px_rgba(0,255,157,0.2)]"
+               alt="Proof Full"
+             />
+             <p className="text-center text-zinc-500 font-mono text-[10px] mt-4 uppercase animate-pulse">Нажмите в любом месте, чтобы закрыть</p>
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 
-// --- Client Demand Proof Component ---
+// --- Client Demand Proof Component (Zoomable) ---
 const ClientDemandProof = () => {
+  const [isExpanded, setIsExpanded] = useState(false);
+
   return (
-    <div className="relative rounded-xl overflow-hidden border border-[#00FF9D]/40 mb-6 group animate-in zoom-in duration-500 shadow-[0_0_20px_rgba(0,255,157,0.1)]">
-      <img 
-        src="https://i.ibb.co.com/h1mN3kL0/5427147012425059102.jpg" 
-        onError={(e) => { e.target.onerror = null; e.target.src="https://via.placeholder.com/400x200/000000/00FF9D?text=DATA+LOST"; }} 
-        className="w-full object-cover opacity-90 filter grayscale-[0.5] contrast-[1.1] brightness-[0.9]" 
-        alt="Client Demand" 
-      />
-      <div className="absolute inset-0 bg-[linear-gradient(transparent_50%,rgba(0,255,157,0.05)_50%)] bg-[length:100%_3px] pointer-events-none"></div>
-      <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent pointer-events-none"></div>
-      <div className="absolute bottom-3 left-3 bg-black/80 border border-[#00FF9D]/30 px-2 py-1 rounded">
-        <div className="flex items-center gap-1.5">
-           <div className="w-1.5 h-1.5 bg-[#00FF9D] rounded-full animate-pulse"></div>
-           <span className="text-[9px] font-mono text-[#00FF9D]">DEMAND_HIGH</span>
+    <>
+      <div 
+        className="relative rounded-xl overflow-hidden border border-[#00FF9D]/40 mb-6 group animate-in zoom-in duration-500 shadow-[0_0_20px_rgba(0,255,157,0.1)] cursor-zoom-in"
+        onClick={(e) => {
+           e.stopPropagation();
+           setIsExpanded(true);
+        }}
+      >
+        <img 
+          src="https://i.ibb.co.com/h1mN3kL0/5427147012425059102.jpg" 
+          onError={(e) => { e.target.onerror = null; e.target.src="https://via.placeholder.com/400x200/000000/00FF9D?text=DATA+LOST"; }} 
+          className="w-full object-cover opacity-90 filter grayscale-[0.5] contrast-[1.1] brightness-[0.9]" 
+          alt="Client Demand" 
+        />
+        {/* Zoom Hint */}
+        <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-md rounded-full p-1.5 opacity-60 group-hover:opacity-100 transition-opacity border border-[#00FF9D]/30">
+          <Search className="w-3 h-3 text-[#00FF9D]" />
+        </div>
+
+        <div className="absolute inset-0 bg-[linear-gradient(transparent_50%,rgba(0,255,157,0.05)_50%)] bg-[length:100%_3px] pointer-events-none"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent pointer-events-none"></div>
+        <div className="absolute bottom-3 left-3 bg-black/80 border border-[#00FF9D]/30 px-2 py-1 rounded">
+          <div className="flex items-center gap-1.5">
+             <div className="w-1.5 h-1.5 bg-[#00FF9D] rounded-full animate-pulse"></div>
+             <span className="text-[9px] font-mono text-[#00FF9D]">DEMAND_HIGH</span>
+          </div>
         </div>
       </div>
-    </div>
+
+       {/* Expanded View */}
+       {isExpanded && (
+        <div 
+          className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 animate-in fade-in duration-300"
+          onClick={(e) => {
+             e.stopPropagation();
+             setIsExpanded(false);
+          }}
+        >
+          <div className="relative w-full max-w-2xl">
+             <img 
+               src="https://i.ibb.co.com/h1mN3kL0/5427147012425059102.jpg" 
+               className="w-full h-auto rounded-lg border border-[#00FF9D]/50 shadow-[0_0_50px_rgba(0,255,157,0.2)]"
+               alt="Demand Full"
+             />
+             <p className="text-center text-zinc-500 font-mono text-[10px] mt-4 uppercase animate-pulse">Нажмите в любом месте, чтобы закрыть</p>
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 
@@ -401,39 +347,74 @@ const SetupTimeline = () => {
 };
 
 
-// --- Authentic Yandex Wordstat Graph ---
-const WordstatGraph = () => (
-  <div className="w-full bg-[#1c1c1e] rounded-xl border border-zinc-700 overflow-hidden mb-6 font-sans shadow-xl">
-    <div className="bg-[#242426] px-4 py-3 border-b border-zinc-700 flex justify-between items-center">
-      <div>
-        <div className="flex items-center gap-1.5">
-           <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
-           <span className="text-[11px] text-zinc-300 font-bold">История запросов (Яндекс Вордстат)</span>
-        </div>
-        <p className="text-[13px] text-white mt-0.5 font-medium">«телеграм магазин»</p>
-      </div>
-      <div className="text-right">
-        <p className="text-[9px] text-zinc-500 uppercase tracking-wider">Всего показов</p>
-        <p className="text-[16px] font-bold text-white">6 650</p>
-      </div>
-    </div>
+// --- Authentic Yandex Wordstat Graph (Zoomable) ---
+const WordstatGraph = () => {
+  const [isExpanded, setIsExpanded] = useState(false);
 
-    {/* Real Screenshot Container */}
-    <div className="relative w-full h-auto group">
-      <img 
-        src="https://i.ibb.co.com/Y7WjS1Tc/2026-01-16-014054.png" 
-        alt="Real Wordstat Data"
-        className="w-full h-auto object-cover opacity-90 group-hover:opacity-100 transition-opacity duration-300"
-        onError={(e) => { 
-            e.target.onerror = null; 
-            e.target.src="https://via.placeholder.com/600x300/1c1c1e/00FF9D?text=WORDSTAT+DATA"; 
+  return (
+    <>
+      <div 
+        className="w-full bg-[#1c1c1e] rounded-xl border border-zinc-700 overflow-hidden mb-6 font-sans shadow-xl cursor-zoom-in relative group"
+        onClick={(e) => {
+           e.stopPropagation();
+           setIsExpanded(true);
         }}
-      />
-      {/* Overlay to blend light screenshots into dark theme initially */}
-      <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors pointer-events-none"></div>
-    </div>
-  </div>
-);
+      >
+        <div className="bg-[#242426] px-4 py-3 border-b border-zinc-700 flex justify-between items-center">
+          <div>
+            <div className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+              <span className="text-[11px] text-zinc-300 font-bold">История запросов (Яндекс Вордстат)</span>
+            </div>
+            <p className="text-[13px] text-white mt-0.5 font-medium">«телеграм магазин»</p>
+          </div>
+          <div className="text-right">
+            <p className="text-[9px] text-zinc-500 uppercase tracking-wider">Всего показов</p>
+            <p className="text-[16px] font-bold text-white">6 650</p>
+          </div>
+        </div>
+
+        {/* Real Screenshot Container */}
+        <div className="relative w-full h-auto">
+          <img 
+            src="https://i.ibb.co.com/Y7WjS1Tc/2026-01-16-014054.png" 
+            alt="Real Wordstat Data"
+            className="w-full h-auto object-cover opacity-90 group-hover:opacity-100 transition-opacity duration-300"
+            onError={(e) => { 
+                e.target.onerror = null; 
+                e.target.src="https://via.placeholder.com/600x300/1c1c1e/00FF9D?text=WORDSTAT+DATA"; 
+            }}
+          />
+          <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors pointer-events-none"></div>
+           {/* Zoom Hint */}
+          <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-md rounded-full p-1.5 opacity-60 group-hover:opacity-100 transition-opacity border border-white/20">
+             <Search className="w-3 h-3 text-white" />
+          </div>
+        </div>
+      </div>
+
+       {/* Expanded View */}
+       {isExpanded && (
+        <div 
+          className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 animate-in fade-in duration-300"
+          onClick={(e) => {
+             e.stopPropagation();
+             setIsExpanded(false);
+          }}
+        >
+          <div className="relative w-full max-w-4xl">
+             <img 
+               src="https://i.ibb.co.com/Y7WjS1Tc/2026-01-16-014054.png" 
+               className="w-full h-auto rounded-lg border border-zinc-700 shadow-2xl"
+               alt="Wordstat Full"
+             />
+             <p className="text-center text-zinc-500 font-mono text-[10px] mt-4 uppercase animate-pulse">Нажмите в любом месте, чтобы закрыть</p>
+          </div>
+        </div>
+      )}
+    </>
+  );
+};
 
 // --- Brand Logos components ---
 const BrandLogos = {
@@ -524,12 +505,277 @@ const BrandLogos = {
   )
 };
 
+// --- NEW 3D CAROUSEL COMPONENT ---
+const Carousel3D = () => {
+  const images = [
+    "https://i.ibb.co.com/Fp52kXy/666.png",
+    "https://i.ibb.co.com/9H5ZxPfy/555.png",
+    "https://i.ibb.co.com/bjV5YtR2/444.png",
+    "https://i.ibb.co.com/Q3k778bd/333.png",
+    "https://i.ibb.co.com/M5tCqhDs/222.png",
+    "https://i.ibb.co.com/BV1gXyf7/111.png"
+  ];
+
+  // Logic: 6 items, circle. 360/6 = 60deg per item.
+  // CSS transform: rotateY(i * 60deg) translateZ(r)
+  // r ~= width / (2 * tan(30deg))
+  // Assuming width ~ 200px (smaller horizontal card), r ~ 180px
+
+  return (
+    <div className="w-full h-[200px] flex items-center justify-center perspective-container overflow-visible">
+      <div className="spinner">
+        {images.map((img, i) => (
+          <div 
+            key={i} 
+            className="carousel-item flex items-center justify-center"
+            style={{ 
+              '--i': i,
+              '--total': images.length 
+            }}
+          >
+            {/* CLEAN IMAGE - Rounded corners + Neon Glow */}
+            <img 
+              src={img} 
+              alt={`Result ${i+1}`} 
+              className="max-w-full max-h-full object-contain pointer-events-none rounded-[24px] shadow-[0_0_15px_rgba(0,255,157,0.6)]"
+              onError={(e) => { e.target.style.display = 'none'; }}
+            />
+          </div>
+        ))}
+      </div>
+      <style>{`
+        .perspective-container {
+          perspective: 800px; /* Stronger 3D */
+        }
+        .spinner {
+          position: relative;
+          width: 220px; /* Reduced width */
+          height: 125px; /* Reduced height */
+          transform-style: preserve-3d;
+          animation: spin 20s infinite linear;
+          /* Add a slight X tilt to show the ring structure better */
+          transform: rotateX(-10deg); 
+        }
+        .spinner:hover {
+          animation-play-state: paused;
+        }
+        @keyframes spin {
+          from { transform: rotateX(-10deg) rotateY(0deg); }
+          to { transform: rotateX(-10deg) rotateY(-360deg); }
+        }
+        .carousel-item {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 220px; 
+          height: 125px;
+          /* Calculate rotation: index * (360 / total) */
+          /* TranslateZ: reduced to match smaller width */
+          transform: rotateY(calc(var(--i) * 60deg)) translateZ(220px);
+          backface-visibility: hidden; 
+          -webkit-backface-visibility: hidden;
+          /* ALL STYLES REMOVED per user request */
+          background: transparent;
+          border: none;
+          box-shadow: none;
+        }
+        /* Add reflection to items */
+        .carousel-item img {
+          -webkit-box-reflect: below 5px linear-gradient(transparent, transparent, rgba(0,0,0,0.3));
+        }
+      `}</style>
+    </div>
+  );
+};
+
+// --- NEW SHOP INTRO SEQUENCE COMPONENT ---
+const ShopIntroSequence = ({ onComplete }) => {
+  const messages = [
+    { 
+      part1: "Пока другие обещают лиды", 
+      part2: "МЫ ПОКАЗЫВАЕМ ДЕНЬГИ" 
+    },
+    { 
+      part1: "МЫ НЕ ИЩЕМ НОВЫХ КЛИЕНТОВ", 
+      part2: "Мы даем твоим старым клиентам возможность купить мгновенно" 
+    },
+    { 
+      part1: "МЫ УБИРАЕМ ОЖИДАНИЕ", 
+      part2: "ВЫ ПОЛУЧАЕТЕ ДЕНЬГИ" 
+    },
+    { 
+      part1: "Спасаем от 20% чистой прибыли", 
+      part2: "И ЗАСТАВЛЯЕМ ТАРГЕТ РАБОТАТЬ НА 100%" 
+    }
+  ];
+
+  const [index, setIndex] = useState(0);
+  const [phase, setPhase] = useState('part1In');
+
+  useEffect(() => {
+    let isMounted = true;
+    let timeout;
+    
+    const runSequence = () => {
+      if (phase === 'part1In') {
+        timeout = setTimeout(() => { if(isMounted) setPhase('part1Wait'); }, 1000);
+      } else if (phase === 'part1Wait') {
+        timeout = setTimeout(() => { if(isMounted) setPhase('part1Dim'); }, 1000);
+      } else if (phase === 'part1Dim') {
+        timeout = setTimeout(() => { if(isMounted) setPhase('part2In'); }, 500);
+      } else if (phase === 'part2In') {
+        timeout = setTimeout(() => { if(isMounted) setPhase('fullWait'); }, 1000);
+      } else if (phase === 'fullWait') {
+        timeout = setTimeout(() => { if(isMounted) setPhase('out'); }, 2000); // Read time
+      } else if (phase === 'out') {
+        timeout = setTimeout(() => {
+          if (isMounted) {
+            if (index < messages.length - 1) {
+              setIndex(prev => prev + 1);
+              setPhase('part1In');
+            } else {
+              onComplete();
+            }
+          }
+        }, 800); // Accelerated exit (0.8s match)
+      }
+    };
+    
+    runSequence();
+    return () => { isMounted = false; clearTimeout(timeout); };
+  }, [phase, index, messages.length, onComplete]);
+
+  const current = messages[index];
+  // LUXURY LOGIC: Keep gray/dimmed state during 'out' phase to prevent flashing back to white
+  const isDimmed = phase === 'part1Dim' || phase === 'part2In' || phase === 'fullWait' || phase === 'out';
+  const showPart2 = phase === 'part2In' || phase === 'fullWait' || phase === 'out'; // Keep part 2 visible during out so they fade together
+
+  return (
+    <div className="flex flex-col items-center justify-center h-full w-full min-h-[60vh] px-4 cursor-pointer bg-black/40 backdrop-blur-sm" onClick={onComplete}>
+       <div 
+         key={index}
+         className={`
+           w-full text-center max-w-2xl transition-all duration-300
+           ${phase === 'out' ? 'animate-[smokeOut_0.8s_ease-in_forwards]' : ''} 
+         `}
+       >
+         {/* Part 1 - Platinum/Silver Text */}
+         <h2 className={`
+           text-xl sm:text-3xl font-bold uppercase leading-relaxed tracking-wide font-['Chakra_Petch'] 
+           bg-clip-text text-transparent bg-gradient-to-b from-white via-gray-200 to-gray-400
+           drop-shadow-[0_2px_10px_rgba(255,255,255,0.2)] transition-all duration-700
+           ${phase === 'part1In' ? 'animate-[smokeIn_1s_ease-out_forwards]' : ''}
+           ${isDimmed ? 'opacity-50 blur-[1px]' : 'opacity-100'}
+         `}>
+           {current.part1}
+         </h2>
+
+         {/* Part 2 - Gold/Amber Text with Shine */}
+         {showPart2 && (
+            <div className="relative inline-block mt-4">
+              <h2 className={`
+                text-2xl sm:text-4xl font-black uppercase leading-relaxed tracking-wider font-['Chakra_Petch']
+                bg-clip-text text-transparent bg-gradient-to-r from-[#D4AF37] via-[#F7EF8A] to-[#D4AF37]
+                drop-shadow-[0_0_25px_rgba(212,175,55,0.4)]
+                animate-[smokeIn_1s_ease-out_forwards]
+              `}>
+                {current.part2}
+              </h2>
+              {/* Shimmer Effect Overlay */}
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent skew-x-12 animate-[shimmer_2s_infinite]"></div>
+            </div>
+         )}
+       </div>
+       <div className="absolute bottom-10 text-[10px] text-zinc-600 uppercase tracking-widest animate-pulse">
+         Нажмите, чтобы пропустить
+       </div>
+    </div>
+  );
+};
+
+// --- NEW SHOP SMOKE FEATURES COMPONENT (WITH SPLIT LOGIC - Unused in render but kept for ref) ---
+const ShopSmokeFeatures = () => {
+  const messages = [
+    { 
+      part1: "Пока другие обещают лиды", 
+      part2: "мы показываем деньги" 
+    },
+    { 
+      part1: "МЫ НЕ ИЩЕМ НОВЫХ КЛИЕНТОВ", 
+      part2: "Мы даем твоим старым клиентам возможность купить мгновенно" 
+    },
+    { 
+      part1: "МЫ УБИРАЕМ ОЖИДАНИЕ", 
+      part2: "Вы получаете деньги" 
+    },
+    { 
+      part1: "Спасаем от 20% чистой прибыли", 
+      part2: "и заставляем таргет работать на 100%" 
+    }
+  ];
+
+  const [index, setIndex] = useState(0);
+  const [phase, setPhase] = useState('part1In');
+
+  useEffect(() => {
+    let isMounted = true;
+    let timeout;
+    const runSequence = () => {
+      if (phase === 'part1In') timeout = setTimeout(() => { if(isMounted) setPhase('part1Wait'); }, 1000);
+      else if (phase === 'part1Wait') timeout = setTimeout(() => { if(isMounted) setPhase('part1Dim'); }, 1000);
+      else if (phase === 'part1Dim') timeout = setTimeout(() => { if(isMounted) setPhase('part2In'); }, 500);
+      else if (phase === 'part2In') timeout = setTimeout(() => { if(isMounted) setPhase('fullWait'); }, 1000);
+      else if (phase === 'fullWait') timeout = setTimeout(() => { if(isMounted) setPhase('out'); }, 2500);
+      else if (phase === 'out') timeout = setTimeout(() => { if(isMounted) { setIndex(prev => (prev + 1) % messages.length); setPhase('part1In'); } }, 800);
+    };
+    runSequence();
+    return () => { isMounted = false; clearTimeout(timeout); };
+  }, [phase, index, messages.length]);
+
+  const current = messages[index];
+  const isGray = phase === 'part1Dim' || phase === 'part2In' || phase === 'fullWait' || phase === 'out';
+  const showPart2 = phase === 'part2In' || phase === 'fullWait' || phase === 'out';
+
+  return (
+    <div className="w-full min-h-[180px] flex items-center justify-center py-6">
+       <div 
+         className={`
+           w-full text-center max-w-md transition-all duration-300
+           ${phase === 'out' ? 'animate-[smokeOut_0.8s_ease-in_forwards]' : ''}
+         `}
+       >
+         {/* Part 1 */}
+         <p className={`
+           text-sm sm:text-base font-bold uppercase leading-relaxed tracking-wide font-['Chakra_Petch'] drop-shadow-[0_0_15px_rgba(255,255,255,0.2)] transition-all duration-700
+           ${phase === 'part1In' ? 'animate-[smokeIn_1s_ease-out_forwards]' : ''}
+           ${isGray ? 'text-zinc-600 blur-[0.5px] animate-[glitchText_3s_infinite]' : 'text-white'}
+         `}>
+           {current.part1}
+         </p>
+         
+         {/* Part 2 */}
+         {showPart2 && (
+            <p className={`
+              mt-3 text-base sm:text-lg font-black text-[#00FF9D] uppercase leading-relaxed tracking-wide font-['Chakra_Petch'] drop-shadow-[0_0_15px_rgba(255,255,157,0.4)]
+              animate-[smokeIn_1s_ease-out_forwards]
+            `}>
+              {current.part2}
+            </p>
+         )}
+       </div>
+    </div>
+  );
+};
+
 const App = () => {
-  const [currentView, setCurrentView] = useState('main'); // 'main', 'education', 'faq', 'program'
+  const [currentView, setCurrentView] = useState('main'); // 'main', 'education', 'faq', 'program', 'shop'
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalType, setModalType] = useState('');
   const [showToast, setShowToast] = useState(false);
   const [activeSlide, setActiveSlide] = useState(0);
+  
+  // State for Shop Intro
+  const [shopIntroFinished, setShopIntroFinished] = useState(false);
   
   // State for FAQ Modal
   const [activeFaq, setActiveFaq] = useState(null);
@@ -543,6 +789,13 @@ const App = () => {
         setActiveSlide((prev) => (prev + 1) % slides.length);
       }, 4500);
       return () => clearInterval(timer);
+    }
+  }, [currentView]);
+  
+  // Reset Intro when opening Shop
+  useEffect(() => {
+    if (currentView === 'shop') {
+       // Handled in click handler for better control.
     }
   }, [currentView]);
 
@@ -687,17 +940,25 @@ const App = () => {
     setActiveFaq(null);
     setShowCalculator(false);
   };
+  
+  const handleShopClick = () => {
+    setShopIntroFinished(false);
+    setCurrentView('shop');
+  };
 
   return (
     <div className="min-h-screen bg-[#050505] text-white font-sans selection:bg-[#00FF9D]/30 relative overflow-hidden flex flex-col">
       <link href="https://fonts.googleapis.com/css2?family=Syne:wght@800&family=Outfit:wght@400;700&family=Chakra+Petch:wght@700&display=swap" rel="stylesheet" />
         
-      {/* Background */}
+      {/* Background - Aurora Effect Added Here */}
       <div className="fixed inset-0 z-0 pointer-events-none">
         <div className="absolute inset-0 bg-[#020202] -z-20" />
+        {/* Aurora Blobs */}
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-purple-500/10 rounded-full blur-[120px] animate-pulse"></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-[#00FF9D]/5 rounded-full blur-[120px] animate-pulse"></div>
+        
         <div className="absolute inset-0 opacity-20 -z-10" style={{ backgroundImage: `linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px)`, backgroundSize: '50px 50px', maskImage: 'radial-gradient(circle at 50% 30%, black 40%, transparent 100%)', WebkitMaskImage: 'radial-gradient(circle at 50% 30%, black 40%, transparent 100%)' }} />
         <canvas ref={canvasRef} className="absolute inset-0 opacity-30 mix-blend-screen" />
-        <div className="absolute top-[-100px] left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-[radial-gradient(ellipse_at_center,rgba(0,255,157,0.1)_0%,transparent_70%)] blur-[80px]" />
       </div>
 
       <div className="relative z-10 flex-grow flex flex-col max-w-lg mx-auto w-full px-4 pt-10 pb-20"> {/* pb-20 for ticker space */}
@@ -708,30 +969,91 @@ const App = () => {
               <h1 className="font-['Chakra_Petch'] font-[700] uppercase tracking-[0.15em] whitespace-nowrap overflow-visible relative block w-full text-center" style={{ fontSize: 'clamp(1.5rem, 8.5vw, 3.5rem)', textShadow: '0 0 20px rgba(0,255,157,0.3)', color: '#ffffff' }}>
                 <span className="relative inline-block mr-[-0.15em]">TAIPAN MEDIA<span className="absolute inset-0 -z-10 opacity-40 blur-[12px] animate-pulse text-[#00FF9D]">TAIPAN MEDIA</span></span>
               </h1>
+              
+              {/* REPLACED DYNAMIC SMOKE STATUS WITH STATIC "DIGITAL MEDIA" SUBTITLE */}
               <div className="flex items-center justify-center gap-4 mt-3 w-full">
                 <div className="h-[1px] flex-1 max-w-[40px] bg-gradient-to-r from-transparent to-zinc-700"></div>
-                <p className="text-[10px] uppercase tracking-[0.6em] mr-[-0.6em] text-zinc-500 font-bold whitespace-nowrap">Digital Agency</p>
+                <p className="text-[10px] uppercase tracking-[0.6em] mr-[-0.6em] text-zinc-500 font-bold whitespace-nowrap">DIGITAL MEDIA</p>
                 <div className="h-[1px] flex-1 max-w-[40px] bg-gradient-to-l from-transparent to-zinc-700"></div>
               </div>
             </div>
+            
             <div className="grid grid-cols-2 gap-4 mb-4 w-full">
-              <div onClick={() => openModal('Telegram Shop')} className="group relative glass-card rounded-3xl p-6 h-64 flex flex-col items-center justify-center text-center cursor-pointer">
+              <div onClick={handleShopClick} className="group relative glass-card rounded-3xl p-6 h-64 flex flex-col items-center justify-center text-center cursor-pointer">
                 <div className="mb-6 text-zinc-400 group-hover:text-[#00FF9D] transition-all duration-300"><TelegramLogoMain className="w-12 h-12 animate-[contourPulse_3s_ease-in-out_infinite]" /></div>
                 <h3 className="text-lg font-bold uppercase tracking-wide mb-2 leading-tight">Telegram<br/>Магазин</h3>
-                <p className="text-[9px] text-zinc-500 uppercase tracking-widest mb-4">Бизнес продает 24/7</p>
+                <p className="text-[9px] text-zinc-500 uppercase tracking-widest mb-4 leading-relaxed px-2">
+                  Выведите свой бизнес на новый уровень, и заберите ту прибыль, которую вы упускаете
+                </p>
                 <div className="flex items-center text-[10px] text-[#00FF9D] opacity-0 group-hover:opacity-100 transition-all font-bold tracking-wider">ЗАКАЗАТЬ <ArrowRight className="w-3 h-3 ml-1" /></div>
               </div>
               <div onClick={() => setCurrentView('education')} className="group relative glass-card rounded-3xl p-6 h-64 flex flex-col items-center justify-center text-center cursor-pointer">
                 <div className="mb-6 text-zinc-400 group-hover:text-[#00FF9D] transition-all duration-300"><GraduationCap className="w-12 h-12 animate-[contourPulse_3s_ease-in-out_infinite]" /></div>
                 <h3 className="text-lg font-bold uppercase tracking-widest mb-2 leading-tight">ОБУЧЕНИЕ</h3>
-                <p className="text-[9px] text-zinc-500 uppercase tracking-widest mb-4 leading-relaxed px-2 text-zinc-500">Твой шанс в Telegram</p>
+                <p className="text-[9px] text-zinc-500 uppercase tracking-widest mb-4 leading-relaxed px-2 text-zinc-500">
+                  Освой трендовый навык с большим спросом, и получи возможность зарабатывать из дома
+                </p>
                 <div className="flex items-center text-[10px] text-[#00FF9D] opacity-0 group-hover:opacity-100 transition-all font-bold tracking-wider">УЗНАТЬ <ArrowRight className="w-3 h-3 ml-1" /></div>
               </div>
             </div>
             <div onClick={() => openModal('Mini App')} className="group relative glass-card rounded-3xl p-6 flex flex-col items-center justify-center cursor-pointer text-center w-full">
               <h3 className="text-lg font-bold uppercase tracking-widest mb-2 group-hover:text-[#00FF9D] transition-colors">MINI APP</h3>
-              <p className="text-[10px] text-zinc-500 uppercase tracking-widest group-hover:text-white transition-colors">Заказать для своего бизнеса</p>
+              <p className="text-[10px] text-zinc-500 uppercase tracking-widest group-hover:text-white transition-colors">Заказать персональный mini app</p>
             </div>
+          </div>
+        )}
+
+        {currentView === 'shop' && (
+          <div className="animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col h-full items-center w-full">
+            {!shopIntroFinished ? (
+               <ShopIntroSequence onComplete={() => setShopIntroFinished(true)} />
+            ) : (
+              <>
+                <button onClick={() => setCurrentView('main')} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-6 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
+                <div className="flex-grow flex flex-col items-center w-full space-y-6 animate-in slide-in-from-bottom duration-700">
+                  
+                  {/* Shop Header */}
+                  <div className="text-center px-4 w-full mb-4">
+                      <TelegramLogoMain className="w-20 h-20 mx-auto text-[#00FF9D] mb-4 drop-shadow-[0_0_15px_rgba(0,255,157,0.5)] animate-[contourPulse_3s_ease-in-out_infinite]" />
+                      <h2 className="text-3xl font-black tracking-tighter uppercase mb-2 font-['Chakra_Petch'] leading-none">
+                        TELEGRAM<br/><span className="text-[#00FF9D]">STORE</span>
+                      </h2>
+                      <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] mr-[-0.3em] font-bold">E-commerce нового поколения</p>
+                  </div>
+
+                  {/* Features List (Restored) */}
+                  <div className="w-full space-y-3">
+                     {[
+                       { title: "Каталог и Корзина", desc: "Полноценный интернет-магазин внутри мессенджера. Удобный выбор товаров без лишних переходов." },
+                       { title: "Оплата в 1 клик", desc: "Интеграция с Kaspi, картами и криптовалютой. Мгновенные транзакции." },
+                       { title: "CRM Система", desc: "Управление заказами, статусами и клиентами прямо внутри Telegram." },
+                       { title: "Авто-рассылки", desc: "Push-уведомления клиентам о новинках и акциях с открываемостью 90%." }
+                     ].map((item, i) => (
+                       <div key={i} className="glass-card rounded-2xl p-4 flex items-start gap-4 hover:bg-white/5 transition-all">
+                          <div className="mt-1 bg-[#00FF9D]/10 p-2 rounded-full text-[#00FF9D] border border-[#00FF9D]/20"><CheckCircle2 className="w-4 h-4" /></div>
+                          <div>
+                            <h4 className="text-sm font-bold text-white uppercase tracking-wider mb-1">{item.title}</h4>
+                            <p className="text-[10px] text-zinc-400 leading-relaxed">{item.desc}</p>
+                          </div>
+                       </div>
+                     ))}
+                  </div>
+
+                  {/* Pricing & CTA */}
+                  <div className="mt-4 w-full glass-card p-6 rounded-3xl text-center border border-[#00FF9D]/20 relative overflow-hidden group">
+                      <div className="absolute inset-0 bg-gradient-to-t from-[#00FF9D]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                      <p className="text-[10px] text-zinc-400 uppercase tracking-widest mb-2 relative z-10">Разработка под ключ</p>
+                      <div className="text-2xl font-black text-white mb-4 font-['Chakra_Petch'] relative z-10">от 150 000 ₸</div>
+                      <button 
+                        onClick={() => openModal('Order Shop')} 
+                        className="w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-4 rounded-xl shadow-[0_0_20px_rgba(0,255,157,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs relative z-10 flex items-center justify-center gap-2"
+                      >
+                        Обсудить проект <ArrowRight className="w-4 h-4" />
+                      </button>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         )}
 
@@ -771,10 +1093,16 @@ const App = () => {
           <div className="animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col h-full">
             <button onClick={() => setCurrentView('education')} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-6 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
             <div className="flex-grow flex flex-col items-center w-full space-y-6">
-              <div className="text-center px-4 w-full mb-4">
-                <h2 className="text-3xl font-black tracking-tighter uppercase mb-2 font-['Chakra_Petch']">ГЛАВНЫЕ<br/><span className="text-[#00FF9D]">ФАКТЫ</span></h2>
-                <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] mr-[-0.3em] font-bold">Почему это работает</p>
+              
+              {/* --- CHANGED: REPLACED HEADER TEXT WITH 3D CAROUSEL --- */}
+              <div className="w-full mb-6">
+                <Carousel3D />
+                <div className="text-center mt-2">
+                   {/* REMOVED "RESULTS" TEXT */}
+                </div>
               </div>
+              
+              {/* Preserved FAQ List */}
               <div className="w-full space-y-4">
                 {faqItems.map((item) => (
                   <div 
@@ -801,10 +1129,15 @@ const App = () => {
           <div className="animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col h-full">
             <button onClick={() => setCurrentView('faq')} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-6 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
             <div className="flex-grow flex flex-col items-center w-full space-y-6">
-              <div className="text-center px-4 w-full mb-4">
-                <h2 className="text-3xl font-black tracking-tighter uppercase mb-2 font-['Chakra_Petch']">ПРОТОКОЛ<br/><span className="text-[#00FF9D]">TAIPAN</span></h2>
+              
+              {/* --- CENTERED TITLE FIX --- */}
+              <div className="flex flex-col items-center text-center px-4 w-full mb-6 mx-auto max-w-sm">
+                <h2 className="text-3xl sm:text-4xl font-black tracking-tight uppercase mb-2 font-['Chakra_Petch'] leading-tight">
+                  Модули обучения<br/><span className="text-[#00FF9D]">TAIPAN ACADEMY</span>
+                </h2>
                 <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] mr-[-0.3em] font-bold">Система доминирования</p>
               </div>
+
               <div className="w-full space-y-3">
                 {[
                   { 
@@ -833,7 +1166,7 @@ const App = () => {
                     subtitle: "Где твои деньги",
                     desc: "Покажем список ниш, где за такие магазины платят больше всего. Даем готовое предложение, которое остается только отправить.",
                     easy: "Тебе не нужно ничего выдумывать — мы даем наводку на прибыльные места и готовый текст для сделки.",
-                    locked: true // Kept visually locked for effect, but content is visible as requested context implied showcasing it
+                    locked: false // UNLOCKED per request
                   }
                 ].map((item, i) => (
                   <div key={i} className="glass-card rounded-2xl p-5 flex flex-col items-start gap-3 group cursor-pointer hover:bg-white/5 transition-all">
@@ -862,9 +1195,24 @@ const App = () => {
               </div>
             </div>
             <div className="mt-8 w-full glass-card p-6 rounded-3xl text-center border border-[#00FF9D]/20">
-              <p className="text-[10px] text-zinc-400 uppercase tracking-widest mb-2">Доступ к закрытому каналу</p>
-              <div className="text-2xl font-black text-white mb-4 font-['Chakra_Petch']">19 990 ₽ <span className="text-zinc-600 text-lg line-through decoration-red-600 decoration-2 ml-2">45 000 ₽</span></div>
-              <button onClick={() => openModal('Buy Course')} className="w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-4 rounded-xl shadow-[0_0_20px_rgba(0,255,157,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs">Забрать доступ</button>
+              <p className="text-[10px] text-zinc-400 uppercase tracking-widest mb-2">Стоимость обучения</p>
+              <div className="text-2xl font-black text-white mb-4 font-['Chakra_Petch']">50 000 ₸ <span className="text-zinc-600 text-lg line-through decoration-red-600 decoration-2 ml-2">80 000 ₸</span></div>
+              <a 
+                href="https://qpay-payform.qiwi.kz/form/invoice?invoiceUid=2bb2b799-2112-4f53-bcd7-c4587581392d"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-4 rounded-xl shadow-[0_0_20px_rgba(0,255,157,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs mb-3"
+              >
+                Приобрести обучение
+              </a>
+              <a 
+                href="https://t.me/taipan_manager"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block w-full bg-transparent border border-[#00FF9D]/50 text-[#00FF9D] font-black uppercase tracking-widest py-4 rounded-xl hover:bg-[#00FF9D]/10 hover:scale-[1.02] active:scale-[0.98] transition-all text-xs"
+              >
+                Переключиться на менеджера
+              </a>
             </div>
           </div>
         )}
@@ -935,28 +1283,46 @@ const App = () => {
 
       <style>{`
         .glass-card {
-            background: transparent;
-            backdrop-filter: blur(2px);
-            -webkit-backdrop-filter: blur(2px);
-            border: 1px solid rgba(0, 255, 157, 0.15); 
-            box-shadow: none;
+            background: rgba(20, 20, 20, 0.4);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            border-left: 1px solid rgba(255, 255, 255, 0.1);
             transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
         }
         .glass-card:hover {
-            background: rgba(0, 255, 157, 0.02);
+            background: rgba(0, 255, 157, 0.03);
             border-color: rgba(0, 255, 157, 0.4);
-            box-shadow: 0 0 20px rgba(0, 255, 157, 0.1);
+            box-shadow: 0 0 30px rgba(0, 255, 157, 0.15);
         }
         @keyframes contourPulse {
           0% { filter: drop-shadow(0 0 2px rgba(0, 255, 157, 0.4)); opacity: 0.8; }
           50% { filter: drop-shadow(0 0 8px rgba(0, 255, 157, 0.8)); opacity: 1; }
           100% { filter: drop-shadow(0 0 2px rgba(0, 255, 157, 0.4)); opacity: 0.8; }
         }
+        @keyframes smokeIn {
+          0% { opacity: 0; filter: blur(20px); transform: translateY(10px) scale(0.9); }
+          100% { opacity: 1; filter: blur(0); transform: translateY(0) scale(1); }
+        }
+        @keyframes smokeOut {
+          0% { opacity: 1; filter: blur(0); transform: translateY(0) scale(1); }
+          100% { opacity: 0; filter: blur(20px); transform: translateY(-10px) scale(1.1); }
+        }
         @keyframes smokeDrift {
           0% { transform: translate(0, 0) scale(1); opacity: 0.3; }
           33% { transform: translate(15px, -15px) scale(1.1); opacity: 0.6; }
           66% { transform: translate(-10px, 10px) scale(0.9); opacity: 0.4; }
           100% { transform: translate(0, 0) scale(1); opacity: 0.3; }
+        }
+        @keyframes glitchText {
+          0% { transform: translate(0); text-shadow: none; }
+          20% { transform: translate(-2px, 2px); text-shadow: 2px 0 #00FF9D, -2px 0 #ff00de; }
+          40% { transform: translate(2px, -2px); text-shadow: -2px 0 #00FF9D, 2px 0 #ff00de; }
+          60% { transform: translate(0); text-shadow: none; }
+          80% { transform: translate(1px, -1px); text-shadow: 1px 0 #00FF9D, -1px 0 #ff00de; }
+          100% { transform: translate(0); text-shadow: none; }
         }
         @keyframes glitch {
           0% { transform: translate(0) skew(0deg); opacity: 1; filter: none; }
@@ -970,6 +1336,10 @@ const App = () => {
           80% { transform: translate(0, -1px) skew(0deg); opacity: 1; filter: contrast(1.5); }
           90% { transform: translate(-1px, 1px) skew(0deg); opacity: 0.9; }
           100% { transform: translate(0) skew(0deg); opacity: 1; filter: none; }
+        }
+        @keyframes shimmer {
+          0% { transform: translateX(-150%) skewX(12deg); }
+          100% { transform: translateX(150%) skewX(12deg); }
         }
         @keyframes heightGrow {
           from { height: 0; }

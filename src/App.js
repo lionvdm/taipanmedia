@@ -2,11 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 
 /**
  * Taipan Media - Elite React Application
- * FIX: Text Transition Timing & Styling.
- * * User Request: "White text lingers for half a second when switching, shouldn't happen."
- * * Issue: When phase switched to 'out', the `isDimmed/isGray` flag turned false, causing the text to transition back to full opacity/white color WHILE fading out container.
- * * Fix: Included `phase === 'out'` in the `isDimmed/isGray` conditions in all status components.
- * * Tweak: Accelerated fade-out duration (1s -> 0.8s) for snappier transitions.
+ * UPDATE: Partner Logos - Horizontal Scroll & Bigger Size.
+ * * User Request: "Logos bigger and go from left to right".
+ * * Action: Updated `PartnersCredits` to use a horizontal flex layout.
+ * * Animation: Changed to `scrollRight` (moving ->).
+ * * Styling: Increased logo height to `h-24` (approx 96px) for visibility.
  */
 
 // --- Internal Icon Components ---
@@ -549,8 +549,8 @@ const Carousel3D = () => {
         }
         .spinner {
           position: relative;
-          width: 220px; /* Reduced width */
-          height: 125px; /* Reduced height */
+          width: 260px; /* Increased Width */
+          height: 150px; /* Adjusted Height */
           transform-style: preserve-3d;
           animation: spin 20s infinite linear;
           /* Add a slight X tilt to show the ring structure better */
@@ -567,11 +567,11 @@ const Carousel3D = () => {
           position: absolute;
           top: 0;
           left: 0;
-          width: 220px; 
-          height: 125px;
+          width: 260px; 
+          height: 150px;
           /* Calculate rotation: index * (360 / total) */
-          /* TranslateZ: reduced to match smaller width */
-          transform: rotateY(calc(var(--i) * 60deg)) translateZ(220px);
+          /* TranslateZ: Adjusted for larger cards */
+          transform: rotateY(calc(var(--i) * 60deg)) translateZ(280px);
           backface-visibility: hidden; 
           -webkit-backface-visibility: hidden;
           /* ALL STYLES REMOVED per user request */
@@ -693,76 +693,48 @@ const ShopIntroSequence = ({ onComplete }) => {
   );
 };
 
-// --- NEW SHOP SMOKE FEATURES COMPONENT (WITH SPLIT LOGIC - Unused in render but kept for ref) ---
-const ShopSmokeFeatures = () => {
-  const messages = [
-    { 
-      part1: "Пока другие обещают лиды", 
-      part2: "мы показываем деньги" 
-    },
-    { 
-      part1: "МЫ НЕ ИЩЕМ НОВЫХ КЛИЕНТОВ", 
-      part2: "Мы даем твоим старым клиентам возможность купить мгновенно" 
-    },
-    { 
-      part1: "МЫ УБИРАЕМ ОЖИДАНИЕ", 
-      part2: "Вы получаете деньги" 
-    },
-    { 
-      part1: "Спасаем от 20% чистой прибыли", 
-      part2: "и заставляем таргет работать на 100%" 
-    }
+// --- PARTNERS CREDITS COMPONENT (NEW) ---
+const PartnersCredits = () => {
+  const logos = [
+    "https://i.ibb.co.com/PvND9HRh/Picsart-Background-Remover.png",
+    "https://i.ibb.co.com/YHbCZm2/Yandex-Metrika-hd-Picsart-Background-Remover.png",
+    "https://i.ibb.co.com/DfQywRwj/Picsart-Background-Remover.png",
+    "https://i.ibb.co.com/QZpjR8B/salon-cvetov-janym-photo-place-Picsart-Background-Remover.png",
+    "https://i.ibb.co.com/3mKHz61B/Picsart-Background-Remover.png"
   ];
 
-  const [index, setIndex] = useState(0);
-  const [phase, setPhase] = useState('part1In');
-
-  useEffect(() => {
-    let isMounted = true;
-    let timeout;
-    const runSequence = () => {
-      if (phase === 'part1In') timeout = setTimeout(() => { if(isMounted) setPhase('part1Wait'); }, 1000);
-      else if (phase === 'part1Wait') timeout = setTimeout(() => { if(isMounted) setPhase('part1Dim'); }, 1000);
-      else if (phase === 'part1Dim') timeout = setTimeout(() => { if(isMounted) setPhase('part2In'); }, 500);
-      else if (phase === 'part2In') timeout = setTimeout(() => { if(isMounted) setPhase('fullWait'); }, 1000);
-      else if (phase === 'fullWait') timeout = setTimeout(() => { if(isMounted) setPhase('out'); }, 2500);
-      else if (phase === 'out') timeout = setTimeout(() => { if(isMounted) { setIndex(prev => (prev + 1) % messages.length); setPhase('part1In'); } }, 800);
-    };
-    runSequence();
-    return () => { isMounted = false; clearTimeout(timeout); };
-  }, [phase, index, messages.length]);
-
-  const current = messages[index];
-  const isGray = phase === 'part1Dim' || phase === 'part2In' || phase === 'fullWait' || phase === 'out';
-  const showPart2 = phase === 'part2In' || phase === 'fullWait' || phase === 'out';
-
   return (
-    <div className="w-full min-h-[180px] flex items-center justify-center py-6">
-       <div 
-         className={`
-           w-full text-center max-w-md transition-all duration-300
-           ${phase === 'out' ? 'animate-[smokeOut_0.8s_ease-in_forwards]' : ''}
-         `}
-       >
-         {/* Part 1 */}
-         <p className={`
-           text-sm sm:text-base font-bold uppercase leading-relaxed tracking-wide font-['Chakra_Petch'] drop-shadow-[0_0_15px_rgba(255,255,255,0.2)] transition-all duration-700
-           ${phase === 'part1In' ? 'animate-[smokeIn_1s_ease-out_forwards]' : ''}
-           ${isGray ? 'text-zinc-600 blur-[0.5px] animate-[glitchText_3s_infinite]' : 'text-white'}
-         `}>
-           {current.part1}
-         </p>
-         
-         {/* Part 2 */}
-         {showPart2 && (
-            <p className={`
-              mt-3 text-base sm:text-lg font-black text-[#00FF9D] uppercase leading-relaxed tracking-wide font-['Chakra_Petch'] drop-shadow-[0_0_15px_rgba(255,255,157,0.4)]
-              animate-[smokeIn_1s_ease-out_forwards]
-            `}>
-              {current.part2}
-            </p>
-         )}
-       </div>
+    <div className="w-full mt-8 overflow-hidden relative">
+      <p className="text-center text-[10px] text-zinc-600 uppercase tracking-widest mb-6">Нам доверяют</p>
+      
+      {/* Horizontal scrolling container */}
+      <div className="relative w-full overflow-hidden mask-gradient-horizontal">
+        <div className="flex items-center gap-12 animate-scrollLeft w-max">
+           {/* Duplicate logos for infinite scroll effect */}
+           {[...logos, ...logos, ...logos].map((logo, i) => (
+             <img 
+               key={i} 
+               src={logo} 
+               alt="Partner Logo" 
+               className="h-24 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity duration-300"
+             />
+           ))}
+        </div>
+      </div>
+
+      <style>{`
+        @keyframes scrollLeft {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-33.33%); } /* Loop 1/3 of total width */
+        }
+        .animate-scrollLeft {
+          animation: scrollLeft 30s linear infinite;
+        }
+        .mask-gradient-horizontal {
+          mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+          -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+        }
+      `}</style>
     </div>
   );
 };
@@ -1000,6 +972,9 @@ const App = () => {
               <h3 className="text-lg font-bold uppercase tracking-widest mb-2 group-hover:text-[#00FF9D] transition-colors">MINI APP</h3>
               <p className="text-[10px] text-zinc-500 uppercase tracking-widest group-hover:text-white transition-colors">Заказать персональный mini app</p>
             </div>
+            
+            {/* PARTNERS LOGO SCROLL */}
+            <PartnersCredits />
           </div>
         )}
 
@@ -1358,6 +1333,28 @@ const App = () => {
         }
         @keyframes widthGrow {
           from { width: 0; }
+        }
+        @keyframes scrollUp {
+          0% { transform: translateY(0); }
+          100% { transform: translateY(-50%); }
+        }
+        .animate-scrollUp {
+          animation: scrollUp 20s linear infinite;
+        }
+        .mask-gradient {
+          mask-image: linear-gradient(to bottom, transparent, black 20%, black 80%, transparent);
+          -webkit-mask-image: linear-gradient(to bottom, transparent, black 20%, black 80%, transparent);
+        }
+        @keyframes scrollLeft {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-33.33%); }
+        }
+        .animate-scrollLeft {
+          animation: scrollLeft 30s linear infinite;
+        }
+        .mask-gradient-horizontal {
+          mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+          -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
         }
       `}</style>
     </div>

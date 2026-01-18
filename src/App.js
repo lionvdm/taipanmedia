@@ -2,13 +2,14 @@ import React, { useState, useEffect, useRef } from 'react';
 
 /**
  * Taipan Media - Elite React Application
- * UPDATE: Partners Animation - Premium Cinematic Style.
- * * User Request: "Change animation for logos, make a more expensive premium animation".
- * * Action: Replaced 'Glitch' effect with 'Cinematic Blur Reveal' in `PartnersCredits`.
- * * Details: 
- * - Logos fade in with blur and slight scale up.
- * - Added a subtle background glow behind the active logo for depth.
- * - Smoother timing curves (cubic-bezier).
+ * UPDATE: PERFORMANCE OPTIMIZATION (Mobile Focus)
+ * * User Request: "Optimize everything, images load long and freeze on mobile".
+ * * Action: Implemented `SmartImage` with async decoding, lazy loading, and skeletons.
+ * * Key Changes:
+ * - Added `SmartImage` component for non-blocking image rendering.
+ * - Reduced Canvas Matrix FPS for mobile battery/CPU saving.
+ * - Added `will-change: transform` hints for GPU acceleration.
+ * - Implemented fade-in transitions for all assets to prevent layout jumps.
  */
 
 // --- Internal Icon Components ---
@@ -59,6 +60,36 @@ const TelegramLogoMain = ({ className }) => (
   </svg>
 );
 
+// --- NEW COMPONENT: SmartImage (Optimization Core) ---
+// Handles lazy loading, async decoding, and skeleton states to prevent freezing
+const SmartImage = ({ src, alt, className, style, wrapperClass = "" }) => {
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [hasError, setHasError] = useState(false);
+
+  return (
+    <div className={`relative overflow-hidden ${wrapperClass} ${className?.includes('rounded') ? '' : 'rounded-none'}`}>
+      {!isLoaded && !hasError && (
+        <div className={`absolute inset-0 bg-zinc-900/50 animate-pulse z-0 ${className}`} style={style} />
+      )}
+      <img
+        src={src}
+        alt={alt}
+        loading="lazy"
+        decoding="async"
+        onLoad={() => setIsLoaded(true)}
+        onError={(e) => {
+           setHasError(true);
+           if (e.target.src !== "https://via.placeholder.com/400x200?text=Error") {
+              e.target.style.display = 'none'; // Hide broken image if no fallback
+           }
+        }}
+        className={`${className} transition-opacity duration-700 ease-out ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
+        style={style}
+      />
+    </div>
+  );
+};
+
 // --- Profit Calculator Component ---
 const ProfitCalculator = () => {
   const [price, setPrice] = useState(50000);
@@ -105,7 +136,7 @@ const ProfitCalculator = () => {
   );
 };
 
-// --- Hacker Proof Component (Zoomable) ---
+// --- Hacker Proof Component (Optimized) ---
 const HackerProof = () => {
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -114,25 +145,24 @@ const HackerProof = () => {
       <div 
         className="relative rounded-xl overflow-hidden border border-[#00FF9D]/40 mb-6 group animate-in zoom-in duration-500 shadow-[0_0_20px_rgba(0,255,157,0.1)] cursor-zoom-in"
         onClick={(e) => {
-           e.stopPropagation();
-           setIsExpanded(true);
+            e.stopPropagation();
+            setIsExpanded(true);
         }}
       >
-        <img 
+        <SmartImage 
           src="https://i.ibb.co.com/FdhqGvD/2025-11-09-113228-fotor-20251109143545.jpg" 
-          onError={(e) => { e.target.onerror = null; e.target.src="https://via.placeholder.com/400x200/000000/00FF9D?text=EVIDENCE+LOST"; }} 
           className="w-full object-cover opacity-90 filter grayscale contrast-[1.1] brightness-[0.8] sepia-[1] hue-rotate-[50deg] saturate-[2.5]" 
           alt="Encrypted Proof" 
         />
         {/* Zoom Hint */}
-        <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-md rounded-full p-1.5 opacity-60 group-hover:opacity-100 transition-opacity border border-[#00FF9D]/30">
+        <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-md rounded-full p-1.5 opacity-60 group-hover:opacity-100 transition-opacity border border-[#00FF9D]/30 z-10">
           <Search className="w-3 h-3 text-[#00FF9D]" />
         </div>
 
-        <div className="absolute inset-0 bg-[linear-gradient(transparent_50%,rgba(0,255,157,0.1)_50%)] bg-[length:100%_4px] pointer-events-none"></div>
-        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-black/20 pointer-events-none"></div>
+        <div className="absolute inset-0 bg-[linear-gradient(transparent_50%,rgba(0,255,157,0.1)_50%)] bg-[length:100%_4px] pointer-events-none z-10"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-black/20 pointer-events-none z-10"></div>
         
-        <div className="absolute bottom-3 left-3 right-3 flex justify-between items-end z-10">
+        <div className="absolute bottom-3 left-3 right-3 flex justify-between items-end z-20">
            <div>
               <p className="text-[#00FF9D] text-[10px] font-black font-mono bg-black/80 px-2 py-0.5 inline-block border-l-2 border-[#00FF9D]">VIRGINIA GOLD</p>
               <p className="text-white text-[9px] font-mono bg-black/80 px-2 py-0.5 mt-1 inline-block">ЧЕК: 100.000 Т</p>
@@ -146,12 +176,12 @@ const HackerProof = () => {
         <div 
           className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 animate-in fade-in duration-300"
           onClick={(e) => {
-             e.stopPropagation();
-             setIsExpanded(false);
+              e.stopPropagation();
+              setIsExpanded(false);
           }}
         >
           <div className="relative w-full max-w-2xl">
-             <img 
+             <SmartImage 
                src="https://i.ibb.co.com/FdhqGvD/2025-11-09-113228-fotor-20251109143545.jpg" 
                className="w-full h-auto rounded-lg border border-[#00FF9D]/50 shadow-[0_0_50px_rgba(0,255,157,0.2)]"
                alt="Proof Full"
@@ -164,7 +194,7 @@ const HackerProof = () => {
   );
 };
 
-// --- Client Demand Proof Component (Zoomable) ---
+// --- Client Demand Proof Component (Optimized) ---
 const ClientDemandProof = () => {
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -173,24 +203,23 @@ const ClientDemandProof = () => {
       <div 
         className="relative rounded-xl overflow-hidden border border-[#00FF9D]/40 mb-6 group animate-in zoom-in duration-500 shadow-[0_0_20px_rgba(0,255,157,0.1)] cursor-zoom-in"
         onClick={(e) => {
-           e.stopPropagation();
-           setIsExpanded(true);
+            e.stopPropagation();
+            setIsExpanded(true);
         }}
       >
-        <img 
+        <SmartImage 
           src="https://i.ibb.co.com/h1mN3kL0/5427147012425059102.jpg" 
-          onError={(e) => { e.target.onerror = null; e.target.src="https://via.placeholder.com/400x200/000000/00FF9D?text=DATA+LOST"; }} 
           className="w-full object-cover opacity-90 filter grayscale-[0.5] contrast-[1.1] brightness-[0.9]" 
           alt="Client Demand" 
         />
         {/* Zoom Hint */}
-        <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-md rounded-full p-1.5 opacity-60 group-hover:opacity-100 transition-opacity border border-[#00FF9D]/30">
+        <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-md rounded-full p-1.5 opacity-60 group-hover:opacity-100 transition-opacity border border-[#00FF9D]/30 z-10">
           <Search className="w-3 h-3 text-[#00FF9D]" />
         </div>
 
-        <div className="absolute inset-0 bg-[linear-gradient(transparent_50%,rgba(0,255,157,0.05)_50%)] bg-[length:100%_3px] pointer-events-none"></div>
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent pointer-events-none"></div>
-        <div className="absolute bottom-3 left-3 bg-black/80 border border-[#00FF9D]/30 px-2 py-1 rounded">
+        <div className="absolute inset-0 bg-[linear-gradient(transparent_50%,rgba(0,255,157,0.05)_50%)] bg-[length:100%_3px] pointer-events-none z-10"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent pointer-events-none z-10"></div>
+        <div className="absolute bottom-3 left-3 bg-black/80 border border-[#00FF9D]/30 px-2 py-1 rounded z-20">
           <div className="flex items-center gap-1.5">
              <div className="w-1.5 h-1.5 bg-[#00FF9D] rounded-full animate-pulse"></div>
              <span className="text-[9px] font-mono text-[#00FF9D]">DEMAND_HIGH</span>
@@ -203,12 +232,12 @@ const ClientDemandProof = () => {
         <div 
           className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 animate-in fade-in duration-300"
           onClick={(e) => {
-             e.stopPropagation();
-             setIsExpanded(false);
+              e.stopPropagation();
+              setIsExpanded(false);
           }}
         >
           <div className="relative w-full max-w-2xl">
-             <img 
+             <SmartImage 
                src="https://i.ibb.co.com/h1mN3kL0/5427147012425059102.jpg" 
                className="w-full h-auto rounded-lg border border-[#00FF9D]/50 shadow-[0_0_50px_rgba(0,255,157,0.2)]"
                alt="Demand Full"
@@ -319,7 +348,7 @@ const SetupTimeline = () => {
 };
 
 
-// --- Authentic Yandex Wordstat Graph (Zoomable) ---
+// --- Authentic Yandex Wordstat Graph (Optimized) ---
 const WordstatGraph = () => {
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -328,8 +357,8 @@ const WordstatGraph = () => {
       <div 
         className="w-full bg-[#1c1c1e] rounded-xl border border-zinc-700 overflow-hidden mb-6 font-sans shadow-xl cursor-zoom-in relative group"
         onClick={(e) => {
-           e.stopPropagation();
-           setIsExpanded(true);
+            e.stopPropagation();
+            setIsExpanded(true);
         }}
       >
         <div className="bg-[#242426] px-4 py-3 border-b border-zinc-700 flex justify-between items-center">
@@ -348,18 +377,14 @@ const WordstatGraph = () => {
 
         {/* Real Screenshot Container */}
         <div className="relative w-full h-auto">
-          <img 
+          <SmartImage 
             src="https://i.ibb.co.com/Y7WjS1Tc/2026-01-16-014054.png" 
             alt="Real Wordstat Data"
             className="w-full h-auto object-cover opacity-90 group-hover:opacity-100 transition-opacity duration-300"
-            onError={(e) => { 
-                e.target.onerror = null; 
-                e.target.src="https://via.placeholder.com/600x300/1c1c1e/00FF9D?text=WORDSTAT+DATA"; 
-            }}
           />
-          <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors pointer-events-none"></div>
+          <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors pointer-events-none z-10"></div>
            {/* Zoom Hint */}
-          <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-md rounded-full p-1.5 opacity-60 group-hover:opacity-100 transition-opacity border border-white/20">
+          <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-md rounded-full p-1.5 opacity-60 group-hover:opacity-100 transition-opacity border border-white/20 z-20">
              <Search className="w-3 h-3 text-white" />
           </div>
         </div>
@@ -370,12 +395,12 @@ const WordstatGraph = () => {
         <div 
           className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 animate-in fade-in duration-300"
           onClick={(e) => {
-             e.stopPropagation();
-             setIsExpanded(false);
+              e.stopPropagation();
+              setIsExpanded(false);
           }}
         >
           <div className="relative w-full max-w-4xl">
-             <img 
+             <SmartImage 
                src="https://i.ibb.co.com/Y7WjS1Tc/2026-01-16-014054.png" 
                className="w-full h-auto rounded-lg border border-zinc-700 shadow-2xl"
                alt="Wordstat Full"
@@ -477,7 +502,7 @@ const BrandLogos = {
   )
 };
 
-// --- NEW 3D CAROUSEL COMPONENT ---
+// --- NEW 3D CAROUSEL COMPONENT (Optimized) ---
 const Carousel3D = () => {
   const images = [
     "https://i.ibb.co.com/Fp52kXy/666.png",
@@ -506,11 +531,11 @@ const Carousel3D = () => {
             }}
           >
             {/* CLEAN IMAGE - Rounded corners + Neon Glow */}
-            <img 
+            <SmartImage 
               src={img} 
               alt={`Result ${i+1}`} 
               className="max-w-full max-h-full object-contain pointer-events-none rounded-[24px] shadow-[0_0_15px_rgba(0,255,157,0.6)]"
-              onError={(e) => { e.target.style.display = 'none'; }}
+              wrapperClass="w-full h-full"
             />
           </div>
         ))}
@@ -527,6 +552,7 @@ const Carousel3D = () => {
           animation: spin 10s infinite linear;
           /* Add a slight X tilt to show the ring structure better */
           transform: rotateX(-10deg); 
+          will-change: transform; /* Optimized for Mobile GPU */
         }
         .spinner:hover {
           animation-play-state: paused;
@@ -582,34 +608,49 @@ const ShopIntroSequence = ({ onComplete }) => {
   ];
 
   const [index, setIndex] = useState(0);
-  const [phase, setPhase] = useState('part1In');
+  const [phase, setPhase] = useState('start');
 
   useEffect(() => {
     let isMounted = true;
     let timeout;
     
     const runSequence = () => {
-      if (phase === 'part1In') {
-        timeout = setTimeout(() => { if(isMounted) setPhase('part1Wait'); }, 1000);
-      } else if (phase === 'part1Wait') {
-        timeout = setTimeout(() => { if(isMounted) setPhase('part1Dim'); }, 1000);
-      } else if (phase === 'part1Dim') {
-        timeout = setTimeout(() => { if(isMounted) setPhase('part2In'); }, 500);
-      } else if (phase === 'part2In') {
-        timeout = setTimeout(() => { if(isMounted) setPhase('fullWait'); }, 1000);
-      } else if (phase === 'fullWait') {
-        timeout = setTimeout(() => { if(isMounted) setPhase('out'); }, 2000); // Read time
-      } else if (phase === 'out') {
+      // PHASE 0: START (Hidden state to ensure smooth entry)
+      if (phase === 'start') {
+        timeout = setTimeout(() => { if(isMounted) setPhase('part1In'); }, 100);
+      } 
+      // PHASE 1: Part 1 Enters
+      else if (phase === 'part1In') {
+        timeout = setTimeout(() => { if(isMounted) setPhase('part1Wait'); }, 1200);
+      } 
+      // PHASE 2: Wait
+      else if (phase === 'part1Wait') {
+        timeout = setTimeout(() => { if(isMounted) setPhase('part1Dim'); }, 800);
+      } 
+      // PHASE 3: Dim Part 1 (Optional, or just prepare Part 2)
+      else if (phase === 'part1Dim') {
+        timeout = setTimeout(() => { if(isMounted) setPhase('part2In'); }, 400);
+      } 
+      // PHASE 4: Part 2 Enters
+      else if (phase === 'part2In') {
+        timeout = setTimeout(() => { if(isMounted) setPhase('fullWait'); }, 2000);
+      } 
+      // PHASE 5: Full Message Wait
+      else if (phase === 'fullWait') {
+        timeout = setTimeout(() => { if(isMounted) setPhase('out'); }, 1000); // Time to read both parts
+      } 
+      // PHASE 6: Exit
+      else if (phase === 'out') {
         timeout = setTimeout(() => {
           if (isMounted) {
             if (index < messages.length - 1) {
               setIndex(prev => prev + 1);
-              setPhase('part1In');
+              setPhase('start'); // Reset to start for next message
             } else {
               onComplete();
             }
           }
-        }, 800); // Accelerated exit (0.8s match)
+        }, 800); // Match animation duration
       }
     };
     
@@ -618,54 +659,79 @@ const ShopIntroSequence = ({ onComplete }) => {
   }, [phase, index, messages.length, onComplete]);
 
   const current = messages[index];
-  // LUXURY LOGIC: Keep gray/dimmed state during 'out' phase to prevent flashing back to white
+  
+  // Logic: 
+  // Part 1 is visible from 'part1In' until 'out' starts
+  const part1Visible = phase !== 'start';
+  
+  // Part 2 is visible from 'part2In' until 'out' starts
+  const showPart2 = phase === 'part2In' || phase === 'fullWait' || phase === 'out';
+  
+  // Dim Part 1 slightly when Part 2 arrives to focus attention
   const isDimmed = phase === 'part1Dim' || phase === 'part2In' || phase === 'fullWait' || phase === 'out';
-  const showPart2 = phase === 'part2In' || phase === 'fullWait' || phase === 'out'; // Keep part 2 visible during out so they fade together
 
   return (
-    <div className="flex flex-col items-center justify-center h-full w-full min-h-[60vh] px-4 cursor-pointer bg-black/40 backdrop-blur-sm" onClick={onComplete}>
+    <div className="flex flex-col items-center justify-center h-full w-full min-h-[60vh] px-4 cursor-pointer" onClick={onComplete}>
+       {/* Background Spotlight for focus */}
+       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80%] h-[200px] bg-white/5 blur-[80px] rounded-full -z-10 pointer-events-none animate-[pulse_4s_infinite]"></div>
+
        <div 
          key={index}
          className={`
-           w-full text-center max-w-2xl transition-all duration-300
-           ${phase === 'out' ? 'animate-[smokeOut_0.8s_ease-in_forwards]' : ''} 
+           w-full text-center max-w-3xl transition-all duration-500
+           ${phase === 'out' ? 'animate-[cinematicOut_0.8s_ease-in_forwards]' : ''} 
          `}
        >
-         {/* Part 1 - Platinum/Silver Text */}
+         {/* Part 1 - Platinum/Silver Text - Smooth Reveal */}
          <h2 className={`
-           text-xl sm:text-3xl font-bold uppercase leading-relaxed tracking-wide font-['Chakra_Petch'] 
-           bg-clip-text text-transparent bg-gradient-to-b from-white via-gray-200 to-gray-400
-           drop-shadow-[0_2px_10px_rgba(255,255,255,0.2)] transition-all duration-700
-           ${phase === 'part1In' ? 'animate-[smokeIn_1s_ease-out_forwards]' : ''}
-           ${isDimmed ? 'opacity-50 blur-[1px]' : 'opacity-100'}
+           text-lg sm:text-2xl font-light uppercase tracking-[0.2em] font-['Outfit']
+           text-zinc-300 drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]
+           transition-all duration-1000 cubic-bezier(0.2, 0.8, 0.2, 1)
+           ${part1Visible ? 'opacity-100 translate-y-0 scale-100 blur-0' : 'opacity-0 translate-y-[20px] scale-95 blur-[10px]'}
+           ${isDimmed ? 'opacity-60' : ''}
          `}>
            {current.part1}
          </h2>
 
-         {/* Part 2 - Gold/Amber Text with Shine */}
-         {showPart2 && (
-            <div className="relative inline-block mt-4">
-              <h2 className={`
-                text-2xl sm:text-4xl font-black uppercase leading-relaxed tracking-wider font-['Chakra_Petch']
-                bg-clip-text text-transparent bg-gradient-to-r from-[#D4AF37] via-[#F7EF8A] to-[#D4AF37]
-                drop-shadow-[0_0_25px_rgba(212,175,55,0.4)]
-                animate-[smokeIn_1s_ease-out_forwards]
-              `}>
-                {current.part2}
-              </h2>
-              {/* Shimmer Effect Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent skew-x-12 animate-[shimmer_2s_infinite]"></div>
-            </div>
-         )}
+         {/* Part 2 - Luxury Gold Text - Magnetic Reveal */}
+         <div className={`relative inline-block mt-6 transition-all duration-1000 cubic-bezier(0.2, 0.8, 0.2, 1) ${showPart2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-[30px]'}`}>
+             <h2 className={`
+               text-3xl sm:text-5xl font-black uppercase font-['Chakra_Petch']
+               text-transparent bg-clip-text bg-gradient-to-r from-[#BF953F] via-[#FCF6BA] to-[#B38728]
+               drop-shadow-[0_0_30px_rgba(191,149,63,0.3)]
+               transition-all duration-1000 cubic-bezier(0.2, 0.8, 0.2, 1)
+               ${showPart2 ? 'scale-100 tracking-widest blur-0' : 'scale-90 tracking-normal blur-[5px]'}
+             `}>
+               {current.part2}
+             </h2>
+             {/* Subtle Shine Overlay */}
+             {showPart2 && (
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent -skew-x-12 animate-[textShine_3s_infinite_linear] mix-blend-overlay"></div>
+             )}
+         </div>
        </div>
-       <div className="absolute bottom-10 text-[10px] text-zinc-600 uppercase tracking-widest animate-pulse">
-         Нажмите, чтобы пропустить
+       
+       <div className="absolute bottom-20 text-[10px] text-zinc-600 uppercase tracking-[0.3em] animate-pulse">
+         Нажмите для продолжения
        </div>
+       
+       <style>{`
+          /* Optimized Keyframes for Performance */
+          @keyframes cinematicOut {
+            0% { opacity: 1; transform: scale(1); filter: blur(0); }
+            100% { opacity: 0; transform: scale(1.1); filter: blur(20px); }
+          }
+          @keyframes textShine {
+             0% { transform: translateX(-150%) skewX(-12deg); }
+             50% { transform: translateX(150%) skewX(-12deg); }
+             100% { transform: translateX(150%) skewX(-12deg); }
+          }
+       `}</style>
     </div>
   );
 };
 
-// --- NEW PARTNERS CREDITS COMPONENT (PREMIUM CINEMATIC REVEAL) ---
+// --- PARTNERS CREDITS COMPONENT (Optimized) ---
 const PartnersCredits = () => {
   const logos = [
     "https://i.ibb.co.com/PvND9HRh/Picsart-Background-Remover.png",
@@ -675,76 +741,53 @@ const PartnersCredits = () => {
     "https://i.ibb.co.com/3mKHz61B/Picsart-Background-Remover.png"
   ];
 
-  const [index, setIndex] = useState(0);
-  const [phase, setPhase] = useState('in'); // in, stay, out
-
-  useEffect(() => {
-      let isMounted = true;
-      const cycle = async () => {
-          if (!isMounted) return;
-          setPhase('in');
-          await new Promise(r => setTimeout(r, 1000)); // Cinematic Enter
-          
-          if (!isMounted) return;
-          setPhase('stay');
-          await new Promise(r => setTimeout(r, 2500)); // Stay Visible
-          
-          if (!isMounted) return;
-          setPhase('out');
-          await new Promise(r => setTimeout(r, 1000)); // Cinematic Exit
-
-          if (!isMounted) return;
-          setIndex(prev => (prev + 1) % logos.length);
-      };
-      cycle();
-      return () => { isMounted = false; };
-  }, [index, logos.length]);
-
-  const currentLogo = logos[index];
-  const isYandex = currentLogo.includes("Yandex");
-  const isRomantic = currentLogo.includes("janym");
-  
-  // Color correction filter: Yandex/Romantic WHITE, others ORIGINAL.
-  // Adding subtle drop-shadow to ALL for depth.
-  const imgStyle = (isYandex || isRomantic) 
-      ? { filter: 'brightness(0) invert(1) drop-shadow(0 0 5px rgba(255,255,255,0.5))' } 
-      : { filter: 'drop-shadow(0 0 8px rgba(255,255,255,0.2))' };
-
   return (
-    <div className="w-full mt-10 h-40 flex flex-col items-center justify-center relative">
-       <p className="text-center text-[10px] text-zinc-500 uppercase tracking-[0.2em] mb-8 font-light">Партнеры</p>
-       <div className="relative w-full flex justify-center items-center h-32">
-           <div className={`
-               relative flex items-center justify-center
-               ${phase === 'in' ? 'animate-[premiumIn_1s_cubic-bezier(0.16,1,0.3,1)_forwards]' : ''}
-               ${phase === 'stay' ? 'opacity-100 animate-[premiumFloat_4s_ease-in-out_infinite]' : ''}
-               ${phase === 'out' ? 'animate-[premiumOut_1s_cubic-bezier(0.7,0,0.84,0)_forwards]' : ''}
-           `}>
-             <img 
-               key={index}
-               src={currentLogo} 
-               alt="Partner Logo" 
-               style={imgStyle}
-               className="h-32 w-auto object-contain"
-             />
-             {/* Subtle glow behind active logo */}
-             <div className="absolute inset-0 bg-white/5 blur-3xl rounded-full -z-10 scale-150 opacity-20"></div>
-           </div>
-       </div>
-       <style>{`
-        @keyframes premiumIn {
-          0% { opacity: 0; filter: blur(20px); transform: scale(0.9) translateY(10px); }
-          100% { opacity: 1; filter: blur(0); transform: scale(1) translateY(0); }
+    <div className="w-full mt-8 overflow-hidden relative">
+      <p className="text-center text-[10px] text-zinc-600 uppercase tracking-widest mb-6">Нам доверяют</p>
+      
+      {/* Horizontal scrolling container */}
+      <div className="relative w-full overflow-hidden mask-gradient-horizontal">
+        <div className="flex items-center gap-12 animate-scrollRight w-max">
+           {/* Duplicate logos for infinite scroll effect (x3 for smoothness) */}
+           {[...logos, ...logos, ...logos].map((logo, i) => {
+             // Logic to fix specific dark logos on dark background
+             const isYandex = logo.includes("Yandex");
+             const isRomantic = logo.includes("janym"); 
+             
+             // Make both logos white/bright with crisp white edge glow
+             const imgStyle = (isYandex || isRomantic) 
+                ? { filter: 'brightness(0) invert(1) drop-shadow(0 0 1.5px #ffffff)' } 
+                : { filter: 'drop-shadow(0 0 1.5px #ffffff)' };
+
+             return (
+               <SmartImage 
+                 key={i} 
+                 src={logo} 
+                 alt="Partner Logo" 
+                 style={imgStyle}
+                 // Force full opacity for white logos to pop, allow opacity transition for others
+                 className={`h-40 w-auto object-contain opacity-100 hover:opacity-80 transition-opacity duration-300`}
+                 wrapperClass="flex-shrink-0"
+               />
+             );
+           })}
+        </div>
+      </div>
+
+      <style>{`
+        @keyframes scrollRight {
+          0% { transform: translateX(-33.33%); } /* Start shifted left */
+          100% { transform: translateX(0); } /* Move to 0 */
         }
-        @keyframes premiumOut {
-          0% { opacity: 1; filter: blur(0); transform: scale(1) translateY(0); }
-          100% { opacity: 0; filter: blur(20px); transform: scale(1.1) translateY(-10px); }
+        .animate-scrollRight {
+          animation: scrollRight 20s linear infinite; /* Adjusted to 20s as per speed request */
+          will-change: transform; /* Optimize GPU */
         }
-        @keyframes premiumFloat {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-3px); }
+        .mask-gradient-horizontal {
+          mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+          -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
         }
-       `}</style>
+      `}</style>
     </div>
   );
 };
@@ -783,32 +826,38 @@ const App = () => {
 
   const canvasRef = useRef(null);
 
+  // OPTIMIZED MATRIX EFFECT FOR MOBILE
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     let width, height, columns, drops = [];
     const chars = "TAIPAN0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    
     const initMatrix = () => {
       width = canvas.width = window.innerWidth;
       height = canvas.height = window.innerHeight;
-      columns = Math.floor(width / 20);
+      // REDUCED DENSITY FOR MOBILE (width / 25 instead of 20)
+      columns = Math.floor(width / 25);
       drops = Array(columns).fill(0).map(() => Math.random() * -100);
     };
+    
     const drawMatrix = () => {
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.1)'; // Increased trail fade for less repaints visual
       ctx.fillRect(0, 0, width, height);
       ctx.fillStyle = '#00FF9D';
-      ctx.font = '16px monospace';
+      ctx.font = '14px monospace'; // Smaller font
       for (let i = 0; i < drops.length; i++) {
         const text = chars.charAt(Math.floor(Math.random() * chars.length));
-        ctx.fillText(text, i * 20, drops[i] * 20);
-        if (drops[i] * 20 > height && Math.random() > 0.975) drops[i] = 0;
+        ctx.fillText(text, i * 25, drops[i] * 25);
+        if (drops[i] * 25 > height && Math.random() > 0.975) drops[i] = 0;
         drops[i]++;
       }
     };
+    
     initMatrix();
-    const interval = setInterval(drawMatrix, 50);
+    // REDUCED FRAME RATE (75ms instead of 50ms) to save Mobile CPU
+    const interval = setInterval(drawMatrix, 75);
     window.addEventListener('resize', initMatrix);
     return () => { clearInterval(interval); window.removeEventListener('resize', initMatrix); };
   }, []);
@@ -901,9 +950,9 @@ const App = () => {
             <p>На обучении мы даем не только технические навыки, но и <span className="text-white font-bold">полную систему продаж</span>:</p>
             <br/>
             <ul className="list-disc pl-4 space-y-2">
-               <li><span className="text-[#00FF9D] font-bold">Где брать клиентов:</span> Покажем, как выйти на те самые тысячи заказов.</li>
-               <li><span className="text-[#00FF9D] font-bold">Как продавать:</span> Научим вести переговоры с бизнесменами и закрывать сделки на высокие чеки.</li>
-               <li><span className="text-[#00FF9D] font-bold">Готовые шаблоны предложений:</span> Тебе не нужно ничего придумывать — просто бери наше проверенное КП и отправляй клиенту.</li>
+                <li><span className="text-[#00FF9D] font-bold">Где брать клиентов:</span> Покажем, как выйти на те самые тысячи заказов.</li>
+                <li><span className="text-[#00FF9D] font-bold">Как продавать:</span> Научим вести переговоры с бизнесменами и закрывать сделки на высокие чеки.</li>
+                <li><span className="text-[#00FF9D] font-bold">Готовые шаблоны предложений:</span> Тебе не нужно ничего придумывать — просто бери наше проверенное КП и отправляй клиенту.</li>
             </ul>
             <br/>
             <p>Мы научим тебя делать результат «под ключ», чтобы ты мог уверенно забирать свои <span className="text-white font-bold">100 000₸</span> за проект.</p>
@@ -1008,20 +1057,20 @@ const App = () => {
 
                   {/* Features List (Restored) */}
                   <div className="w-full space-y-3">
-                     {[
-                       { title: "Каталог и Корзина", desc: "Полноценный интернет-магазин внутри мессенджера. Удобный выбор товаров без лишних переходов." },
-                       { title: "Оплата в 1 клик", desc: "Интеграция с Kaspi, картами и криптовалютой. Мгновенные транзакции." },
-                       { title: "CRM Система", desc: "Управление заказами, статусами и клиентами прямо внутри Telegram." },
-                       { title: "Авто-рассылки", desc: "Push-уведомления клиентам о новинках и акциях с открываемостью 90%." }
-                     ].map((item, i) => (
-                       <div key={i} className="glass-card rounded-2xl p-4 flex items-start gap-4 hover:bg-white/5 transition-all">
-                          <div className="mt-1 bg-[#00FF9D]/10 p-2 rounded-full text-[#00FF9D] border border-[#00FF9D]/20"><CheckCircle2 className="w-4 h-4" /></div>
-                          <div>
-                            <h4 className="text-sm font-bold text-white uppercase tracking-wider mb-1">{item.title}</h4>
-                            <p className="text-[10px] text-zinc-400 leading-relaxed">{item.desc}</p>
-                          </div>
-                       </div>
-                     ))}
+                      {[
+                        { title: "Каталог и Корзина", desc: "Полноценный интернет-магазин внутри мессенджера. Удобный выбор товаров без лишних переходов." },
+                        { title: "Оплата в 1 клик", desc: "Интеграция с Kaspi, картами и криптовалютой. Мгновенные транзакции." },
+                        { title: "CRM Система", desc: "Управление заказами, статусами и клиентами прямо внутри Telegram." },
+                        { title: "Авто-рассылки", desc: "Push-уведомления клиентам о новинках и акциях с открываемостью 90%." }
+                      ].map((item, i) => (
+                        <div key={i} className="glass-card rounded-2xl p-4 flex items-start gap-4 hover:bg-white/5 transition-all">
+                           <div className="mt-1 bg-[#00FF9D]/10 p-2 rounded-full text-[#00FF9D] border border-[#00FF9D]/20"><CheckCircle2 className="w-4 h-4" /></div>
+                           <div>
+                             <h4 className="text-sm font-bold text-white uppercase tracking-wider mb-1">{item.title}</h4>
+                             <p className="text-[10px] text-zinc-400 leading-relaxed">{item.desc}</p>
+                           </div>
+                        </div>
+                      ))}
                   </div>
 
                   {/* Pricing & CTA */}
@@ -1337,17 +1386,49 @@ const App = () => {
         @keyframes widthGrow {
           from { width: 0; }
         }
-        @keyframes premiumIn {
-          0% { opacity: 0; filter: blur(20px); transform: scale(0.9) translateY(10px); }
-          100% { opacity: 1; filter: blur(0); transform: scale(1) translateY(0); }
+        @keyframes scrollLeft {
+          0% { transform: translateX(0); } 
+          100% { transform: translateX(-33.33%); } /* Loop 1/3 of total width */
+        }
+        .animate-scrollLeft {
+          animation: scrollLeft 20s linear infinite; /* Adjusted to 20s as per speed request */
+        }
+        .mask-gradient-horizontal {
+          mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+          -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+        }
+        
+        /* Premium Text Animations */
+        @keyframes premiumSlideUp {
+          0% { opacity: 0; transform: translateY(20px); filter: blur(5px); }
+          100% { opacity: 1; transform: translateY(0); filter: blur(0); }
+        }
+        @keyframes goldReveal {
+           0% { opacity: 0; transform: scale(0.95); letter-spacing: 0em; }
+           100% { opacity: 1; transform: scale(1); letter-spacing: 0.05em; }
+        }
+        @keyframes textShine {
+           0% { transform: translateX(-150%) skewX(-12deg); }
+           50% { transform: translateX(150%) skewX(-12deg); }
+           100% { transform: translateX(150%) skewX(-12deg); }
         }
         @keyframes premiumOut {
-          0% { opacity: 1; filter: blur(0); transform: scale(1) translateY(0); }
-          100% { opacity: 0; filter: blur(20px); transform: scale(1.1) translateY(-10px); }
+          0% { opacity: 1; transform: scale(1); filter: blur(0); }
+          100% { opacity: 0; transform: scale(1.05); filter: blur(10px); }
         }
-        @keyframes premiumFloat {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-3px); }
+        
+        /* Cinematic Animations for Intro */
+        @keyframes cinematicIn {
+            0% { opacity: 0; transform: translateY(20px) scale(0.95); filter: blur(10px); }
+            100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+        }
+        @keyframes cinematicOut {
+            0% { opacity: 1; transform: scale(1); filter: blur(0); }
+            100% { opacity: 0; transform: scale(1.1); filter: blur(20px); }
+        }
+        @keyframes shine {
+            0% { transform: translateX(-150%) skewX(-12deg); }
+            40%, 100% { transform: translateX(150%) skewX(-12deg); }
         }
       `}</style>
     </div>

@@ -923,7 +923,7 @@
               specificStyle = { filter: 'brightness(1.1) contrast(1.1)' };
           } else if (isPicsartLogo) {
               // White glow for the selected logo
-              specificStyle = { filter: 'brightness(0) invert(1)' };
+              specificStyle = { filter: 'brightness(0) invert(1) drop-shadow(0 0 10px rgba(255, 255, 255, 0.6))' };
           }
           
           // For the "Food" logo position:

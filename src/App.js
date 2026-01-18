@@ -289,11 +289,17 @@
                 className="w-full h-1 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-[#00FF9D] mb-6"
               />
 
-              <div className="bg-[#00FF9D]/10 border border-[#00FF9D]/30 p-4 rounded-2xl text-center">
-                <p className="text-[10px] text-zinc-400 uppercase tracking-widest mb-1">Твоя упущенная выгода</p>
-                <p className="text-2xl font-black text-white font-['Chakra_Petch'] animate-pulse">
-                  {profit.toLocaleString()} ₸ <span className="text-[12px] text-zinc-500 font-sans font-normal">/ мес</span>
-                </p>
+              <div className="relative overflow-hidden bg-[#00FF9D]/10 border border-[#00FF9D]/30 p-4 rounded-2xl text-center group">
+                {/* --- ADDED GRID & SCANLINE EFFECT --- */}
+                <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,157,0.05)_1px,transparent_1px)] bg-[size:15px_15px] pointer-events-none"></div>
+                <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-[#00FF9D]/10 to-transparent animate-[scanLine_3s_linear_infinite]"></div>
+                
+                <div className="relative z-10">
+                    <p className="text-[10px] text-zinc-400 uppercase tracking-widest mb-1">Твоя упущенная выгода</p>
+                    <p className="text-2xl font-black text-white font-['Chakra_Petch'] animate-pulse">
+                      {profit.toLocaleString()} ₸ <span className="text-[12px] text-zinc-500 font-sans font-normal">/ мес</span>
+                    </p>
+                </div>
               </div>
             </div>
           );
@@ -322,7 +328,10 @@
                   <Search className="w-3 h-3 text-[#00FF9D]" />
                 </div>
 
-                <div className="absolute inset-0 bg-[linear-gradient(transparent_50%,rgba(0,255,157,0.1)_50%)] bg-[length:100%_4px] pointer-events-none z-10"></div>
+                {/* --- ADDED GRID & SCANLINE EFFECT --- */}
+                <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none z-10"></div>
+                <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-[#00FF9D]/10 to-transparent animate-[scanLine_2.5s_linear_infinite] z-10"></div>
+                
                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-black/20 pointer-events-none z-10"></div>
                 
                 <div className="absolute bottom-3 left-3 right-3 flex justify-between items-end z-20">
@@ -380,7 +389,10 @@
                   <Search className="w-3 h-3 text-[#00FF9D]" />
                 </div>
 
-                <div className="absolute inset-0 bg-[linear-gradient(transparent_50%,rgba(0,255,157,0.05)_50%)] bg-[length:100%_3px] pointer-events-none z-10"></div>
+                {/* --- ADDED GRID & SCANLINE EFFECT --- */}
+                <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none z-10"></div>
+                <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-[#00FF9D]/10 to-transparent animate-[scanLine_2.5s_linear_infinite] z-10"></div>
+
                 <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent pointer-events-none z-10"></div>
                 <div className="absolute bottom-3 left-3 bg-black/80 border border-[#00FF9D]/30 px-2 py-1 rounded z-20">
                   <div className="flex items-center gap-1.5">
@@ -415,52 +427,59 @@
 
         // --- Skill Scanner Component ---
         const SkillScanner = () => (
-          <div className="w-full bg-[#0A0A0A] rounded-xl border border-[#00FF9D]/20 p-4 mb-6 relative overflow-hidden animate-in slide-in-from-bottom duration-500">
-            <div className="flex items-center justify-between mb-4 border-b border-zinc-800 pb-2">
-               <div className="flex items-center gap-2">
-                 <div className="w-1.5 h-1.5 rounded-full bg-[#00FF9D] animate-pulse"></div>
-                 <span className="text-[10px] font-mono text-[#00FF9D] tracking-widest">СИСТЕМНЫЙ_АНАЛИЗ</span>
-               </div>
-               <span className="text-[9px] text-zinc-600 font-mono">v.2.0.4</span>
-            </div>
+          <div className="w-full bg-[#0A0A0A] rounded-xl border border-[#00FF9D]/20 p-4 mb-6 relative overflow-hidden animate-in slide-in-from-bottom duration-500 group">
+             {/* --- ADDED GRID & SCANLINE EFFECT --- */}
+            <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none"></div>
+            <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-[#00FF9D]/05 to-transparent animate-[scanLine_4s_linear_infinite]"></div>
 
-            <div className="space-y-4">
-              {/* Metric 1 */}
-              <div>
-                <div className="flex justify-between text-[10px] font-mono mb-1">
-                  <span className="text-zinc-400">НАВЫКИ (КОДИНГ)</span>
-                  <span className="text-zinc-600">НЕ ТРЕБУЕТСЯ</span>
+            <div className="relative z-10">
+                <div className="flex items-center justify-between mb-4 border-b border-zinc-800 pb-2">
+                   <div className="flex items-center gap-2">
+                     <div className="w-1.5 h-1.5 rounded-full bg-[#00FF9D] animate-pulse"></div>
+                     <span className="text-[10px] font-mono text-[#00FF9D] tracking-widest">СИСТЕМНЫЙ_АНАЛИЗ</span>
+                   </div>
+                   <span className="text-[9px] text-zinc-600 font-mono">v.2.0.4</span>
                 </div>
-                <div className="w-full h-1 bg-zinc-900 rounded-full">
-                   <div className="w-[0%] h-full bg-red-500 rounded-full"></div>
-                </div>
-              </div>
 
-              {/* Metric 2 */}
-              <div>
-                <div className="flex justify-between text-[10px] font-mono mb-1">
-                  <span className="text-zinc-400">ВРЕМЯ НАСТРОЙКИ</span>
-                  <span className="text-[#00FF9D]">~45 МИН</span>
-                </div>
-                <div className="w-full h-1 bg-zinc-900 rounded-full">
-                   <div className="w-[15%] h-full bg-[#00FF9D] rounded-full shadow-[0_0_8px_#00FF9D] animate-[widthGrow_1s_ease-out]"></div>
-                </div>
-              </div>
+                <div className="space-y-4">
+                  {/* Metric 1 */}
+                  <div>
+                    <div className="flex justify-between text-[10px] font-mono mb-1">
+                      <span className="text-zinc-400">НАВЫКИ (КОДИНГ)</span>
+                      <span className="text-zinc-600">НЕ ТРЕБУЕТСЯ</span>
+                    </div>
+                    <div className="w-full h-1 bg-zinc-900 rounded-full">
+                       <div className="w-[0%] h-full bg-red-500 rounded-full"></div>
+                    </div>
+                  </div>
 
-              {/* Metric 3 */}
-              <div>
-                <div className="flex justify-between text-[10px] font-mono mb-1">
-                  <span className="text-zinc-400">АВТОМАТИЗАЦИЯ</span>
-                  <span className="text-[#00FF9D]">90%</span>
+                  {/* Metric 2 */}
+                  <div>
+                    <div className="flex justify-between text-[10px] font-mono mb-1">
+                      <span className="text-zinc-400">ВРЕМЯ НАСТРОЙКИ</span>
+                      <span className="text-[#00FF9D]">~45 МИН</span>
+                    </div>
+                    <div className="w-full h-1 bg-zinc-900 rounded-full">
+                       <div className="w-[15%] h-full bg-[#00FF9D] rounded-full shadow-[0_0_8px_#00FF9D] animate-[widthGrow_1s_ease-out]"></div>
+                    </div>
+                  </div>
+
+                  {/* Metric 3 */}
+                  <div>
+                    <div className="flex justify-between text-[10px] font-mono mb-1">
+                      <span className="text-zinc-400">АВТОМАТИЗАЦИЯ</span>
+                      <span className="text-[#00FF9D]">90%</span>
+                    </div>
+                    <div className="w-full h-1 bg-zinc-900 rounded-full">
+                       <div className="w-[90%] h-full bg-[#00FF9D] rounded-full shadow-[0_0_8px_#00FF9D] animate-[widthGrow_1.5s_ease-out]"></div>
+                    </div>
+                  </div>
                 </div>
-                <div className="w-full h-1 bg-zinc-900 rounded-full">
-                   <div className="w-[90%] h-full bg-[#00FF9D] rounded-full shadow-[0_0_8px_#00FF9D] animate-[widthGrow_1.5s_ease-out]"></div>
+                
+                <div className="mt-4 p-2 bg-[#00FF9D]/5 rounded border border-[#00FF9D]/10 text-center relative overflow-hidden">
+                   <div className="absolute inset-0 bg-[#00FF9D]/5 animate-pulse"></div>
+                   <p className="text-[9px] text-[#00FF9D] font-black tracking-widest uppercase relative z-10">ВЕРДИКТ: ИДЕАЛЬНО ДЛЯ НОВИЧКОВ</p>
                 </div>
-              </div>
-            </div>
-            
-            <div className="mt-4 p-2 bg-[#00FF9D]/5 rounded border border-[#00FF9D]/10 text-center">
-               <p className="text-[9px] text-[#00FF9D] font-black tracking-widest uppercase">ВЕРДИКТ: ИДЕАЛЬНО ДЛЯ НОВИЧКОВ</p>
             </div>
           </div>
         );
@@ -545,6 +564,10 @@
                     alt="Real Wordstat Data"
                     className="w-full h-auto object-cover opacity-90 group-hover:opacity-100 transition-opacity duration-300"
                   />
+                  {/* --- ADDED GRID & SCANLINE EFFECT (LIKE PARTNERS LOGOS) --- */}
+                  <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none z-10"></div>
+                  <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-[#00FF9D]/10 to-transparent animate-[scanLine_2.5s_linear_infinite] z-10"></div>
+                  
                   <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors pointer-events-none z-10"></div>
                    {/* Zoom Hint */}
                   <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-md rounded-full p-1.5 opacity-60 group-hover:opacity-100 transition-opacity border border-white/20 z-20">
@@ -1262,15 +1285,21 @@
 
                           {/* Pricing & CTA */}
                           <div className="mt-4 w-full glass-card p-6 rounded-3xl text-center border border-[#00FF9D]/20 relative overflow-hidden group">
+                              {/* --- ADDED GRID & SCANLINE EFFECT --- */}
+                              <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:30px_30px] pointer-events-none opacity-50"></div>
+                              <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-[#00FF9D]/05 to-transparent animate-[scanLine_5s_linear_infinite]"></div>
+                              
                               <div className="absolute inset-0 bg-gradient-to-t from-[#00FF9D]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                              <p className="text-[10px] text-zinc-400 uppercase tracking-widest mb-2 relative z-10">Разработка под ключ</p>
-                              <div className="text-2xl font-black text-white mb-4 font-['Chakra_Petch'] relative z-10">от 150 000 ₸</div>
-                              <button 
-                                onClick={() => openModal('Order Shop')} 
-                                className="w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-4 rounded-xl shadow-[0_0_20px_rgba(0,255,157,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs relative z-10 flex items-center justify-center gap-2"
-                              >
-                                Обсудить проект <ArrowRight className="w-4 h-4" />
-                              </button>
+                              <div className="relative z-10">
+                                  <p className="text-[10px] text-zinc-400 uppercase tracking-widest mb-2">Разработка под ключ</p>
+                                  <div className="text-2xl font-black text-white mb-4 font-['Chakra_Petch']">от 150 000 ₸</div>
+                                  <button 
+                                    onClick={() => openModal('Order Shop')} 
+                                    className="w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-4 rounded-xl shadow-[0_0_20px_rgba(0,255,157,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs flex items-center justify-center gap-2"
+                                  >
+                                    Обсудить проект <ArrowRight className="w-4 h-4" />
+                                  </button>
+                              </div>
                           </div>
                         </div>
                       </React.Fragment>

@@ -198,18 +198,19 @@ const Search = ({ className }) => (
 );
 
 const TelegramLogoMain = ({ className }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" stroke="none" className={className}>
     <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.446 1.394c-.16.16-.295.293-.605.293l.214-3.054 5.56-5.022c.24-.213-.054-.334-.373-.121l-6.869 4.326-2.962-.924c-.64-.203-.658-.64.135-.954l11.566-4.458c.538-.196 1.006.128.832.942z"/>
   </svg>
 );
 
 // --- NEW COMPONENT: SmartImage (Optimization Core) ---
-const SmartImage = ({ src, alt, className, style, wrapperClass = "" }) => {
+// UPDATED: Added overflowHidden prop to control clipping
+const SmartImage = ({ src, alt, className, style, wrapperClass = "", overflowHidden = true }) => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
 
   return (
-    <div className={`relative overflow-hidden ${wrapperClass} ${className?.includes('rounded') ? '' : 'rounded-none'}`}>
+    <div className={`relative ${overflowHidden ? 'overflow-hidden' : ''} ${wrapperClass} ${className?.includes('rounded') ? '' : 'rounded-none'}`}>
       {!isLoaded && !hasError && (
         <div className={`absolute inset-0 bg-zinc-900/50 animate-pulse z-0 ${className}`} style={style} />
       )}
@@ -407,7 +408,7 @@ const ClientDemandProof = () => {
 // --- Skill Scanner Component ---
 const SkillScanner = () => (
   <div className="w-full bg-[#0A0A0A] rounded-xl border border-[#00FF9D]/20 p-4 mb-6 relative overflow-hidden animate-in slide-in-from-bottom duration-500 group">
-     {/* --- ADDED GRID & SCANLINE EFFECT --- */}
+      {/* --- ADDED GRID & SCANLINE EFFECT --- */}
     <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none"></div>
     <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-[#00FF9D]/05 to-transparent animate-[scanLine_4s_linear_infinite]"></div>
 
@@ -677,76 +678,68 @@ const Carousel3D = () => {
     "https://i.ibb.co.com/M5tCqhDs/222.png",
     "https://i.ibb.co.com/BV1gXyf7/111.png"
   ];
+  
+  const [index, setIndex] = useState(0);
 
-  // Logic: 6 items, circle. 360/6 = 60deg per item.
-  // CSS transform: rotateY(i * 60deg) translateZ(r)
-  // r ~= width / (2 * tan(30deg))
-  // Assuming width ~ 260px (larger horizontal card), r ~ 220px
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setIndex((prev) => (prev + 1) % images.length);
+    }, 4000); // 4 seconds
+    return () => clearInterval(timer);
+  }, [images.length]);
 
   return (
-    <div className="w-full h-[250px] flex items-center justify-center perspective-container overflow-visible">
-      <div className="spinner">
-        {images.map((img, i) => (
-          <div 
-            key={i} 
-            className="carousel-item flex items-center justify-center"
-            style={{ 
-              '--i': i,
-              '--total': images.length 
-            }}
-          >
-            {/* CLEAN IMAGE - Rounded corners + Neon Glow */}
-            <SmartImage 
-              src={img} 
-              alt={`Result ${i+1}`} 
-              className="max-w-full max-h-full object-contain pointer-events-none rounded-[24px] shadow-[0_0_15px_rgba(0,255,157,0.6)]"
-              wrapperClass="w-full h-full"
-            />
-          </div>
-        ))}
-      </div>
-      <style>{`
-        .perspective-container {
-          perspective: 1000px; /* Stronger 3D */
-        }
-        .spinner {
-          position: relative;
-          width: 260px; /* Increased Width */
-          height: 150px; /* Adjusted Height */
-          transform-style: preserve-3d;
-          animation: spin 10s infinite linear;
-          /* Add a slight X tilt to show the ring structure better */
-          transform: rotateX(-10deg); 
-          will-change: transform; /* Optimized for Mobile GPU */
-        }
-        .spinner:hover {
-          animation-play-state: paused;
-        }
-        @keyframes spin {
-          from { transform: rotateX(-10deg) rotateY(0deg); }
-          to { transform: rotateX(-10deg) rotateY(-360deg); }
-        }
-        .carousel-item {
-          position: absolute;
-          top: 0;
-          left: 0;
-          width: 260px; 
-          height: 150px;
-          /* Calculate rotation: index * (360 / total) */
-          /* TranslateZ: Adjusted for larger cards */
-          transform: rotateY(calc(var(--i) * 60deg)) translateZ(280px);
-          backface-visibility: hidden; 
-          -webkit-backface-visibility: hidden;
-          /* ALL STYLES REMOVED per user request */
-          background: transparent;
-          border: none;
-          box-shadow: none;
-        }
-        /* Add reflection to items */
-        .carousel-item img {
-          -webkit-box-reflect: below 5px linear-gradient(transparent, transparent, rgba(0,0,0,0.3));
-        }
-      `}</style>
+    <div className="relative w-full h-[280px] flex items-center justify-center">
+       {images.map((img, i) => {
+         // NOTIFICATION STACK LOGIC
+         const total = images.length;
+         const dist = (index - i + total) % total;
+         
+         // Default style for hidden items
+         let styleClass = "opacity-0 scale-50 z-0 translate-y-[100px]"; 
+         
+         if (dist === 0) {
+            // FRONT (Active)
+            styleClass = "opacity-100 scale-100 z-30 translate-y-[0px]";
+         } else if (dist === 1) {
+            // PREVIOUS 1
+            styleClass = "opacity-60 scale-90 z-20 -translate-y-[40px]";
+         } else if (dist === 2) {
+            // PREVIOUS 2
+            styleClass = "opacity-30 scale-80 z-10 -translate-y-[70px]";
+         } else if (dist === total - 1) {
+            // NEXT (Upcoming) - Ready to slide in from bottom
+            styleClass = "opacity-0 scale-100 z-40 translate-y-[100%] pointer-events-none"; 
+         }
+         
+         return (
+           <div 
+             key={i}
+             className={`absolute transition-all duration-700 cubic-bezier(0.25, 0.8, 0.25, 1) w-[320px] h-[180px] flex items-center justify-center ${styleClass}`}
+           >
+              {/* FIX: object-contain ensures the FULL image is visible (no cropping).
+                  No background, no border on the container.
+                  Shadow helps it pop.
+              */}
+              <img 
+                src={img} 
+                alt="Notification" 
+                className="max-w-full max-h-full object-contain rounded-[32px] drop-shadow-[0_20px_50px_rgba(0,0,0,0.6)]"
+              />
+           </div>
+         )
+       })}
+       
+       {/* Simple Indicators */}
+       <div className="absolute bottom-0 flex gap-2 z-50">
+         {images.map((_, i) => (
+           <div 
+             key={i} 
+             onClick={() => setIndex(i)}
+             className={`h-1 rounded-full transition-all duration-300 cursor-pointer ${i === index ? 'w-6 bg-white' : 'w-1 bg-zinc-700 hover:bg-zinc-500'}`} 
+           />
+         ))}
+       </div>
     </div>
   );
 };
@@ -824,14 +817,14 @@ const ShopIntroSequence = ({ onComplete }) => {
   }, [phase, index, messages.length, onComplete]);
 
   const current = messages[index];
-  
+   
   // Logic: 
   // Part 1 is visible from 'part1In' until 'out' starts
   const part1Visible = phase !== 'start';
-  
+   
   // Part 2 is visible from 'part2In' until 'out' starts
   const showPart2 = phase === 'part2In' || phase === 'fullWait' || phase === 'out';
-  
+   
   // Dim Part 1 slightly when Part 2 arrives to focus attention
   const isDimmed = phase === 'part1Dim' || phase === 'part2In' || phase === 'fullWait' || phase === 'out';
 

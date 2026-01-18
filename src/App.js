@@ -2,14 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 
 /**
  * Taipan Media - Elite React Application
- * UPDATE: PERFORMANCE OPTIMIZATION (Mobile Focus)
- * * User Request: "Optimize everything, images load long and freeze on mobile".
- * * Action: Implemented `SmartImage` with async decoding, lazy loading, and skeletons.
- * * Key Changes:
- * - Added `SmartImage` component for non-blocking image rendering.
- * - Reduced Canvas Matrix FPS for mobile battery/CPU saving.
- * - Added `will-change: transform` hints for GPU acceleration.
- * - Implemented fade-in transitions for all assets to prevent layout jumps.
+ * UPDATE: SYSTEM REFRESH & PARTNERS OPTIMIZATION
+ * * Action: Full file regeneration to resolve interpreter error.
+ * * PartnersCredits: Retained "Tight Frame + Huge Logos" design (h-32 container, 125% scale).
+ * * Animations: Cyber-reveal and scanline effects active.
  */
 
 // --- Internal Icon Components ---
@@ -80,7 +76,7 @@ const SmartImage = ({ src, alt, className, style, wrapperClass = "" }) => {
         onError={(e) => {
            setHasError(true);
            if (e.target.src !== "https://via.placeholder.com/400x200?text=Error") {
-              e.target.style.display = 'none'; // Hide broken image if no fallback
+             e.target.style.display = 'none'; // Hide broken image if no fallback
            }
         }}
         className={`${className} transition-opacity duration-700 ease-out ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
@@ -338,8 +334,8 @@ const SetupTimeline = () => {
         <div className="relative pl-6 mt-8">
            <div className="absolute -left-[7px] top-1 w-3.5 h-3.5 bg-[#00FF9D] rounded-full animate-pulse shadow-[0_0_15px_#00FF9D]"></div>
            <div className="bg-[#00FF9D]/10 border border-[#00FF9D]/30 p-3 rounded-lg">
-              <h4 className="text-sm font-black text-[#00FF9D] uppercase tracking-wider mb-1">МАГАЗИН ГОТОВ</h4>
-              <p className="text-[10px] text-zinc-300 leading-snug">Можно запускать трафик и получать прибыль. Система работает автономно.</p>
+             <h4 className="text-sm font-black text-[#00FF9D] uppercase tracking-wider mb-1">МАГАЗИН ГОТОВ</h4>
+             <p className="text-[10px] text-zinc-300 leading-snug">Можно запускать трафик и получать прибыль. Система работает автономно.</p>
            </div>
         </div>
       </div>
@@ -731,7 +727,7 @@ const ShopIntroSequence = ({ onComplete }) => {
   );
 };
 
-// --- PARTNERS CREDITS COMPONENT (Optimized) ---
+// --- PARTNERS CREDITS COMPONENT (Updated: Single Logo Cyber-Cycle) ---
 const PartnersCredits = () => {
   const logos = [
     "https://i.ibb.co.com/PvND9HRh/Picsart-Background-Remover.png",
@@ -741,51 +737,88 @@ const PartnersCredits = () => {
     "https://i.ibb.co.com/3mKHz61B/Picsart-Background-Remover.png"
   ];
 
-  return (
-    <div className="w-full mt-8 overflow-hidden relative">
-      <p className="text-center text-[10px] text-zinc-600 uppercase tracking-widest mb-6">Нам доверяют</p>
-      
-      {/* Horizontal scrolling container */}
-      <div className="relative w-full overflow-hidden mask-gradient-horizontal">
-        <div className="flex items-center gap-12 animate-scrollRight w-max">
-           {/* Duplicate logos for infinite scroll effect (x3 for smoothness) */}
-           {[...logos, ...logos, ...logos].map((logo, i) => {
-             // Logic to fix specific dark logos on dark background
-             const isYandex = logo.includes("Yandex");
-             const isRomantic = logo.includes("janym"); 
-             
-             // Make both logos white/bright with crisp white edge glow
-             const imgStyle = (isYandex || isRomantic) 
-                ? { filter: 'brightness(0) invert(1) drop-shadow(0 0 1.5px #ffffff)' } 
-                : { filter: 'drop-shadow(0 0 1.5px #ffffff)' };
+  const [currentIndex, setCurrentIndex] = useState(0);
 
-             return (
-               <SmartImage 
-                 key={i} 
-                 src={logo} 
-                 alt="Partner Logo" 
-                 style={imgStyle}
-                 // Force full opacity for white logos to pop, allow opacity transition for others
-                 className={`h-40 w-auto object-contain opacity-100 hover:opacity-80 transition-opacity duration-300`}
-                 wrapperClass="flex-shrink-0"
-               />
-             );
-           })}
-        </div>
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % logos.length);
+    }, 2500); // Смена каждые 2.5 секунды
+    return () => clearInterval(timer);
+  }, []);
+
+  const currentLogo = logos[currentIndex];
+  // Removed specific logic for Yandex/Janym to keep original colors
+  
+  // Style logic: Original colors + Brightness Boost + Neon Glow
+  const imgStyle = { 
+    filter: 'drop-shadow(0 0 20px rgba(0,255,157,0.15)) brightness(1.1) contrast(1.1) saturate(1.2)' 
+  };
+
+  return (
+    <div className="w-full mt-12 mb-8 relative px-4 flex flex-col items-center justify-center">
+      <div className="flex items-center justify-center gap-4 mb-6 opacity-100">
+        <div className="h-[1px] w-8 bg-gradient-to-r from-transparent to-[#00FF9D]"></div>
+        <p className="text-center text-[10px] text-[#00FF9D] uppercase tracking-[0.4em] mr-[-0.4em] font-bold shadow-green-glow animate-pulse">Нам доверяют</p>
+        <div className="h-[1px] w-8 bg-gradient-to-l from-transparent to-[#00FF9D]"></div>
+      </div>
+      
+      {/* Container for Single Logo - Reduced Height for tighter frame */}
+      <div className="relative w-full h-32 flex items-center justify-center overflow-hidden bg-white/5 rounded-xl border border-[#00FF9D]/10 shadow-[0_0_30px_rgba(0,0,0,0.5)]">
+         {/* Background Grid Effect */}
+         <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:20px_20px]"></div>
+         
+         {/* Animate key change to trigger re-mount animation */}
+         <div key={currentIndex} className="relative z-10 animate-[cyberReveal_0.5s_cubic-bezier(0.215,0.61,0.355,1)_both] w-full flex justify-center">
+            <SmartImage 
+               src={currentLogo} 
+               alt="Partner Logo" 
+               style={imgStyle}
+               // Larger logos relative to frame: h-24 with scale 1.25 to burst out
+               className="h-24 w-auto object-contain max-w-[90%] transform scale-125"
+               wrapperClass="relative z-10 flex justify-center w-full"
+             />
+         </div>
+         
+         {/* Decorative Scanline */}
+         <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-[#00FF9D]/10 to-transparent animate-[scanLine_2.5s_linear_infinite]"></div>
+      </div>
+
+      {/* Pagination Indicators */}
+      <div className="flex gap-1.5 mt-4">
+        {logos.map((_, idx) => (
+          <div 
+            key={idx} 
+            className={`h-1 rounded-full transition-all duration-300 ${idx === currentIndex ? 'w-8 bg-[#00FF9D] shadow-[0_0_10px_#00FF9D]' : 'w-1.5 bg-zinc-800'}`}
+          />
+        ))}
       </div>
 
       <style>{`
-        @keyframes scrollRight {
-          0% { transform: translateX(-33.33%); } /* Start shifted left */
-          100% { transform: translateX(0); } /* Move to 0 */
+        @keyframes cyberReveal {
+          0% { 
+            opacity: 0; 
+            transform: scale(1.5); 
+            filter: blur(20px) hue-rotate(90deg) brightness(2); /* Added brightness flash on entry */
+          }
+          20% {
+            opacity: 1;
+            transform: scale(1.2);
+            filter: blur(0) brightness(1.2);
+          }
+          40% {
+             transform: scale(1.35);
+             filter: brightness(1.3);
+          }
+          100% { 
+            opacity: 1; 
+            transform: scale(1.25); 
+            /* Filter removed here to fallback to inline style with original colors */
+          }
         }
-        .animate-scrollRight {
-          animation: scrollRight 20s linear infinite; /* Adjusted to 20s as per speed request */
-          will-change: transform; /* Optimize GPU */
-        }
-        .mask-gradient-horizontal {
-          mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
-          -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+        @keyframes scanLine {
+          0% { transform: translateY(-100%); opacity: 0; }
+          50% { opacity: 1; }
+          100% { transform: translateY(100%); opacity: 0; }
         }
       `}</style>
     </div>
@@ -831,7 +864,9 @@ const App = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
-    let width, height, columns, drops = [];
+    let width = window.innerWidth;
+    let height = window.innerHeight;
+    let columns, drops = [];
     const chars = "TAIPAN0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     
     const initMatrix = () => {
@@ -858,8 +893,16 @@ const App = () => {
     initMatrix();
     // REDUCED FRAME RATE (75ms instead of 50ms) to save Mobile CPU
     const interval = setInterval(drawMatrix, 75);
-    window.addEventListener('resize', initMatrix);
-    return () => { clearInterval(interval); window.removeEventListener('resize', initMatrix); };
+    
+    // GUARD: Only re-init matrix if width changes (prevents reset on mobile address bar scroll)
+    const handleResize = () => {
+        if (window.innerWidth !== width) {
+            initMatrix();
+        }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => { clearInterval(interval); window.removeEventListener('resize', handleResize); };
   }, []);
 
   const openModal = (type) => { setModalType(type); setIsModalOpen(true); };
@@ -1218,11 +1261,11 @@ const App = () => {
                     </div>
                     
                     <div className="pl-[3.5rem] w-full">
-                       <p className="text-[10px] text-zinc-400 leading-relaxed mb-3">{item.desc}</p>
-                       <div className="bg-[#00FF9D]/5 border-l-2 border-[#00FF9D]/30 pl-3 py-2 rounded-r-lg">
+                        <p className="text-[10px] text-zinc-400 leading-relaxed mb-3">{item.desc}</p>
+                        <div className="bg-[#00FF9D]/5 border-l-2 border-[#00FF9D]/30 pl-3 py-2 rounded-r-lg">
                           <p className="text-[8px] text-[#00FF9D] font-bold uppercase mb-0.5 tracking-widest">ПОЧЕМУ ЭТО ПРОСТО:</p>
                           <p className="text-[9px] text-zinc-500 italic leading-snug">{item.easy}</p>
-                       </div>
+                        </div>
                     </div>
                   </div>
                 ))}
@@ -1388,10 +1431,10 @@ const App = () => {
         }
         @keyframes scrollLeft {
           0% { transform: translateX(0); } 
-          100% { transform: translateX(-33.33%); } /* Loop 1/3 of total width */
+          100% { transform: translateX(-33.333%); } /* Loop 1/3 of total width */
         }
         .animate-scrollLeft {
-          animation: scrollLeft 20s linear infinite; /* Adjusted to 20s as per speed request */
+          animation: scrollLeft 30s linear infinite; /* Adjusted to 20s as per speed request */
         }
         .mask-gradient-horizontal {
           mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
@@ -1429,6 +1472,40 @@ const App = () => {
         @keyframes shine {
             0% { transform: translateX(-150%) skewX(-12deg); }
             40%, 100% { transform: translateX(150%) skewX(-12deg); }
+        }
+        
+        /* Floating Animation for Partner Logos */
+        @keyframes premiumFloat {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-6px); }
+        }
+        
+        /* Cyber Reveal Keyframes */
+        @keyframes cyberReveal {
+          0% { 
+            opacity: 0; 
+            transform: scale(1.5); 
+            filter: blur(20px) hue-rotate(90deg);
+          }
+          20% {
+            opacity: 1;
+            transform: scale(1.2);
+            filter: blur(0);
+          }
+          40% {
+             transform: scale(1.35);
+             filter: brightness(1.5);
+          }
+          100% { 
+            opacity: 1; 
+            transform: scale(1.25); 
+            filter: none;
+          }
+        }
+        @keyframes scanLine {
+          0% { transform: translateY(-100%); opacity: 0; }
+          50% { opacity: 1; }
+          100% { transform: translateY(100%); opacity: 0; }
         }
       `}</style>
     </div>

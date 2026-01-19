@@ -255,17 +255,17 @@ const SmartImage = ({ src, alt, className, style, wrapperClass = "", overflowHid
 
 // --- Компонент Поля Ввода (Вынесен наружу для исправления бага фокуса) ---
 const InputField = ({ label, value, setValue, suffix = "" }) => (
-  <div className="mb-4">
-    <label className="block text-[10px] text-zinc-500 mb-2 uppercase tracking-wider font-bold">{label}</label>
+  <div className="mb-2">
+    <label className="block text-[9px] text-zinc-500 mb-1 uppercase tracking-wider font-bold">{label}</label>
     <div className="relative">
       <input 
         type="number" 
         value={value === 0 ? '' : value} 
         onChange={(e) => setValue(Number(e.target.value))}
         placeholder="0"
-        className="w-full bg-[#0A0A0A] border border-zinc-800 rounded-xl p-3 text-white focus:border-[#00FF9D]/50 outline-none transition-all font-['Chakra_Petch'] text-sm appearance-none placeholder-zinc-700"
+        className="w-full bg-[#0A0A0A] border border-zinc-800 rounded-xl p-2.5 text-white focus:border-[#00FF9D]/50 outline-none transition-all font-['Chakra_Petch'] text-sm appearance-none placeholder-zinc-700"
       />
-      {suffix && <span className="absolute right-4 top-3 text-zinc-500 text-xs font-bold pointer-events-none">{suffix}</span>}
+      {suffix && <span className="absolute right-4 top-2.5 text-zinc-500 text-xs font-bold pointer-events-none">{suffix}</span>}
     </div>
   </div>
 );
@@ -299,34 +299,34 @@ const ProfitCalculator = ({ onAction }) => {
       <InputField label="Средний чек" value={avgCheck} setValue={setAvgCheck} suffix="₸" />
       <InputField label="Средний % чистой прибыли" value={margin} setValue={setMargin} suffix="%" />
 
-      <div className="relative overflow-hidden bg-red-900/20 border border-red-500/50 p-5 rounded-2xl text-center group mt-4 shadow-[0_0_30px_rgba(220,38,38,0.2)] animate-[contourPulse_2s_ease-in-out_infinite]">
+      <div className="relative overflow-hidden bg-red-900/20 border border-red-500/50 p-4 rounded-2xl text-center group mt-2 shadow-[0_0_30px_rgba(220,38,38,0.2)] animate-[contourPulse_2s_ease-in-out_infinite]">
         {/* --- СЕТКА И СКАНЛАЙН ЭФФЕКТ (RED VERSION) --- */}
         <div className="absolute inset-0 bg-[linear-gradient(rgba(220,38,38,0.1)_1px,transparent_1px),linear-gradient(90deg,rgba(220,38,38,0.1)_1px,transparent_1px)] bg-[size:15px_15px] pointer-events-none"></div>
         <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-red-500/10 to-transparent animate-[scanLine_3s_linear_infinite]"></div>
         
         <div className="relative z-10">
-            <div className="flex flex-col items-center justify-center mb-2">
+            <div className="flex flex-col items-center justify-center mb-1">
                <div className="flex items-center gap-2">
-                   <span className="text-xl animate-pulse">🔥</span>
-                   <p className="text-[10px] text-red-500 font-black uppercase tracking-[0.2em] animate-pulse">ВЫ СЖИГАЕТЕ ЕЖЕМЕСЯЧНО</p>
-                   <span className="text-xl animate-pulse">🔥</span>
+                   <span className="text-lg animate-pulse">🔥</span>
+                   <p className="text-[9px] text-red-500 font-black uppercase tracking-[0.2em] animate-pulse">ВЫ СЖИГАЕТЕ ЕЖЕМЕСЯЧНО</p>
+                   <span className="text-lg animate-pulse">🔥</span>
                </div>
-               <p className="text-[9px] text-red-400/80 font-bold uppercase tracking-widest mt-1">
+               <p className="text-[8px] text-red-400/80 font-bold uppercase tracking-widest mt-0.5">
                  УПУСКАЯ {missedConversion}% КОНВЕРСИИ
                </p>
             </div>
             
-            <p className="text-4xl font-black text-white font-['Chakra_Petch'] drop-shadow-[0_0_15px_rgba(220,38,38,0.8)] mb-2">
+            <p className="text-3xl font-black text-white font-['Chakra_Petch'] drop-shadow-[0_0_15px_rgba(220,38,38,0.8)] mb-2">
               - {profit.toLocaleString()} ₸
             </p>
             
             <div className="bg-red-500/10 border-t border-b border-red-500/20 py-2 mt-2 backdrop-blur-sm">
-               <p className="text-[10px] text-zinc-300 uppercase tracking-wider font-medium leading-relaxed">
+               <p className="text-[9px] text-zinc-300 uppercase tracking-wider font-medium leading-relaxed">
                  Это <span className="text-red-400 font-black text-sm">{sales} покупателей</span>, которые <br/>унесли деньги вашим конкурентам
                </p>
             </div>
             
-            <p className="text-[8px] text-zinc-500 mt-3 italic">
+            <p className="text-[8px] text-zinc-500 mt-2 italic">
               *Эти деньги могли быть на вашей карте прямо сейчас
             </p>
         </div>
@@ -334,7 +334,7 @@ const ProfitCalculator = ({ onAction }) => {
 
       <button 
         onClick={onAction} 
-        className="w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-4 rounded-xl shadow-[0_0_20px_rgba(0,255,157,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs flex items-center justify-center gap-2 animate-pulse mt-6"
+        className="w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-3 rounded-xl shadow-[0_0_20px_rgba(0,255,157,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs flex items-center justify-center gap-2 animate-pulse mt-4"
       >
         ПЛАН ВОЗВРАТА ОТ {returnAmount.toLocaleString()} ₸ В МЕСЯЦ <ArrowRight className="w-4 h-4" />
       </button>
@@ -914,6 +914,11 @@ const PartnersCredits = () => {
 };
 
 const App = () => {
+  // Force system refresh
+  useEffect(() => {
+    console.log("Taipan Media App Initialized");
+  }, []);
+
   const [currentView, setCurrentView] = useState('main'); // 'main', 'education', 'faq', 'program', 'shop', 'calculator'
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalType, setModalType] = useState('');
@@ -1221,22 +1226,20 @@ const App = () => {
 
         {currentView === 'calculator' && (
           <div className="animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col h-full items-center w-full">
-            <button onClick={() => setCurrentView('shop')} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-6 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
+            <button onClick={() => setCurrentView('shop')} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-4 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
             
-            <div className="flex-grow flex flex-col items-center w-full space-y-6 animate-in slide-in-from-bottom duration-700">
-                <div className="text-center px-4 w-full mb-4">
-                    <Wallet className="w-16 h-16 mx-auto text-[#00FF9D] mb-4 drop-shadow-[0_0_15px_rgba(0,255,157,0.5)] animate-[contourPulse_3s_ease-in-out_infinite]" />
-                    <h2 className="text-3xl font-black tracking-tighter uppercase mb-2 font-['Chakra_Petch'] leading-none">
-                    ТВОЯ<br/><span className="text-[#00FF9D]">ПРИБЫЛЬ</span>
+            <div className="flex-grow flex flex-col items-center w-full space-y-2 animate-in slide-in-from-bottom duration-700">
+                <div className="text-center px-4 w-full mb-2">
+                    <Wallet className="w-12 h-12 mx-auto text-[#00FF9D] mb-2 drop-shadow-[0_0_15px_rgba(0,255,157,0.5)] animate-[contourPulse_3s_ease-in-out_infinite]" />
+                    <h2 className="text-2xl sm:text-3xl font-black tracking-tighter uppercase mb-1 font-['Chakra_Petch'] leading-none whitespace-nowrap">
+                    ТВОЯ <span className="text-[#00FF9D]">ПРИБЫЛЬ</span>
                     </h2>
                     <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] mr-[-0.3em] font-bold">Узнай сколько ты теряешь</p>
                 </div>
 
-                <div className="w-full glass-card p-6 rounded-3xl border border-[#00FF9D]/20 relative overflow-hidden">
+                <div className="w-full glass-card p-4 rounded-3xl border border-[#00FF9D]/20 relative overflow-hidden">
                     <ProfitCalculator onAction={() => openModal('Order Shop')} />
                 </div>
-
-                {/* Кнопка теперь находится внутри ProfitCalculator */}
             </div>
           </div>
         )}

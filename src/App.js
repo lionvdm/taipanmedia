@@ -138,8 +138,8 @@ const GlobalStyles = () => (
         filter: blur(0);
       }
       40% {
-         transform: scale(1.35);
-         filter: brightness(1.5);
+          transform: scale(1.35);
+          filter: brightness(1.5);
       }
       100% { 
         opacity: 1; 
@@ -748,8 +748,8 @@ const Carousel3D = () => {
 const ShopIntroSequence = ({ onComplete }) => {
   const messages = [
     { 
-      part1: "Пока другие обещают лиды", 
-      part2: "МЫ ПОКАЗЫВАЕМ ДЕНЬГИ" 
+      part1: "Меньше диалогов - больше денег", 
+      part2: "Спасаем от 20% упущенной чистой прибыли" 
     },
     { 
       part1: "МЫ НЕ ИЩЕМ НОВЫХ КЛИЕНТОВ", 
@@ -862,10 +862,6 @@ const ShopIntroSequence = ({ onComplete }) => {
              `}>
                {current.part2}
              </h2>
-             {/* Subtle Shine Overlay */}
-             {showPart2 && (
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent -skew-x-12 animate-[textShine_3s_infinite_linear] mix-blend-overlay"></div>
-             )}
          </div>
        </div>
        

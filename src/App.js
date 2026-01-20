@@ -176,6 +176,81 @@ const GlobalStyles = () => (
   `}} />
 );
 
+// --- ХУК ДЛЯ АНИМАЦИИ ЦИФР (ODOMETER) ---
+const useOdometer = (targetValue, duration = 1000) => {
+  const [displayValue, setDisplayValue] = useState(0);
+  const frameRef = useRef(0);
+  const startValueRef = useRef(0);
+  const startTimeRef = useRef(0);
+
+  useEffect(() => {
+    const startValue = startValueRef.current;
+    const endValue = targetValue;
+    
+    if (startValue === endValue) return;
+
+    const animate = (currentTime) => {
+      if (!startTimeRef.current) startTimeRef.current = currentTime;
+      const elapsed = currentTime - startTimeRef.current;
+      const progress = Math.min(elapsed / duration, 1);
+      
+      // Ease Out Quart - плавная остановка
+      const ease = 1 - Math.pow(1 - progress, 4);
+      
+      const current = Math.floor(startValue + (endValue - startValue) * ease);
+      
+      setDisplayValue(current);
+      startValueRef.current = current;
+
+      if (progress < 1) {
+        frameRef.current = requestAnimationFrame(animate);
+      } else {
+        startTimeRef.current = 0;
+        setDisplayValue(endValue);
+        startValueRef.current = endValue;
+      }
+    };
+    
+    cancelAnimationFrame(frameRef.current);
+    startTimeRef.current = 0;
+    frameRef.current = requestAnimationFrame(animate);
+
+    return () => cancelAnimationFrame(frameRef.current);
+  }, [targetValue, duration]);
+
+  return displayValue;
+};
+
+// --- КОМПОНЕНТ ЖИВОГО СЧЕТЧИКА (SYSTEM MONITOR) ---
+const LiveUserCounter = () => {
+  const [users, setUsers] = useState(124);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setUsers((prev) => {
+        // Change by a small random amount between -3 and +3
+        const change = Math.floor(Math.random() * 7) - 3;
+        // Ensure we don't go below a realistic number (e.g., 90)
+        return Math.max(90, prev + change);
+      });
+    }, 5000); // Update every 5 seconds
+
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="fixed top-4 left-4 z-50 flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/40 backdrop-blur-sm border border-[#00FF9D]/10 animate-in fade-in duration-1000 pointer-events-none">
+      <div className="relative flex items-center justify-center">
+         <div className="w-1.5 h-1.5 rounded-full bg-[#00FF9D] animate-pulse relative z-10"></div>
+         <div className="absolute w-full h-full rounded-full bg-[#00FF9D] animate-ping opacity-20"></div>
+      </div>
+      <p className="text-[8px] font-mono text-[#00FF9D]/80 tracking-widest leading-none">
+        СЕЙЧАС ОНЛАЙН: <span className="text-white font-bold">{users}</span>
+      </p>
+    </div>
+  );
+};
+
 // --- Компоненты Иконок ---
 
 const GraduationCap = ({ className }) => (
@@ -281,6 +356,10 @@ const ProfitCalculator = ({ onAction, data, setData }) => {
   const revenue = sales * data.avgCheck;
   const profit = Math.floor(revenue * (data.margin / 100));
   
+  // Анимация цифр
+  const animatedProfit = useOdometer(profit);
+  const animatedSales = useOdometer(sales);
+
   // Сумма для возврата (20% от упущенной прибыли)
   const returnAmount = Math.floor(profit * 0.2);
 
@@ -303,7 +382,7 @@ const ProfitCalculator = ({ onAction, data, setData }) => {
             <div className="flex flex-col items-center justify-center mb-2">
                <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-[0.1em] mb-1">ВАШ БИЗНЕС МОЖЕТ ПРИНОСИТЬ</p>
                <p className="text-3xl sm:text-4xl font-black text-[#00FF9D] font-['Chakra_Petch'] drop-shadow-[0_0_15px_rgba(0,255,157,0.4)] mb-1">
-                 НА {profit.toLocaleString()} ₸
+                 НА {animatedProfit.toLocaleString()} ₸
                </p>
                <p className="text-[12px] text-white font-bold uppercase tracking-[0.2em]">
                  БОЛЬШЕ ЕЖЕМЕСЯЧНО
@@ -312,7 +391,7 @@ const ProfitCalculator = ({ onAction, data, setData }) => {
             
             <div className="bg-[#00FF9D]/5 border-t border-b border-[#00FF9D]/10 py-3 mt-3 backdrop-blur-sm">
                <p className="text-[10px] text-zinc-300 uppercase tracking-wider font-medium leading-relaxed">
-                 ЭТО <span className="text-[#00FF9D] font-black">{sales} ПОКУПАТЕЛЕЙ</span>, КОТОРЫЕ<br/>ГОТОВЫ ПЛАТИТЬ ВАМ УЖЕ СЕЙЧАС
+                 ЭТО <span className="text-[#00FF9D] font-black">{animatedSales} ПОКУПАТЕЛЕЙ</span>, КОТОРЫЕ<br/>ГОТОВЫ ПЛАТИТЬ ВАМ УЖЕ СЕЙЧАС
                </p>
             </div>
             
@@ -827,7 +906,8 @@ const PartnersCredits = () => {
     "https://i.ibb.co.com/YHbCZm2/Yandex-Metrika-hd-Picsart-Background-Remover.png",
     "https://i.ibb.co.com/DfQywRwj/Picsart-Background-Remover.png",
     "https://i.ibb.co.com/QZpjR8B/salon-cvetov-janym-photo-place-Picsart-Background-Remover.png",
-    "https://i.ibb.co.com/3mKHz61B/Picsart-Background-Remover.png"
+    "https://i.ibb.co.com/3mKHz61B/Picsart-Background-Remover.png",
+    "https://i.ibb.co.com/4g74sZT7/maxresdefault-Picsart-Background-Remover.png"
   ];
 
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -845,6 +925,7 @@ const PartnersCredits = () => {
   const isRomantic = currentLogo.includes("janym");
   const isFood = currentLogo.includes("DfQywRwj"); // Определение по хешу
   const isPicsartLogo = currentLogo.includes("PvND9HRh"); // Выбранный пользователем
+  const isLargeLogo = currentLogo.includes("4g74sZT7"); // Новый логотип, который нужно увеличить
 
   let specificStyle = { 
     filter: 'drop-shadow(0 0 20px rgba(0,255,157,0.15)) brightness(1.1) contrast(1.1) saturate(1.2)' 
@@ -858,15 +939,22 @@ const PartnersCredits = () => {
       specificStyle = { filter: 'brightness(1.1) contrast(1.1)' };
   } else if (isPicsartLogo) {
       specificStyle = { filter: 'brightness(0) invert(1) drop-shadow(0 0 10px rgba(255, 255, 255, 0.6))' };
+  } else if (isLargeLogo) {
+      // Убираем лишние эффекты, если нужно, или оставляем дефолтные, но увеличиваем размер ниже
+      specificStyle = { filter: 'brightness(1.2)' };
   }
    
-  const logoClasses = `h-24 w-auto object-contain max-w-[90%] transform scale-125 ${isFood ? 'translate-y-6' : ''}`;
+  // Увеличиваем масштаб специально для этого логотипа (scale-[2.5] вместо scale-125)
+  const scaleClass = isLargeLogo ? 'scale-[2.5]' : 'scale-125';
+  const translateClass = isFood ? 'translate-y-6' : '';
+  
+  const logoClasses = `h-24 w-auto object-contain max-w-[90%] transform ${scaleClass} ${translateClass}`;
 
   return (
     <div className="w-full mt-12 mb-8 relative px-4 flex flex-col items-center justify-center">
       <div className="flex items-center justify-center gap-4 mb-6 opacity-100">
         <div className="h-[1px] w-8 bg-gradient-to-r from-transparent to-[#00FF9D]"></div>
-        <p className="text-center text-[10px] text-[#00FF9D] uppercase tracking-[0.4em] mr-[-0.4em] font-bold shadow-green-glow animate-pulse">Нам доверяют</p>
+        <p className="text-center text-[10px] text-[#00FF9D] uppercase tracking-[0.4em] mr-[-0.4em] font-bold shadow-green-glow animate-pulse">Наши партнёры</p>
         <div className="h-[1px] w-8 bg-gradient-to-l from-transparent to-[#00FF9D]"></div>
       </div>
        
@@ -922,6 +1010,10 @@ const RoiView = ({ profit, onBack, onAction }) => {
     window.open('https://t.me/taipanmedia', '_blank');
   };
 
+  // Анимация для ROI
+  const animatedProfit = useOdometer(conservativeProfit);
+  const animatedPercentage = useOdometer(returnPercentage);
+
   return (
     <div className="animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col h-full items-center w-full">
         <button onClick={onBack} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-4 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
@@ -943,7 +1035,7 @@ const RoiView = ({ profit, onBack, onAction }) => {
              {/* Карточка дохода (из калькулятора) */}
              <div className="w-full glass-card p-4 rounded-2xl flex justify-between items-center border border-[#00FF9D]/20 bg-[#00FF9D]/5">
                 <span className="text-xs text-zinc-400 font-bold uppercase tracking-wider">Потенциальный возврат</span>
-                <span className="text-sm font-black text-[#00FF9D] font-['Chakra_Petch']">{conservativeProfit.toLocaleString()} ₸/мес</span>
+                <span className="text-sm font-black text-[#00FF9D] font-['Chakra_Petch']">{animatedProfit.toLocaleString()} ₸/мес</span>
             </div>
 
             {/* Главный блок Возврата Вложений */}
@@ -954,7 +1046,7 @@ const RoiView = ({ profit, onBack, onAction }) => {
                     При указанных вами показателях,<br/>в первый месяц вы вернёте
                 </p>
                 <div className={`text-5xl font-black font-['Chakra_Petch'] mb-3 relative z-10 ${isProfitable ? 'text-[#00FF9D]' : 'text-zinc-500'}`}>
-                    {returnPercentage}% <span className="text-sm font-bold text-zinc-500 uppercase tracking-wide">вложений</span>
+                    {animatedPercentage}% <span className="text-sm font-bold text-zinc-500 uppercase tracking-wide">вложений</span>
                 </div>
                 
                 {isProfitable ? (
@@ -1007,6 +1099,9 @@ const App = () => {
       const revenue = sales * calcData.avgCheck;
       return Math.floor(revenue * (calcData.margin / 100));
   };
+
+  // Анимированные хуки для одометра в калькуляторе.
+  // Они должны быть вызваны внутри компонента, поэтому передаем данные, а хуки используем внутри ProfitCalculator
    
   // Состояние для интро магазина
   const [shopIntroFinished, setShopIntroFinished] = useState(false);
@@ -1209,6 +1304,9 @@ const App = () => {
         <div className="absolute inset-0 opacity-20 -z-10" style={{ backgroundImage: `linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px)`, backgroundSize: '50px 50px', maskImage: 'radial-gradient(circle at 50% 30%, black 40%, transparent 100%)', WebkitMaskImage: 'radial-gradient(circle at 50% 30%, black 40%, transparent 100%)' }} />
         <canvas ref={canvasRef} className="absolute inset-0 opacity-30 mix-blend-screen" />
       </div>
+      
+      {/* --- LIVE COUNTER ADDED HERE --- */}
+      <LiveUserCounter />
 
       <div className="relative z-10 flex-grow flex flex-col max-w-lg mx-auto w-full px-4 pt-10 pb-20"> {/* pb-20 для тикера */}
         
@@ -1252,177 +1350,6 @@ const App = () => {
             
             {/* СКРОЛЛ ЛОГОТИПОВ ПАРТНЕРОВ */}
             <PartnersCredits />
-          </div>
-        )}
-
-        {currentView === 'shop' && (
-          <div className="animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col h-full items-center w-full">
-            {!shopIntroFinished ? (
-               <ShopIntroSequence onComplete={() => setShopIntroFinished(true)} />
-            ) : (
-              <React.Fragment>
-                <button onClick={() => setCurrentView('main')} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-6 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
-                <div className="flex-grow flex flex-col items-center w-full space-y-6 animate-in slide-in-from-bottom duration-700">
-                  
-                  {/* Заголовок Магазина */}
-                  <div className="text-center px-4 w-full mb-4">
-                      <TelegramLogoMain className="w-20 h-20 mx-auto text-[#00FF9D] mb-4 drop-shadow-[0_0_15px_rgba(0,255,157,0.5)] animate-[contourPulse_3s_ease-in-out_infinite]" />
-                      <h2 className="text-3xl font-black tracking-tighter uppercase mb-2 font-['Chakra_Petch'] leading-none">
-                        TELEGRAM<br/><span className="text-[#00FF9D]">STORE</span>
-                      </h2>
-                      <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] mr-[-0.3em] font-bold">E-commerce нового поколения</p>
-                  </div>
-
-                  {/* Список Преимуществ (Восстановлен) */}
-                  <div className="w-full space-y-3">
-                      {[
-                        { title: "Каталог и Корзина", desc: "Полноценный интернет-магазин внутри мессенджера. Удобный выбор товаров без лишних переходов." },
-                        { title: "Оплата в 1 клик", desc: "Интеграция с Kaspi, картами и криптовалютой. Мгновенные транзакции." },
-                        { title: "CRM Система", desc: "Управление заказами, статусами и клиентами прямо внутри Telegram." },
-                        { title: "Авто-рассылки", desc: "Push-уведомления клиентам о новинках и акциях с открываемостью 90%." }
-                      ].map((item, i) => (
-                        <div key={i} className="glass-card rounded-2xl p-4 flex items-start gap-4 hover:bg-white/5 transition-all">
-                           <div className="mt-1 bg-[#00FF9D]/10 p-2 rounded-full text-[#00FF9D] border border-[#00FF9D]/20"><CheckCircle2 className="w-4 h-4" /></div>
-                           <div>
-                             <h4 className="text-sm font-bold text-white uppercase tracking-wider mb-1">{item.title}</h4>
-                             <p className="text-[10px] text-zinc-400 leading-relaxed">{item.desc}</p>
-                           </div>
-                        </div>
-                      ))}
-                  </div>
-
-                  {/* Цены и CTA */}
-                  <div className="mt-4 w-full glass-card p-6 rounded-3xl text-center border border-[#00FF9D]/20 relative overflow-hidden group">
-                      <div className="absolute inset-0 bg-gradient-to-t from-[#00FF9D]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                      <button 
-                        onClick={() => setCurrentView('calculator')} 
-                        className="w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-4 rounded-xl shadow-[0_0_20px_rgba(0,255,157,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs relative z-10 flex items-center justify-center gap-2 animate-pulse"
-                      >
-                        РАССЧИТАТЬ УПУЩЕННУЮ ПРИБЫЛЬ
-                      </button>
-                  </div>
-                </div>
-              </React.Fragment>
-            )}
-          </div>
-        )}
-
-        {currentView === 'calculator' && (
-          <div className="animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col h-full items-center w-full">
-            <button onClick={() => setCurrentView('shop')} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-4 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
-            
-            <div className="flex-grow flex flex-col items-center w-full space-y-2 animate-in slide-in-from-bottom duration-700">
-                <div className="text-center px-4 w-full mb-2">
-                    <Wallet className="w-12 h-12 mx-auto text-[#00FF9D] mb-2 drop-shadow-[0_0_15px_rgba(0,255,157,0.5)] animate-[contourPulse_3s_ease-in-out_infinite]" />
-                    <h2 className="text-2xl sm:text-3xl font-black tracking-tighter uppercase mb-1 font-['Chakra_Petch'] leading-none whitespace-nowrap">
-                    ТВОЯ <span className="text-[#00FF9D]">ПРИБЫЛЬ</span>
-                    </h2>
-                    <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] mr-[-0.3em] font-bold">Узнай сколько ты теряешь</p>
-                </div>
-
-                <div className="w-full glass-card p-4 rounded-3xl border border-[#00FF9D]/20 relative overflow-hidden">
-                    <ProfitCalculator data={calcData} setData={setCalcData} onAction={() => setCurrentView('strategy')} />
-                </div>
-            </div>
-          </div>
-        )}
-
-        {currentView === 'strategy' && (
-          <div className="animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col h-full items-center w-full">
-             <button onClick={() => setCurrentView('calculator')} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-4 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
-             
-             <div className="flex-grow flex flex-col items-center w-full space-y-6 overflow-y-auto pb-20 no-scrollbar">
-                <div className="text-center px-4 w-full">
-                    <h2 className="text-2xl sm:text-3xl font-black tracking-tighter uppercase mb-1 font-['Chakra_Petch'] leading-none whitespace-nowrap">
-                    КЕЙСЫ <span className="text-[#00FF9D]">ПАРТНЕРОВ</span>
-                    </h2>
-                    <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] mr-[-0.3em] font-bold">Реальные магазины на платформе</p>
-                </div>
-
-                {/* Case 1 */}
-                <div className="w-full mb-4 flex flex-col items-center">
-                    <div className="w-2/3 max-w-[200px]"> {/* Reduced image size */}
-                        <SmartImage 
-                          src="https://i.ibb.co.com/gMTG4QXt/5438294939344244553.jpg" 
-                          className="rounded-[20px] w-full h-auto object-contain" 
-                          alt="Fashion Store Case"
-                        />
-                    </div>
-                    <div className="w-full mt-4 px-2 text-center">
-                        <h3 className="text-sm font-black text-white uppercase tracking-wider mb-2">КЕЙС «КАСТРЮЛЬКА ЕДЫ»</h3>
-                        <p className="text-[10px] text-zinc-400 leading-relaxed">
-                            Пока другие тратят бюджет на рекламу, мы включили продажи по расписанию. Пуш в 18:00 на пустой желудок принес <span className="text-[#00FF9D] font-bold">+43% к чекам</span>. Мы превратили хаотичные заказы в предсказуемый алгоритм. Taipan Media заставляет технологии работать на ваших инстинктах.
-                        </p>
-                    </div>
-                </div>
-
-                {/* Case 2 */}
-                <div className="w-full mb-4 flex flex-col items-center">
-                    <div className="w-2/3 max-w-[200px]"> {/* Reduced image size */}
-                        <SmartImage 
-                          src="https://i.ibb.co.com/ks9Sz9zz/5438294939344244554.jpg" 
-                          className="rounded-[20px] w-full h-auto object-contain" 
-                          alt="Romantic Store Case"
-                        />
-                    </div>
-                    <div className="w-full mt-4 px-2 text-center">
-                        <h3 className="text-sm font-black text-white uppercase tracking-wider mb-2">КЕЙС «ROMANTIC»</h3>
-                        <p className="text-[10px] text-zinc-400 leading-relaxed">
-                            Мы внедрили ИИ-алгоритмы, которые анализируют поведение ваших покупателей и допродают товар в момент пикового интереса, показывая, что с этим товаром обычно покупают другие. Результат: <span className="text-[#00FF9D] font-bold">+57% к чеку</span> за счет маржинальных допов. Мы не ждем желания клиента — Taipan Media создает его через алгоритмы.
-                        </p>
-                    </div>
-                </div>
-                
-                <div className="w-full pt-4 pb-8">
-                    <button 
-                        onClick={() => setCurrentView('roi')} 
-                        className="w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-4 rounded-xl shadow-[0_0_20px_rgba(0,255,157,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs flex items-center justify-center gap-2 animate-pulse"
-                    >
-                        УЗНАТЬ СТОИМОСТЬ И СРОКИ
-                    </button>
-                    <p className="text-center text-[9px] text-zinc-600 mt-3">
-                        Оставьте заявку для бесплатной консультации
-                    </p>
-                </div>
-             </div>
-          </div>
-        )}
-
-        {currentView === 'roi' && (
-           <RoiView profit={calculateProfit()} onBack={() => setCurrentView('strategy')} onAction={() => openModal('Start Project')} />
-        )}
-
-        {currentView === 'education' && (
-          <div className="animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col h-full items-center">
-            <button onClick={() => setCurrentView('main')} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-6 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
-            <div className="flex-grow flex flex-col items-center justify-center space-y-10 w-full">
-              <div className="text-center px-4 w-full mb-10">
-                <h2 className="text-4xl font-black tracking-tighter uppercase mb-2 font-['Chakra_Petch']">Упущенные<br/><span className="text-[#00FF9D]">Возможности</span></h2>
-                <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] mr-[-0.3em] font-bold">История твоих сомнений</p>
-              </div>
-              
-              {/* КАРУСЕЛЬ УПУЩЕННЫХ ВОЗМОЖНОСТЕЙ */}
-              <div className="relative w-full h-[280px] flex items-center justify-center">
-                 {/* Только логика изображений из прошлого, но нам нужно интегрировать НОВЫЕ Истории Успеха ниже */}
-                 <div className="relative w-full h-[280px] flex items-center justify-center overflow-hidden">
-                    {/* Переопределяем логику карусели инлайн для ясности или просто используем компонент */}
-                    {slides.map((SlideComponent, idx) => (
-                       <div key={idx} className={`absolute inset-0 flex items-center justify-center transition-all duration-[1200ms] ease-in-out transform ${activeSlide === idx ? 'opacity-100 scale-100 blur-0' : 'opacity-0 scale-75 blur-3xl'}`}>
-                         <div className="relative w-full text-center">
-                            <div className="absolute inset-0 bg-white/5 blur-3xl rounded-full transform scale-150 left-1/2 -translate-x-1/2" />
-                            <div className="relative z-10"><SlideComponent isActive={activeSlide === idx} /></div>
-                         </div>
-                       </div>
-                     ))}
-                 </div>
-              </div>
-              
-              <div className="text-center w-full px-6 flex justify-center mb-8">
-                <p className="text-zinc-500 text-[12px] font-bold uppercase tracking-widest mr-[-0.1em] animate-pulse whitespace-nowrap">Не стань историей упущенных шансов</p>
-              </div>
-
-            </div>
-            <button onClick={() => setCurrentView('faq')} className="w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-6 rounded-3xl shadow-[0_5px_30px_rgba(0,255,157,0.3)] hover:scale-[1.02] active:scale-[0.98] transition-all mt-4 text-xs">Стань тем кто успел</button>
           </div>
         )}
 
@@ -1534,7 +1461,7 @@ const App = () => {
             </div>
             <div className="mt-8 w-full glass-card p-6 rounded-3xl text-center border border-[#00FF9D]/20">
               <p className="text-[10px] text-zinc-400 uppercase tracking-widest mb-2">Стоимость обучения</p>
-              <div className="text-2xl font-black text-white mb-4 font-['Chakra_Petch']">50 000 ₸ <span className="text-zinc-600 text-lg line-through decoration-red-600 decoration-2 ml-2">80 000 ₸</span></div>
+              <div className="text-2xl font-black text-white mb-2 font-['Chakra_Petch']">50 000 ₸ <span className="text-zinc-600 text-lg line-through decoration-red-600 decoration-2 ml-2">80 000 ₸</span></div>
               <p className="text-[10px] text-zinc-500 uppercase tracking-widest mb-6">Длительность обучения (14 дней)</p>
               
               {/* Removed Purchase Button */}
@@ -1616,4 +1543,3 @@ const App = () => {
 };
 
 export default App;
- 

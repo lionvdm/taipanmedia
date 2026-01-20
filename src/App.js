@@ -110,7 +110,7 @@ const GlobalStyles = () => (
       mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
       -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
     }
-     
+      
     /* Анимации текста */
     @keyframes premiumSlideUp {
       0% { opacity: 0; transform: translateY(20px); filter: blur(5px); }
@@ -129,7 +129,7 @@ const GlobalStyles = () => (
       0% { opacity: 1; transform: scale(1); filter: blur(0); }
       100% { opacity: 0; transform: scale(1.05); filter: blur(10px); }
     }
-     
+      
     /* Кинематографичные анимации для интро */
     @keyframes cinematicIn {
         0% { opacity: 0; transform: translateY(20px) scale(0.95); filter: blur(10px); }
@@ -139,13 +139,13 @@ const GlobalStyles = () => (
         0% { opacity: 1; transform: scale(1); filter: blur(0); }
         100% { opacity: 0; transform: scale(1.1); filter: blur(20px); }
     }
-     
+      
     /* Плавающая анимация для логотипов партнеров */
     @keyframes premiumFloat {
       0%, 100% { transform: translateY(0); }
       50% { transform: translateY(-6px); }
     }
-     
+      
     /* Кибер-появление */
     @keyframes cyberReveal {
       0% { 
@@ -876,7 +876,8 @@ const PartnersCredits = () => {
     "https://i.ibb.co.com/YHbCZm2/Yandex-Metrika-hd-Picsart-Background-Remover.png",
     "https://i.ibb.co.com/DfQywRwj/Picsart-Background-Remover.png",
     "https://i.ibb.co.com/QZpjR8B/salon-cvetov-janym-photo-place-Picsart-Background-Remover.png",
-    "https://i.ibb.co.com/3mKHz61B/Picsart-Background-Remover.png"
+    "https://i.ibb.co.com/3mKHz61B/Picsart-Background-Remover.png",
+    "https://i.ibb.co.com/4g74sZT7/maxresdefault-Picsart-Background-Remover.png"
   ];
 
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -894,6 +895,7 @@ const PartnersCredits = () => {
   const isRomantic = currentLogo.includes("janym");
   const isFood = currentLogo.includes("DfQywRwj"); // Определение по хешу
   const isPicsartLogo = currentLogo.includes("PvND9HRh"); // Выбранный пользователем
+  const isNewPartner = currentLogo.includes("4g74sZT7");
 
   let specificStyle = { 
     filter: 'drop-shadow(0 0 20px rgba(0,255,157,0.15)) brightness(1.1) contrast(1.1) saturate(1.2)' 
@@ -907,15 +909,18 @@ const PartnersCredits = () => {
       specificStyle = { filter: 'brightness(1.1) contrast(1.1)' };
   } else if (isPicsartLogo) {
       specificStyle = { filter: 'brightness(0) invert(1) drop-shadow(0 0 10px rgba(255, 255, 255, 0.6))' };
+  } else if (isNewPartner) {
+      specificStyle = { filter: 'brightness(1.1) contrast(1.1) drop-shadow(0 0 15px rgba(255,255,255,0.2))' };
   }
    
-  const logoClasses = `h-24 w-auto object-contain max-w-[90%] transform scale-125 ${isFood ? 'translate-y-6' : ''}`;
+  // Увеличиваем масштаб еще сильнее для нового партнера (scale-[2.5])
+  const logoClasses = `h-24 w-auto object-contain max-w-[90%] transform ${isNewPartner ? 'scale-[2.5]' : 'scale-125'} ${isFood ? 'translate-y-6' : ''}`;
 
   return (
     <div className="w-full mt-12 mb-8 relative px-4 flex flex-col items-center justify-center">
       <div className="flex items-center justify-center gap-4 mb-6 opacity-100">
         <div className="h-[1px] w-8 bg-gradient-to-r from-transparent to-[#00FF9D]"></div>
-        <p className="text-center text-[10px] text-[#00FF9D] uppercase tracking-[0.4em] mr-[-0.4em] font-bold shadow-green-glow animate-pulse">Нам доверяют</p>
+        <p className="text-center text-[10px] text-[#00FF9D] uppercase tracking-[0.4em] mr-[-0.4em] font-bold shadow-green-glow animate-pulse">Наши партнёры</p>
         <div className="h-[1px] w-8 bg-gradient-to-l from-transparent to-[#00FF9D]"></div>
       </div>
        
@@ -1097,7 +1102,7 @@ const App = () => {
     let height = window.innerHeight;
     let columns, drops = [];
     const chars = "TAIPAN0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-     
+      
     const initMatrix = () => {
       width = canvas.width = window.innerWidth;
       height = canvas.height = window.innerHeight;
@@ -1105,7 +1110,7 @@ const App = () => {
       columns = Math.floor(width / 25);
       drops = Array(columns).fill(0).map(() => Math.random() * -100);
     };
-     
+      
     const drawMatrix = () => {
       ctx.fillStyle = 'rgba(0, 0, 0, 0.1)'; // Увеличенное затухание следа для меньшего визуального перересовывания
       ctx.fillRect(0, 0, width, height);
@@ -1118,11 +1123,11 @@ const App = () => {
         drops[i]++;
       }
     };
-     
+      
     initMatrix();
     // УМЕНЬШЕННАЯ ЧАСТОТА КАДРОВ (75мс вместо 50мс) для экономии CPU на мобильных
     const interval = setInterval(drawMatrix, 75);
-     
+      
     // ЗАЩИТА: Переинициализация матрицы только при изменении ширины (предотвращает сброс при скролле адресной строки на мобильных)
     const handleResize = () => {
         if (window.innerWidth !== width) {
@@ -1456,8 +1461,8 @@ const App = () => {
               
               {/* КАРУСЕЛЬ УПУЩЕННЫХ ВОЗМОЖНОСТЕЙ */}
               <div className="relative w-full h-[280px] flex items-center justify-center">
-                 {/* Только логика изображений из прошлого, но нам нужно интегрировать НОВЫЕ Истории Успеха ниже */}
-                 <div className="relative w-full h-[280px] flex items-center justify-center overflow-hidden">
+                  {/* Только логика изображений из прошлого, но нам нужно интегрировать НОВЫЕ Истории Успеха ниже */}
+                  <div className="relative w-full h-[280px] flex items-center justify-center overflow-hidden">
                     {/* Переопределяем логику карусели инлайн для ясности или просто используем компонент */}
                     {slides.map((SlideComponent, idx) => (
                        <div key={idx} className={`absolute inset-0 flex items-center justify-center transition-all duration-[1200ms] ease-in-out transform ${activeSlide === idx ? 'opacity-100 scale-100 blur-0' : 'opacity-0 scale-75 blur-3xl'}`}>
@@ -1467,7 +1472,7 @@ const App = () => {
                          </div>
                        </div>
                      ))}
-                 </div>
+                  </div>
               </div>
               
               <div className="text-center w-full px-6 flex justify-center mb-8">

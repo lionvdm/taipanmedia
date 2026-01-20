@@ -33,9 +33,9 @@ const GlobalStyles = () => (
         transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
     }
     .glass-card:hover {
-        background: rgba(0, 255, 157, 0.03);
-        border-color: rgba(0, 255, 157, 0.4);
-        box-shadow: 0 0 30px rgba(0, 255, 157, 0.15);
+        background: rgba(255, 255, 255, 0.03);
+        border-color: rgba(255, 255, 255, 0.2);
+        box-shadow: none;
     }
     .no-scrollbar::-webkit-scrollbar {
         display: none;
@@ -45,9 +45,9 @@ const GlobalStyles = () => (
         scrollbar-width: none;
     }
     @keyframes contourPulse {
-      0% { filter: drop-shadow(0 0 2px rgba(0, 255, 157, 0.4)); opacity: 0.8; }
-      50% { filter: drop-shadow(0 0 8px rgba(0, 255, 157, 0.8)); opacity: 1; }
-      100% { filter: drop-shadow(0 0 2px rgba(0, 255, 157, 0.4)); opacity: 0.8; }
+      0% { filter: drop-shadow(0 0 1px rgba(0, 255, 157, 0.3)); opacity: 0.8; }
+      50% { filter: drop-shadow(0 0 6px rgba(0, 255, 157, 0.6)); opacity: 1; }
+      100% { filter: drop-shadow(0 0 1px rgba(0, 255, 157, 0.3)); opacity: 0.8; }
     }
     @keyframes smokeIn {
       0% { opacity: 0; filter: blur(20px); transform: translateY(10px) scale(0.9); }
@@ -299,35 +299,30 @@ const ProfitCalculator = ({ onAction }) => {
       <InputField label="Средний чек" value={avgCheck} setValue={setAvgCheck} suffix="₸" />
       <InputField label="Средний % чистой прибыли" value={margin} setValue={setMargin} suffix="%" />
 
-      <div className="relative overflow-hidden bg-red-900/20 border border-red-500/50 p-4 rounded-2xl text-center group mt-2 shadow-[0_0_30px_rgba(220,38,38,0.2)] animate-[contourPulse_2s_ease-in-out_infinite]">
-        {/* --- СЕТКА И СКАНЛАЙН ЭФФЕКТ (RED VERSION) --- */}
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(220,38,38,0.1)_1px,transparent_1px),linear-gradient(90deg,rgba(220,38,38,0.1)_1px,transparent_1px)] bg-[size:15px_15px] pointer-events-none"></div>
-        <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-red-500/10 to-transparent animate-[scanLine_3s_linear_infinite]"></div>
+      <div className="relative overflow-hidden bg-[#00FF9D]/5 border border-[#00FF9D]/30 p-5 rounded-2xl text-center group mt-4 shadow-[0_0_30px_rgba(0,255,157,0.1)]">
+        {/* --- СЕТКА И СКАНЛАЙН ЭФФЕКТ (GREEN VERSION) --- */}
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,157,0.05)_1px,transparent_1px)] bg-[size:15px_15px] pointer-events-none"></div>
+        <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-[#00FF9D]/5 to-transparent animate-[scanLine_3s_linear_infinite]"></div>
         
         <div className="relative z-10">
-            <div className="flex flex-col items-center justify-center mb-1">
-               <div className="flex items-center gap-2">
-                   <span className="text-lg animate-pulse">🔥</span>
-                   <p className="text-[9px] text-red-500 font-black uppercase tracking-[0.2em] animate-pulse">ВЫ СЖИГАЕТЕ ЕЖЕМЕСЯЧНО</p>
-                   <span className="text-lg animate-pulse">🔥</span>
-               </div>
-               <p className="text-[8px] text-red-400/80 font-bold uppercase tracking-widest mt-0.5">
-                 УПУСКАЯ {missedConversion}% КОНВЕРСИИ
+            <div className="flex flex-col items-center justify-center mb-2">
+               <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-[0.1em] mb-1">ВАШ БИЗНЕС МОЖЕТ ПРИНОСИТЬ</p>
+               <p className="text-3xl sm:text-4xl font-black text-[#00FF9D] font-['Chakra_Petch'] drop-shadow-[0_0_15px_rgba(0,255,157,0.4)] mb-1">
+                 НА {profit.toLocaleString()} ₸
+               </p>
+               <p className="text-[12px] text-white font-bold uppercase tracking-[0.2em]">
+                 БОЛЬШЕ ЕЖЕМЕСЯЧНО
                </p>
             </div>
             
-            <p className="text-3xl font-black text-white font-['Chakra_Petch'] drop-shadow-[0_0_15px_rgba(220,38,38,0.8)] mb-2">
-              - {profit.toLocaleString()} ₸
-            </p>
-            
-            <div className="bg-red-500/10 border-t border-b border-red-500/20 py-2 mt-2 backdrop-blur-sm">
-               <p className="text-[9px] text-zinc-300 uppercase tracking-wider font-medium leading-relaxed">
-                 Это <span className="text-red-400 font-black text-sm">{sales} покупателей</span>, которые <br/>унесли деньги вашим конкурентам
+            <div className="bg-[#00FF9D]/5 border-t border-b border-[#00FF9D]/10 py-3 mt-3 backdrop-blur-sm">
+               <p className="text-[10px] text-zinc-300 uppercase tracking-wider font-medium leading-relaxed">
+                 ЭТО <span className="text-[#00FF9D] font-black">{sales} ПОКУПАТЕЛЕЙ</span>, КОТОРЫЕ<br/>ГОТОВЫ ПЛАТИТЬ ВАМ УЖЕ СЕЙЧАС
                </p>
             </div>
             
-            <p className="text-[8px] text-zinc-500 mt-2 italic">
-              *Эти деньги могли быть на вашей карте прямо сейчас
+            <p className="text-[8px] text-zinc-500 mt-3 italic">
+               *Мы знаем как увеличить конверсию от 20% и выше
             </p>
         </div>
       </div>
@@ -336,7 +331,7 @@ const ProfitCalculator = ({ onAction }) => {
         onClick={onAction} 
         className="w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-3 rounded-xl shadow-[0_0_20px_rgba(0,255,157,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs flex items-center justify-center gap-2 animate-pulse mt-4"
       >
-        ПЛАН ВОЗВРАТА ОТ {returnAmount.toLocaleString()} ₸ В МЕСЯЦ <ArrowRight className="w-4 h-4" />
+        ПОЛУЧИТЬ СТРАТЕГИЮ ОТ TAIPAN GROUP
       </button>
     </div>
   );
@@ -919,7 +914,7 @@ const App = () => {
     console.log("Taipan Media App Initialized");
   }, []);
 
-  const [currentView, setCurrentView] = useState('main'); // 'main', 'education', 'faq', 'program', 'shop', 'calculator'
+  const [currentView, setCurrentView] = useState('main'); // 'main', 'education', 'faq', 'program', 'shop', 'calculator', 'strategy'
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalType, setModalType] = useState('');
   const [showToast, setShowToast] = useState(false);
@@ -1238,9 +1233,74 @@ const App = () => {
                 </div>
 
                 <div className="w-full glass-card p-4 rounded-3xl border border-[#00FF9D]/20 relative overflow-hidden">
-                    <ProfitCalculator onAction={() => openModal('Order Shop')} />
+                    <ProfitCalculator onAction={() => setCurrentView('strategy')} />
                 </div>
             </div>
+          </div>
+        )}
+
+        {currentView === 'strategy' && (
+          <div className="animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col h-full items-center w-full">
+             <button onClick={() => setCurrentView('calculator')} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-4 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
+             
+             <div className="flex-grow flex flex-col items-center w-full space-y-8 overflow-y-auto pb-20 no-scrollbar">
+                <div className="text-center px-4 w-full">
+                    <h2 className="text-2xl sm:text-3xl font-black tracking-tighter uppercase mb-1 font-['Chakra_Petch'] leading-none whitespace-nowrap">
+                    КЕЙСЫ <span className="text-[#00FF9D]">ПАРТНЕРОВ</span>
+                    </h2>
+                    <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] mr-[-0.3em] font-bold">Реальные магазины на платформе</p>
+                </div>
+
+                {/* Case 1 */}
+                <div className="w-full mb-4">
+                    <SmartImage 
+                      src="https://i.ibb.co.com/gMTG4QXt/5438294939344244553.jpg" 
+                      className="rounded-[32px] w-full h-auto shadow-[0_10px_40px_rgba(0,0,0,0.5)] border border-zinc-800" 
+                      alt="Fashion Store Case"
+                    />
+                    <div className="mt-4 flex justify-between items-end px-2">
+                        <div>
+                            <p className="text-sm font-bold text-white uppercase tracking-wider mb-1">Магазин Одежды</p>
+                            <p className="text-[10px] text-zinc-500">Ниша: Fashion & Style</p>
+                        </div>
+                        <div className="text-right">
+                            <p className="text-[10px] text-zinc-500 uppercase tracking-widest mb-1">Конверсия</p>
+                            <p className="text-lg font-black text-[#00FF9D] font-['Chakra_Petch']">4.8%</p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Case 2 */}
+                <div className="w-full mb-4">
+                    <SmartImage 
+                      src="https://i.ibb.co.com/ks9Sz9zz/5438294939344244554.jpg" 
+                      className="rounded-[32px] w-full h-auto shadow-[0_10px_40px_rgba(0,0,0,0.5)] border border-zinc-800" 
+                      alt="Electronics Store Case"
+                    />
+                    <div className="mt-4 flex justify-between items-end px-2">
+                        <div>
+                            <p className="text-sm font-bold text-white uppercase tracking-wider mb-1">Магазин Гаджетов</p>
+                            <p className="text-[10px] text-zinc-500">Ниша: Electronics</p>
+                        </div>
+                        <div className="text-right">
+                            <p className="text-[10px] text-zinc-500 uppercase tracking-widest mb-1">Конверсия</p>
+                            <p className="text-lg font-black text-[#00FF9D] font-['Chakra_Petch']">3.2%</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div className="w-full pt-4 pb-8">
+                    <button 
+                        onClick={() => openModal('Strategy Request')} 
+                        className="w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-4 rounded-xl shadow-[0_0_20px_rgba(0,255,157,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs flex items-center justify-center gap-2 animate-pulse"
+                    >
+                        ХОЧУ ТАКОЙ ЖЕ МАГАЗИН
+                    </button>
+                    <p className="text-center text-[9px] text-zinc-600 mt-3">
+                        Оставьте заявку для бесплатной консультации
+                    </p>
+                </div>
+             </div>
           </div>
         )}
 

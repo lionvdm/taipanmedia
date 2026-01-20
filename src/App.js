@@ -347,7 +347,7 @@ const HackerProof = () => {
       >
         <SmartImage 
           src="https://i.ibb.co.com/FdhqGvD/2025-11-09-113228-fotor-20251109143545.jpg" 
-          className="w-full object-cover opacity-90 filter grayscale contrast-[1.1] brightness-[0.8] sepia-[1] hue-rotate-[50deg] saturate-[2.5]" 
+          className="w-full object-cover" 
           alt="Encrypted Proof" 
         />
         {/* Подсказка увеличения */}
@@ -1518,7 +1518,7 @@ const App = () => {
                           <p className="text-[10px] text-[#00FF9D] font-bold uppercase tracking-wider">{item.subtitle}</p>
                         </div>
                       </div>
-                      {!item.locked && <ArrowRight className="w-4 h-4 text-zinc-600 group-hover:text-[#00FF9D] transition-colors" />}
+                      {/* Стрелка удалена отсюда */}
                     </div>
                     
                     <div className="pl-[3.5rem] w-full">
@@ -1535,22 +1535,16 @@ const App = () => {
             <div className="mt-8 w-full glass-card p-6 rounded-3xl text-center border border-[#00FF9D]/20">
               <p className="text-[10px] text-zinc-400 uppercase tracking-widest mb-2">Стоимость обучения</p>
               <div className="text-2xl font-black text-white mb-4 font-['Chakra_Petch']">50 000 ₸ <span className="text-zinc-600 text-lg line-through decoration-red-600 decoration-2 ml-2">80 000 ₸</span></div>
-              <a 
-                href="https://qpay-payform.qiwi.kz/form/invoice?invoiceUid=2bb2b799-2112-4f53-bcd7-c4587581392d"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-4 rounded-xl shadow-[0_0_20px_rgba(0,255,157,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs mb-3"
+              <p className="text-[10px] text-zinc-500 uppercase tracking-widest mb-6">Длительность обучения (14 дней)</p>
+              
+              {/* Removed Purchase Button */}
+
+              <button
+                onClick={() => window.open('https://t.me/taipanmedia', '_blank')}
+                className="block w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-4 rounded-xl shadow-[0_0_20px_rgba(0,255,157,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs"
               >
-                Приобрести обучение
-              </a>
-              <a 
-                href="https://t.me/taipanmedia"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block w-full bg-transparent border border-[#00FF9D]/50 text-[#00FF9D] font-black uppercase tracking-widest py-4 rounded-xl hover:bg-[#00FF9D]/10 hover:scale-[1.02] active:scale-[0.98] transition-all text-xs"
-              >
-                Переключиться на менеджера
-              </a>
+                Получить подробную консультацию
+              </button>
             </div>
           </div>
         )}

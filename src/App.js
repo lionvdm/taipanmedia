@@ -271,33 +271,28 @@ const InputField = ({ label, value, setValue, suffix = "" }) => (
 );
 
 // --- Компонент Калькулятора Прибыли (Обновленный: Триггер-версия с кнопкой) ---
-const ProfitCalculator = ({ onAction }) => {
-  const [traffic, setTraffic] = useState(0); // Трафик в месяц
-  const [conversion, setConversion] = useState(0); // Конверсия в %
-  const [avgCheck, setAvgCheck] = useState(0); // Средний чек
-  const [margin, setMargin] = useState(0); // Маржинальность (чистая прибыль) в %
-
+const ProfitCalculator = ({ onAction, data, setData }) => {
   // Логика расчета:
   // Продажи = Трафик * (Конверсия / 100)
   // Выручка = Продажи * Средний чек
   // Чистая прибыль = Выручка * (Маржа / 100)
   
-  const sales = Math.floor(traffic * (conversion / 100));
-  const revenue = sales * avgCheck;
-  const profit = Math.floor(revenue * (margin / 100));
+  const sales = Math.floor(data.traffic * (data.conversion / 100));
+  const revenue = sales * data.avgCheck;
+  const profit = Math.floor(revenue * (data.margin / 100));
   
   // Сумма для возврата (20% от упущенной прибыли)
   const returnAmount = Math.floor(profit * 0.2);
 
   // Упущенная конверсия (100 - указанная)
-  const missedConversion = 100 - conversion;
+  const missedConversion = 100 - data.conversion;
 
   return (
     <div className="w-full animate-in slide-in-from-bottom duration-500">
-      <InputField label="Сколько людей в месяц?" value={traffic} setValue={setTraffic} />
-      <InputField label="Какая конверсия?" value={conversion} setValue={setConversion} suffix="%" />
-      <InputField label="Средний чек" value={avgCheck} setValue={setAvgCheck} suffix="₸" />
-      <InputField label="Средний % чистой прибыли" value={margin} setValue={setMargin} suffix="%" />
+      <InputField label="Сколько людей в месяц?" value={data.traffic} setValue={(v) => setData({...data, traffic: v})} />
+      <InputField label="Какая конверсия?" value={data.conversion} setValue={(v) => setData({...data, conversion: v})} suffix="%" />
+      <InputField label="Средний чек" value={data.avgCheck} setValue={(v) => setData({...data, avgCheck: v})} suffix="₸" />
+      <InputField label="Средний % чистой прибыли" value={data.margin} setValue={(v) => setData({...data, margin: v})} suffix="%" />
 
       <div className="relative overflow-hidden bg-[#00FF9D]/5 border border-[#00FF9D]/30 p-5 rounded-2xl text-center group mt-4 shadow-[0_0_30px_rgba(0,255,157,0.1)]">
         {/* --- СЕТКА И СКАНЛАЙН ЭФФЕКТ (GREEN VERSION) --- */}
@@ -908,17 +903,110 @@ const PartnersCredits = () => {
   );
 };
 
+// --- КОМПОНЕНТ РАСЧЕТА ROI (Новый) ---
+const RoiView = ({ profit, onBack, onAction }) => {
+  const investment = 100000;
+  // User logic: We bring *from* 20% of the lost conversion/profit.
+  const conservativeProfit = Math.floor(profit * 0.2); 
+  
+  // Calculate percentage of investment returned in the first month (always positive or 0)
+  const returnPercentage = Math.round((conservativeProfit / investment) * 100);
+  
+  // Рассчитываем срок окупаемости в днях (если прибыль > 0)
+  // Прибыль указана в месяц, значит в день = profit / 30
+  // Дней до окупаемости = investment / (profit / 30)
+  const daysToRecoup = conservativeProfit > 0 ? Math.ceil(investment / (conservativeProfit / 30)) : Infinity;
+  const isProfitable = returnPercentage > 0;
+
+  const handleConsultation = () => {
+    window.open('https://t.me/taipanmedia', '_blank');
+  };
+
+  return (
+    <div className="animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col h-full items-center w-full">
+        <button onClick={onBack} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-4 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
+        
+        <div className="flex-grow flex flex-col items-center w-full space-y-6">
+            <div className="text-center px-4 w-full">
+                <h2 className="text-2xl sm:text-3xl font-black tracking-tighter uppercase mb-1 font-['Chakra_Petch'] leading-none whitespace-nowrap">
+                РАСЧЁТ <span className="text-[#00FF9D]">ОКУПАЕМОСТИ</span>
+                </h2>
+                <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] mr-[-0.3em] font-bold">Эффективность инвестиций</p>
+            </div>
+
+            {/* Карточка стоимости */}
+            <div className="w-full glass-card p-4 rounded-2xl flex justify-between items-center border border-zinc-800">
+                <span className="text-xs text-zinc-400 font-bold uppercase tracking-wider">Стоимость разработки</span>
+                <span className="text-sm font-black text-white font-['Chakra_Petch']">100 000 ₸</span>
+            </div>
+
+             {/* Карточка дохода (из калькулятора) */}
+             <div className="w-full glass-card p-4 rounded-2xl flex justify-between items-center border border-[#00FF9D]/20 bg-[#00FF9D]/5">
+                <span className="text-xs text-zinc-400 font-bold uppercase tracking-wider">Потенциальный возврат</span>
+                <span className="text-sm font-black text-[#00FF9D] font-['Chakra_Petch']">{conservativeProfit.toLocaleString()} ₸/мес</span>
+            </div>
+
+            {/* Главный блок Возврата Вложений */}
+            <div className="relative w-full overflow-hidden bg-gradient-to-br from-zinc-900 to-black border border-zinc-800 p-6 rounded-3xl text-center group">
+                <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none"></div>
+                
+                <p className="text-[10px] text-zinc-400 uppercase tracking-widest mb-3 relative z-10 leading-relaxed">
+                    При указанных вами показателях,<br/>в первый месяц вы вернёте
+                </p>
+                <div className={`text-5xl font-black font-['Chakra_Petch'] mb-3 relative z-10 ${isProfitable ? 'text-[#00FF9D]' : 'text-zinc-500'}`}>
+                    {returnPercentage}% <span className="text-sm font-bold text-zinc-500 uppercase tracking-wide">вложений</span>
+                </div>
+                
+                {isProfitable ? (
+                   <div className="inline-block bg-[#00FF9D]/10 border border-[#00FF9D]/30 px-3 py-1 rounded-full relative z-10">
+                      <p className="text-[10px] text-[#00FF9D] font-bold uppercase tracking-wider">
+                        Полная окупаемость: ~{daysToRecoup} {daysToRecoup === 1 ? 'день' : (daysToRecoup > 1 && daysToRecoup < 5) ? 'дня' : 'дней'}
+                      </p>
+                   </div>
+                ) : (
+                   <p className="text-[10px] text-zinc-600 relative z-10">Заполните калькулятор для расчета</p>
+                )}
+            </div>
+
+            <div className="w-full pt-4">
+                <button 
+                    onClick={handleConsultation} 
+                    className="w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-4 rounded-xl shadow-[0_0_20px_rgba(0,255,157,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs flex items-center justify-center gap-2 animate-pulse"
+                >
+                    ПОЛУЧИТЬ КОНСУЛЬТАЦИЮ
+                </button>
+            </div>
+        </div>
+    </div>
+  );
+};
+
 const App = () => {
   // Force system refresh
   useEffect(() => {
     console.log("Taipan Media App Initialized");
   }, []);
 
-  const [currentView, setCurrentView] = useState('main'); // 'main', 'education', 'faq', 'program', 'shop', 'calculator', 'strategy'
+  const [currentView, setCurrentView] = useState('main'); // 'main', 'education', 'faq', 'program', 'shop', 'calculator', 'strategy', 'roi'
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalType, setModalType] = useState('');
   const [showToast, setShowToast] = useState(false);
   const [activeSlide, setActiveSlide] = useState(0);
+  
+  // Состояние калькулятора (поднято вверх)
+  const [calcData, setCalcData] = useState({
+    traffic: 0,
+    conversion: 0,
+    avgCheck: 0,
+    margin: 0
+  });
+
+  // Вспомогательный расчет прибыли для передачи в RoiView
+  const calculateProfit = () => {
+      const sales = Math.floor(calcData.traffic * (calcData.conversion / 100));
+      const revenue = sales * calcData.avgCheck;
+      return Math.floor(revenue * (calcData.margin / 100));
+  };
    
   // Состояние для интро магазина
   const [shopIntroFinished, setShopIntroFinished] = useState(false);
@@ -1233,7 +1321,7 @@ const App = () => {
                 </div>
 
                 <div className="w-full glass-card p-4 rounded-3xl border border-[#00FF9D]/20 relative overflow-hidden">
-                    <ProfitCalculator onAction={() => setCurrentView('strategy')} />
+                    <ProfitCalculator data={calcData} setData={setCalcData} onAction={() => setCurrentView('strategy')} />
                 </div>
             </div>
           </div>
@@ -1243,7 +1331,7 @@ const App = () => {
           <div className="animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col h-full items-center w-full">
              <button onClick={() => setCurrentView('calculator')} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-4 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
              
-             <div className="flex-grow flex flex-col items-center w-full space-y-8 overflow-y-auto pb-20 no-scrollbar">
+             <div className="flex-grow flex flex-col items-center w-full space-y-6 overflow-y-auto pb-20 no-scrollbar">
                 <div className="text-center px-4 w-full">
                     <h2 className="text-2xl sm:text-3xl font-black tracking-tighter uppercase mb-1 font-['Chakra_Petch'] leading-none whitespace-nowrap">
                     КЕЙСЫ <span className="text-[#00FF9D]">ПАРТНЕРОВ</span>
@@ -1252,49 +1340,45 @@ const App = () => {
                 </div>
 
                 {/* Case 1 */}
-                <div className="w-full mb-4">
-                    <SmartImage 
-                      src="https://i.ibb.co.com/gMTG4QXt/5438294939344244553.jpg" 
-                      className="rounded-[32px] w-full h-auto shadow-[0_10px_40px_rgba(0,0,0,0.5)] border border-zinc-800" 
-                      alt="Fashion Store Case"
-                    />
-                    <div className="mt-4 flex justify-between items-end px-2">
-                        <div>
-                            <p className="text-sm font-bold text-white uppercase tracking-wider mb-1">Магазин Одежды</p>
-                            <p className="text-[10px] text-zinc-500">Ниша: Fashion & Style</p>
-                        </div>
-                        <div className="text-right">
-                            <p className="text-[10px] text-zinc-500 uppercase tracking-widest mb-1">Конверсия</p>
-                            <p className="text-lg font-black text-[#00FF9D] font-['Chakra_Petch']">4.8%</p>
-                        </div>
+                <div className="w-full mb-4 flex flex-col items-center">
+                    <div className="w-2/3 max-w-[200px]"> {/* Reduced image size */}
+                        <SmartImage 
+                          src="https://i.ibb.co.com/gMTG4QXt/5438294939344244553.jpg" 
+                          className="rounded-[20px] w-full h-auto object-contain" 
+                          alt="Fashion Store Case"
+                        />
+                    </div>
+                    <div className="w-full mt-4 px-2 text-center">
+                        <h3 className="text-sm font-black text-white uppercase tracking-wider mb-2">КЕЙС «КАСТРЮЛЬКА ЕДЫ»</h3>
+                        <p className="text-[10px] text-zinc-400 leading-relaxed">
+                            Пока другие тратят бюджет на рекламу, мы включили продажи по расписанию. Пуш в 18:00 на пустой желудок принес <span className="text-[#00FF9D] font-bold">+43% к чекам</span>. Мы превратили хаотичные заказы в предсказуемый алгоритм. Taipan Media заставляет технологии работать на ваших инстинктах.
+                        </p>
                     </div>
                 </div>
 
                 {/* Case 2 */}
-                <div className="w-full mb-4">
-                    <SmartImage 
-                      src="https://i.ibb.co.com/ks9Sz9zz/5438294939344244554.jpg" 
-                      className="rounded-[32px] w-full h-auto shadow-[0_10px_40px_rgba(0,0,0,0.5)] border border-zinc-800" 
-                      alt="Electronics Store Case"
-                    />
-                    <div className="mt-4 flex justify-between items-end px-2">
-                        <div>
-                            <p className="text-sm font-bold text-white uppercase tracking-wider mb-1">Магазин Гаджетов</p>
-                            <p className="text-[10px] text-zinc-500">Ниша: Electronics</p>
-                        </div>
-                        <div className="text-right">
-                            <p className="text-[10px] text-zinc-500 uppercase tracking-widest mb-1">Конверсия</p>
-                            <p className="text-lg font-black text-[#00FF9D] font-['Chakra_Petch']">3.2%</p>
-                        </div>
+                <div className="w-full mb-4 flex flex-col items-center">
+                    <div className="w-2/3 max-w-[200px]"> {/* Reduced image size */}
+                        <SmartImage 
+                          src="https://i.ibb.co.com/ks9Sz9zz/5438294939344244554.jpg" 
+                          className="rounded-[20px] w-full h-auto object-contain" 
+                          alt="Romantic Store Case"
+                        />
+                    </div>
+                    <div className="w-full mt-4 px-2 text-center">
+                        <h3 className="text-sm font-black text-white uppercase tracking-wider mb-2">КЕЙС «ROMANTIC»</h3>
+                        <p className="text-[10px] text-zinc-400 leading-relaxed">
+                            Мы внедрили ИИ-алгоритмы, которые анализируют поведение ваших покупателей и допродают товар в момент пикового интереса, показывая, что с этим товаром обычно покупают другие. Результат: <span className="text-[#00FF9D] font-bold">+57% к чеку</span> за счет маржинальных допов. Мы не ждем желания клиента — Taipan Media создает его через алгоритмы.
+                        </p>
                     </div>
                 </div>
                 
                 <div className="w-full pt-4 pb-8">
                     <button 
-                        onClick={() => openModal('Strategy Request')} 
+                        onClick={() => setCurrentView('roi')} 
                         className="w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-4 rounded-xl shadow-[0_0_20px_rgba(0,255,157,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs flex items-center justify-center gap-2 animate-pulse"
                     >
-                        ХОЧУ ТАКОЙ ЖЕ МАГАЗИН
+                        УЗНАТЬ СТОИМОСТЬ И СРОКИ
                     </button>
                     <p className="text-center text-[9px] text-zinc-600 mt-3">
                         Оставьте заявку для бесплатной консультации
@@ -1302,6 +1386,10 @@ const App = () => {
                 </div>
              </div>
           </div>
+        )}
+
+        {currentView === 'roi' && (
+           <RoiView profit={calculateProfit()} onBack={() => setCurrentView('strategy')} onAction={() => openModal('Start Project')} />
         )}
 
         {currentView === 'education' && (
@@ -1456,7 +1544,7 @@ const App = () => {
                 Приобрести обучение
               </a>
               <a 
-                href="https://t.me/taipan_manager"
+                href="https://t.me/taipanmedia"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="block w-full bg-transparent border border-[#00FF9D]/50 text-[#00FF9D] font-black uppercase tracking-widest py-4 rounded-xl hover:bg-[#00FF9D]/10 hover:scale-[1.02] active:scale-[0.98] transition-all text-xs"
@@ -1514,7 +1602,7 @@ const App = () => {
             {/* Показать калькулятор, если активирован */}
             {activeFaq.isCalc && showCalculator && (
               <div className="mt-6 border-t border-[#00FF9D]/20 pt-6">
-                <ProfitCalculator />
+                <ProfitCalculator data={calcData} setData={setCalcData} onAction={() => setCurrentView('strategy')} />
               </div>
             )}
 

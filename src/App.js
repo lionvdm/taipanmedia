@@ -13,22 +13,28 @@ const GlobalStyles = () => (
     input[type=number] { -moz-appearance: textfield; }
 
     .glass-card {
-        background: rgba(20, 20, 20, 0.4);
+        background: rgba(20, 20, 20, 0.6);
         backdrop-filter: blur(12px);
         -webkit-backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.05);
-        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-        border-top: 1px solid rgba(255, 255, 255, 0.1);
-        border-left: 1px solid rgba(255, 255, 255, 0.1);
-        transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+        border: 1px solid rgba(0, 255, 157, 0.1);
+        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
+        border-top: 1px solid rgba(0, 255, 157, 0.2);
+        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
     }
     .glass-card:hover {
-        background: rgba(255, 255, 255, 0.03);
-        border-color: rgba(255, 255, 255, 0.2);
-        box-shadow: none;
+        background: rgba(0, 255, 157, 0.05);
+        border-color: rgba(0, 255, 157, 0.4);
+        box-shadow: 0 0 15px rgba(0, 255, 157, 0.1);
     }
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+    /* Tactical Grid Background */
+    .tactical-grid {
+        background-image: linear-gradient(rgba(0, 255, 157, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 255, 157, 0.05) 1px, transparent 1px);
+        background-size: 20px 20px;
+    }
 
     /* Animations */
     @keyframes contourPulse {
@@ -142,6 +148,12 @@ const X = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0
 const Zap = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></svg>);
 const Search = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>);
 const Users = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>);
+const Shield = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>);
+const Bot = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>);
+const Target = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>);
+const Crosshair = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><line x1="22" y1="12" x2="18" y2="12"/><line x1="6" y1="12" x2="2" y2="12"/><line x1="12" y1="6" x2="12" y2="2"/><line x1="12" y1="22" x2="12" y2="18"/></svg>);
+const Code = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>);
+
 const TelegramLogoMain = ({ className }) => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" stroke="none" className={className}>
     <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.446 1.394c-.16.16-.295.293-.605.293l.214-3.054 5.56-5.022c.24-.213-.054-.334-.373-.121l-6.869 4.326-2.962-.924c-.64-.203-.658-.64.135-.954l11.566-4.458c.538-.196 1.006.128.832.942z"/>
@@ -292,7 +304,7 @@ const BaneIntro = ({ onComplete }) => {
                 </div>
                 
                 <div className="absolute bottom-[-100px] left-0 right-0 text-center">
-                    <p className="text-[10px] text-zinc-700 uppercase tracking-[0.5em] animate-pulse">SOUND ON</p>
+                    <p className="text-[10px] text-zinc-700 uppercase tracking-[0.5em] animate-pulse">Включите звук</p>
                 </div>
             </div>
         </div>
@@ -961,54 +973,106 @@ const App = () => {
             <button onClick={() => handleBackClick('main')} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-6 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
             <div className="flex-grow flex flex-col items-center w-full space-y-6">
                 <div className="text-center px-4 w-full mb-4">
-                    <h2 className="text-4xl font-black tracking-tighter uppercase mb-2 font-['Chakra_Petch'] whitespace-nowrap">TAIPAN <span className="text-[#00FF9D]">SQUAD</span></h2>
-                    <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] mr-[-0.3em] font-bold">Архитекторы цифровой реальности</p>
+                    <h2 className="text-4xl font-black tracking-tighter uppercase mb-2 font-['Chakra_Petch'] whitespace-nowrap">STRATEGIC <span className="text-[#00FF9D]">PLAN</span></h2>
+                    <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] mr-[-0.3em] font-bold">PROTOCOL: TAIPAN</p>
                 </div>
                 
-                <div className="relative w-full glass-card p-6 rounded-3xl border border-[#00FF9D]/20 overflow-hidden">
-                    <div className="absolute top-0 right-0 p-4 opacity-20"><Users className="w-20 h-20 text-[#00FF9D]" /></div>
-                    <p className="text-sm font-bold text-white mb-4 relative z-10 leading-relaxed">
-                        <span className="text-[#00FF9D]">Taipan Team.</span> 10 лет в продажах — в каждой строке нашего кода.
+                <div className="relative w-full glass-card p-6 rounded-sm border border-[#00FF9D]/30 overflow-hidden bg-black/40 tactical-grid">
+                    <div className="absolute top-0 right-0 p-2 opacity-30"><Code className="w-16 h-16 text-[#00FF9D]" /></div>
+                    <div className="absolute bottom-0 left-0 p-1 opacity-50 text-[8px] font-mono text-[#00FF9D]">SYS.INIT_SEQ_2026</div>
+
+                    <p className="text-sm font-bold text-white mb-4 relative z-10 leading-relaxed font-mono uppercase border-l-2 border-[#00FF9D] pl-3">
+                        «Личности не имеют значения. Значение имеет только результат».
                     </p>
-                    <p className="text-[11px] text-zinc-400 leading-relaxed relative z-10">
-                        Мы не просто разработчики. Мы — продавцы, которые сели за код, чтобы создать идеальный инструмент. Мы проектируем торговые экосистемы в Telegram, которые заменяют громоздкие сайты и целые отделы маркетинга.
-                    </p>
-                     <p className="text-[11px] text-zinc-400 leading-relaxed relative z-10 mt-2">
-                        Пока другие воюют за таргет, наши системы захватывают продажи.
+                    
+                    <p className="text-[10px] text-zinc-400 leading-relaxed relative z-10 font-mono">
+                        Наш план: замена неэффективных отделов маркетинга автономными системами в Telegram.
                     </p>
                 </div>
 
-                <div className="grid grid-cols-3 gap-2 w-full">
-                    <div className="glass-card p-3 rounded-2xl flex flex-col items-center justify-center text-center">
-                        <span className="text-2xl font-black text-[#00FF9D] font-['Chakra_Petch']">4+</span>
-                        <span className="text-[8px] text-zinc-500 uppercase font-bold tracking-wider mt-1">Года на рынке</span>
+                <div className="grid grid-cols-1 gap-3 w-full">
+                    {/* Block 1 */}
+                    <div className="glass-card p-4 rounded-sm border border-zinc-800 flex items-start gap-4 hover:border-[#00FF9D]/40 transition-colors group">
+                        <div className="mt-1"><Shield className="w-6 h-6 text-[#00FF9D] opacity-80 group-hover:opacity-100 group-hover:drop-shadow-[0_0_8px_#00FF9D] transition-all" /></div>
+                        <div>
+                             <div className="flex items-baseline gap-2 mb-1">
+                                 <span className="text-xs font-bold text-white font-mono uppercase tracking-wider">РАЗВЕДКА</span>
+                                 <span className="text-[10px] text-[#00FF9D] font-mono">[10 ЛЕТ]</span>
+                             </div>
+                             <p className="text-[10px] text-zinc-400 leading-relaxed font-mono">10 лет в продажах позволяют нам видеть слабые места конкурентов раньше, чем они сами их заметят.</p>
+                        </div>
                     </div>
-                     <div className="glass-card p-3 rounded-2xl flex flex-col items-center justify-center text-center">
-                        <span className="text-2xl font-black text-white font-['Chakra_Petch']">150+</span>
-                        <span className="text-[8px] text-zinc-500 uppercase font-bold tracking-wider mt-1">Проектов</span>
+                    {/* Block 2 */}
+                     <div className="glass-card p-4 rounded-sm border border-zinc-800 flex items-start gap-4 hover:border-[#00FF9D]/40 transition-colors group">
+                        <div className="mt-1"><Zap className="w-6 h-6 text-[#00FF9D] opacity-80 group-hover:opacity-100 group-hover:drop-shadow-[0_0_8px_#00FF9D] transition-all" /></div>
+                        <div>
+                             <div className="flex items-baseline gap-2 mb-1">
+                                 <span className="text-xs font-bold text-white font-mono uppercase tracking-wider">УДАР</span>
+                                 <span className="text-[10px] text-[#00FF9D] font-mono">[7 ДНЕЙ]</span>
+                             </div>
+                             <p className="text-[10px] text-zinc-400 leading-relaxed font-mono">Мы не ведем переговоры месяцами. Развертывание боевой торговой системы на базе botmag занимает неделю.</p>
+                        </div>
                     </div>
-                     <div className="glass-card p-3 rounded-2xl flex flex-col items-center justify-center text-center">
-                        <span className="text-xl font-black text-[#00FF9D] font-['Chakra_Petch']">$5M+</span>
-                        <span className="text-[8px] text-zinc-500 uppercase font-bold tracking-wider mt-1">Прибыль клиентов</span>
+                    {/* Block 3 */}
+                    <div className="glass-card p-4 rounded-sm border border-zinc-800 flex items-start gap-4 hover:border-[#00FF9D]/40 transition-colors group">
+                        <div className="mt-1"><Bot className="w-6 h-6 text-[#00FF9D] opacity-80 group-hover:opacity-100 group-hover:drop-shadow-[0_0_8px_#00FF9D] transition-all" /></div>
+                        <div>
+                             <div className="flex items-baseline gap-2 mb-1">
+                                 <span className="text-xs font-bold text-white font-mono uppercase tracking-wider">КОНТРОЛЬ</span>
+                                 <span className="text-[10px] text-[#00FF9D] font-mono">[90%]</span>
+                             </div>
+                             <p className="text-[10px] text-zinc-400 leading-relaxed font-mono">Мы исключаем человеческий фактор. Система продает сама, пока вы считаете прибыль.</p>
+                        </div>
                     </div>
                 </div>
 
-                <div className="w-full space-y-3">
-                    <div className="glass-card p-4 rounded-2xl flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-full bg-zinc-900 flex items-center justify-center text-[#00FF9D] font-black font-mono border border-[#00FF9D]/20">01</div>
-                        <div><h4 className="text-xs font-bold text-white uppercase tracking-wider mb-1">СКОРОСТЬ</h4><p className="text-[10px] text-zinc-500">Запуск проектов за 24 часа. Деньги любят скорость.</p></div>
-                    </div>
-                    <div className="glass-card p-4 rounded-2xl flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-full bg-zinc-900 flex items-center justify-center text-[#00FF9D] font-black font-mono border border-[#00FF9D]/20">02</div>
-                        <div><h4 className="text-xs font-bold text-white uppercase tracking-wider mb-1">АНОНИМНОСТЬ</h4><p className="text-[10px] text-zinc-500">Ваши данные и доходы под надежной защитой.</p></div>
-                    </div>
-                    <div className="glass-card p-4 rounded-2xl flex items-center gap-4">
-                         <div className="w-10 h-10 rounded-full bg-zinc-900 flex items-center justify-center text-[#00FF9D] font-black font-mono border border-[#00FF9D]/20">03</div>
-                        <div><h4 className="text-xs font-bold text-white uppercase tracking-wider mb-1">РЕЗУЛЬТАТ</h4><p className="text-[10px] text-zinc-500">Мы не продаем процессы. Мы продаем готовый бизнес.</p></div>
+                <div className="w-full space-y-4 pt-4 border-t border-zinc-800">
+                    <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] font-bold mb-2 pl-2">СТАДИИ ВНЕДРЕНИЯ</p>
+                    
+                    <div className="relative pl-6 border-l border-[#00FF9D]/30 ml-2 space-y-6">
+                        {/* Stage 1 */}
+                        <div className="relative">
+                            <div className="absolute -left-[29px] top-0 w-3 h-3 bg-[#050505] border border-[#00FF9D] rounded-full"></div>
+                            <h4 className="text-xs font-bold text-white uppercase tracking-wider mb-1 font-mono">01 // АНАЛИЗ ЦЕЛИ</h4>
+                            <p className="text-[10px] text-zinc-500 font-mono">Детальный разбор вашего продукта и аудитории.</p>
+                        </div>
+                         {/* Stage 2 */}
+                        <div className="relative">
+                            <div className="absolute -left-[29px] top-0 w-3 h-3 bg-[#050505] border border-[#00FF9D] rounded-full"></div>
+                            <h4 className="text-xs font-bold text-white uppercase tracking-wider mb-1 font-mono">02 // СБОРКА АРСЕНАЛА</h4>
+                            <p className="text-[10px] text-zinc-500 font-mono">Проектирование Mini App с учетом психологии захвата внимания покупателя.</p>
+                        </div>
+                         {/* Stage 3 */}
+                        <div className="relative">
+                            <div className="absolute -left-[29px] top-0 w-3 h-3 bg-[#00FF9D] rounded-full shadow-[0_0_10px_#00FF9D]"></div>
+                            <h4 className="text-xs font-bold text-[#00FF9D] uppercase tracking-wider mb-1 font-mono">03 // ЗАПУСК</h4>
+                            <p className="text-[10px] text-zinc-400 font-mono">Активация системы и начало приема оплат.</p>
+                        </div>
                     </div>
                 </div>
 
-                 <button onClick={() => window.open('https://t.me/taipanmedia', '_blank')} className="w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-4 rounded-xl shadow-[0_0_20px_rgba(0,255,157,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs mt-auto">Связаться с командой</button>
+                <div className="w-full pt-4">
+                     <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] font-bold mb-3 pl-2">УСПЕШНЫЕ ОПЕРАЦИИ</p>
+                     <div className="grid grid-cols-2 gap-3">
+                         <div className="glass-card p-3 rounded-sm border border-zinc-800 flex flex-col items-center justify-center h-24 opacity-80 hover:opacity-100 hover:border-[#00FF9D]/30 transition-all cursor-pointer" onClick={() => window.open('https://t.me/taipanmedia', '_blank')}>
+                             <SmartImage src="https://i.ibb.co.com/ks9Sz9zz/5438294939344244554.jpg" className="w-full h-full object-cover opacity-60 hover:opacity-100 transition-opacity rounded-sm" alt="ROMANTIC Case" />
+                             <div className="absolute inset-0 flex items-center justify-center bg-black/60 hover:bg-black/40 transition-colors">
+                                 <span className="text-[10px] font-bold text-white font-mono tracking-wider">ROMANTIC</span>
+                             </div>
+                         </div>
+                         <div className="glass-card p-3 rounded-sm border border-zinc-800 flex flex-col items-center justify-center h-24 opacity-80 hover:opacity-100 hover:border-[#00FF9D]/30 transition-all cursor-pointer" onClick={() => window.open('https://t.me/taipanmedia', '_blank')}>
+                             <SmartImage src="https://i.ibb.co.com/gMTG4QXt/5438294939344244553.jpg" className="w-full h-full object-cover opacity-60 hover:opacity-100 transition-opacity rounded-sm" alt="FOOD Case" />
+                             <div className="absolute inset-0 flex items-center justify-center bg-black/60 hover:bg-black/40 transition-colors">
+                                 <span className="text-[10px] font-bold text-white font-mono tracking-wider">КАСТРЮЛЬКА</span>
+                             </div>
+                         </div>
+                     </div>
+                </div>
+
+                 <button onClick={() => window.open('https://t.me/taipanmedia', '_blank')} className="w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-4 rounded-sm shadow-[0_0_20px_rgba(0,255,157,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs mt-4 font-mono flex items-center justify-center gap-2">
+                    <Crosshair className="w-4 h-4" />
+                    ОБСУДИТЬ ПЛАН
+                 </button>
             </div>
           </div>
         )}

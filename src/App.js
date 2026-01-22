@@ -241,10 +241,10 @@ const BaneIntro = ({ onComplete }) => {
             });
         }
 
-        const t1 = setTimeout(() => setPhase(1), 500);  // "Не важно кто мы такие"
-        const t2 = setTimeout(() => setPhase(2), 2800); // "Важно то"
-        const t3 = setTimeout(() => setPhase(3), 4200); // "Какой у нас план"
-        const t4 = setTimeout(() => onComplete(), 7000); // Завершение (чуть длиннее для драматизма)
+        const t1 = setTimeout(() => setPhase(1), 800);  // "Не важно кто мы такие" (сдвинул на 800мс, чтобы чуть позже)
+        const t2 = setTimeout(() => setPhase(2), 3200); // "Важно то" (сдвинул дальше, около 3.2с)
+        const t3 = setTimeout(() => setPhase(3), 4800); // "Какой у нас план" (еще пауза, 4.8с)
+        const t4 = setTimeout(() => onComplete(), 8000); // Завершение (чуть длиннее для драматизма)
 
         return () => { 
             clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); 

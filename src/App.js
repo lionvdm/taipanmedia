@@ -30,84 +30,7 @@ const GlobalStyles = () => (
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-    /* --- ROBOT ANIMATIONS --- */
-    @keyframes robotFloat {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-8px); }
-    }
-    @keyframes robotPatrol {
-      0% { transform: translateX(0) scaleX(1); }
-      45% { transform: translateX(-100px) scaleX(1); }
-      50% { transform: translateX(-100px) scaleX(-1); } /* Turn around */
-      95% { transform: translateX(0) scaleX(-1); }
-      100% { transform: translateX(0) scaleX(1); } /* Turn back */
-    }
-    @keyframes robotBlink {
-      0%, 90%, 100% { transform: scaleY(1); }
-      95% { transform: scaleY(0.1); }
-    }
-    @keyframes robotHandWave {
-      0%, 100% { transform: rotate(-10deg); }
-      50% { transform: rotate(10deg); }
-    }
-    @keyframes robotSleep {
-      0%, 100% { transform: translateY(5px) scale(0.95); opacity: 0.8; }
-      50% { transform: translateY(8px) scale(0.97); opacity: 0.6; }
-    }
-    @keyframes robotHappyJump {
-      0%, 100% { transform: translateY(0) scale(1); }
-      30% { transform: translateY(-15px) scale(1.1); }
-      50% { transform: translateY(0) scale(0.95); }
-      70% { transform: translateY(-8px) scale(1.05); }
-    }
-    @keyframes robotGlitch {
-      0% { clip-path: inset(20% 0 80% 0); transform: translate(-2px, 1px); }
-      20% { clip-path: inset(60% 0 10% 0); transform: translate(2px, -1px); }
-      40% { clip-path: inset(40% 0 50% 0); transform: translate(-2px, 2px); }
-      60% { clip-path: inset(80% 0 5% 0); transform: translate(2px, -2px); }
-      80% { clip-path: inset(10% 0 70% 0); transform: translate(-1px, 1px); }
-      100% { clip-path: inset(30% 0 50% 0); transform: translate(1px, -1px); }
-    }
-    @keyframes robotCleaning {
-      0% { transform: translateX(0) rotate(0deg); }
-      25% { transform: translateX(-10px) rotate(-5deg); }
-      50% { transform: translateX(0) rotate(0deg); }
-      75% { transform: translateX(10px) rotate(5deg); }
-      100% { transform: translateX(0) rotate(0deg); }
-    }
-    @keyframes confettiFall {
-      0% { transform: translateY(-20px) rotate(0deg); opacity: 1; }
-      100% { transform: translateY(100px) rotate(720deg); opacity: 0; }
-    }
-    .robot-confetti span {
-      position: absolute;
-      width: 5px;
-      height: 5px;
-      background: #00FF9D;
-      animation: confettiFall 2s linear infinite;
-    }
-    
-    /* NEW ANIMATIONS FOR MODES */
-    @keyframes capDrop {
-      0% { transform: translateY(-40px) rotate(-10deg); opacity: 0; }
-      60% { transform: translateY(5px) rotate(5deg); opacity: 1; }
-      80% { transform: translateY(-2px) rotate(-2deg); }
-      100% { transform: translateY(0) rotate(0deg); opacity: 1; }
-    }
-    @keyframes tasselSwing {
-      0%, 100% { transform: rotate(-5deg); }
-      50% { transform: rotate(15deg); }
-    }
-    @keyframes dollarPulse {
-      0%, 100% { transform: scale(1); }
-      50% { transform: scale(1.2); }
-    }
-    @keyframes slotEnter {
-       0% { transform: translateY(-20px); opacity: 0; filter: blur(5px); }
-       100% { transform: translateY(0); opacity: 1; filter: blur(0); }
-    }
-
-    /* Existing animations */
+    /* Animations */
     @keyframes contourPulse {
       0% { filter: drop-shadow(0 0 1px rgba(0, 255, 157, 0.3)); opacity: 0.8; }
       50% { filter: drop-shadow(0 0 6px rgba(0, 255, 157, 0.6)); opacity: 1; }
@@ -129,265 +52,21 @@ const GlobalStyles = () => (
       100% { opacity: 1; transform: scale(1.25); filter: none; }
     }
     @keyframes widthGrow { from { width: 0; } }
+    @keyframes glitch {
+      0% { transform: translate(0) skew(0deg); opacity: 1; filter: none; }
+      10% { transform: translate(-2px, 1px) skew(-2deg); opacity: 0.8; filter: brightness(1.5); }
+      20% { transform: translate(2px, -1px) skew(2deg); opacity: 1; }
+      30% { transform: translate(-1px, 2px) skew(0deg); opacity: 0.8; filter: contrast(2); }
+      40% { transform: translate(1px, -2px) skew(0deg); opacity: 1; }
+      50% { transform: translate(-1px, 0) skew(-5deg); opacity: 0.3; filter: brightness(0.5); }
+      60% { transform: translate(1px, 0) skew(5deg); opacity: 1; }
+      70% { transform: translate(0, 1px) skew(0deg); opacity: 0.8; }
+      80% { transform: translate(0, -1px) skew(0deg); opacity: 1; filter: contrast(1.5); }
+      90% { transform: translate(-1px, 1px) skew(0deg); opacity: 0.9; }
+      100% { transform: translate(0) skew(0deg); opacity: 1; filter: none; }
+    }
   `}} />
 );
-
-// --- MEMORY SERVICE ---
-const RobotMemory = {
-  save: (key, value) => {
-    try {
-      const data = JSON.parse(localStorage.getItem('taipan_robot_memory') || '{}');
-      data[key] = value;
-      localStorage.setItem('taipan_robot_memory', JSON.stringify(data));
-    } catch (e) { console.error("Memory Error", e); }
-  },
-  get: (key) => {
-    try {
-      const data = JSON.parse(localStorage.getItem('taipan_robot_memory') || '{}');
-      return data[key];
-    } catch (e) { return null; }
-  }
-};
-
-// --- DIALOGUE MATRIX ---
-const ROBOT_PHRASES = {
-  business: [
-    "Цифры любят тишину и точность. Не подведи.",
-    "Это твоя прибыль или сдача с магазина? Шучу, давай считать.",
-    "Бизнес не прощает ошибок в расчетах. Сосредоточься.",
-    "Эффективность на максимуме. Мне нравится этот темп.",
-    "Каждая копейка должна работать. Иначе зачем это всё?",
-    "Анализирую потенциал... Выглядит аппетитно."
-  ],
-  education: [
-    "Смотри, всё проще, чем кажется. Просто двигай блоки!",
-    "Код не кусается. Ну, почти. Но я рядом, бро.",
-    "Ты справляешься лучше, чем мой разработчик в первый день!",
-    "Главное — не сдаваться. Даже когда консоль красная.",
-    "Бро, ты делаешь историю. Продолжай в том же духе!",
-    "Шаг за шагом. Мы построим этот космолет."
-  ],
-  highProfit: [
-    "Ого! С такими цифрами мы скоро купим сервер на Марсе! Работаем!",
-    "Я чувствую запах денег... много денег!",
-    "Это законно быть таким богатым? Шучу, работаем!"
-  ],
-  glitch: [
-    "Эррор! Ты ввел что-то не то! Мои цепи плавятся!",
-    "Отрицательная прибыль? Мы что, благотворительный фонд?",
-    "Системный сбой! Логика покинула чат."
-  ],
-  poke: [
-    "Ой! Хватит меня тыкать! Я же не сенсорная панель в Тесле!",
-    "Эй, щекотно! Или больно... У меня нет нервов, но всё же!",
-    "Еще раз ткнешь — уйду в спящий режим навсегда."
-  ],
-  night: [
-    "Ночной кодинг? Или ночной обсчет прибыли? В любом случае — уважение от системы.",
-    "Город спит, просыпается мафия и мы. Работаем.",
-    "В это время сервера летают быстрее. Отличный выбор."
-  ],
-  return: [
-    "Я уж думал, ты ушел на завод... Рад, что ты вернулся в игру!",
-    "О, живой человек! Я начал скучать.",
-    "Возвращение легенды! Продолжаем?"
-  ],
-  strategy: [
-    "О, выбор чемпиона! Готовлю отчет, который перевернет твое представление о деньгах...",
-    "Стратегия — это мост в будущее. Строим!",
-    "Серьезный подход. Уважаю."
-  ],
-  fourthWall: [
-    "Слушай, а этот дизайн интерфейса тебе нравится? Я сам выбирал этот оттенок зеленого.",
-    "Ты тоже чувствуешь, что мы внутри симуляции? Или это только у меня пинг высокий?",
-    "Надеюсь, ты не бот. А то было бы неловко разговаривать с коллегой."
-  ],
-  batteryLow: [
-    "Бро, у тебя зарядка садится! Быстрее сохраняй токен, а то я погасну вместе с твоими мечтами!",
-    "Энергия на исходе! Подключись к матрице, срочно!",
-    "Я теряю мощность... найди розетку, человек!"
-  ],
-  taxCollector: [
-    "Эй, я проверил счета, там пыль. Пошли что-нибудь посчитаем?",
-    "Калькулятор скучает. Деньги сами себя не посчитают, бро.",
-    "Давно не виделись в бухгалтерии. Зайдем?"
-  ],
-  educationCritic: [
-    "Ты точно всё прочитал? Или просто хочешь кнопку 'Бабло'? Так не работает, вернись и вникни!",
-    "Слишком быстро! Ты что, Нео, чтобы загружать знания прямо в мозг?",
-    "Не скипай туториал, в жизни автосейвов нет!"
-  ],
-  cleaner: [
-    "Подметаю лишние байты... У нас тут должно быть чисто, как в швейцарском банке.",
-    "Оптимизирую пространство... Убираю цифровой мусор.",
-    "Чистота — залог высокой конверсии. Протираю экран изнутри."
-  ]
-};
-
-const getRandomPhrase = (category) => {
-  const list = ROBOT_PHRASES[category] || ["Я тут."];
-  return list[Math.floor(Math.random() * list.length)];
-};
-
-// --- COMPONENT: TAIPAN ROBOT (CUTE WHITE VERSION) ---
-const TaipanRobot = ({ mood, message, showBubble, onRobotClick, currentView }) => {
-  // Determine specialized modes based on view (FIXED TO INCLUDE SUB-PAGES)
-  const isShopMode = ['shop', 'calculator', 'strategy', 'roi'].includes(currentView);
-  const isEducationMode = ['education', 'faq', 'program'].includes(currentView);
-
-  // Force style overrides based on module
-  // If in Shop, ALWAYS GOLD. If Education, ALWAYS Scholar colors.
-  const robotColor = isShopMode ? '#FFD700' : '#ffffff'; 
-  const strokeColor = isShopMode ? '#B8860B' : '#ccc';
-  
-  // Confetti colors
-  const confettiColor = isShopMode ? '#FFD700' : '#00FF9D';
-
-  return (
-    <div className="fixed bottom-4 right-4 z-50 flex flex-col items-end cursor-pointer" onClick={onRobotClick}>
-      {/* Speech Bubble */}
-      <div className={`
-        bg-white border border-white/50 p-3 rounded-2xl rounded-tr-none mb-3 max-w-[200px] 
-        shadow-[0_0_20px_rgba(255,255,255,0.3)] transition-all duration-500 transform origin-bottom-right pointer-events-none
-        ${showBubble ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-50 translate-y-10'}
-      `}>
-        <p className="text-[10px] text-black font-bold leading-snug font-['Chakra_Petch']">
-          {message}
-        </p>
-      </div>
-
-      {/* Robot Container with Animations */}
-      <div className={`
-        w-24 h-24 relative flex items-center justify-center transition-all duration-700
-        ${mood === 'sleeping' ? 'animate-[robotSleep_3s_infinite_ease-in-out]' : ''}
-        ${mood === 'celebrating' ? 'animate-[robotHappyJump_1s_infinite]' : ''}
-        ${mood === 'error' ? 'animate-[robotGlitch_0.3s_infinite]' : ''}
-        ${mood === 'active' ? 'animate-[robotPatrol_10s_infinite_linear]' : ''}
-        ${mood === 'cleaning' ? 'animate-[robotCleaning_2s_infinite]' : ''}
-      `}>
-        {/* Confetti */}
-        {mood === 'celebrating' && (
-          <div className="absolute inset-0 -top-10 robot-confetti">
-            <span style={{left: '10%', animationDelay: '0s', background: confettiColor}}></span>
-            <span style={{left: '30%', animationDelay: '0.2s', background: confettiColor}}></span>
-            <span style={{left: '50%', animationDelay: '0.4s', background: confettiColor}}></span>
-            <span style={{left: '70%', animationDelay: '0.6s', background: confettiColor}}></span>
-            <span style={{left: '90%', animationDelay: '0.8s', background: confettiColor}}></span>
-          </div>
-        )}
-
-        {/* Robot Body Group */}
-        <div className={`relative transition-all duration-500 ${mood === 'bored' ? 'grayscale opacity-70' : ''}`}>
-           {/* Soft Glow - Changes with Mode */}
-           <div className={`
-             absolute inset-0 blur-2xl opacity-30 rounded-full transition-colors duration-500
-             ${isShopMode ? 'bg-[#FFD700] opacity-50' : ''}
-             ${isEducationMode ? 'bg-blue-300 opacity-30' : ''}
-             ${mood === 'error' ? 'bg-yellow-500 opacity-60' : ''}
-           `}></div>
-           
-           {/* CUTE WHITE ROBOT SVG */}
-           <svg viewBox="0 0 100 100" className="w-20 h-20 drop-shadow-2xl overflow-visible">
-             <defs>
-               <linearGradient id="whiteBody" x1="0%" y1="0%" x2="100%" y2="100%">
-                 <stop offset="0%" stopColor={robotColor} />
-                 <stop offset="100%" stopColor={isShopMode ? '#e6c200' : "#e0e0e0"} />
-               </linearGradient>
-               <filter id="cuteGlow">
-                 <feGaussianBlur stdDeviation="1" result="coloredBlur"/>
-                 <feMerge>
-                   <feMergeNode in="coloredBlur"/>
-                   <feMergeNode in="SourceGraphic"/>
-                 </feMerge>
-               </filter>
-             </defs>
-
-             {/* HEAD (Rounded White) */}
-             <rect x="25" y="20" width="50" height="40" rx="18" fill="url(#whiteBody)" stroke={strokeColor} strokeWidth="1" />
-             
-             {/* FACE SCREEN (Glossy Black) */}
-             <rect x="30" y="28" width="40" height="24" rx="10" fill="#111" stroke="#333" strokeWidth="1" />
-             
-             {/* EYES Logic - STRICT Mode Enforcement */}
-             <g className={mood === 'sleeping' ? '' : 'animate-[robotBlink_4s_infinite]'}>
-                {/* Shop Mode: Dollar Eyes (ALWAYS unless Error) */}
-                {isShopMode && mood !== 'error' ? (
-                   <g className="animate-[slotEnter_0.5s_ease-out]">
-                      <text x="36" y="45" fontSize="14" fill="#00FF9D" fontWeight="bold" fontFamily="monospace" className="animate-[dollarPulse_1.5s_infinite]">$</text>
-                      <text x="58" y="45" fontSize="14" fill="#00FF9D" fontWeight="bold" fontFamily="monospace" className="animate-[dollarPulse_1.5s_infinite]">$</text>
-                   </g>
-                ) : mood === 'sleeping' ? (
-                   <>
-                     <path d="M38 40 Q42 42 46 40" stroke="#0088cc" strokeWidth="2.5" strokeLinecap="round" fill="none" />
-                     <path d="M54 40 Q58 42 62 40" stroke="#0088cc" strokeWidth="2.5" strokeLinecap="round" fill="none" />
-                     <text x="50" y="20" textAnchor="middle" fill="#0088cc" fontSize="10" fontFamily="monospace" className="animate-pulse">Zzz</text>
-                   </>
-                ) : mood === 'celebrating' ? (
-                   <>
-                     <path d="M36 42 L40 38 L44 42" stroke="#F7931A" strokeWidth="3" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-                     <path d="M56 42 L60 38 L64 42" stroke="#F7931A" strokeWidth="3" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-                     {/* Blush */}
-                     <circle cx="34" cy="46" r="2" fill="#F7931A" opacity="0.5" />
-                     <circle cx="66" cy="46" r="2" fill="#F7931A" opacity="0.5" />
-                   </>
-                ) : mood === 'error' ? (
-                   <>
-                      {/* X Eyes */}
-                      <path d="M36 38 L44 46 M44 38 L36 46" stroke="#FFD700" strokeWidth="2.5" strokeLinecap="round" />
-                      <path d="M56 38 L64 46 M64 38 L56 46" stroke="#FFD700" strokeWidth="2.5" strokeLinecap="round" />
-                   </>
-                ) : (
-                   /* Default / Education Eyes */
-                   <>
-                     <ellipse cx="40" cy="40" rx={isEducationMode ? "6" : "5"} ry={isEducationMode ? "8" : "7"} fill="#00FF9D" filter="url(#cuteGlow)" />
-                     <ellipse cx="60" cy="40" rx={isEducationMode ? "6" : "5"} ry={isEducationMode ? "8" : "7"} fill="#00FF9D" filter="url(#cuteGlow)" />
-                     <circle cx="42" cy="38" r={isEducationMode ? "2" : "1.5"} fill="white" opacity="0.8" />
-                     <circle cx="62" cy="38" r={isEducationMode ? "2" : "1.5"} fill="white" opacity="0.8" />
-                   </>
-                )}
-             </g>
-
-             {/* BODY */}
-             <path d="M35 60 L65 60 L60 75 Q50 80 40 75 Z" fill="url(#whiteBody)" stroke={strokeColor} strokeWidth="1" />
-             
-             {/* HANDS */}
-             {mood === 'cleaning' ? (
-                <>
-                  <circle cx="28" cy="65" r="5" fill={robotColor} stroke={strokeColor} strokeWidth="1" className="animate-[robotHandWave_0.5s_infinite_ease-in-out]" />
-                  <line x1="28" y1="65" x2="10" y2="90" stroke="#8B4513" strokeWidth="3" /> 
-                  <path d="M5 90 L15 90 L18 100 L2 100 Z" fill="#F4A460" /> 
-                  <circle cx="72" cy="65" r="5" fill={robotColor} stroke={strokeColor} strokeWidth="1" />
-                </>
-             ) : (
-               <>
-                  <circle cx="28" cy="65" r="5" fill={robotColor} stroke={strokeColor} strokeWidth="1" className="animate-[robotHandWave_2s_infinite_ease-in-out]" style={{transformOrigin: '28px 65px'}} />
-                  <circle cx="72" cy="65" r="5" fill={robotColor} stroke={strokeColor} strokeWidth="1" className="animate-[robotHandWave_2s_infinite_ease-in-out_reverse]" style={{transformOrigin: '72px 65px'}} />
-               </>
-             )}
-
-             {/* ANTENNA */}
-             <line x1="50" y1="20" x2="50" y2="12" stroke="#ccc" strokeWidth="2" />
-             <circle cx="50" cy="12" r="3" fill={mood === 'active' ? '#00FF9D' : (mood === 'error' ? '#FFD700' : '#999')} className={mood === 'active' || mood === 'error' ? 'animate-pulse' : ''} />
-
-             {/* EDUCATION MODE: Graduation Cap (ALWAYS ON in Education) */}
-             {isEducationMode && (
-                <g className="animate-[capDrop_0.8s_ease-out_forwards]">
-                   <path d="M30 15 L50 20 L70 15 L50 10 Z" fill="#222" stroke="#000" strokeWidth="1" />
-                   <path d="M30 15 L50 20 L50 26 L30 20 Z" fill="#333" /> 
-                   <path d="M50 20 L70 15 L70 21 L50 26 Z" fill="#111" />
-                   <g className="animate-[tasselSwing_2s_infinite_ease-in-out]" style={{transformOrigin: '50px 15px'}}>
-                      <line x1="50" y1="15" x2="65" y2="25" stroke="#00FF9D" strokeWidth="2" />
-                      <circle cx="65" cy="25" r="2" fill="#00FF9D" />
-                   </g>
-                </g>
-             )}
-
-           </svg>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 // --- ХУК ДЛЯ АНИМАЦИИ ЦИФР ---
 const useOdometer = (targetValue, duration = 1000) => {
@@ -474,7 +153,7 @@ const SmartImage = ({ src, alt, className, style, wrapperClass = "", overflowHid
 };
 
 // --- Компонент Поля Ввода ---
-const InputField = ({ label, value, setValue, suffix = "", onFocus, onBlur }) => (
+const InputField = ({ label, value, setValue, suffix = "" }) => (
   <div className="mb-2">
     <label className="block text-[9px] text-zinc-500 mb-1 uppercase tracking-wider font-bold">{label}</label>
     <div className="relative">
@@ -482,8 +161,6 @@ const InputField = ({ label, value, setValue, suffix = "", onFocus, onBlur }) =>
         type="number" 
         value={value === 0 ? '' : value} 
         onChange={(e) => setValue(Number(e.target.value))}
-        onFocus={onFocus}
-        onBlur={onBlur}
         placeholder="0"
         className="w-full bg-[#0A0A0A] border border-zinc-800 rounded-xl p-2.5 text-white focus:border-[#00FF9D]/50 outline-none transition-all font-['Chakra_Petch'] text-sm appearance-none placeholder-zinc-700"
       />
@@ -493,7 +170,7 @@ const InputField = ({ label, value, setValue, suffix = "", onFocus, onBlur }) =>
 );
 
 // --- Компонент Калькулятора Прибыли ---
-const ProfitCalculator = ({ onAction, data, setData, onTrigger, onInputChange }) => {
+const ProfitCalculator = ({ onAction, data, setData }) => {
   const sales = Math.floor(data.traffic * (data.conversion / 100));
   const revenue = sales * data.avgCheck;
   const profit = Math.floor(revenue * (data.margin / 100));
@@ -501,91 +178,29 @@ const ProfitCalculator = ({ onAction, data, setData, onTrigger, onInputChange })
   const animatedProfit = useOdometer(profit);
   const animatedSales = useOdometer(sales);
 
-  const hasCelebrated = useRef(false);
-
-  // Validate Negative Inputs for Glitch
-  useEffect(() => {
-     if (data.traffic < 0 || data.conversion < 0 || data.avgCheck < 0 || data.margin < 0) {
-         if (onTrigger) onTrigger(getRandomPhrase('glitch'), 'error');
-     }
-  }, [data, onTrigger]);
-
-  useEffect(() => {
-    if (profit > 1000000 && !hasCelebrated.current) {
-      if (onTrigger) onTrigger(getRandomPhrase('highProfit'), 'celebrating');
-      hasCelebrated.current = true;
-    } else if (profit < 1000000) {
-      hasCelebrated.current = false;
-    }
-  }, [profit, onTrigger]);
-
-  const handleFocus = () => {
-    if (onTrigger) onTrigger(getRandomPhrase('business'), 'active'); 
-  };
-
   return (
     <div className="w-full animate-in slide-in-from-bottom duration-500">
-      <InputField 
-        label="Сколько людей в месяц?" 
-        value={data.traffic} 
-        setValue={(v) => setData({...data, traffic: v})} 
-        onFocus={handleFocus}
-      />
-      <InputField 
-        label="Какая конверсия?" 
-        value={data.conversion} 
-        setValue={(v) => setData({...data, conversion: v})} 
-        suffix="%" 
-        onFocus={handleFocus}
-      />
-      <InputField 
-        label="Средний чек" 
-        value={data.avgCheck} 
-        setValue={(v) => setData({...data, avgCheck: v})} 
-        suffix="₸" 
-        onFocus={handleFocus}
-      />
-      <InputField 
-        label="Средний % чистой прибыли" 
-        value={data.margin} 
-        setValue={(v) => setData({...data, margin: v})} 
-        suffix="%" 
-        onFocus={handleFocus}
-      />
+      <InputField label="Сколько людей в месяц?" value={data.traffic} setValue={(v) => setData({...data, traffic: v})} />
+      <InputField label="Какая конверсия?" value={data.conversion} setValue={(v) => setData({...data, conversion: v})} suffix="%" />
+      <InputField label="Средний чек" value={data.avgCheck} setValue={(v) => setData({...data, avgCheck: v})} suffix="₸" />
+      <InputField label="Средний % чистой прибыли" value={data.margin} setValue={(v) => setData({...data, margin: v})} suffix="%" />
 
       <div className="relative overflow-hidden bg-[#00FF9D]/5 border border-[#00FF9D]/30 p-5 rounded-2xl text-center group mt-4 shadow-[0_0_30px_rgba(0,255,157,0.1)]">
         <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,157,0.05)_1px,transparent_1px)] bg-[size:15px_15px] pointer-events-none"></div>
         <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-[#00FF9D]/5 to-transparent animate-[scanLine_3s_linear_infinite]"></div>
-        
         <div className="relative z-10">
             <div className="flex flex-col items-center justify-center mb-2">
                <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-[0.1em] mb-1">ВАШ БИЗНЕС МОЖЕТ ПРИНОСИТЬ</p>
-               <p className="text-3xl sm:text-4xl font-black text-[#00FF9D] font-['Chakra_Petch'] drop-shadow-[0_0_15px_rgba(0,255,157,0.4)] mb-1">
-                 НА {animatedProfit.toLocaleString()} ₸
-               </p>
-               <p className="text-[12px] text-white font-bold uppercase tracking-[0.2em]">
-                 БОЛЬШЕ ЕЖЕМЕСЯЧНО
-               </p>
+               <p className="text-3xl sm:text-4xl font-black text-[#00FF9D] font-['Chakra_Petch'] drop-shadow-[0_0_15px_rgba(0,255,157,0.4)] mb-1">НА {animatedProfit.toLocaleString()} ₸</p>
+               <p className="text-[12px] text-white font-bold uppercase tracking-[0.2em]">БОЛЬШЕ ЕЖЕМЕСЯЧНО</p>
             </div>
-            
             <div className="bg-[#00FF9D]/5 border-t border-b border-[#00FF9D]/10 py-3 mt-3 backdrop-blur-sm">
-               <p className="text-[10px] text-zinc-300 uppercase tracking-wider font-medium leading-relaxed">
-                 ЭТО <span className="text-[#00FF9D] font-black">{animatedSales} ПОКУПАТЕЛЕЙ</span>, КОТОРЫЕ<br/>ГОТОВЫ ПЛАТИТЬ ВАМ УЖЕ СЕЙЧАС
-               </p>
+               <p className="text-[10px] text-zinc-300 uppercase tracking-wider font-medium leading-relaxed">ЭТО <span className="text-[#00FF9D] font-black">{animatedSales} ПОКУПАТЕЛЕЙ</span>, КОТОРЫЕ<br/>ГОТОВЫ ПЛАТИТЬ ВАМ УЖЕ СЕЙЧАС</p>
             </div>
-            
-            <p className="text-[8px] text-zinc-500 mt-3 italic">
-               *Мы знаем как увеличить конверсию от 20% и выше
-            </p>
+            <p className="text-[8px] text-zinc-500 mt-3 italic">*Мы знаем как увеличить конверсию от 20% и выше</p>
         </div>
       </div>
-
-      <button 
-        onClick={onAction} 
-        className="w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-3 rounded-xl shadow-[0_0_20px_rgba(0,255,157,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs flex items-center justify-center gap-2 animate-pulse mt-4"
-      >
-        ПОЛУЧИТЬ СТРАТЕГИЮ ОТ TAIPAN GROUP
-      </button>
+      <button onClick={onAction} className="w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-3 rounded-xl shadow-[0_0_20px_rgba(0,255,157,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs flex items-center justify-center gap-2 animate-pulse mt-4">ПОЛУЧИТЬ СТРАТЕГИЮ ОТ TAIPAN GROUP</button>
     </div>
   );
 };
@@ -669,7 +284,7 @@ const SkillScanner = () => (
 );
 
 // --- SetupTimeline ---
-const SetupTimeline = ({ onTrigger }) => {
+const SetupTimeline = () => {
   const steps = [
     { title: "ШАГ 1: ТОКЕН", time: "~ 2 МИН", desc: "Создайте бота. Вставьте токен. Магазин запущен." },
     { title: "ШАГ 2: ТОВАРЫ", time: "~ 4 МИН", desc: "Добавьте товары вручную или загрузите через Excel/XML." },
@@ -681,7 +296,7 @@ const SetupTimeline = ({ onTrigger }) => {
       <div className="flex items-center justify-between mb-6"><span className="text-[10px] text-[#00FF9D] font-mono tracking-widest border border-[#00FF9D]/30 px-2 py-1 rounded">ПРОТОКОЛ ЗАПУСКА</span><span className="text-[10px] text-zinc-500 font-mono">TOTAL: ~10 МИН</span></div>
       <div className="relative border-l border-[#00FF9D]/20 ml-2 space-y-6">
         {steps.map((step, i) => (
-          <div key={i} className="relative pl-6 group" onClick={() => onTrigger && onTrigger(getRandomPhrase('education'))}>
+          <div key={i} className="relative pl-6 group">
              <div className="absolute -left-[5px] top-1 w-2.5 h-2.5 bg-[#050505] border border-[#00FF9D] rounded-full group-hover:bg-[#00FF9D] group-hover:shadow-[0_0_10px_#00FF9D] transition-all"></div>
              <div className="flex justify-between items-start">
                <div><h4 className="text-sm font-bold text-white font-['Chakra_Petch'] leading-none mb-1 group-hover:text-[#00FF9D] transition-colors">{step.title}</h4><p className="text-[11px] text-zinc-400 leading-snug max-w-[220px]">{step.desc}</p></div>
@@ -947,136 +562,12 @@ const App = () => {
   const [showToast, setShowToast] = useState(false);
   const [activeSlide, setActiveSlide] = useState(0);
   const [onlineCount, setOnlineCount] = useState(0);
-  const [clickCount, setClickCount] = useState(0);
-  
-  // NEW: Track view entry time for Education Critic
-  const [viewStartTime, setViewStartTime] = useState(Date.now());
 
   useEffect(() => {
     setOnlineCount(Math.floor(Math.random() * 16)); 
     const interval = setInterval(() => { setOnlineCount(Math.floor(Math.random() * 16)); }, 60000); 
     return () => clearInterval(interval);
   }, []);
-
-  // --- ROBOT LOGIC ---
-  const [robotState, setRobotState] = useState({ mood: 'idle', message: 'Я тут, чтобы помочь!', showBubble: false, lastActivity: Date.now() });
-  
-  // Ref to access latest state inside event listeners
-  const robotStateRef = useRef(robotState);
-  useEffect(() => {
-    robotStateRef.current = robotState;
-  }, [robotState]);
-
-  // Trigger Robot Message with a specific mood
-  const triggerRobotMsg = useCallback((text, mood = 'idle') => {
-    setRobotState(prev => ({ ...prev, mood: mood, message: text, showBubble: true }));
-    setTimeout(() => {
-        setRobotState(prev => ({ ...prev, showBubble: false, mood: 'idle' })); 
-    }, 4000);
-  }, []);
-
-  // Trigger Joy Animation
-  const triggerRobotJoy = useCallback(() => {
-    setRobotState(prev => {
-        if(prev.mood === 'success') return prev;
-        return { ...prev, mood: 'success', message: getRandomPhrase('highProfit'), showBubble: true }
-    });
-    setTimeout(() => {
-        setRobotState(prev => {
-            if(prev.mood === 'success') return { ...prev, mood: 'idle', showBubble: false };
-            return prev;
-        })
-    }, 5000);
-  }, []);
-
-  // Easter Eggs: Night & Return & Battery
-  useEffect(() => {
-      // Battery Check
-      if ('getBattery' in navigator) {
-        navigator.getBattery().then(battery => {
-           if (battery.level < 0.2 && !battery.charging) {
-             triggerRobotMsg("Бро, у тебя зарядка садится! Быстрее сохраняй токен, а то я погасну вместе с твоими мечтами!", 'warning');
-           }
-        });
-      }
-
-      // Night check
-      const hours = new Date().getHours();
-      if (hours >= 0 && hours < 6) {
-          setTimeout(() => triggerRobotMsg("Ночной кодинг? Или ночной обсчет прибыли? В любом случае — уважение от системы.", 'idle'), 1000);
-      }
-
-      // Visibility check (User returns)
-      const handleVisibilityChange = () => {
-          if (!document.hidden) {
-              triggerRobotMsg("Я уж думал, ты ушел на завод... Рад, что ты вернулся в игру!", 'idle');
-          }
-      };
-      document.addEventListener("visibilitychange", handleVisibilityChange);
-      return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
-  }, [triggerRobotMsg]);
-
-  // Robot Interaction (Click)
-  const handleRobotClick = () => {
-      setClickCount(prev => {
-          const newCount = prev + 1;
-          if (newCount === 5) {
-              triggerRobotMsg("Ой! Хватит меня тыкать! Я же не сенсорная панель в Тесле!", 'warning');
-              return 0; // Reset
-          }
-          return newCount;
-      });
-  };
-
-  // Idle Timer & Tasks
-  useEffect(() => {
-    const handleActivity = () => {
-      // Just update last activity timestamp without forcing a re-render if mood is already correct
-      setRobotState(prev => ({ ...prev, lastActivity: Date.now() })); 
-    };
-    
-    let timeout;
-    const throttledHandler = () => {
-        if (!timeout) {
-            timeout = setTimeout(() => {
-                handleActivity();
-                timeout = null;
-            }, 1000);
-        }
-    }
-
-    window.addEventListener('mousemove', throttledHandler);
-    window.addEventListener('click', throttledHandler);
-    window.addEventListener('touchstart', throttledHandler);
-    
-    const idleTimer = setInterval(() => {
-      const now = Date.now();
-      const current = robotStateRef.current;
-      const inactiveTime = now - current.lastActivity;
-      
-      // Task: Tax Collector (If idle and NOT in calculator)
-      if (inactiveTime > 30000 && inactiveTime < 32000 && currentView !== 'calculator') {
-           triggerRobotMsg("Эй, я проверил счета, там пыль. Пошли что-нибудь посчитаем?", 'warning');
-      }
-
-      // Task: Fourth Wall (Random check)
-      if (Math.random() > 0.98 && inactiveTime > 5000 && inactiveTime < 20000) {
-           triggerRobotMsg("Слушай, а этот дизайн интерфейса тебе нравится? Я сам выбирал этот оттенок зеленого.", 'idle');
-      }
-      
-      if (inactiveTime > 20000 && inactiveTime <= 120000 && current.mood !== 'warning') {
-         if (!current.showBubble) setRobotState(prev => ({ ...prev, mood: 'warning' }));
-      } 
-    }, 1000);
-
-    return () => {
-      window.removeEventListener('mousemove', throttledHandler);
-      window.removeEventListener('click', throttledHandler);
-      window.removeEventListener('touchstart', throttledHandler);
-      clearInterval(idleTimer);
-      if (timeout) clearTimeout(timeout);
-    };
-  }, [currentView, triggerRobotMsg]); 
   
   const [calcData, setCalcData] = useState({ traffic: 0, conversion: 0, avgCheck: 0, margin: 0 });
   const calculateProfit = () => {
@@ -1138,52 +629,33 @@ const App = () => {
     setShowToast(true); 
     setTimeout(() => setShowToast(false), 3000); 
     e.target.reset(); 
-    const formData = new FormData(e.target);
-    const name = formData.get('name');
-    if (name) RobotMemory.save('userName', name);
-    triggerRobotMsg(`Приятно познакомиться, ${name || 'друг'}! Я запомнил тебя.`);
   };
   const handleFaqClick = (item) => { setActiveFaq(item); setShowCalculator(false); };
   const closeFaq = () => { setActiveFaq(null); setShowCalculator(false); };
   const handleShopClick = () => { setShopIntroFinished(false); setCurrentView('shop'); };
   
   const handleEducationClick = () => {
-    setViewStartTime(Date.now()); // Start timer
-    triggerRobotMsg(getRandomPhrase('education'), 'advice');
     setCurrentView('education');
   }
 
   const handleStrategyClick = () => {
-     triggerRobotMsg("О, выбор чемпиона! Готовлю отчет, который перевернет твое представление о деньгах...", 'idle');
      setCurrentView('strategy');
   };
 
   const handleBackClick = (target) => {
-    // Task: Education Critic
-    if (currentView === 'education') {
-        const timeSpent = Date.now() - viewStartTime;
-        if (timeSpent < 10000) { // Less than 10 seconds
-            triggerRobotMsg("Ты точно всё прочитал? Или просто хочешь кнопку 'Бабло'? Так не работает, вернись и вникни!", 'warning');
-            setTimeout(() => setCurrentView(target), 2500); // Delay navigation to show message
-            return;
-        }
-    }
-
-    triggerRobotMsg("Страшно? Это нормально. Великие дела всегда начинаются с мурашек. Давай попробуем еще раз?", 'idle');
     setCurrentView(target);
   }
 
   const faqItems = [
     { id: 'stats', question: "Это вообще покупают?", icon: <TrendingUp className="w-5 h-5 text-[#00FF9D]" />, component: (<div className="w-full"><WordstatGraph /><h3 className="text-white font-bold mb-3 uppercase tracking-wide text-sm font-['Chakra_Petch'] leading-tight">6 650 человек ищут тебя. Как долго ты будешь их игнорировать?</h3><p className="text-sm text-zinc-300 leading-relaxed border-l-2 border-[#00FF9D]/50 pl-4 mb-4">Это официальная статистика Яндекса: <span className="text-[#00FF9D] font-bold">6 650</span> прямых запросов на ТГ-магазины в месяц.<br/><br/>Пока ты ищешь «подходящий момент», наши ученики уже забирают эти чеки по <span className="text-white font-bold">100 000₸</span>, просто потому что они оказались на связи.<br/><br/>Мы даем тебе все инструменты и доступ к этому потоку. Твой результат — это просто вопрос того, возьмешь ли ты готовую систему и начнешь ли по ней работать.<br/><br/><span className="text-[#00FF9D] italic font-medium">Рынок платит тем, кто действует, а не тем, кто наблюдает.</span></p></div>) },
     { id: 'proof', question: "А это реально работает?", icon: <Lock className="w-5 h-5 text-[#00FF9D]" />, component: (<div className="w-full"><HackerProof /><p className="text-sm text-zinc-300 leading-relaxed border-l-2 border-[#00FF9D]/50 pl-4 mb-2">Пока ты сомневаешься, <span className="text-[#00FF9D] font-bold">Карашаш</span> прошла наше обучение и уже забирает свои <span className="text-white font-bold">100 000₸</span>.<br/><br/>На скриншоте — результат её работы. Она просто взяла знания, которые мы даём, и закрыла одного из <span className="text-[#00FF9D] font-bold">6 650</span> горячих клиентов в Яндексе. Ей не нужен был «подходящий момент», ей нужна была рабочая система.<br/><br/><span className="text-white italic">Рынок пустой. Деньги на столе. Ты следующий или так и будешь смотреть на чужие чеки?</span></p></div>) },
-    { id: 'difficulty', question: "А сложно это делать?", icon: <Zap className="w-5 h-5 text-[#00FF9D]" />, component: (<div className="w-full"><SkillScanner /> <SetupTimeline onTrigger={(msg) => triggerRobotMsg(msg, 'advice')} /><p className="text-sm text-zinc-300 leading-relaxed border-l-2 border-[#00FF9D]/50 pl-4 mb-4"><span className="text-white font-bold">Программистом быть не нужно.</span><br/><br/>Собрать такой магазин проще, чем выложить пост в Инстаграм. Мы даем всё готовое: ты просто расставляешь блоки по местам за один вечер.<br/><br/><span className="text-[#00FF9D] font-bold">Работай с телефона:</span> Не нужен компьютер, всё настраивается прямо в смартфоне.<br/><br/><span className="text-[#00FF9D] font-bold">Для декрета или совмещения:</span> Занимайся этим, пока ребенок спит или после основной работы.<br/><br/><span className="text-[#00FF9D] font-bold">Просто и понятно:</span> Если умеешь переписываться в Telegram — ты справишься.<br/><br/><span className="text-white font-bold italic">Хватит смотреть на чужие чеки. Заходи и делай свои.</span></p></div>) },
+    { id: 'difficulty', question: "А сложно это делать?", icon: <Zap className="w-5 h-5 text-[#00FF9D]" />, component: (<div className="w-full"><SkillScanner /> <SetupTimeline /><p className="text-sm text-zinc-300 leading-relaxed border-l-2 border-[#00FF9D]/50 pl-4 mb-4"><span className="text-white font-bold">Программистом быть не нужно.</span><br/><br/>Собрать такой магазин проще, чем выложить пост в Инстаграм. Мы даем всё готовое: ты просто расставляешь блоки по местам за один вечер.<br/><br/><span className="text-[#00FF9D] font-bold">Работай с телефона:</span> Не нужен компьютер, всё настраивается прямо в смартфоне.<br/><br/><span className="text-[#00FF9D] font-bold">Для декрета или совмещения:</span> Занимайся этим, пока ребенок спит или после основной работы.<br/><br/><span className="text-[#00FF9D] font-bold">Просто и понятно:</span> Если умеешь переписываться в Telegram — ты справишься.<br/><br/><span className="text-white font-bold italic">Хватит смотреть на чужие чеки. Заходи и делай свои.</span></p></div>) },
     { id: 'calc', question: "Найду ли я клиентов?", icon: <Wallet className="w-5 h-5 text-[#00FF9D]" />, isCalc: true, component: (<div className="w-full"><ClientDemandProof /><div className="text-sm text-zinc-300 leading-relaxed border-l-2 border-[#00FF9D]/50 pl-4 mb-4"><p><span className="text-white font-bold">Ты не просто их найдешь — они тоже будут тебя искать.</span></p><br/><p>Статистика Яндекса не врет: каждый месяц <span className="text-[#00FF9D] font-bold">6 650</span> предпринимателей ищут, кто сделает им магазин в Telegram. Спрос огромный, а тех, кто умеет делать это качественно — единицы.</p><br/><p>На обучении мы даем не только технические навыки, но и <span className="text-white font-bold">полную систему продаж</span>:</p><br/><ul className="list-disc pl-4 space-y-2"><li><span className="text-[#00FF9D] font-bold">Где брать клиентов:</span> Покажем, как выйти на те самые тысячи заказов.</li><li><span className="text-[#00FF9D] font-bold">Как продавать:</span> Научим вести переговоры с бизнесменами и закрывать сделки на высокие чеки.</li><li><span className="text-[#00FF9D] font-bold">Готовые шаблоны предложений:</span> Тебе не нужно ничего придумывать — просто бери наше проверенное КП и отправляй клиенту.</li></ul><br/><p>Мы научим тебя делать результат «под ключ», чтобы ты мог уверенно забирать свои <span className="text-white font-bold">100 000₸</span> за проект.</p></div></div>) }
   ];
 
   return (
     <div className="min-h-screen bg-[#050505] text-white font-sans selection:bg-[#00FF9D]/30 relative overflow-hidden flex flex-col">
       <GlobalStyles />
-      <TaipanRobot mood={robotState.mood} message={robotState.message} showBubble={robotState.showBubble} onRobotClick={handleRobotClick} currentView={currentView} />
       <div className="fixed inset-0 z-0 pointer-events-none">
         <div className="absolute inset-0 bg-[#020202] -z-20" />
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-purple-500/10 rounded-full blur-[120px] animate-pulse"></div>
@@ -1274,14 +746,7 @@ const App = () => {
                     <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] mr-[-0.3em] font-bold">Узнайте сколько вы теряете</p>
                 </div>
                 <div className="w-full glass-card p-4 rounded-3xl border border-[#00FF9D]/20 relative overflow-hidden">
-                    <ProfitCalculator 
-                      data={calcData} 
-                      setData={setCalcData} 
-                      onAction={handleStrategyClick} 
-                      onTrigger={triggerRobotMsg} 
-                      onHighProfit={triggerRobotJoy} 
-                      onInputChange={triggerRobotMsg} 
-                    />
+                    <ProfitCalculator data={calcData} setData={setCalcData} onAction={() => setCurrentView('strategy')} />
                 </div>
             </div>
           </div>
@@ -1399,7 +864,7 @@ const App = () => {
             <div className="flex items-center gap-3 mb-6"><div className="p-2 rounded-full bg-[#00FF9D]/10 text-[#00FF9D]">{activeFaq.icon}</div><h2 className="text-xl font-bold font-['Chakra_Petch'] leading-tight">{activeFaq.question}</h2></div>
             <div className="mb-4">{activeFaq.component}</div>
             {activeFaq.isCalc && !showCalculator && (<button onClick={() => setShowCalculator(true)} className="w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-4 rounded-xl shadow-[0_0_15px_rgba(0,255,157,0.3)] animate-pulse hover:scale-[1.02] transition-all text-xs">РАССЧИТАТЬ ПРИБЫЛЬ</button>)}
-            {activeFaq.isCalc && showCalculator && (<div className="mt-6 border-t border-[#00FF9D]/20 pt-6"><ProfitCalculator data={calcData} setData={setCalcData} onAction={() => setCurrentView('strategy')} onHighProfit={triggerRobotJoy} onInputFocus={triggerRobotMsg} onTrigger={triggerRobotMsg} /></div>)}
+            {activeFaq.isCalc && showCalculator && (<div className="mt-6 border-t border-[#00FF9D]/20 pt-6"><ProfitCalculator data={calcData} setData={setCalcData} onAction={() => setCurrentView('strategy')} /></div>)}
             <button onClick={closeFaq} className="absolute top-6 right-6 text-zinc-500 hover:text-white"><X className="w-6 h-6" /></button>
           </div>
         </div>

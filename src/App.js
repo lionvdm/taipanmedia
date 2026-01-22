@@ -65,6 +65,12 @@ const GlobalStyles = () => (
       90% { transform: translate(-1px, 1px) skew(0deg); opacity: 0.9; }
       100% { transform: translate(0) skew(0deg); opacity: 1; filter: none; }
     }
+    
+    .typing-cursor::after {
+      content: '|';
+      animation: blink 1s step-start infinite;
+    }
+    @keyframes blink { 50% { opacity: 0; } }
   `}} />
 );
 
@@ -122,6 +128,46 @@ const TelegramLogoMain = ({ className }) => (
     <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.446 1.394c-.16.16-.295.293-.605.293l.214-3.054 5.56-5.022c.24-.213-.054-.334-.373-.121l-6.869 4.326-2.962-.924c-.64-.203-.658-.64.135-.954l11.566-4.458c.538-.196 1.006.128.832.942z"/>
   </svg>
 );
+
+// --- RobotGreeting Component (NEW) ---
+const RobotGreeting = ({ onClose }) => {
+  const [text, setText] = useState("");
+  const fullText = "Привет! Я Taipan AI. Готов захватить рынок?";
+
+  useEffect(() => {
+    let i = 0;
+    const timer = setInterval(() => {
+      setText(fullText.slice(0, i));
+      i++;
+      if (i > fullText.length + 1) clearInterval(timer);
+    }, 60);
+    return () => clearInterval(timer);
+  }, []);
+
+  return (
+    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end animate-in slide-in-from-bottom-10 duration-1000">
+      <div className="bg-[#050505] border border-[#00FF9D]/40 p-4 rounded-t-2xl rounded-bl-2xl mb-3 max-w-[240px] shadow-[0_0_30px_rgba(0,255,157,0.15)] relative backdrop-blur-md">
+        <button onClick={onClose} className="absolute -top-2 -right-2 bg-[#00FF9D] text-black rounded-full p-1 hover:scale-110 transition-transform shadow-[0_0_10px_#00FF9D]"><X className="w-3 h-3" /></button>
+        <p className="text-[#00FF9D] font-mono text-xs leading-relaxed typing-cursor font-bold tracking-wide">{text}</p>
+      </div>
+      <div className="w-16 h-16 relative group cursor-pointer hover:scale-105 transition-transform" onClick={() => setText(fullText)}>
+         <div className="absolute inset-0 bg-[#00FF9D] rounded-full blur-[15px] opacity-40 animate-pulse"></div>
+         <div className="w-full h-full bg-black border-2 border-[#00FF9D] rounded-full flex items-center justify-center relative z-10 overflow-hidden shadow-inner">
+             {/* Simple CSS Robot Eye */}
+            <div className="relative w-full h-full flex items-center justify-center bg-zinc-900">
+                <div className="w-10 h-6 bg-black rounded-md border border-[#00FF9D]/50 flex items-center justify-center relative overflow-hidden">
+                    <div className="absolute inset-0 bg-[#00FF9D]/10 animate-pulse"></div>
+                    <div className="flex gap-1.5 z-10">
+                        <div className="w-2 h-2 bg-[#00FF9D] rounded-full shadow-[0_0_5px_#00FF9D] animate-[blink_3s_infinite]"></div>
+                        <div className="w-2 h-2 bg-[#00FF9D] rounded-full shadow-[0_0_5px_#00FF9D] animate-[blink_3s_infinite]"></div>
+                    </div>
+                </div>
+            </div>
+         </div>
+      </div>
+    </div>
+  );
+};
 
 // --- Новый компонент: SmartImage ---
 const SmartImage = ({ src, alt, className, style, wrapperClass = "", overflowHidden = true }) => {
@@ -297,11 +343,11 @@ const SetupTimeline = () => {
       <div className="relative border-l border-[#00FF9D]/20 ml-2 space-y-6">
         {steps.map((step, i) => (
           <div key={i} className="relative pl-6 group">
-             <div className="absolute -left-[5px] top-1 w-2.5 h-2.5 bg-[#050505] border border-[#00FF9D] rounded-full group-hover:bg-[#00FF9D] group-hover:shadow-[0_0_10px_#00FF9D] transition-all"></div>
-             <div className="flex justify-between items-start">
-               <div><h4 className="text-sm font-bold text-white font-['Chakra_Petch'] leading-none mb-1 group-hover:text-[#00FF9D] transition-colors">{step.title}</h4><p className="text-[11px] text-zinc-400 leading-snug max-w-[220px]">{step.desc}</p></div>
-               <span className="text-[9px] font-mono text-[#00FF9D]/70 bg-[#00FF9D]/5 px-1.5 py-0.5 rounded ml-2 whitespace-nowrap">{step.time}</span>
-             </div>
+              <div className="absolute -left-[5px] top-1 w-2.5 h-2.5 bg-[#050505] border border-[#00FF9D] rounded-full group-hover:bg-[#00FF9D] group-hover:shadow-[0_0_10px_#00FF9D] transition-all"></div>
+              <div className="flex justify-between items-start">
+                <div><h4 className="text-sm font-bold text-white font-['Chakra_Petch'] leading-none mb-1 group-hover:text-[#00FF9D] transition-colors">{step.title}</h4><p className="text-[11px] text-zinc-400 leading-snug max-w-[220px]">{step.desc}</p></div>
+                <span className="text-[9px] font-mono text-[#00FF9D]/70 bg-[#00FF9D]/5 px-1.5 py-0.5 rounded ml-2 whitespace-nowrap">{step.time}</span>
+              </div>
           </div>
         ))}
         <div className="relative pl-6 mt-8"><div className="absolute -left-[7px] top-1 w-3.5 h-3.5 bg-[#00FF9D] rounded-full animate-pulse shadow-[0_0_15px_#00FF9D]"></div><div className="bg-[#00FF9D]/10 border border-[#00FF9D]/30 p-3 rounded-lg"><h4 className="text-sm font-black text-[#00FF9D] uppercase tracking-wider mb-1">МАГАЗИН ГОТОВ</h4><p className="text-[10px] text-zinc-300 leading-snug">Можно запускать трафик и получать прибыль. Система работает автономно.</p></div></div>
@@ -463,7 +509,7 @@ const ShopIntroSequence = ({ onComplete }) => {
   const message = { part1: "МЕНЬШЕ ДИАЛОГОВ — БОЛЬШЕ ДЕНЕГ.", part2: "СПАСАЕМ ОТ 20% УПУЩЕННОЙ ПРИБЫЛИ" };
   useEffect(() => {
     const timer = setTimeout(() => { onComplete(); }, 3000);
-    return () => clearTimeout(timer);
+    return () => clearInterval(timer);
   }, [onComplete]);
   return (
     <div className="flex flex-col items-center justify-center h-full w-full min-h-[60vh] px-4 cursor-pointer" onClick={onComplete}>
@@ -562,6 +608,8 @@ const App = () => {
   const [showToast, setShowToast] = useState(false);
   const [activeSlide, setActiveSlide] = useState(0);
   const [onlineCount, setOnlineCount] = useState(0);
+  // NEW: State for Robot
+  const [showRobot, setShowRobot] = useState(true);
 
   useEffect(() => {
     setOnlineCount(Math.floor(Math.random() * 16)); 
@@ -639,7 +687,7 @@ const App = () => {
   }
 
   const handleStrategyClick = () => {
-     setCurrentView('strategy');
+       setCurrentView('strategy');
   };
 
   const handleBackClick = (target) => {
@@ -678,8 +726,8 @@ const App = () => {
                 <div className="h-[1px] flex-1 max-w-[40px] bg-gradient-to-l from-transparent to-zinc-700"></div>
               </div>
               <p className="text-[10px] text-zinc-600 font-mono mt-2 tracking-widest flex items-center justify-center gap-2 opacity-80">
-                 <span className="w-1.5 h-1.5 rounded-full bg-[#00FF9D] animate-pulse shadow-[0_0_5px_#00FF9D]"></span>
-                 СЕЙЧАС ОНЛАЙН: <span className="text-zinc-400 font-bold">{onlineCount}</span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#00FF9D] animate-pulse shadow-[0_0_5px_#00FF9D]"></span>
+                  СЕЙЧАС ОНЛАЙН: <span className="text-zinc-400 font-bold">{onlineCount}</span>
               </p>
             </div>
             
@@ -790,8 +838,8 @@ const App = () => {
                     {slides.map((SlideComponent, idx) => (
                        <div key={idx} className={`absolute inset-0 flex items-center justify-center transition-all duration-[1200ms] ease-in-out transform ${activeSlide === idx ? 'opacity-100 scale-100 blur-0' : 'opacity-0 scale-75 blur-3xl'}`}>
                          <div className="relative w-full text-center">
-                            <div className="absolute inset-0 bg-white/5 blur-3xl rounded-full transform scale-150 left-1/2 -translate-x-1/2" />
-                            <div className="relative z-10"><SlideComponent isActive={activeSlide === idx} /></div>
+                           <div className="absolute inset-0 bg-white/5 blur-3xl rounded-full transform scale-150 left-1/2 -translate-x-1/2" />
+                           <div className="relative z-10"><SlideComponent isActive={activeSlide === idx} /></div>
                          </div>
                        </div>
                      ))}
@@ -876,6 +924,9 @@ const App = () => {
           <span className="text-xs font-bold uppercase tracking-wider">Запрос принят</span>
         </div>
       )}
+
+      {/* Robot Greeting Display */}
+      {showRobot && <RobotGreeting onClose={() => setShowRobot(false)} />}
     </div>
   );
 };

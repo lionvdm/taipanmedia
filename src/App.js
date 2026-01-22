@@ -129,28 +129,42 @@ const TelegramLogoMain = ({ className }) => (
   </svg>
 );
 
-// --- RobotGreeting Component (NEW) ---
-const RobotGreeting = ({ onClose }) => {
+// --- RobotGreeting Component (UPDATED with Name) ---
+const RobotGreeting = ({ onClose, userName }) => {
   const [text, setText] = useState("");
-  const fullText = "Привет! Я Taipan AI. Готов захватить рынок?";
+  const [showBubble, setShowBubble] = useState(true);
 
   useEffect(() => {
+    // Determine message based on userName
+    const fullText = userName 
+        ? `Привет, ${userName}! Я Taipan AI. Работаем?` 
+        : "Привет! Я Taipan AI. Готов захватить рынок?";
+
+    setText(""); // Clear previous text
+    setShowBubble(true); // Ensure bubble is visible on update
+    
     let i = 0;
     const timer = setInterval(() => {
       setText(fullText.slice(0, i));
       i++;
-      if (i > fullText.length + 1) clearInterval(timer);
-    }, 60);
+      if (i > fullText.length + 1) {
+        clearInterval(timer);
+        // Auto-hide bubble after 4 seconds
+        setTimeout(() => setShowBubble(false), 4000);
+      }
+    }, 50);
     return () => clearInterval(timer);
-  }, []);
+  }, [userName]); // Re-run effect when userName changes
 
   return (
     <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end animate-in slide-in-from-bottom-10 duration-1000">
-      <div className="bg-[#050505] border border-[#00FF9D]/40 p-4 rounded-t-2xl rounded-bl-2xl mb-3 max-w-[240px] shadow-[0_0_30px_rgba(0,255,157,0.15)] relative backdrop-blur-md">
-        <button onClick={onClose} className="absolute -top-2 -right-2 bg-[#00FF9D] text-black rounded-full p-1 hover:scale-110 transition-transform shadow-[0_0_10px_#00FF9D]"><X className="w-3 h-3" /></button>
-        <p className="text-[#00FF9D] font-mono text-xs leading-relaxed typing-cursor font-bold tracking-wide">{text}</p>
-      </div>
-      <div className="w-16 h-16 relative group cursor-pointer hover:scale-105 transition-transform" onClick={() => setText(fullText)}>
+      {showBubble && (
+        <div className="bg-[#050505] border border-[#00FF9D]/40 p-4 rounded-t-2xl rounded-bl-2xl mb-3 max-w-[240px] shadow-[0_0_30px_rgba(0,255,157,0.15)] relative backdrop-blur-md animate-in fade-in slide-in-from-bottom-2 duration-300">
+          <button onClick={() => setShowBubble(false)} className="absolute -top-2 -right-2 bg-[#00FF9D] text-black rounded-full p-1 hover:scale-110 transition-transform shadow-[0_0_10px_#00FF9D]"><X className="w-3 h-3" /></button>
+          <p className="text-[#00FF9D] font-mono text-xs leading-relaxed typing-cursor font-bold tracking-wide">{text}</p>
+        </div>
+      )}
+      <div className="w-16 h-16 relative group cursor-pointer hover:scale-105 transition-transform" onClick={() => setShowBubble(true)}>
          <div className="absolute inset-0 bg-[#00FF9D] rounded-full blur-[15px] opacity-40 animate-pulse"></div>
          <div className="w-full h-full bg-black border-2 border-[#00FF9D] rounded-full flex items-center justify-center relative z-10 overflow-hidden shadow-inner">
              {/* Simple CSS Robot Eye */}
@@ -610,11 +624,36 @@ const App = () => {
   const [onlineCount, setOnlineCount] = useState(0);
   // NEW: State for Robot
   const [showRobot, setShowRobot] = useState(true);
+  const [userName, setUserName] = useState('');
 
   useEffect(() => {
     setOnlineCount(Math.floor(Math.random() * 16)); 
     const interval = setInterval(() => { setOnlineCount(Math.floor(Math.random() * 16)); }, 60000); 
     return () => clearInterval(interval);
+  }, []);
+
+  // --- TELEGRAM WEB APP INTEGRATION ---
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.Telegram && window.Telegram.WebApp) {
+        const tg = window.Telegram.WebApp;
+        tg.ready();
+        
+        // Попытка получить данные пользователя
+        if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+            const user = tg.initDataUnsafe.user;
+            const name = user.first_name || user.username || '';
+            if (name) {
+                setUserName(name);
+            }
+        }
+        
+        // Разворачиваем на весь экран
+        try {
+            tg.expand();
+        } catch (e) {
+            console.log("Expand not supported");
+        }
+    }
   }, []);
   
   const [calcData, setCalcData] = useState({ traffic: 0, conversion: 0, avgCheck: 0, margin: 0 });
@@ -673,6 +712,10 @@ const App = () => {
   const closeModal = () => setIsModalOpen(false);
   const handleSubmit = (e) => { 
     e.preventDefault(); 
+    const formData = new FormData(e.target);
+    const name = formData.get('name');
+    if (name) setUserName(name);
+    
     closeModal(); 
     setShowToast(true); 
     setTimeout(() => setShowToast(false), 3000); 
@@ -896,7 +939,7 @@ const App = () => {
             <h2 className="text-2xl font-bold text-center mb-2 tracking-tight">Начать сейчас</h2>
             <p className="text-center text-zinc-500 text-xs uppercase tracking-widest mb-8">Интерес: <span className="text-[#00FF9D]">{modalType}</span></p>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <input type="text" placeholder="Ваше Имя" required className="w-full bg-black border border-white/5 rounded-2xl p-4 text-center text-white focus:border-[#00FF9D]/50 outline-none transition-all placeholder-zinc-700" />
+              <input name="name" type="text" placeholder="Ваше Имя" defaultValue={userName} required className="w-full bg-black border border-white/5 rounded-2xl p-4 text-center text-white focus:border-[#00FF9D]/50 outline-none transition-all placeholder-zinc-700" />
               <input type="text" placeholder="@username" required className="w-full bg-black border border-white/5 rounded-2xl p-4 text-center text-white focus:border-[#00FF9D]/50 outline-none transition-all placeholder-zinc-700" />
               <button type="submit" className="w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-5 rounded-2xl mt-4 text-xs">Связаться со мной</button>
             </form>
@@ -926,7 +969,7 @@ const App = () => {
       )}
 
       {/* Robot Greeting Display */}
-      {showRobot && <RobotGreeting onClose={() => setShowRobot(false)} />}
+      {showRobot && <RobotGreeting onClose={() => setShowRobot(false)} userName={userName} />}
     </div>
   );
 };

@@ -258,9 +258,9 @@ const BaneIntro = ({ onComplete }) => {
         }
 
         const t1 = setTimeout(() => setPhase(1), 50); 
-        const t2 = setTimeout(() => setPhase(2), 3200); // Оставляем сдвиг для "Важно то"
-        const t3 = setTimeout(() => setPhase(3), 4400); // Возвращаем 4400 для "Какой у нас план"
-        const t4 = setTimeout(() => onComplete(), 7800); // Чуть раньше завершаем
+        const t2 = setTimeout(() => setPhase(2), 3400); 
+        const t3 = setTimeout(() => setPhase(3), 4400); 
+        const t4 = setTimeout(() => onComplete(), 7800); 
 
         return () => { 
             clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); 
@@ -985,11 +985,11 @@ const App = () => {
                     <div className="absolute bottom-0 left-0 p-1 opacity-50 text-[8px] font-mono text-[#00FF9D]">SYS.INIT_SEQ_2026</div>
 
                     <p className="text-sm font-bold text-white mb-4 relative z-10 leading-relaxed font-mono uppercase border-l-2 border-[#00FF9D] pl-3">
-                        «Личности не имеют значения. Значение имеет только результат».
+                        «Наш план: позволить таргету доводить каждого лида до товара, без молчания и тишины».
                     </p>
                     
                     <p className="text-[10px] text-zinc-400 leading-relaxed relative z-10 font-mono">
-                        Наш план: позволить таргету доводить каждого лида до товара, без молчания и тишины.
+                        Личности не имеют значения. Значение имеет только результат.
                     </p>
                 </div>
 

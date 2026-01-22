@@ -258,9 +258,9 @@ const BaneIntro = ({ onComplete }) => {
         }
 
         const t1 = setTimeout(() => setPhase(1), 50); 
-        const t2 = setTimeout(() => setPhase(2), 2800); 
-        const t3 = setTimeout(() => setPhase(3), 4400); 
-        const t4 = setTimeout(() => onComplete(), 7500); 
+        const t2 = setTimeout(() => setPhase(2), 3200); // Оставляем сдвиг для "Важно то"
+        const t3 = setTimeout(() => setPhase(3), 4400); // Возвращаем 4400 для "Какой у нас план"
+        const t4 = setTimeout(() => onComplete(), 7800); // Чуть раньше завершаем
 
         return () => { 
             clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); 
@@ -671,6 +671,9 @@ const App = () => {
   
   // Добавляем состояние для Intro Бэйна
   const [baneIntroActive, setBaneIntroActive] = useState(false);
+  
+  // State for image preview modal
+  const [previewImage, setPreviewImage] = useState(null);
 
   useEffect(() => {
     setOnlineCount(Math.floor(Math.random() * 16)); 
@@ -973,8 +976,8 @@ const App = () => {
             <button onClick={() => handleBackClick('main')} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-6 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
             <div className="flex-grow flex flex-col items-center w-full space-y-6">
                 <div className="text-center px-4 w-full mb-4">
-                    <h2 className="text-4xl font-black tracking-tighter uppercase mb-2 font-['Chakra_Petch'] whitespace-nowrap">STRATEGIC <span className="text-[#00FF9D]">PLAN</span></h2>
-                    <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] mr-[-0.3em] font-bold">PROTOCOL: TAIPAN</p>
+                    <h2 className="text-4xl font-black tracking-tighter uppercase mb-2 font-['Chakra_Petch'] whitespace-nowrap">КТО <span className="text-[#00FF9D]">МЫ</span></h2>
+                    <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] mr-[-0.3em] font-bold">И КАКОЙ У НАС ПЛАН</p>
                 </div>
                 
                 <div className="relative w-full glass-card p-6 rounded-sm border border-[#00FF9D]/30 overflow-hidden bg-black/40 tactical-grid">
@@ -986,7 +989,7 @@ const App = () => {
                     </p>
                     
                     <p className="text-[10px] text-zinc-400 leading-relaxed relative z-10 font-mono">
-                        Наш план: замена неэффективных отделов маркетинга автономными системами в Telegram.
+                        Наш план: позволить таргету доводить каждого лида до товара, без молчания и тишины.
                     </p>
                 </div>
 
@@ -996,10 +999,10 @@ const App = () => {
                         <div className="mt-1"><Shield className="w-6 h-6 text-[#00FF9D] opacity-80 group-hover:opacity-100 group-hover:drop-shadow-[0_0_8px_#00FF9D] transition-all" /></div>
                         <div>
                              <div className="flex items-baseline gap-2 mb-1">
-                                 <span className="text-xs font-bold text-white font-mono uppercase tracking-wider">РАЗВЕДКА</span>
+                                 <span className="text-xs font-bold text-white font-mono uppercase tracking-wider">Опыт в продажах и разработках</span>
                                  <span className="text-[10px] text-[#00FF9D] font-mono">[10 ЛЕТ]</span>
                              </div>
-                             <p className="text-[10px] text-zinc-400 leading-relaxed font-mono">10 лет в продажах позволяют нам видеть слабые места конкурентов раньше, чем они сами их заметят.</p>
+                             <p className="text-[10px] text-zinc-400 leading-relaxed font-mono">10 лет в продажах позволяют нам знать что хочет клиент, что ему доставляет комфорт и позволяет плавно совершать покупку.</p>
                         </div>
                     </div>
                     {/* Block 2 */}
@@ -1007,21 +1010,22 @@ const App = () => {
                         <div className="mt-1"><Zap className="w-6 h-6 text-[#00FF9D] opacity-80 group-hover:opacity-100 group-hover:drop-shadow-[0_0_8px_#00FF9D] transition-all" /></div>
                         <div>
                              <div className="flex items-baseline gap-2 mb-1">
-                                 <span className="text-xs font-bold text-white font-mono uppercase tracking-wider">УДАР</span>
-                                 <span className="text-[10px] text-[#00FF9D] font-mono">[7 ДНЕЙ]</span>
+                                 <span className="text-xs font-bold text-white font-mono uppercase tracking-wider">Оперативность</span>
+                                 <span className="text-[10px] text-[#00FF9D] font-mono">[ОТ 7 ДНЕЙ]</span>
                              </div>
-                             <p className="text-[10px] text-zinc-400 leading-relaxed font-mono">Мы не ведем переговоры месяцами. Развертывание боевой торговой системы на базе botmag занимает неделю.</p>
+                             <p className="text-[10px] text-zinc-400 leading-relaxed font-mono">Мы не ведем переговоры месяцами. Мы запускаем MVP и улучшаем его под ваши запросы. Наша цель, не затягивать то, что может приносить вам доход уже завтра.</p>
                         </div>
                     </div>
                     {/* Block 3 */}
                     <div className="glass-card p-4 rounded-sm border border-zinc-800 flex items-start gap-4 hover:border-[#00FF9D]/40 transition-colors group">
-                        <div className="mt-1"><Bot className="w-6 h-6 text-[#00FF9D] opacity-80 group-hover:opacity-100 group-hover:drop-shadow-[0_0_8px_#00FF9D] transition-all" /></div>
+                        <div className="mt-1"><GraduationCap className="w-6 h-6 text-[#00FF9D] opacity-80 group-hover:opacity-100 group-hover:drop-shadow-[0_0_8px_#00FF9D] transition-all" /></div>
                         <div>
                              <div className="flex items-baseline gap-2 mb-1">
-                                 <span className="text-xs font-bold text-white font-mono uppercase tracking-wider">КОНТРОЛЬ</span>
-                                 <span className="text-[10px] text-[#00FF9D] font-mono">[90%]</span>
+                                 <span className="text-xs font-bold text-white font-mono uppercase tracking-wider">ОБУЧЕНИЕ</span>
+                                 <span className="text-[10px] text-[#00FF9D] font-mono">[100%]</span>
                              </div>
-                             <p className="text-[10px] text-zinc-400 leading-relaxed font-mono">Мы исключаем человеческий фактор. Система продает сама, пока вы считаете прибыль.</p>
+                             <p className="text-[10px] text-zinc-400 leading-relaxed font-mono">Мы не только разрабатываем телеграм-магазины, мы обучаем ваш персонал использовать его на 100%.</p>
+                             <p className="text-[10px] text-zinc-400 leading-relaxed font-mono mt-2 pt-2 border-t border-zinc-800">Так же мы обучаем физ.лиц, которые хотят освоить трендовый навык, и обеспечить себе дополнительный доход с нашей командой.</p>
                         </div>
                     </div>
                 </div>
@@ -1054,13 +1058,13 @@ const App = () => {
                 <div className="w-full pt-4">
                      <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] font-bold mb-3 pl-2">УСПЕШНЫЕ ОПЕРАЦИИ</p>
                      <div className="grid grid-cols-2 gap-3">
-                         <div className="glass-card p-3 rounded-sm border border-zinc-800 flex flex-col items-center justify-center h-24 opacity-80 hover:opacity-100 hover:border-[#00FF9D]/30 transition-all cursor-pointer" onClick={() => window.open('https://t.me/taipanmedia', '_blank')}>
+                         <div className="glass-card p-3 rounded-sm border border-zinc-800 flex flex-col items-center justify-center h-24 opacity-80 hover:opacity-100 hover:border-[#00FF9D]/30 transition-all cursor-pointer" onClick={() => setPreviewImage("https://i.ibb.co.com/ks9Sz9zz/5438294939344244554.jpg")}>
                              <SmartImage src="https://i.ibb.co.com/ks9Sz9zz/5438294939344244554.jpg" className="w-full h-full object-cover opacity-60 hover:opacity-100 transition-opacity rounded-sm" alt="ROMANTIC Case" />
                              <div className="absolute inset-0 flex items-center justify-center bg-black/60 hover:bg-black/40 transition-colors">
                                  <span className="text-[10px] font-bold text-white font-mono tracking-wider">ROMANTIC</span>
                              </div>
                          </div>
-                         <div className="glass-card p-3 rounded-sm border border-zinc-800 flex flex-col items-center justify-center h-24 opacity-80 hover:opacity-100 hover:border-[#00FF9D]/30 transition-all cursor-pointer" onClick={() => window.open('https://t.me/taipanmedia', '_blank')}>
+                         <div className="glass-card p-3 rounded-sm border border-zinc-800 flex flex-col items-center justify-center h-24 opacity-80 hover:opacity-100 hover:border-[#00FF9D]/30 transition-all cursor-pointer" onClick={() => setPreviewImage("https://i.ibb.co.com/gMTG4QXt/5438294939344244553.jpg")}>
                              <SmartImage src="https://i.ibb.co.com/gMTG4QXt/5438294939344244553.jpg" className="w-full h-full object-cover opacity-60 hover:opacity-100 transition-opacity rounded-sm" alt="FOOD Case" />
                              <div className="absolute inset-0 flex items-center justify-center bg-black/60 hover:bg-black/40 transition-colors">
                                  <span className="text-[10px] font-bold text-white font-mono tracking-wider">КАСТРЮЛЬКА</span>
@@ -1104,6 +1108,21 @@ const App = () => {
             {activeFaq.isCalc && !showCalculator && (<button onClick={() => setShowCalculator(true)} className="w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-4 rounded-xl shadow-[0_0_15px_rgba(0,255,157,0.3)] animate-pulse hover:scale-[1.02] transition-all text-xs">РАССЧИТАТЬ ПРИБЫЛЬ</button>)}
             {activeFaq.isCalc && showCalculator && (<div className="mt-6 border-t border-[#00FF9D]/20 pt-6"><ProfitCalculator data={calcData} setData={setCalcData} onAction={() => setCurrentView('strategy')} /></div>)}
             <button onClick={closeFaq} className="absolute top-6 right-6 text-zinc-500 hover:text-white"><X className="w-6 h-6" /></button>
+          </div>
+        </div>
+      )}
+
+      {/* Image Preview Modal */}
+      {previewImage && (
+        <div className="fixed inset-0 z-[400] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 animate-in fade-in duration-300" onClick={() => setPreviewImage(null)}>
+          <div className="relative w-full max-w-4xl h-full max-h-[90vh] flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+             <img src={previewImage} className="w-full h-full object-contain rounded-lg shadow-2xl" alt="Case Study Full" />
+             <button 
+                className="absolute top-4 right-4 bg-black/50 p-2 rounded-full text-white hover:bg-black/80 transition-colors"
+                onClick={() => setPreviewImage(null)}
+             >
+                <X className="w-6 h-6" />
+             </button>
           </div>
         </div>
       )}

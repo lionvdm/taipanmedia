@@ -65,12 +65,14 @@ const GlobalStyles = () => (
       90% { transform: translate(-1px, 1px) skew(0deg); opacity: 0.9; }
       100% { transform: translate(0) skew(0deg); opacity: 1; filter: none; }
     }
-    
-    .typing-cursor::after {
-      content: '|';
-      animation: blink 1s step-start infinite;
+    @keyframes textReveal {
+      0% { opacity: 0; transform: translateY(10px); filter: blur(4px); }
+      100% { opacity: 1; transform: translateY(0); filter: blur(0); }
     }
-    @keyframes blink { 50% { opacity: 0; } }
+    @keyframes voiceWave {
+      0%, 100% { height: 10%; }
+      50% { height: 100%; }
+    }
   `}} />
 );
 
@@ -123,65 +125,12 @@ const Wallet = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewB
 const X = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>);
 const Zap = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></svg>);
 const Search = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>);
+const Users = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>);
 const TelegramLogoMain = ({ className }) => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" stroke="none" className={className}>
     <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.446 1.394c-.16.16-.295.293-.605.293l.214-3.054 5.56-5.022c.24-.213-.054-.334-.373-.121l-6.869 4.326-2.962-.924c-.64-.203-.658-.64.135-.954l11.566-4.458c.538-.196 1.006.128.832.942z"/>
   </svg>
 );
-
-// --- RobotGreeting Component (UPDATED with Name) ---
-const RobotGreeting = ({ onClose, userName }) => {
-  const [text, setText] = useState("");
-  const [showBubble, setShowBubble] = useState(true);
-
-  useEffect(() => {
-    // Determine message based on userName
-    const fullText = userName 
-        ? `Привет, ${userName}! Я Taipan AI. Работаем?` 
-        : "Привет! Я Taipan AI. Готов захватить рынок?";
-
-    setText(""); // Clear previous text
-    setShowBubble(true); // Ensure bubble is visible on update
-    
-    let i = 0;
-    const timer = setInterval(() => {
-      setText(fullText.slice(0, i));
-      i++;
-      if (i > fullText.length + 1) {
-        clearInterval(timer);
-        // Auto-hide bubble after 4 seconds
-        setTimeout(() => setShowBubble(false), 4000);
-      }
-    }, 50);
-    return () => clearInterval(timer);
-  }, [userName]); // Re-run effect when userName changes
-
-  return (
-    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end animate-in slide-in-from-bottom-10 duration-1000">
-      {showBubble && (
-        <div className="bg-[#050505] border border-[#00FF9D]/40 p-4 rounded-t-2xl rounded-bl-2xl mb-3 max-w-[240px] shadow-[0_0_30px_rgba(0,255,157,0.15)] relative backdrop-blur-md animate-in fade-in slide-in-from-bottom-2 duration-300">
-          <button onClick={() => setShowBubble(false)} className="absolute -top-2 -right-2 bg-[#00FF9D] text-black rounded-full p-1 hover:scale-110 transition-transform shadow-[0_0_10px_#00FF9D]"><X className="w-3 h-3" /></button>
-          <p className="text-[#00FF9D] font-mono text-xs leading-relaxed typing-cursor font-bold tracking-wide">{text}</p>
-        </div>
-      )}
-      <div className="w-16 h-16 relative group cursor-pointer hover:scale-105 transition-transform" onClick={() => setShowBubble(true)}>
-         <div className="absolute inset-0 bg-[#00FF9D] rounded-full blur-[15px] opacity-40 animate-pulse"></div>
-         <div className="w-full h-full bg-black border-2 border-[#00FF9D] rounded-full flex items-center justify-center relative z-10 overflow-hidden shadow-inner">
-             {/* Simple CSS Robot Eye */}
-            <div className="relative w-full h-full flex items-center justify-center bg-zinc-900">
-                <div className="w-10 h-6 bg-black rounded-md border border-[#00FF9D]/50 flex items-center justify-center relative overflow-hidden">
-                    <div className="absolute inset-0 bg-[#00FF9D]/10 animate-pulse"></div>
-                    <div className="flex gap-1.5 z-10">
-                        <div className="w-2 h-2 bg-[#00FF9D] rounded-full shadow-[0_0_5px_#00FF9D] animate-[blink_3s_infinite]"></div>
-                        <div className="w-2 h-2 bg-[#00FF9D] rounded-full shadow-[0_0_5px_#00FF9D] animate-[blink_3s_infinite]"></div>
-                    </div>
-                </div>
-            </div>
-         </div>
-      </div>
-    </div>
-  );
-};
 
 // --- Новый компонент: SmartImage ---
 const SmartImage = ({ src, alt, className, style, wrapperClass = "", overflowHidden = true }) => {
@@ -263,6 +212,68 @@ const ProfitCalculator = ({ onAction, data, setData }) => {
       <button onClick={onAction} className="w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-3 rounded-xl shadow-[0_0_20px_rgba(0,255,157,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs flex items-center justify-center gap-2 animate-pulse mt-4">ПОЛУЧИТЬ СТРАТЕГИЮ ОТ TAIPAN GROUP</button>
     </div>
   );
+};
+
+// --- Bane Intro Component ---
+const BaneIntro = ({ onComplete }) => {
+    const [phase, setPhase] = useState(0);
+
+    useEffect(() => {
+        // Воспроизведение аудио. 
+        // Убедитесь, что файл "VID_20260122_010534_539 (online-audio-converter.com).mp3" находится в папке public
+        const audio = new Audio('/VID_20260122_010534_539 (online-audio-converter.com).mp3');
+        audio.volume = 1.0;
+        
+        // Пытаемся воспроизвести (браузеры могут блокировать автоплей без взаимодействия)
+        const playPromise = audio.play();
+        if (playPromise !== undefined) {
+            playPromise.catch(error => {
+                console.log("Audio autoplay prevented:", error);
+            });
+        }
+
+        const t1 = setTimeout(() => setPhase(1), 500);  // "Не важно кто мы такие"
+        const t2 = setTimeout(() => setPhase(2), 2800); // "Важно то"
+        const t3 = setTimeout(() => setPhase(3), 4200); // "Какой у нас план"
+        const t4 = setTimeout(() => onComplete(), 7000); // Завершение (чуть длиннее для драматизма)
+
+        return () => { 
+            clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); 
+            audio.pause();
+        };
+    }, [onComplete]);
+
+    return (
+        <div className="fixed inset-0 z-[300] bg-black flex flex-col items-center justify-center p-6 text-center cursor-pointer" onClick={onComplete}>
+            <div className="max-w-md w-full relative">
+                 {/* Voice Visualizer */}
+                <div className="flex justify-center items-end gap-1 h-16 mb-12 opacity-50">
+                     {[...Array(12)].map((_, i) => (
+                         <div key={i} className="w-2 bg-[#00FF9D] rounded-full animate-[voiceWave_0.8s_ease-in-out_infinite]" style={{ animationDelay: `${Math.random() * 0.5}s`, height: '10%' }}></div>
+                     ))}
+                </div>
+
+                <div className="space-y-6">
+                    <h2 className={`text-xl sm:text-2xl font-black uppercase font-['Chakra_Petch'] tracking-[0.2em] text-zinc-500 transition-all duration-1000 ${phase >= 1 ? 'opacity-100 translate-y-0 blur-0' : 'opacity-0 translate-y-4 blur-sm'}`}>
+                        НЕ ВАЖНО КТО МЫ ТАКИЕ
+                    </h2>
+                    
+                    <div className="space-y-2">
+                        <h2 className={`text-2xl sm:text-3xl font-black uppercase font-['Chakra_Petch'] tracking-widest text-white transition-all duration-700 ${phase >= 2 ? 'opacity-100 translate-y-0 blur-0' : 'opacity-0 translate-y-4 blur-sm'}`}>
+                            ВАЖНО ТО...
+                        </h2>
+                        <h2 className={`text-3xl sm:text-5xl font-black uppercase font-['Chakra_Petch'] tracking-widest text-[#00FF9D] transition-all duration-500 ${phase >= 3 ? 'opacity-100 scale-100 blur-0' : 'opacity-0 scale-90 blur-sm'}`}>
+                            КАКОЙ У НАС ПЛАН
+                        </h2>
+                    </div>
+                </div>
+                
+                <div className="absolute bottom-[-100px] left-0 right-0 text-center">
+                    <p className="text-[10px] text-zinc-700 uppercase tracking-[0.5em] animate-pulse">SOUND ON</p>
+                </div>
+            </div>
+        </div>
+    );
 };
 
 // --- HackerProof ---
@@ -357,11 +368,11 @@ const SetupTimeline = () => {
       <div className="relative border-l border-[#00FF9D]/20 ml-2 space-y-6">
         {steps.map((step, i) => (
           <div key={i} className="relative pl-6 group">
-              <div className="absolute -left-[5px] top-1 w-2.5 h-2.5 bg-[#050505] border border-[#00FF9D] rounded-full group-hover:bg-[#00FF9D] group-hover:shadow-[0_0_10px_#00FF9D] transition-all"></div>
-              <div className="flex justify-between items-start">
-                <div><h4 className="text-sm font-bold text-white font-['Chakra_Petch'] leading-none mb-1 group-hover:text-[#00FF9D] transition-colors">{step.title}</h4><p className="text-[11px] text-zinc-400 leading-snug max-w-[220px]">{step.desc}</p></div>
-                <span className="text-[9px] font-mono text-[#00FF9D]/70 bg-[#00FF9D]/5 px-1.5 py-0.5 rounded ml-2 whitespace-nowrap">{step.time}</span>
-              </div>
+             <div className="absolute -left-[5px] top-1 w-2.5 h-2.5 bg-[#050505] border border-[#00FF9D] rounded-full group-hover:bg-[#00FF9D] group-hover:shadow-[0_0_10px_#00FF9D] transition-all"></div>
+             <div className="flex justify-between items-start">
+               <div><h4 className="text-sm font-bold text-white font-['Chakra_Petch'] leading-none mb-1 group-hover:text-[#00FF9D] transition-colors">{step.title}</h4><p className="text-[11px] text-zinc-400 leading-snug max-w-[220px]">{step.desc}</p></div>
+               <span className="text-[9px] font-mono text-[#00FF9D]/70 bg-[#00FF9D]/5 px-1.5 py-0.5 rounded ml-2 whitespace-nowrap">{step.time}</span>
+             </div>
           </div>
         ))}
         <div className="relative pl-6 mt-8"><div className="absolute -left-[7px] top-1 w-3.5 h-3.5 bg-[#00FF9D] rounded-full animate-pulse shadow-[0_0_15px_#00FF9D]"></div><div className="bg-[#00FF9D]/10 border border-[#00FF9D]/30 p-3 rounded-lg"><h4 className="text-sm font-black text-[#00FF9D] uppercase tracking-wider mb-1">МАГАЗИН ГОТОВ</h4><p className="text-[10px] text-zinc-300 leading-snug">Можно запускать трафик и получать прибыль. Система работает автономно.</p></div></div>
@@ -523,7 +534,7 @@ const ShopIntroSequence = ({ onComplete }) => {
   const message = { part1: "МЕНЬШЕ ДИАЛОГОВ — БОЛЬШЕ ДЕНЕГ.", part2: "СПАСАЕМ ОТ 20% УПУЩЕННОЙ ПРИБЫЛИ" };
   useEffect(() => {
     const timer = setTimeout(() => { onComplete(); }, 3000);
-    return () => clearInterval(timer);
+    return () => clearTimeout(timer);
   }, [onComplete]);
   return (
     <div className="flex flex-col items-center justify-center h-full w-full min-h-[60vh] px-4 cursor-pointer" onClick={onComplete}>
@@ -622,38 +633,14 @@ const App = () => {
   const [showToast, setShowToast] = useState(false);
   const [activeSlide, setActiveSlide] = useState(0);
   const [onlineCount, setOnlineCount] = useState(0);
-  // NEW: State for Robot
-  const [showRobot, setShowRobot] = useState(true);
-  const [userName, setUserName] = useState('');
+  
+  // Добавляем состояние для Intro Бэйна
+  const [baneIntroActive, setBaneIntroActive] = useState(false);
 
   useEffect(() => {
     setOnlineCount(Math.floor(Math.random() * 16)); 
     const interval = setInterval(() => { setOnlineCount(Math.floor(Math.random() * 16)); }, 60000); 
     return () => clearInterval(interval);
-  }, []);
-
-  // --- TELEGRAM WEB APP INTEGRATION ---
-  useEffect(() => {
-    if (typeof window !== 'undefined' && window.Telegram && window.Telegram.WebApp) {
-        const tg = window.Telegram.WebApp;
-        tg.ready();
-        
-        // Попытка получить данные пользователя
-        if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
-            const user = tg.initDataUnsafe.user;
-            const name = user.first_name || user.username || '';
-            if (name) {
-                setUserName(name);
-            }
-        }
-        
-        // Разворачиваем на весь экран
-        try {
-            tg.expand();
-        } catch (e) {
-            console.log("Expand not supported");
-        }
-    }
   }, []);
   
   const [calcData, setCalcData] = useState({ traffic: 0, conversion: 0, avgCheck: 0, margin: 0 });
@@ -712,10 +699,6 @@ const App = () => {
   const closeModal = () => setIsModalOpen(false);
   const handleSubmit = (e) => { 
     e.preventDefault(); 
-    const formData = new FormData(e.target);
-    const name = formData.get('name');
-    if (name) setUserName(name);
-    
     closeModal(); 
     setShowToast(true); 
     setTimeout(() => setShowToast(false), 3000); 
@@ -730,11 +713,21 @@ const App = () => {
   }
 
   const handleStrategyClick = () => {
-       setCurrentView('strategy');
+     setCurrentView('strategy');
   };
 
   const handleBackClick = (target) => {
     setCurrentView(target);
+  }
+
+  // Новый обработчик для кнопки "Кто мы?"
+  const handleAboutClick = () => {
+     setBaneIntroActive(true);
+  }
+
+  const handleBaneIntroComplete = () => {
+      setBaneIntroActive(false);
+      setCurrentView('about');
   }
 
   const faqItems = [
@@ -747,6 +740,9 @@ const App = () => {
   return (
     <div className="min-h-screen bg-[#050505] text-white font-sans selection:bg-[#00FF9D]/30 relative overflow-hidden flex flex-col">
       <GlobalStyles />
+      {/* Bane Intro Overlay */}
+      {baneIntroActive && <BaneIntro onComplete={handleBaneIntroComplete} />}
+
       <div className="fixed inset-0 z-0 pointer-events-none">
         <div className="absolute inset-0 bg-[#020202] -z-20" />
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-purple-500/10 rounded-full blur-[120px] animate-pulse"></div>
@@ -769,8 +765,8 @@ const App = () => {
                 <div className="h-[1px] flex-1 max-w-[40px] bg-gradient-to-l from-transparent to-zinc-700"></div>
               </div>
               <p className="text-[10px] text-zinc-600 font-mono mt-2 tracking-widest flex items-center justify-center gap-2 opacity-80">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#00FF9D] animate-pulse shadow-[0_0_5px_#00FF9D]"></span>
-                  СЕЙЧАС ОНЛАЙН: <span className="text-zinc-400 font-bold">{onlineCount}</span>
+                 <span className="w-1.5 h-1.5 rounded-full bg-[#00FF9D] animate-pulse shadow-[0_0_5px_#00FF9D]"></span>
+                 СЕЙЧАС ОНЛАЙН: <span className="text-zinc-400 font-bold">{onlineCount}</span>
               </p>
             </div>
             
@@ -788,9 +784,16 @@ const App = () => {
                 <div className="flex items-center text-[10px] text-[#00FF9D] opacity-0 group-hover:opacity-100 transition-all font-bold tracking-wider">УЗНАТЬ <ArrowRight className="w-3 h-3 ml-1" /></div>
               </div>
             </div>
-            <div onClick={() => openModal('Mini App')} className="group relative glass-card rounded-3xl p-6 flex flex-col items-center justify-center cursor-pointer text-center w-full">
-              <h3 className="text-lg font-bold uppercase tracking-widest mb-2 group-hover:text-[#00FF9D] transition-colors">MINI APP</h3>
-              <p className="text-[10px] text-zinc-500 uppercase tracking-widest group-hover:text-white transition-colors">Заказать персональный mini app</p>
+            <div className="grid grid-cols-2 gap-4 w-full">
+                <div onClick={() => openModal('Mini App')} className="group relative glass-card rounded-3xl p-6 flex flex-col items-center justify-center cursor-pointer text-center w-full h-40">
+                    <h3 className="text-lg font-bold uppercase tracking-widest mb-2 group-hover:text-[#00FF9D] transition-colors">MINI APP</h3>
+                    <p className="text-[10px] text-zinc-500 uppercase tracking-widest group-hover:text-white transition-colors leading-tight">Заказать персональный mini app</p>
+                </div>
+                 <div onClick={handleAboutClick} className="group relative glass-card rounded-3xl p-6 flex flex-col items-center justify-center cursor-pointer text-center w-full h-40">
+                    <Users className="w-8 h-8 mb-3 text-zinc-500 group-hover:text-[#00FF9D] transition-colors" />
+                    <h3 className="text-lg font-bold uppercase tracking-widest mb-2 group-hover:text-[#00FF9D] transition-colors">КТО МЫ?</h3>
+                    <p className="text-[10px] text-zinc-500 uppercase tracking-widest group-hover:text-white transition-colors leading-tight">О команде и миссии</p>
+                </div>
             </div>
             <PartnersCredits />
           </div>
@@ -881,8 +884,8 @@ const App = () => {
                     {slides.map((SlideComponent, idx) => (
                        <div key={idx} className={`absolute inset-0 flex items-center justify-center transition-all duration-[1200ms] ease-in-out transform ${activeSlide === idx ? 'opacity-100 scale-100 blur-0' : 'opacity-0 scale-75 blur-3xl'}`}>
                          <div className="relative w-full text-center">
-                           <div className="absolute inset-0 bg-white/5 blur-3xl rounded-full transform scale-150 left-1/2 -translate-x-1/2" />
-                           <div className="relative z-10"><SlideComponent isActive={activeSlide === idx} /></div>
+                            <div className="absolute inset-0 bg-white/5 blur-3xl rounded-full transform scale-150 left-1/2 -translate-x-1/2" />
+                            <div className="relative z-10"><SlideComponent isActive={activeSlide === idx} /></div>
                          </div>
                        </div>
                      ))}
@@ -929,6 +932,60 @@ const App = () => {
             <div className="mt-8 w-full glass-card p-6 rounded-3xl text-center border border-[#00FF9D]/20"><p className="text-[10px] text-zinc-400 uppercase tracking-widest mb-2">Стоимость обучения</p><div className="text-2xl font-black text-white mb-4 font-['Chakra_Petch']">50 000 ₸ <span className="text-zinc-600 text-lg line-through decoration-red-600 decoration-2 ml-2">80 000 ₸</span></div><p className="text-[10px] text-zinc-500 uppercase tracking-widest mb-6">Длительность обучения (14 дней)</p><button onClick={() => window.open('https://t.me/taipanmedia', '_blank')} className="block w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-4 rounded-xl shadow-[0_0_20px_rgba(0,255,157,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs">Получить подробную консультацию</button></div>
           </div>
         )}
+
+        {currentView === 'about' && (
+          <div className="animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col h-full items-center">
+            <button onClick={() => handleBackClick('main')} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-6 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
+            <div className="flex-grow flex flex-col items-center w-full space-y-6">
+                <div className="text-center px-4 w-full mb-4">
+                    <h2 className="text-4xl font-black tracking-tighter uppercase mb-2 font-['Chakra_Petch'] whitespace-nowrap">TAIPAN <span className="text-[#00FF9D]">SQUAD</span></h2>
+                    <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] mr-[-0.3em] font-bold">Архитекторы цифровой реальности</p>
+                </div>
+                
+                <div className="relative w-full glass-card p-6 rounded-3xl border border-[#00FF9D]/20 overflow-hidden">
+                    <div className="absolute top-0 right-0 p-4 opacity-20"><Users className="w-20 h-20 text-[#00FF9D]" /></div>
+                    <p className="text-sm font-bold text-white mb-4 relative z-10 leading-relaxed">
+                        Мы — команда разработчиков и маркетологов, создающая инструменты для <span className="text-[#00FF9D]">доминирования</span> на рынке.
+                    </p>
+                    <p className="text-[11px] text-zinc-400 leading-relaxed relative z-10">
+                        В мире, где внимание — это новая валюта, мы создаем системы, которые конвертируют взгляды в прибыль. Мы не следуем трендам. Мы их кодируем.
+                    </p>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2 w-full">
+                    <div className="glass-card p-3 rounded-2xl flex flex-col items-center justify-center text-center">
+                        <span className="text-2xl font-black text-[#00FF9D] font-['Chakra_Petch']">4+</span>
+                        <span className="text-[8px] text-zinc-500 uppercase font-bold tracking-wider mt-1">Года на рынке</span>
+                    </div>
+                     <div className="glass-card p-3 rounded-2xl flex flex-col items-center justify-center text-center">
+                        <span className="text-2xl font-black text-white font-['Chakra_Petch']">150+</span>
+                        <span className="text-[8px] text-zinc-500 uppercase font-bold tracking-wider mt-1">Проектов</span>
+                    </div>
+                     <div className="glass-card p-3 rounded-2xl flex flex-col items-center justify-center text-center">
+                        <span className="text-xl font-black text-[#00FF9D] font-['Chakra_Petch']">$5M+</span>
+                        <span className="text-[8px] text-zinc-500 uppercase font-bold tracking-wider mt-1">Прибыль клиентов</span>
+                    </div>
+                </div>
+
+                <div className="w-full space-y-3">
+                    <div className="glass-card p-4 rounded-2xl flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-full bg-zinc-900 flex items-center justify-center text-[#00FF9D] font-black font-mono border border-[#00FF9D]/20">01</div>
+                        <div><h4 className="text-xs font-bold text-white uppercase tracking-wider mb-1">СКОРОСТЬ</h4><p className="text-[10px] text-zinc-500">Запуск проектов за 24 часа. Деньги любят скорость.</p></div>
+                    </div>
+                    <div className="glass-card p-4 rounded-2xl flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-full bg-zinc-900 flex items-center justify-center text-[#00FF9D] font-black font-mono border border-[#00FF9D]/20">02</div>
+                        <div><h4 className="text-xs font-bold text-white uppercase tracking-wider mb-1">АНОНИМНОСТЬ</h4><p className="text-[10px] text-zinc-500">Ваши данные и доходы под надежной защитой.</p></div>
+                    </div>
+                    <div className="glass-card p-4 rounded-2xl flex items-center gap-4">
+                         <div className="w-10 h-10 rounded-full bg-zinc-900 flex items-center justify-center text-[#00FF9D] font-black font-mono border border-[#00FF9D]/20">03</div>
+                        <div><h4 className="text-xs font-bold text-white uppercase tracking-wider mb-1">РЕЗУЛЬТАТ</h4><p className="text-[10px] text-zinc-500">Мы не продаем процессы. Мы продаем готовый бизнес.</p></div>
+                    </div>
+                </div>
+
+                 <button onClick={() => window.open('https://t.me/taipanmedia', '_blank')} className="w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-4 rounded-xl shadow-[0_0_20px_rgba(0,255,157,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs mt-auto">Связаться с командой</button>
+            </div>
+          </div>
+        )}
       </div>
 
       {isModalOpen && (
@@ -939,7 +996,7 @@ const App = () => {
             <h2 className="text-2xl font-bold text-center mb-2 tracking-tight">Начать сейчас</h2>
             <p className="text-center text-zinc-500 text-xs uppercase tracking-widest mb-8">Интерес: <span className="text-[#00FF9D]">{modalType}</span></p>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <input name="name" type="text" placeholder="Ваше Имя" defaultValue={userName} required className="w-full bg-black border border-white/5 rounded-2xl p-4 text-center text-white focus:border-[#00FF9D]/50 outline-none transition-all placeholder-zinc-700" />
+              <input type="text" placeholder="Ваше Имя" required className="w-full bg-black border border-white/5 rounded-2xl p-4 text-center text-white focus:border-[#00FF9D]/50 outline-none transition-all placeholder-zinc-700" />
               <input type="text" placeholder="@username" required className="w-full bg-black border border-white/5 rounded-2xl p-4 text-center text-white focus:border-[#00FF9D]/50 outline-none transition-all placeholder-zinc-700" />
               <button type="submit" className="w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-5 rounded-2xl mt-4 text-xs">Связаться со мной</button>
             </form>
@@ -967,9 +1024,6 @@ const App = () => {
           <span className="text-xs font-bold uppercase tracking-wider">Запрос принят</span>
         </div>
       )}
-
-      {/* Robot Greeting Display */}
-      {showRobot && <RobotGreeting onClose={() => setShowRobot(false)} userName={userName} />}
     </div>
   );
 };

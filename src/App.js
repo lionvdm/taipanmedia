@@ -73,14 +73,35 @@ const GlobalStyles = () => (
       0%, 100% { height: 10%; }
       50% { height: 100%; }
     }
-    /* Новые анимации для интро */
-    @keyframes cinematicReveal {
-      0% { opacity: 0; filter: blur(20px); letter-spacing: 0em; transform: scale(1.05); }
-      100% { opacity: 1; filter: blur(0); letter-spacing: 0.2em; transform: scale(1); }
+    /* PREMIUM INTRO ANIMATIONS */
+    @keyframes aggressive-glitch-text {
+      0% { opacity: 0; transform: scale(1.2) skewX(20deg); filter: blur(10px); color: #333; }
+      20% { opacity: 1; transform: scale(1) skewX(-10deg); filter: blur(0); color: #fff; text-shadow: 5px 0 #ff0000; }
+      40% { transform: skewX(10deg); text-shadow: -5px 0 #00ffff; }
+      60% { transform: skewX(-5deg); text-shadow: 2px 0 #ff0000; }
+      80% { transform: skewX(2deg); }
+      100% { transform: skewX(0); color: #e0e0e0; letter-spacing: 0.2em; }
     }
-    @keyframes textGlow {
-      0%, 100% { text-shadow: 0 0 10px rgba(0, 255, 157, 0.1); }
-      50% { text-shadow: 0 0 30px rgba(0, 255, 157, 0.6), 0 0 10px rgba(0, 255, 157, 0.4); }
+
+    @keyframes fire-text {
+      0% { text-shadow: 0 -2px 10px #ff3d00, 0 -5px 20px #ff9100, 0 -10px 40px #ffea00; color: #fff; transform: scale(1); }
+      10% { text-shadow: 0 -2px 12px #ff3d00, 0 -10px 25px #ff9100, 0 -15px 45px #ffea00; color: #ffffcc; transform: scale(1.02); }
+      20% { text-shadow: 0 -2px 8px #ff3d00, 0 -5px 18px #ff9100, 0 -10px 35px #ffea00; color: #fff; transform: scale(1); }
+      30% { text-shadow: 0 -2px 15px #ff0000, 0 -8px 25px #ff4d00, 0 -18px 50px #ffae00; color: #fff0f0; transform: scale(1.03); }
+      40% { opacity: 0.9; }
+      50% { opacity: 1; text-shadow: 0 -2px 10px #ff3d00, 0 -5px 20px #ff9100, 0 -10px 40px #ffea00; }
+      100% { text-shadow: 0 -2px 10px #ff3d00, 0 -5px 20px #ff9100, 0 -10px 40px #ffea00; }
+    }
+
+    @keyframes smoke-fade {
+      0% { opacity: 0; filter: blur(15px); transform: translateY(20px) scale(0.9); }
+      100% { opacity: 1; filter: blur(0); transform: translateY(0) scale(1); }
+    }
+    
+    @keyframes burn-in {
+      0% { color: #000; text-shadow: none; opacity: 0; }
+      50% { color: #300; text-shadow: 0 0 10px #500; opacity: 1; }
+      100% { color: #fff; text-shadow: 0 0 5px #ff5500, 0 0 10px #ff0000; }
     }
   `}} />
 );
@@ -262,27 +283,30 @@ const BaneIntro = ({ onComplete }) => {
                      ))}
                 </div>
 
-                <div className="space-y-8">
+                <div className="space-y-8 relative z-10">
                     {/* Первая фраза */}
-                    <div className={`transition-all duration-[1500ms] ease-out transform ${phase >= 1 ? 'opacity-100 translate-y-0 blur-0' : 'opacity-0 translate-y-8 blur-lg'}`}>
-                        <h2 className="text-xl sm:text-2xl font-black uppercase font-['Chakra_Petch'] tracking-[0.2em] text-zinc-600 animate-[cinematicReveal_3s_ease-out_forwards]">
+                    <div className={`transition-all duration-[1500ms] ease-out ${phase >= 1 ? 'opacity-100' : 'opacity-0'}`}>
+                        <h2 className="text-xl sm:text-2xl font-black uppercase font-['Chakra_Petch'] tracking-[0.2em] text-zinc-500 animate-[smoke-fade_2s_ease-out_forwards]">
                             НЕ ВАЖНО КТО МЫ ТАКИЕ
                         </h2>
                     </div>
                     
                     {/* Вторая фраза */}
-                    <div className={`transition-all duration-[1000ms] delay-200 ease-out transform ${phase >= 2 ? 'opacity-100 translate-y-0 blur-0' : 'opacity-0 translate-y-8 blur-lg'}`}>
-                        <h2 className="text-2xl sm:text-3xl font-black uppercase font-['Chakra_Petch'] tracking-widest text-zinc-300 animate-[cinematicReveal_2.5s_ease-out_forwards]">
+                    <div className={`transition-all duration-[100ms] ${phase >= 2 ? 'opacity-100' : 'opacity-0'}`}>
+                        <h2 className="text-2xl sm:text-3xl font-black uppercase font-['Chakra_Petch'] tracking-widest text-white animate-[aggressive-glitch-text_0.5s_cubic-bezier(0.25,0.46,0.45,0.94)_both]">
                             ВАЖНО ТО
                         </h2>
                     </div>
 
                     {/* Третья фраза - главная */}
-                    <div className={`transition-all duration-[800ms] delay-300 ease-out transform ${phase >= 3 ? 'opacity-100 scale-100 blur-0' : 'opacity-0 scale-90 blur-xl'}`}>
-                        <h2 className="text-3xl sm:text-5xl font-black uppercase font-['Chakra_Petch'] tracking-widest text-[#00FF9D] animate-[textGlow_3s_infinite_ease-in-out] relative">
-                            КАКОЙ У НАС ПЛАН
-                            <div className="absolute inset-0 blur-[30px] bg-[#00FF9D]/20 animate-pulse -z-10"></div>
-                        </h2>
+                    <div className={`transition-all duration-[200ms] ${phase >= 3 ? 'opacity-100' : 'opacity-0'}`}>
+                        <div className="relative inline-block">
+                            <h2 className="text-4xl sm:text-6xl font-black uppercase font-['Chakra_Petch'] tracking-widest text-white animate-[fire-text_3s_infinite_linear] relative z-10">
+                                КАКОЙ У НАС ПЛАН
+                            </h2>
+                            {/* Fire effect backing */}
+                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-orange-500 blur-[40px] opacity-20 animate-pulse mix-blend-screen"></div>
+                        </div>
                     </div>
                 </div>
                 

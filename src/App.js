@@ -235,12 +235,9 @@ const BaneIntro = ({ onComplete }) => {
     const [phase, setPhase] = useState(0);
 
     useEffect(() => {
-        // Воспроизведение аудио. 
-        // Убедитесь, что файл "VID_20260122_010534_539 (online-audio-converter.com).mp3" находится в папке public
         const audio = new Audio('/VID_20260122_010534_539 (online-audio-converter.com).mp3');
         audio.volume = 1.0;
         
-        // Пытаемся воспроизвести (браузеры могут блокировать автоплей без взаимодействия)
         const playPromise = audio.play();
         if (playPromise !== undefined) {
             playPromise.catch(error => {
@@ -248,10 +245,10 @@ const BaneIntro = ({ onComplete }) => {
             });
         }
 
-        const t1 = setTimeout(() => setPhase(1), 50);  // "Не важно кто мы такие" - Появляется практически сразу
-        const t2 = setTimeout(() => setPhase(2), 2800); // "Важно то"
-        const t3 = setTimeout(() => setPhase(3), 4400); // "Какой у нас план"
-        const t4 = setTimeout(() => onComplete(), 7500); // Завершение
+        const t1 = setTimeout(() => setPhase(1), 50); 
+        const t2 = setTimeout(() => setPhase(2), 2800); 
+        const t3 = setTimeout(() => setPhase(3), 4400); 
+        const t4 = setTimeout(() => onComplete(), 7500); 
 
         return () => { 
             clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); 
@@ -273,7 +270,7 @@ const BaneIntro = ({ onComplete }) => {
                     {/* Первая фраза */}
                     <div className={`transition-all duration-[1500ms] ease-out ${phase >= 1 ? 'opacity-100' : 'opacity-0'}`}>
                         <h2 className="text-xl sm:text-2xl font-black uppercase font-['Chakra_Petch'] tracking-[0.2em] text-zinc-500 animate-[smoke-fade_2s_ease-out_forwards]">
-                            НЕ ВАЖНО КТО МЫ ТАКИЕ
+                            НЕВАЖНО КТО МЫ ТАКИЕ
                         </h2>
                     </div>
                     

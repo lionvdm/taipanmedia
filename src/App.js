@@ -73,35 +73,21 @@ const GlobalStyles = () => (
       0%, 100% { height: 10%; }
       50% { height: 100%; }
     }
-    /* PREMIUM INTRO ANIMATIONS */
+    /* OPTIMIZED INTRO ANIMATIONS */
     @keyframes aggressive-glitch-text {
-      0% { opacity: 0; transform: scale(1.2) skewX(20deg); filter: blur(10px); color: #333; }
-      20% { opacity: 1; transform: scale(1) skewX(-10deg); filter: blur(0); color: #fff; text-shadow: 5px 0 #ff0000; }
-      40% { transform: skewX(10deg); text-shadow: -5px 0 #00ffff; }
-      60% { transform: skewX(-5deg); text-shadow: 2px 0 #ff0000; }
-      80% { transform: skewX(2deg); }
-      100% { transform: skewX(0); color: #e0e0e0; letter-spacing: 0.2em; }
+      0% { opacity: 0; transform: scale(1.1); color: #333; }
+      20% { opacity: 1; transform: scale(1); color: #fff; text-shadow: 2px 0 #00FF9D; }
+      100% { color: #e0e0e0; letter-spacing: 0.15em; }
     }
 
-    @keyframes fire-text {
-      0% { text-shadow: 0 -2px 10px #ff3d00, 0 -5px 20px #ff9100, 0 -10px 40px #ffea00; color: #fff; transform: scale(1); }
-      10% { text-shadow: 0 -2px 12px #ff3d00, 0 -10px 25px #ff9100, 0 -15px 45px #ffea00; color: #ffffcc; transform: scale(1.02); }
-      20% { text-shadow: 0 -2px 8px #ff3d00, 0 -5px 18px #ff9100, 0 -10px 35px #ffea00; color: #fff; transform: scale(1); }
-      30% { text-shadow: 0 -2px 15px #ff0000, 0 -8px 25px #ff4d00, 0 -18px 50px #ffae00; color: #fff0f0; transform: scale(1.03); }
-      40% { opacity: 0.9; }
-      50% { opacity: 1; text-shadow: 0 -2px 10px #ff3d00, 0 -5px 20px #ff9100, 0 -10px 40px #ffea00; }
-      100% { text-shadow: 0 -2px 10px #ff3d00, 0 -5px 20px #ff9100, 0 -10px 40px #ffea00; }
+    @keyframes simple-glow {
+      0%, 100% { text-shadow: 0 0 10px rgba(0, 255, 157, 0.3); transform: scale(1); color: #fff; }
+      50% { text-shadow: 0 0 25px rgba(0, 255, 157, 0.8), 0 0 10px rgba(0, 255, 157, 0.5); transform: scale(1.02); color: #00FF9D; }
     }
 
     @keyframes smoke-fade {
-      0% { opacity: 0; filter: blur(15px); transform: translateY(20px) scale(0.9); }
-      100% { opacity: 1; filter: blur(0); transform: translateY(0) scale(1); }
-    }
-    
-    @keyframes burn-in {
-      0% { color: #000; text-shadow: none; opacity: 0; }
-      50% { color: #300; text-shadow: 0 0 10px #500; opacity: 1; }
-      100% { color: #fff; text-shadow: 0 0 5px #ff5500, 0 0 10px #ff0000; }
+      0% { opacity: 0; transform: translateY(10px); }
+      100% { opacity: 1; transform: translateY(0); }
     }
   `}} />
 );
@@ -298,14 +284,12 @@ const BaneIntro = ({ onComplete }) => {
                         </h2>
                     </div>
 
-                    {/* Третья фраза - главная */}
-                    <div className={`transition-all duration-[200ms] ${phase >= 3 ? 'opacity-100' : 'opacity-0'}`}>
+                    {/* Третья фраза - главная (SIMPLIFIED) */}
+                    <div className={`transition-all duration-[500ms] ${phase >= 3 ? 'opacity-100' : 'opacity-0'}`}>
                         <div className="relative inline-block">
-                            <h2 className="text-4xl sm:text-6xl font-black uppercase font-['Chakra_Petch'] tracking-widest text-white animate-[fire-text_3s_infinite_linear] relative z-10">
+                            <h2 className="text-3xl sm:text-5xl font-black uppercase font-['Chakra_Petch'] tracking-widest text-[#00FF9D] animate-[simple-glow_3s_infinite_ease-in-out]">
                                 КАКОЙ У НАС ПЛАН
                             </h2>
-                            {/* Fire effect backing */}
-                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-orange-500 blur-[40px] opacity-20 animate-pulse mix-blend-screen"></div>
                         </div>
                     </div>
                 </div>

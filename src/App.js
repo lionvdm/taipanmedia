@@ -73,6 +73,15 @@ const GlobalStyles = () => (
       0%, 100% { height: 10%; }
       50% { height: 100%; }
     }
+    /* Новые анимации для интро */
+    @keyframes cinematicReveal {
+      0% { opacity: 0; filter: blur(20px); letter-spacing: 0em; transform: scale(1.05); }
+      100% { opacity: 1; filter: blur(0); letter-spacing: 0.2em; transform: scale(1); }
+    }
+    @keyframes textGlow {
+      0%, 100% { text-shadow: 0 0 10px rgba(0, 255, 157, 0.1); }
+      50% { text-shadow: 0 0 30px rgba(0, 255, 157, 0.6), 0 0 10px rgba(0, 255, 157, 0.4); }
+    }
   `}} />
 );
 
@@ -253,17 +262,26 @@ const BaneIntro = ({ onComplete }) => {
                      ))}
                 </div>
 
-                <div className="space-y-6">
-                    <h2 className={`text-xl sm:text-2xl font-black uppercase font-['Chakra_Petch'] tracking-[0.2em] text-zinc-500 transition-all duration-1000 ${phase >= 1 ? 'opacity-100 translate-y-0 blur-0' : 'opacity-0 translate-y-4 blur-sm'}`}>
-                        НЕ ВАЖНО КТО МЫ ТАКИЕ
-                    </h2>
-                    
-                    <div className="space-y-2">
-                        <h2 className={`text-2xl sm:text-3xl font-black uppercase font-['Chakra_Petch'] tracking-widest text-white transition-all duration-700 ${phase >= 2 ? 'opacity-100 translate-y-0 blur-0' : 'opacity-0 translate-y-4 blur-sm'}`}>
-                            ВАЖНО ТО...
+                <div className="space-y-8">
+                    {/* Первая фраза */}
+                    <div className={`transition-all duration-[1500ms] ease-out transform ${phase >= 1 ? 'opacity-100 translate-y-0 blur-0' : 'opacity-0 translate-y-8 blur-lg'}`}>
+                        <h2 className="text-xl sm:text-2xl font-black uppercase font-['Chakra_Petch'] tracking-[0.2em] text-zinc-600 animate-[cinematicReveal_3s_ease-out_forwards]">
+                            НЕ ВАЖНО КТО МЫ ТАКИЕ
                         </h2>
-                        <h2 className={`text-3xl sm:text-5xl font-black uppercase font-['Chakra_Petch'] tracking-widest text-[#00FF9D] transition-all duration-500 ${phase >= 3 ? 'opacity-100 scale-100 blur-0' : 'opacity-0 scale-90 blur-sm'}`}>
+                    </div>
+                    
+                    {/* Вторая фраза */}
+                    <div className={`transition-all duration-[1000ms] delay-200 ease-out transform ${phase >= 2 ? 'opacity-100 translate-y-0 blur-0' : 'opacity-0 translate-y-8 blur-lg'}`}>
+                        <h2 className="text-2xl sm:text-3xl font-black uppercase font-['Chakra_Petch'] tracking-widest text-zinc-300 animate-[cinematicReveal_2.5s_ease-out_forwards]">
+                            ВАЖНО ТО
+                        </h2>
+                    </div>
+
+                    {/* Третья фраза - главная */}
+                    <div className={`transition-all duration-[800ms] delay-300 ease-out transform ${phase >= 3 ? 'opacity-100 scale-100 blur-0' : 'opacity-0 scale-90 blur-xl'}`}>
+                        <h2 className="text-3xl sm:text-5xl font-black uppercase font-['Chakra_Petch'] tracking-widest text-[#00FF9D] animate-[textGlow_3s_infinite_ease-in-out] relative">
                             КАКОЙ У НАС ПЛАН
+                            <div className="absolute inset-0 blur-[30px] bg-[#00FF9D]/20 animate-pulse -z-10"></div>
                         </h2>
                     </div>
                 </div>

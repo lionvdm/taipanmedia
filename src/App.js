@@ -968,10 +968,13 @@ const App = () => {
                 <div className="relative w-full glass-card p-6 rounded-3xl border border-[#00FF9D]/20 overflow-hidden">
                     <div className="absolute top-0 right-0 p-4 opacity-20"><Users className="w-20 h-20 text-[#00FF9D]" /></div>
                     <p className="text-sm font-bold text-white mb-4 relative z-10 leading-relaxed">
-                        Мы — команда разработчиков и маркетологов, создающая инструменты для <span className="text-[#00FF9D]">доминирования</span> на рынке.
+                        <span className="text-[#00FF9D]">Taipan Team.</span> 10 лет в продажах — в каждой строке нашего кода.
                     </p>
                     <p className="text-[11px] text-zinc-400 leading-relaxed relative z-10">
-                        В мире, где внимание — это новая валюта, мы создаем системы, которые конвертируют взгляды в прибыль. Мы не следуем трендам. Мы их кодируем.
+                        Мы не просто разработчики. Мы — продавцы, которые сели за код, чтобы создать идеальный инструмент. Мы проектируем торговые экосистемы в Telegram, которые заменяют громоздкие сайты и целые отделы маркетинга.
+                    </p>
+                     <p className="text-[11px] text-zinc-400 leading-relaxed relative z-10 mt-2">
+                        Пока другие воюют за таргет, наши системы захватывают продажи.
                     </p>
                 </div>
 

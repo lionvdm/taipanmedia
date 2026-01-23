@@ -3,14 +3,26 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 // --- FIREBASE INTEGRATION ---
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
-import { getFirestore, doc, setDoc, updateDoc, serverTimestamp, collection, query, onSnapshot } from 'firebase/firestore';
+import { getFirestore, doc, setDoc, updateDoc, serverTimestamp, collection, query, onSnapshot, deleteDoc } from 'firebase/firestore';
 
-// Initialize Firebase using the global config provided by the environment
-const firebaseConfig = JSON.parse(__firebase_config);
+// --- CONFIGURATION & INIT ---
+const firebaseConfig = {
+  apiKey: "AIzaSyCdcj_56EdygidWa8pQm17fegnF39XB8Xg",
+  authDomain: "taipan-680b2.firebaseapp.com",
+  projectId: "taipan-680b2",
+  storageBucket: "taipan-680b2.firebasestorage.app",
+  messagingSenderId: "990538734233",
+  appId: "1:990538734233:web:dbfe47aed6d87626207608",
+  measurementId: "G-QFJTFTCNNY"
+};
+
+// Инициализация Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
-// Получаем ID приложения для формирования правильных путей
+const isFirebaseInitialized = true;
+
+// Получаем ID приложения для формирования правильных путей (или используем дефолтный)
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
 // --- TELEGRAM API HELPERS ---

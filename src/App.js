@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 
-// --- СТИЛИ ---
+// --- STYLES ---
 const GlobalStyles = () => (
   <style dangerouslySetInnerHTML={{__html: `
     body { margin: 0; background-color: #050505; color: white; overflow-x: hidden; }
-    /* Скрытие скроллбара */
+    /* Hide scrollbar */
     ::-webkit-scrollbar { display: none; }
     body { -ms-overflow-style: none; scrollbar-width: none; }
     
@@ -98,7 +98,7 @@ const GlobalStyles = () => (
   `}} />
 );
 
-// --- ХУК ДЛЯ АНИМАЦИИ ЦИФР ---
+// --- HOOK FOR ODOMETER ANIMATION ---
 const useOdometer = (targetValue, duration = 1000) => {
   const [displayValue, setDisplayValue] = useState(0);
   const frameRef = useRef(0);
@@ -136,7 +136,7 @@ const useOdometer = (targetValue, duration = 1000) => {
   return displayValue;
 };
 
-// --- Компоненты Иконок ---
+// --- ICON COMPONENTS ---
 const GraduationCap = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M22 10v6M2 10l10-5 10 5-10 5z" /><path d="M6 12v5c3 3 9 3 12 0v-5" /></svg>);
 const ArrowRight = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>);
 const ChevronLeft = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m15 18-6-6 6-6" /></svg>);
@@ -149,10 +149,9 @@ const Zap = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox=
 const Search = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>);
 const Users = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>);
 const Shield = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>);
-const Bot = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>);
-const Target = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>);
 const Crosshair = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><line x1="22" y1="12" x2="18" y2="12"/><line x1="6" y1="12" x2="2" y2="12"/><line x1="12" y1="6" x2="12" y2="2"/><line x1="12" y1="22" x2="12" y2="18"/></svg>);
 const Code = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>);
+const Share2 = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>);
 
 const TelegramLogoMain = ({ className }) => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" stroke="none" className={className}>
@@ -160,7 +159,7 @@ const TelegramLogoMain = ({ className }) => (
   </svg>
 );
 
-// --- Новый компонент: SmartImage ---
+// --- COMPONENT: SmartImage ---
 const SmartImage = ({ src, alt, className, style, wrapperClass = "", overflowHidden = true }) => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
@@ -179,7 +178,7 @@ const SmartImage = ({ src, alt, className, style, wrapperClass = "", overflowHid
         onError={(e) => {
            setHasError(true);
            if (e.target.src !== "https://via.placeholder.com/400x200?text=Error") {
-             e.target.style.display = 'none'; // Скрыть битое изображение, если нет фоллбэка
+             e.target.style.display = 'none'; // Hide broken image if no fallback
            }
         }}
         className={`${className} transition-opacity duration-700 ease-out ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
@@ -189,7 +188,7 @@ const SmartImage = ({ src, alt, className, style, wrapperClass = "", overflowHid
   );
 };
 
-// --- Компонент Поля Ввода ---
+// --- INPUT FIELD COMPONENT ---
 const InputField = ({ label, value, setValue, suffix = "" }) => (
   <div className="mb-2">
     <label className="block text-[9px] text-zinc-500 mb-1 uppercase tracking-wider font-bold">{label}</label>
@@ -206,7 +205,7 @@ const InputField = ({ label, value, setValue, suffix = "" }) => (
   </div>
 );
 
-// --- Компонент Калькулятора Прибыли ---
+// --- PROFIT CALCULATOR COMPONENT ---
 const ProfitCalculator = ({ onAction, data, setData }) => {
   const sales = Math.floor(data.traffic * (data.conversion / 100));
   const revenue = sales * data.avgCheck;
@@ -247,13 +246,14 @@ const BaneIntro = ({ onComplete }) => {
     const [phase, setPhase] = useState(0);
 
     useEffect(() => {
+        // NOTE: Audio file needs to be present in public folder for this to work
         const audio = new Audio('/VID_20260122_010534_539 (online-audio-converter.com).mp3');
         audio.volume = 1.0;
         
         const playPromise = audio.play();
         if (playPromise !== undefined) {
             playPromise.catch(error => {
-                console.log("Audio autoplay prevented:", error);
+                console.log("Audio autoplay prevented (expected in preview):", error);
             });
         }
 
@@ -273,27 +273,27 @@ const BaneIntro = ({ onComplete }) => {
             <div className="max-w-md w-full relative">
                  {/* Voice Visualizer */}
                 <div className="flex justify-center items-end gap-1 h-16 mb-12 opacity-50">
-                     {[...Array(12)].map((_, i) => (
-                         <div key={i} className="w-2 bg-[#00FF9D] rounded-full animate-[voiceWave_0.8s_ease-in-out_infinite]" style={{ animationDelay: `${Math.random() * 0.5}s`, height: '10%' }}></div>
-                     ))}
+                      {[...Array(12)].map((_, i) => (
+                          <div key={i} className="w-2 bg-[#00FF9D] rounded-full animate-[voiceWave_0.8s_ease-in-out_infinite]" style={{ animationDelay: `${Math.random() * 0.5}s`, height: '10%' }}></div>
+                      ))}
                 </div>
 
                 <div className="space-y-8 relative z-10">
-                    {/* Первая фраза */}
+                    {/* First Phrase */}
                     <div className={`transition-all duration-[1500ms] ease-out ${phase >= 1 ? 'opacity-100' : 'opacity-0'}`}>
                         <h2 className="text-xl sm:text-2xl font-black uppercase font-['Chakra_Petch'] tracking-[0.2em] text-zinc-500 animate-[smoke-fade_2s_ease-out_forwards]">
                             НЕВАЖНО КТО МЫ ТАКИЕ
                         </h2>
                     </div>
                     
-                    {/* Вторая фраза */}
+                    {/* Second Phrase */}
                     <div className={`transition-all duration-[100ms] ${phase >= 2 ? 'opacity-100' : 'opacity-0'}`}>
                         <h2 className="text-2xl sm:text-3xl font-black uppercase font-['Chakra_Petch'] tracking-widest text-white animate-[aggressive-glitch-text_0.5s_cubic-bezier(0.25,0.46,0.45,0.94)_both]">
                             ВАЖНО ТО
                         </h2>
                     </div>
 
-                    {/* Третья фраза - главная (SIMPLIFIED) */}
+                    {/* Third Phrase - Main */}
                     <div className={`transition-all duration-[500ms] ${phase >= 3 ? 'opacity-100' : 'opacity-0'}`}>
                         <div className="relative inline-block">
                             <h2 className="text-3xl sm:text-5xl font-black uppercase font-['Chakra_Petch'] tracking-widest text-[#00FF9D] animate-[simple-glow_3s_infinite_ease-in-out]">
@@ -660,6 +660,43 @@ const RoiView = ({ profit, onBack, onAction }) => {
   );
 };
 
+// --- Referral Section Component (NEW) ---
+const ReferralSection = () => {
+  const tg = window.Telegram?.WebApp;
+  const userId = tg?.initDataUnsafe?.user?.id || "000";
+  const botUsername = "TaipanBot"; // Placeholder bot username
+  const refLink = `https://t.me/${botUsername}/app?startapp=ref_${userId}`;
+
+  const shareLink = () => {
+    const text = "Забирай скидку 10% на обучение в TAIPAN ACADEMY по моей ссылке! ⚡️";
+    if (tg?.openTelegramLink) {
+        tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(refLink)}&text=${encodeURIComponent(text)}`);
+    } else {
+        // Fallback for browser testing
+        navigator.clipboard.writeText(refLink).then(() => alert("Ссылка скопирована в буфер обмена!"));
+    }
+  };
+
+  return (
+    <div className="glass-card p-6 rounded-3xl border border-[#00FF9D]/20 mt-6 animate-in slide-in-from-bottom duration-700 delay-150">
+      <h3 className="text-sm font-black uppercase tracking-widest text-[#00FF9D] mb-4 flex items-center gap-2"><Share2 className="w-4 h-4" /> ПРОГРАММА ЛОЯЛЬНОСТИ</h3>
+      <div className="bg-black/40 p-4 rounded-xl border border-white/5 mb-4 relative overflow-hidden">
+        <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(0,255,157,0.05)_50%,transparent_75%,transparent_100%)] bg-[length:250%_250%] animate-[snakeFlow_4s_linear_infinite]"></div>
+        <p className="text-[10px] text-zinc-400 uppercase leading-relaxed relative z-10">
+          Твоя выгода: <span className="text-white font-bold">10% скидка</span> за друга.<br/>
+          Выгода друга: <span className="text-white font-bold">10% скидка</span> на старт.
+        </p>
+      </div>
+      <button 
+        onClick={shareLink}
+        className="w-full bg-white text-black font-black py-3 rounded-xl text-[10px] uppercase tracking-widest hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+      >
+        ПОДЕЛИТЬСЯ ССЫЛКОЙ
+      </button>
+    </div>
+  );
+};
+
 const App = () => {
   useEffect(() => { console.log("Taipan Media App Initialized"); }, []);
   const [currentView, setCurrentView] = useState('main'); 
@@ -669,11 +706,64 @@ const App = () => {
   const [activeSlide, setActiveSlide] = useState(0);
   const [onlineCount, setOnlineCount] = useState(0);
   
-  // Добавляем состояние для Intro Бэйна
+  // State for Bane Intro
   const [baneIntroActive, setBaneIntroActive] = useState(false);
   
   // State for image preview modal
   const [previewImage, setPreviewImage] = useState(null);
+
+  // --- NEW: Referral State ---
+  const [hasReferralDiscount, setHasReferralDiscount] = useState(false);
+
+  // --- CRM LOGGING FUNCTION ---
+  const logToTaipanCRM = async (topicId, status, details = "") => {
+    const token = "8398712805:AAHFZXllsCQU0YNd8KIo9Rie5VZeyH91GMQ";
+    const chatId = "-1003690228596"; // Your group ID
+    const tg = window.Telegram?.WebApp;
+    const user = tg?.initDataUnsafe?.user;
+
+    const message = `
+📊 **СТАТУС: ${status}**
+--------------------------
+👤 **Юзер:** ${user?.first_name || 'Incognito'} (@${user?.username || 'нет'})
+🆔 **ID:** \`${user?.id || '---'}\`${details ? `\n🔹 **Детали:** ${details}` : ""}
+--------------------------
+    `;
+
+    try {
+      await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: chatId,
+          message_thread_id: topicId,
+          text: message,
+          parse_mode: "Markdown"
+        })
+      });
+    } catch (e) {
+      console.error("Ошибка CRM:", e);
+    }
+  };
+
+  // --- NEW: Referral Capture Logic & Initial Log ---
+  useEffect(() => {
+    const tg = window.Telegram?.WebApp;
+    const startParam = tg?.initDataUnsafe?.start_param;
+
+    // Log Entry (Topic 2)
+    logToTaipanCRM(2, "ВХОД", "Открыл Mini App");
+
+    if (startParam && startParam.startsWith('ref_')) {
+      const inviterId = startParam.replace('ref_', '');
+      
+      // Save discount state
+      setHasReferralDiscount(true);
+      
+      // Analytics/Backend logic placeholder
+      console.log(`User invited by: ${inviterId}`);
+    }
+  }, []);
 
   useEffect(() => {
     setOnlineCount(Math.floor(Math.random() * 16)); 
@@ -698,7 +788,7 @@ const App = () => {
       return () => clearInterval(timer);
     }
   }, [currentView]);
-   
+    
   const canvasRef = useRef(null);
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -735,37 +825,54 @@ const App = () => {
 
   const openModal = (type) => { setModalType(type); setIsModalOpen(true); };
   const closeModal = () => setIsModalOpen(false);
+  
+  // --- UPDATED: Handle Submit with Logging (Topic 6) ---
   const handleSubmit = (e) => { 
     e.preventDefault(); 
+    
+    const name = e.target[0].value;
+    const contact = e.target[1].value;
+
+    logToTaipanCRM(6, "ГОРЯЧИЙ ЛИД 🔥", `Имя: ${name}\n🔹 Контакт: ${contact}\n🔹 Услуга: ${modalType}`);
+
     closeModal(); 
     setShowToast(true); 
     setTimeout(() => setShowToast(false), 3000); 
     e.target.reset(); 
   };
+
   const handleFaqClick = (item) => { setActiveFaq(item); setShowCalculator(false); };
   const closeFaq = () => { setActiveFaq(null); setShowCalculator(false); };
-  const handleShopClick = () => { setShopIntroFinished(false); setCurrentView('shop'); };
   
+  // --- UPDATED: Handle Shop Click with Logging (Topic 3) ---
+  const handleShopClick = () => { 
+      logToTaipanCRM(3, "ИНТЕРЕС", "Раздел: Магазин");
+      setShopIntroFinished(false); 
+      setCurrentView('shop'); 
+  };
+  
+  // --- UPDATED: Handle Education Click with Logging (Topic 3) ---
   const handleEducationClick = () => {
+    logToTaipanCRM(3, "ИНТЕРЕС", "Раздел: Обучение");
     setCurrentView('education');
   }
 
   const handleStrategyClick = () => {
-     setCurrentView('strategy');
+       setCurrentView('strategy');
   };
 
   const handleBackClick = (target) => {
     setCurrentView(target);
   }
 
-  // Новый обработчик для кнопки "Кто мы?"
+  // Handler for "Who We Are"
   const handleAboutClick = () => {
-     setBaneIntroActive(true);
+       setBaneIntroActive(true);
   }
 
   const handleBaneIntroComplete = () => {
-      setBaneIntroActive(false);
-      setCurrentView('about');
+       setBaneIntroActive(false);
+       setCurrentView('about');
   }
 
   const faqItems = [
@@ -878,7 +985,10 @@ const App = () => {
                     <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] mr-[-0.3em] font-bold">Узнайте сколько вы теряете</p>
                 </div>
                 <div className="w-full glass-card p-4 rounded-3xl border border-[#00FF9D]/20 relative overflow-hidden">
-                    <ProfitCalculator data={calcData} setData={setCalcData} onAction={() => setCurrentView('strategy')} />
+                    <ProfitCalculator data={calcData} setData={setCalcData} onAction={() => {
+                        logToTaipanCRM(3, "РАСЧЕТ", "Пользователь считает прибыль");
+                        setCurrentView('strategy');
+                    }} />
                 </div>
             </div>
           </div>
@@ -931,6 +1041,12 @@ const App = () => {
               </div>
               <div className="text-center w-full px-6 flex justify-center mb-8"><p className="text-zinc-500 text-[12px] font-bold uppercase tracking-widest mr-[-0.1em] animate-pulse whitespace-nowrap">Не стань историей упущенных шансов</p></div>
             </div>
+            
+            {/* --- NEW: Referral Section in Education --- */}
+            <div className="w-full mb-8">
+               <ReferralSection />
+            </div>
+
             <button onClick={() => setCurrentView('faq')} className="w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-6 rounded-3xl shadow-[0_5px_30px_rgba(0,255,157,0.3)] hover:scale-[1.02] active:scale-[0.98] transition-all mt-4 text-xs">Стань тем кто успел</button>
           </div>
         )}
@@ -958,6 +1074,17 @@ const App = () => {
             <button onClick={() => handleBackClick('faq')} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-6 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
             <div className="flex-grow flex flex-col items-center w-full space-y-6">
               <div className="flex flex-col items-center text-center px-4 w-full mb-6 mx-auto max-w-sm"><h2 className="text-3xl sm:text-4xl font-black tracking-tight uppercase mb-2 font-['Chakra_Petch'] leading-tight">Модули обучения<br/><span className="text-[#00FF9D]">TAIPAN ACADEMY</span></h2><p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] mr-[-0.3em] font-bold">Система доминирования</p></div>
+              
+              {/* --- NEW: Referral Discount Banner --- */}
+              {hasReferralDiscount && (
+                <div className="w-full bg-[#00FF9D]/10 border border-[#00FF9D]/40 p-4 rounded-xl mb-2 animate-pulse flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(0,255,157,0.1)]">
+                    <span className="text-lg">🎟</span>
+                    <p className="text-[10px] text-[#00FF9D] font-black text-center uppercase tracking-[0.2em]">
+                    Активирована партнерская скидка 10%
+                    </p>
+                </div>
+              )}
+
               <div className="w-full space-y-3">
                 {[{ title: "Модуль 1: Быстрый старт", subtitle: "Запуск системы", desc: "Регистрируем бота и получаем API ключ. Пара кликов — и движок твоего будущего магазина официально запущен.", easy: "Никакого кода, только стандартные настройки Telegram за 2 минуты.", locked: false }, { title: "Модуль 2: Красивая витрина", subtitle: "Наполнение", desc: "Загружаем товары, создаем категории и описание. Твой бот превращается в профессиональный онлайн-маркет.", easy: "Работает как обычный альбом в соцсетях: добавил фото, поставил цену — готово.", locked: false }, { title: "Модуль 3: Автопилот", subtitle: "Платежи и доставка", desc: "Подключаем оплату (Kaspi/карты) и настраиваем доставку. Теперь магазин сам принимает заказы и деньги 24/7.", easy: "Один раз выбрал нужные галочки в настройках, и система работает без твоего участия.", locked: false }, { title: "Модуль 4: Карта прибыли", subtitle: "Где твои деньги", desc: "Покажем список ниш, где за такие магазины платят больше всего. Даем готовое предложение, которое остается только отправить.", easy: "Тебе не нужно ничего выдумывать — мы даем наводку на прибыльные места и готовый текст для сделки.", locked: false }].map((item, i) => (
                   <div key={i} className="glass-card rounded-2xl p-5 flex flex-col items-start gap-3 group cursor-pointer hover:bg-white/5 transition-all">
@@ -967,7 +1094,24 @@ const App = () => {
                 ))}
               </div>
             </div>
-            <div className="mt-8 w-full glass-card p-6 rounded-3xl text-center border border-[#00FF9D]/20"><p className="text-[10px] text-zinc-400 uppercase tracking-widest mb-2">Стоимость обучения</p><div className="text-2xl font-black text-white mb-4 font-['Chakra_Petch']">50 000 ₸ <span className="text-zinc-600 text-lg line-through decoration-red-600 decoration-2 ml-2">80 000 ₸</span></div><p className="text-[10px] text-zinc-500 uppercase tracking-widest mb-6">Длительность обучения (14 дней)</p><button onClick={() => window.open('https://t.me/taipanmedia', '_blank')} className="block w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-4 rounded-xl shadow-[0_0_20px_rgba(0,255,157,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs">Получить подробную консультацию</button></div>
+            <div className="mt-8 w-full glass-card p-6 rounded-3xl text-center border border-[#00FF9D]/20">
+                <p className="text-[10px] text-zinc-400 uppercase tracking-widest mb-2">Стоимость обучения</p>
+                
+                {/* --- NEW: Dynamic Pricing --- */}
+                <div className="text-2xl font-black text-white mb-4 font-['Chakra_Petch']">
+                    {hasReferralDiscount ? (
+                        <>
+                        <span className="text-[#00FF9D] text-3xl drop-shadow-[0_0_10px_rgba(0,255,157,0.5)]">45 000 ₸</span>
+                        <span className="text-zinc-600 text-sm line-through decoration-red-600 decoration-2 ml-2">50 000 ₸</span>
+                        </>
+                    ) : (
+                        <>50 000 ₸ <span className="text-zinc-600 text-lg line-through decoration-red-600 decoration-2 ml-2">80 000 ₸</span></>
+                    )}
+                </div>
+
+                <p className="text-[10px] text-zinc-500 uppercase tracking-widest mb-6">Длительность обучения (14 дней)</p>
+                <button onClick={() => window.open('https://t.me/taipanmedia', '_blank')} className="block w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-4 rounded-xl shadow-[0_0_20px_rgba(0,255,157,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs">Получить подробную консультацию</button>
+            </div>
           </div>
         )}
 
@@ -1056,21 +1200,21 @@ const App = () => {
                 </div>
 
                 <div className="w-full pt-4">
-                     <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] font-bold mb-3 pl-2">УСПЕШНЫЕ ОПЕРАЦИИ</p>
-                     <div className="grid grid-cols-2 gap-3">
-                         <div className="glass-card p-3 rounded-sm border border-zinc-800 flex flex-col items-center justify-center h-24 opacity-80 hover:opacity-100 hover:border-[#00FF9D]/30 transition-all cursor-pointer" onClick={() => setPreviewImage("https://i.ibb.co.com/ks9Sz9zz/5438294939344244554.jpg")}>
-                             <SmartImage src="https://i.ibb.co.com/ks9Sz9zz/5438294939344244554.jpg" className="w-full h-full object-cover opacity-60 hover:opacity-100 transition-opacity rounded-sm" alt="ROMANTIC Case" />
-                             <div className="absolute inset-0 flex items-center justify-center bg-black/60 hover:bg-black/40 transition-colors">
-                                 <span className="text-[10px] font-bold text-white font-mono tracking-wider">ROMANTIC</span>
-                             </div>
-                         </div>
-                         <div className="glass-card p-3 rounded-sm border border-zinc-800 flex flex-col items-center justify-center h-24 opacity-80 hover:opacity-100 hover:border-[#00FF9D]/30 transition-all cursor-pointer" onClick={() => setPreviewImage("https://i.ibb.co.com/gMTG4QXt/5438294939344244553.jpg")}>
-                             <SmartImage src="https://i.ibb.co.com/gMTG4QXt/5438294939344244553.jpg" className="w-full h-full object-cover opacity-60 hover:opacity-100 transition-opacity rounded-sm" alt="FOOD Case" />
-                             <div className="absolute inset-0 flex items-center justify-center bg-black/60 hover:bg-black/40 transition-colors">
-                                 <span className="text-[10px] font-bold text-white font-mono tracking-wider">КАСТРЮЛЬКА</span>
-                             </div>
-                         </div>
-                     </div>
+                      <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] font-bold mb-3 pl-2">УСПЕШНЫЕ ОПЕРАЦИИ</p>
+                      <div className="grid grid-cols-2 gap-3">
+                          <div className="glass-card p-3 rounded-sm border border-zinc-800 flex flex-col items-center justify-center h-24 opacity-80 hover:opacity-100 hover:border-[#00FF9D]/30 transition-all cursor-pointer" onClick={() => setPreviewImage("https://i.ibb.co.com/ks9Sz9zz/5438294939344244554.jpg")}>
+                              <SmartImage src="https://i.ibb.co.com/ks9Sz9zz/5438294939344244554.jpg" className="w-full h-full object-cover opacity-60 hover:opacity-100 transition-opacity rounded-sm" alt="ROMANTIC Case" />
+                              <div className="absolute inset-0 flex items-center justify-center bg-black/60 hover:bg-black/40 transition-colors">
+                                  <span className="text-[10px] font-bold text-white font-mono tracking-wider">ROMANTIC</span>
+                              </div>
+                          </div>
+                          <div className="glass-card p-3 rounded-sm border border-zinc-800 flex flex-col items-center justify-center h-24 opacity-80 hover:opacity-100 hover:border-[#00FF9D]/30 transition-all cursor-pointer" onClick={() => setPreviewImage("https://i.ibb.co.com/gMTG4QXt/5438294939344244553.jpg")}>
+                              <SmartImage src="https://i.ibb.co.com/gMTG4QXt/5438294939344244553.jpg" className="w-full h-full object-cover opacity-60 hover:opacity-100 transition-opacity rounded-sm" alt="FOOD Case" />
+                              <div className="absolute inset-0 flex items-center justify-center bg-black/60 hover:bg-black/40 transition-colors">
+                                  <span className="text-[10px] font-bold text-white font-mono tracking-wider">КАСТРЮЛЬКА</span>
+                              </div>
+                          </div>
+                      </div>
                 </div>
 
                  <button onClick={() => window.open('https://t.me/taipanmedia', '_blank')} className="w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-4 rounded-sm shadow-[0_0_20px_rgba(0,255,157,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs mt-4 font-mono flex items-center justify-center gap-2">

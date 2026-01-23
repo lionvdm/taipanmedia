@@ -1,8 +1,28 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-// --- FIREBASE INTEGRATION ---
-import { db, auth } from './firebaseConfig'; 
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { signInAnonymously } from 'firebase/auth';
+
+// ==========================================
+// 🛠 ИНСТРУКЦИЯ ДЛЯ ДЕПЛОЯ (VERCEL / GITHUB)
+// ==========================================
+// Когда будете загружать код в свой проект:
+// 1. Раскомментируйте строку ниже:
+// import { db, auth } from './firebaseConfig';
+//
+// 2. ЗАКОММЕНТИРУЙТЕ или удалите блок "PREVIEW CONFIG", который идет следом.
+
+// ==========================================
+// 🚀 PREVIEW CONFIG (РАБОТАЕТ ЗДЕСЬ И СЕЙЧАС)
+// ==========================================
+import { initializeApp } from 'firebase/app';
+import { getFirestore, doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { getAuth, signInAnonymously } from 'firebase/auth';
+
+// Эта часть нужна, чтобы код работал в предпросмотре без отдельного файла конфига
+const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
+// ==========================================
+
 
 // --- CRM LOGGING FUNCTION (GLOBAL) ---
 const logToTaipanCRM = async (topicId, status, details = "") => {
@@ -11,21 +31,23 @@ const logToTaipanCRM = async (topicId, status, details = "") => {
   const tg = window.Telegram?.WebApp;
   const user = tg?.initDataUnsafe?.user;
 
-  // Формируем ссылку на личку пользователя
+  // Формируем прямую ссылку на чат с клиентом
   const userLink = user?.username 
     ? `https://t.me/${user.username}` 
     : `tg://user?id=${user?.id}`;
 
+  // Визуально "отцентрованный" шаблон "Premium Terminal"
   const message = `
-📊 **СТАТУС: ${status}**
---------------------------
-👤 **Юзер:** ${user?.first_name || 'Incognito'} (@${user?.username || 'нет'})
-🆔 **ID:** \`${user?.id || '---'}\`
-🔹 **Детали:** ${details}
+       📡 **TAIPAN MONITORING** 📡
 
-👉 [НАПИСАТЬ КЛИЕНТУ](${userLink})
---------------------------
-  `;
+\`\`\`
+   СТАТУС : ${status.toUpperCase()}
+   ЮЗЕР   : ${user?.first_name || 'AGENT'}
+   ID     : ${user?.id || '---'}
+   ЭКШН   : ${details}
+\`\`\`
+    👤 [ПЕРЕЙТИ К ДИАЛОГУ](${userLink})
+`;
 
   try {
     await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
@@ -41,6 +63,33 @@ const logToTaipanCRM = async (topicId, status, details = "") => {
     });
   } catch (e) {
     console.error("Ошибка CRM:", e);
+  }
+};
+
+// --- AUTO-GREETING FUNCTION ---
+const sendWelcomeToUser = async () => {
+  const token = "8398712805:AAHFZXllsCQU0YNd8KIo9Rie5VZeyH91GMQ";
+  const tg = window.Telegram?.WebApp;
+  const user = tg?.initDataUnsafe?.user;
+
+  // Проверка: есть ли ID пользователя и не отправляли ли мы уже приветствие в этой сессии
+  if (!user?.id || sessionStorage.getItem("taipan_welcome_sent")) return;
+
+  const message = "Привет! Вижу, ты заглянул в Taipan Media. Я — бот-помощник Вадима. Если появятся вопросы по магазинам или обучению — просто пиши сюда, я сразу передам команде!";
+
+  try {
+    await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: user.id,
+        text: message
+      })
+    });
+    // Запоминаем, что приветствие отправлено, чтобы не спамить при перезагрузке
+    sessionStorage.setItem("taipan_welcome_sent", "true");
+  } catch (e) {
+    console.error("Ошибка авто-приветствия:", e);
   }
 };
 
@@ -365,7 +414,7 @@ const HackerProof = () => {
       >
         <SmartImage src="https://i.ibb.co.com/FdhqGvD/2025-11-09-113228-fotor-20251109143545.jpg" className="w-full object-cover" alt="Encrypted Proof" />
         <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-md rounded-full p-1.5 opacity-60 group-hover:opacity-100 transition-opacity border border-[#00FF9D]/30 z-10"><Search className="w-3 h-3 text-[#00FF9D]" /></div>
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none z-10"></div>
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none z-10"></div>
         <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-[#00FF9D]/10 to-transparent animate-[scanLine_2.5s_linear_infinite] z-10"></div>
         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-black/20 pointer-events-none z-10"></div>
         <div className="absolute bottom-3 left-3 right-3 flex justify-between items-end z-20">
@@ -393,7 +442,7 @@ const ClientDemandProof = () => {
       <div className="relative rounded-xl overflow-hidden border border-[#00FF9D]/40 mb-6 group animate-in zoom-in duration-500 shadow-[0_0_20px_rgba(0,255,157,0.1)] cursor-zoom-in" onClick={(e) => { e.stopPropagation(); setIsExpanded(true); }}>
         <SmartImage src="https://i.ibb.co.com/h1mN3kL0/5427147012425059102.jpg" className="w-full object-cover opacity-90 filter grayscale-[0.5] contrast-[1.1] brightness-[0.9]" alt="Client Demand" />
         <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-md rounded-full p-1.5 opacity-60 group-hover:opacity-100 transition-opacity border border-[#00FF9D]/30 z-10"><Search className="w-3 h-3 text-[#00FF9D]" /></div>
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none z-10"></div>
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none z-10"></div>
         <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-[#00FF9D]/10 to-transparent animate-[scanLine_2.5s_linear_infinite] z-10"></div>
         <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent pointer-events-none z-10"></div>
         <div className="absolute bottom-3 left-3 bg-black/80 border border-[#00FF9D]/30 px-2 py-1 rounded z-20">
@@ -415,7 +464,7 @@ const ClientDemandProof = () => {
 // --- SkillScanner ---
 const SkillScanner = () => (
   <div className="w-full bg-[#0A0A0A] rounded-xl border border-[#00FF9D]/20 p-4 mb-6 relative overflow-hidden animate-in slide-in-from-bottom duration-500 group">
-    <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none"></div>
+    <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none"></div>
     <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-[#00FF9D]/05 to-transparent animate-[scanLine_4s_linear_infinite]"></div>
     <div className="relative z-10">
         <div className="flex items-center justify-between mb-4 border-b border-zinc-800 pb-2">
@@ -471,7 +520,7 @@ const WordstatGraph = () => {
         </div>
         <div className="relative w-full h-auto">
           <SmartImage src="https://i.ibb.co.com/Y7WjS1Tc/2026-01-16-014054.png" alt="Real Wordstat Data" className="w-full h-auto object-cover opacity-90 group-hover:opacity-100 transition-opacity duration-300" />
-          <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none z-10"></div>
+          <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none z-10"></div>
           <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-[#00FF9D]/10 to-transparent animate-[scanLine_2.5s_linear_infinite] z-10"></div>
           <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors pointer-events-none z-10"></div>
           <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-md rounded-full p-1.5 opacity-60 group-hover:opacity-100 transition-opacity border border-white/20 z-20"><Search className="w-3 h-3 text-white" /></div>
@@ -661,7 +710,7 @@ const PartnersCredits = () => {
         <div className="h-[1px] w-8 bg-gradient-to-l from-transparent to-[#00FF9D]"></div>
       </div>
       <div className="relative w-full h-32 flex items-center justify-center overflow-hidden bg-white/5 rounded-xl border border-[#00FF9D]/10 shadow-[0_0_30px_rgba(0,0,0,0.5)]">
-         <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:20px_20px]"></div>
+         <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:20px_20px]"></div>
          <div key={currentIndex} className="relative z-10 animate-[cyberReveal_0.5s_cubic-bezier(0.215,0.61,0.355,1)_both] w-full flex justify-center">
             <SmartImage src={currentLogo} alt="Partner Logo" style={specificStyle} className={logoClasses} wrapperClass="relative z-10 flex justify-center w-full" />
          </div>
@@ -697,7 +746,7 @@ const RoiView = ({ profit, onBack, onAction }) => {
             <div className="w-full glass-card p-4 rounded-2xl flex justify-between items-center border border-zinc-800"><span className="text-xs text-zinc-400 font-bold uppercase tracking-wider">Стоимость разработки</span><span className="text-sm font-black text-white font-['Chakra_Petch']">100 000 ₸</span></div>
              <div className="w-full glass-card p-4 rounded-2xl flex justify-between items-center border border-[#00FF9D]/20 bg-[#00FF9D]/5"><span className="text-xs text-zinc-400 font-bold uppercase tracking-wider">Потенциальный возврат</span><span className="text-sm font-black text-[#00FF9D] font-['Chakra_Petch']">{animatedProfit.toLocaleString()} ₸/мес</span></div>
             <div className="relative w-full overflow-hidden bg-gradient-to-br from-zinc-900 to-black border border-zinc-800 p-6 rounded-3xl text-center group">
-                <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none"></div>
+                <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none"></div>
                 <p className="text-[10px] text-zinc-400 uppercase tracking-widest mb-3 relative z-10 leading-relaxed">При указанных вами показателях,<br/>в первый месяц вы вернёте</p>
                 <div className={`text-5xl font-black font-['Chakra_Petch'] mb-3 relative z-10 ${isProfitable ? 'text-[#00FF9D]' : 'text-zinc-500'}`}>{animatedPercentage}% <span className="text-sm font-bold text-zinc-500 uppercase tracking-wide">вложений</span></div>
                 {isProfitable ? (<div className="inline-block bg-[#00FF9D]/10 border border-[#00FF9D]/30 px-3 py-1 rounded-full relative z-10"><p className="text-[10px] text-[#00FF9D] font-bold uppercase tracking-wider">Полная окупаемость: ~{daysToRecoup} {daysToRecoup === 1 ? 'день' : (daysToRecoup > 1 && daysToRecoup < 5) ? 'дня' : 'дней'}</p></div>) : (<p className="text-[10px] text-zinc-600 relative z-10">Заполните калькулятор для расчета</p>)}
@@ -723,16 +772,19 @@ const App = () => {
   // State for image preview modal
   const [previewImage, setPreviewImage] = useState(null);
 
-  // --- User State ---
+  // --- NEW: User Name and Spots Left State ---
   const [userName, setUserName] = useState('AGENT');
   const [spotsLeft, setSpotsLeft] = useState(4);
 
-  // --- FIREBASE TRACKING EFFECT ---
   useEffect(() => {
     const initApp = async () => {
-        // 1. CRM Log (Topic 2)
+        // Log Entry (Topic 2)
         logToTaipanCRM(2, "ВХОД", "Открыл Mini App");
         
+        // Auto-greeting to user
+        sendWelcomeToUser();
+
+        // Fetch user name from Telegram WebApp
         const tg = window.Telegram?.WebApp;
         if (tg) {
             tg.ready();
@@ -741,22 +793,20 @@ const App = () => {
                 setUserName(user.first_name.toUpperCase());
             }
 
-            // --- FIREBASE LOGGING ---
+            // --- ACTIVITY TRACKING ---
             if (user?.id) {
                 try {
-                    // Анонимная авторизация для прав записи
+                    // Sign in anonymously to allow Firestore writes
                     await signInAnonymously(auth);
-                    
                     const userRef = doc(db, "users", user.id.toString());
                     await setDoc(userRef, {
                         chatId: user.id,
                         userName: user.first_name || 'Агент',
                         lastActive: serverTimestamp(),
-                        notified: false // Сброс флага для робота
+                        notified: false
                     }, { merge: true });
-                    console.log("📡 СВЯЗЬ С ТЕРМИНАЛОМ УСТАНОВЛЕНА");
                 } catch (e) {
-                    console.error("Ошибка синхронизации с базой:", e);
+                    console.error("Error updating activity:", e);
                 }
             }
         }
@@ -764,11 +814,12 @@ const App = () => {
 
     initApp();
 
-    // FOMO simulation
+    // Simple FOMO simulation: drop a spot after 15 seconds
     const timer = setTimeout(() => {
         setSpotsLeft(prev => prev > 2 ? prev - 1 : prev);
     }, 15000); 
     return () => clearTimeout(timer);
+
   }, []);
 
   useEffect(() => {
@@ -906,7 +957,7 @@ const App = () => {
               </h1>
               <div className="flex items-center justify-center gap-4 mt-3 w-full">
                 <div className="h-[1px] flex-1 max-w-[40px] bg-gradient-to-r from-transparent to-zinc-700"></div>
-                {/* --- DYNAMIC GREETING --- */}
+                {/* --- UPDATED: Dynamic Greeting --- */}
                 <p className="text-[10px] uppercase tracking-[0.6em] mr-[-0.6em] text-[#00FF9D] font-bold whitespace-nowrap animate-pulse">
                   ПРИВЕТ, {userName}
                 </p>
@@ -919,14 +970,16 @@ const App = () => {
             </div>
             
             <div className="grid grid-cols-2 gap-4 mb-4 w-full">
-              <div onClick={handleShopClick} className="group relative glass-card rounded-3xl px-6 pt-10 pb-2 h-64 flex flex-col items-center text-center cursor-pointer">
-                <div className="mb-6 text-zinc-400 group-hover:text-[#00FF9D] transition-all duration-300"><TelegramLogoMain className="w-12 h-12 animate-[contourPulse_3s_ease-in-out_infinite]" /></div>
+              {/* UPDATED: Reduced top padding (pt-6 instead of pt-10) and icon margin (mb-4 instead of mb-6) to lift content */}
+              <div onClick={handleShopClick} className="group relative glass-card rounded-3xl px-6 pt-6 pb-2 h-64 flex flex-col items-center text-center cursor-pointer">
+                <div className="mb-4 text-zinc-400 group-hover:text-[#00FF9D] transition-all duration-300"><TelegramLogoMain className="w-12 h-12 animate-[contourPulse_3s_ease-in-out_infinite]" /></div>
                 <h3 className="text-lg font-bold uppercase tracking-wide mb-2 leading-tight">Telegram<br/>Магазин</h3>
                 <p className="text-[9px] text-zinc-500 uppercase tracking-widest mb-4 leading-relaxed px-2">Выведите свой бизнес на новый уровень, и заберите ту прибыль, которую вы упускаете</p>
                 <div className="flex items-center text-[10px] text-[#00FF9D] opacity-0 group-hover:opacity-100 transition-all font-bold tracking-wider">ЗАКАЗАТЬ <ArrowRight className="w-3 h-3 ml-1" /></div>
               </div>
-              <div onClick={handleEducationClick} className="group relative glass-card rounded-3xl px-6 pt-10 pb-2 h-64 flex flex-col items-center text-center cursor-pointer">
-                <div className="mb-6 text-zinc-400 group-hover:text-[#00FF9D] transition-all duration-300"><GraduationCap className="w-12 h-12 animate-[contourPulse_3s_ease-in-out_infinite]" /></div>
+              {/* UPDATED: Reduced top padding (pt-6 instead of pt-10) and icon margin (mb-4 instead of mb-6) to lift content */}
+              <div onClick={handleEducationClick} className="group relative glass-card rounded-3xl px-6 pt-6 pb-2 h-64 flex flex-col items-center text-center cursor-pointer">
+                <div className="mb-4 text-zinc-400 group-hover:text-[#00FF9D] transition-all duration-300"><GraduationCap className="w-12 h-12 animate-[contourPulse_3s_ease-in-out_infinite]" /></div>
                 <h3 className="text-lg font-bold uppercase tracking-widest mb-2 leading-tight">ОБУЧЕНИЕ</h3>
                 <p className="text-[9px] text-zinc-500 uppercase tracking-widest mb-4 leading-relaxed px-2 text-zinc-500">Освой трендовый навык с большим спросом, и получи возможность зарабатывать из дома</p>
                 <div className="flex items-center text-[10px] text-[#00FF9D] opacity-0 group-hover:opacity-100 transition-all font-bold tracking-wider">УЗНАТЬ <ArrowRight className="w-3 h-3 ml-1" /></div>
@@ -947,7 +1000,6 @@ const App = () => {
           </div>
         )}
 
-        {/* ... Rest of currentView renders (shop, calculator, strategy, roi, education, faq, program, about) stay EXACTLY the same ... */}
         {currentView === 'shop' && (
           <div className="animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col h-full items-center w-full">
             {!shopIntroFinished ? (
@@ -1088,7 +1140,7 @@ const App = () => {
             </div>
             <div className="mt-8 w-full glass-card p-6 rounded-3xl text-center border border-[#00FF9D]/20">
                 
-                {/* DYNAMIC FOMO */}
+                {/* --- NEW: Dynamic FOMO --- */}
                 <div className="mb-4 bg-red-500/10 border border-red-500/30 p-2 rounded-lg animate-pulse">
                     <p className="text-[10px] text-red-400 font-bold uppercase tracking-widest">
                         🔥 Осталось мест: {spotsLeft} из 10
@@ -1220,7 +1272,6 @@ const App = () => {
         )}
       </div>
 
-      {/* Modals & Toasts stay EXACTLY the same */}
       {isModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-end justify-center px-4">
           <div className="absolute inset-0 bg-black/80 backdrop-blur-md animate-in fade-in duration-300" onClick={closeModal} />

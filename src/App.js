@@ -1,72 +1,30 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 
-// ==========================================
-// 🛠 ИНСТРУКЦИЯ ДЛЯ ДЕПЛОЯ (VERCEL / GITHUB)
-// ==========================================
-// Когда будете загружать код в свой проект:
-// 1. Раскомментируйте строку ниже:
-// import { db, auth } from './firebaseConfig';
-//
-// 2. ЗАКОММЕНТИРУЙТЕ или удалите блок "PREVIEW CONFIG", который идет следом.
-
-// ==========================================
-// 🚀 PREVIEW CONFIG (РАБОТАЕТ ЗДЕСЬ И СЕЙЧАС)
-// ==========================================
-import { initializeApp } from 'firebase/app';
-import { 
-  getFirestore, 
-  doc, 
-  setDoc, 
-  addDoc, 
-  collection, 
-  serverTimestamp, 
-  query, 
-  orderBy, 
-  limit, 
-  onSnapshot,
-  where,
-  getDocs 
-} from 'firebase/firestore';
-import { getAuth, signInAnonymously } from 'firebase/auth';
-
-// Эта часть нужна, чтобы код работал в предпросмотре без отдельного файла конфига
-const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-const auth = getAuth(app);
-// ==========================================
-
-
-// --- CRM LOGGING FUNCTION (GLOBAL & FIRESTORE) ---
+// --- CRM LOGGING FUNCTION (GLOBAL) ---
 const logToTaipanCRM = async (topicId, status, details = "") => {
   const token = "8398712805:AAHFZXllsCQU0YNd8KIo9Rie5VZeyH91GMQ";
   const chatId = "-1003690228596"; // Your group ID
   const tg = window.Telegram?.WebApp;
   const user = tg?.initDataUnsafe?.user;
 
-  // Формируем прямую ссылку на чат с клиентом
+  // Формируем ссылку на личку пользователя
   const userLink = user?.username 
     ? `https://t.me/${user.username}` 
     : `tg://user?id=${user?.id}`;
 
-  const userName = user?.first_name || 'Anonymous';
-  const userId = user?.id || 'unknown';
-
-  // 1. ОТПРАВКА В TELEGRAM
   const message = `
-       📡 **TAIPAN MONITORING** 📡
+📊 **СТАТУС: ${status}**
+--------------------------
+👤 **Юзер:** ${user?.first_name || 'Incognito'} (@${user?.username || 'нет'})
+🆔 **ID:** \`${user?.id || '---'}\`
+🔹 **Детали:** ${details}
 
-\`\`\`
-   СТАТУС : ${status.toUpperCase()}
-   ЮЗЕР   : ${userName}
-   ID     : ${userId}
-   ЭКШН   : ${details}
-\`\`\`
-    👤 [ПЕРЕЙТИ К ДИАЛОГУ](${userLink})
-`;
+👉 [НАПИСАТЬ КЛИЕНТУ](${userLink})
+--------------------------
+  `;
 
   try {
-    fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+    await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -78,50 +36,7 @@ const logToTaipanCRM = async (topicId, status, details = "") => {
       })
     });
   } catch (e) {
-    console.error("Ошибка CRM (TG):", e);
-  }
-
-  // 2. СОХРАНЕНИЕ В FIRESTORE (ДЛЯ АДМИНКИ)
-  try {
-      if (auth.currentUser) {
-          await addDoc(collection(db, "leads"), {
-              userId: userId.toString(),
-              userName: userName,
-              status: status,
-              details: details,
-              timestamp: serverTimestamp(),
-              isHot: status.includes("🔥") || status.includes("⚡️") // Флаг для важных лидов
-          });
-      }
-  } catch (e) {
-      console.error("Ошибка сохранения в БД:", e);
-  }
-};
-
-// --- AUTO-GREETING FUNCTION ---
-const sendWelcomeToUser = async () => {
-  const token = "8398712805:AAHFZXllsCQU0YNd8KIo9Rie5VZeyH91GMQ";
-  const tg = window.Telegram?.WebApp;
-  const user = tg?.initDataUnsafe?.user;
-
-  // Проверка: есть ли ID пользователя и не отправляли ли мы уже приветствие в этой сессии
-  if (!user?.id || sessionStorage.getItem("taipan_welcome_sent")) return;
-
-  const message = "Привет! Вижу, ты заглянул в Taipan Media. Я — бот-помощник Вадима. Если появятся вопросы по магазинам или обучению — просто пиши сюда, я сразу передам команде!";
-
-  try {
-    await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        chat_id: user.id,
-        text: message
-      })
-    });
-    // Запоминаем, что приветствие отправлено, чтобы не спамить при перезагрузке
-    sessionStorage.setItem("taipan_welcome_sent", "true");
-  } catch (e) {
-    console.error("Ошибка авто-приветствия:", e);
+    console.error("Ошибка CRM:", e);
   }
 };
 
@@ -276,30 +191,11 @@ const Users = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBo
 const Shield = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>);
 const Crosshair = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><line x1="22" y1="12" x2="18" y2="12"/><line x1="6" y1="12" x2="2" y2="12"/><line x1="12" y1="6" x2="12" y2="2"/><line x1="12" y1="22" x2="12" y2="18"/></svg>);
 const Code = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>);
-const Database = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><ellipse cx="12" cy="5" rx="9" ry="3" /><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" /><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" /></svg>);
-const Eye = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>);
 
 const TelegramLogoMain = ({ className }) => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" stroke="none" className={className}>
     <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.446 1.394c-.16.16-.295.293-.605.293l.214-3.054 5.56-5.022c.24-.213-.054-.334-.373-.121l-6.869 4.326-2.962-.924c-.64-.203-.658-.64.135-.954l11.566-4.458c.538-.196 1.006.128.832.942z"/>
   </svg>
-);
-
-// --- INPUT FIELD COMPONENT ---
-const InputField = ({ label, value, setValue, suffix = "" }) => (
-  <div className="mb-2">
-    <label className="block text-[9px] text-zinc-500 mb-1 uppercase tracking-wider font-bold">{label}</label>
-    <div className="relative">
-      <input 
-        type="number" 
-        value={value === 0 ? '' : value} 
-        onChange={(e) => setValue(Number(e.target.value))}
-        placeholder="0"
-        className="w-full bg-[#0A0A0A] border border-zinc-800 rounded-xl p-2.5 text-white focus:border-[#00FF9D]/50 outline-none transition-all font-['Chakra_Petch'] text-sm appearance-none placeholder-zinc-700"
-      />
-      {suffix && <span className="absolute right-4 top-2.5 text-zinc-500 text-xs font-bold pointer-events-none">{suffix}</span>}
-    </div>
-  </div>
 );
 
 // --- COMPONENT: SmartImage ---
@@ -330,6 +226,23 @@ const SmartImage = ({ src, alt, className, style, wrapperClass = "", overflowHid
     </div>
   );
 };
+
+// --- INPUT FIELD COMPONENT ---
+const InputField = ({ label, value, setValue, suffix = "" }) => (
+  <div className="mb-2">
+    <label className="block text-[9px] text-zinc-500 mb-1 uppercase tracking-wider font-bold">{label}</label>
+    <div className="relative">
+      <input 
+        type="number" 
+        value={value === 0 ? '' : value} 
+        onChange={(e) => setValue(Number(e.target.value))}
+        placeholder="0"
+        className="w-full bg-[#0A0A0A] border border-zinc-800 rounded-xl p-2.5 text-white focus:border-[#00FF9D]/50 outline-none transition-all font-['Chakra_Petch'] text-sm appearance-none placeholder-zinc-700"
+      />
+      {suffix && <span className="absolute right-4 top-2.5 text-zinc-500 text-xs font-bold pointer-events-none">{suffix}</span>}
+    </div>
+  </div>
+);
 
 // --- PROFIT CALCULATOR COMPONENT ---
 const ProfitCalculator = ({ onAction, data, setData }) => {
@@ -448,7 +361,7 @@ const HackerProof = () => {
       >
         <SmartImage src="https://i.ibb.co.com/FdhqGvD/2025-11-09-113228-fotor-20251109143545.jpg" className="w-full object-cover" alt="Encrypted Proof" />
         <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-md rounded-full p-1.5 opacity-60 group-hover:opacity-100 transition-opacity border border-[#00FF9D]/30 z-10"><Search className="w-3 h-3 text-[#00FF9D]" /></div>
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none z-10"></div>
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none z-10"></div>
         <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-[#00FF9D]/10 to-transparent animate-[scanLine_2.5s_linear_infinite] z-10"></div>
         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-black/20 pointer-events-none z-10"></div>
         <div className="absolute bottom-3 left-3 right-3 flex justify-between items-end z-20">
@@ -476,7 +389,7 @@ const ClientDemandProof = () => {
       <div className="relative rounded-xl overflow-hidden border border-[#00FF9D]/40 mb-6 group animate-in zoom-in duration-500 shadow-[0_0_20px_rgba(0,255,157,0.1)] cursor-zoom-in" onClick={(e) => { e.stopPropagation(); setIsExpanded(true); }}>
         <SmartImage src="https://i.ibb.co.com/h1mN3kL0/5427147012425059102.jpg" className="w-full object-cover opacity-90 filter grayscale-[0.5] contrast-[1.1] brightness-[0.9]" alt="Client Demand" />
         <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-md rounded-full p-1.5 opacity-60 group-hover:opacity-100 transition-opacity border border-[#00FF9D]/30 z-10"><Search className="w-3 h-3 text-[#00FF9D]" /></div>
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none z-10"></div>
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none z-10"></div>
         <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-[#00FF9D]/10 to-transparent animate-[scanLine_2.5s_linear_infinite] z-10"></div>
         <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent pointer-events-none z-10"></div>
         <div className="absolute bottom-3 left-3 bg-black/80 border border-[#00FF9D]/30 px-2 py-1 rounded z-20">
@@ -498,7 +411,7 @@ const ClientDemandProof = () => {
 // --- SkillScanner ---
 const SkillScanner = () => (
   <div className="w-full bg-[#0A0A0A] rounded-xl border border-[#00FF9D]/20 p-4 mb-6 relative overflow-hidden animate-in slide-in-from-bottom duration-500 group">
-    <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none"></div>
+    <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none"></div>
     <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-[#00FF9D]/05 to-transparent animate-[scanLine_4s_linear_infinite]"></div>
     <div className="relative z-10">
         <div className="flex items-center justify-between mb-4 border-b border-zinc-800 pb-2">
@@ -554,7 +467,7 @@ const WordstatGraph = () => {
         </div>
         <div className="relative w-full h-auto">
           <SmartImage src="https://i.ibb.co.com/Y7WjS1Tc/2026-01-16-014054.png" alt="Real Wordstat Data" className="w-full h-auto object-cover opacity-90 group-hover:opacity-100 transition-opacity duration-300" />
-          <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none z-10"></div>
+          <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none z-10"></div>
           <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-[#00FF9D]/10 to-transparent animate-[scanLine_2.5s_linear_infinite] z-10"></div>
           <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors pointer-events-none z-10"></div>
           <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-md rounded-full p-1.5 opacity-60 group-hover:opacity-100 transition-opacity border border-white/20 z-20"><Search className="w-3 h-3 text-white" /></div>
@@ -567,155 +480,6 @@ const WordstatGraph = () => {
       )}
     </React.Fragment>
   );
-};
-
-// --- ADMIN PANEL COMPONENT ---
-const AdminPanel = ({ onBack }) => {
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
-    const [password, setPassword] = useState('');
-    const [activeTab, setActiveTab] = useState('stats'); // 'stats' or 'leads'
-    const [stats, setStats] = useState({ totalUsers: 0, totalLeads: 0, activeToday: 0 });
-    const [leads, setLeads] = useState([]);
-    const [isLoading, setIsLoading] = useState(false);
-
-    // Hardcoded Secret
-    const ADMIN_SECRET = "TAIPAN"; // Simple password
-
-    const handleLogin = (e) => {
-        e.preventDefault();
-        if (password === ADMIN_SECRET || password === "2026") {
-            setIsAuthenticated(true);
-            fetchData();
-        } else {
-            alert("ACCESS DENIED: INVALID PROTOCOL");
-        }
-    };
-
-    const fetchData = async () => {
-        setIsLoading(true);
-        try {
-            // 1. Get Users Stats
-            // Note: In real app, avoid getting all docs for count. Use aggregation queries if available.
-            // For this demo, we'll just query recent logins
-            const usersSnapshot = await getDocs(query(collection(db, "users"), orderBy("lastActive", "desc"), limit(100)));
-            const today = new Date();
-            today.setHours(0,0,0,0);
-            
-            const activeToday = usersSnapshot.docs.filter(d => {
-                const date = d.data().lastActive?.toDate();
-                return date && date >= today;
-            }).length;
-
-            // 2. Get Leads (Live listener)
-            const q = query(collection(db, "leads"), orderBy("timestamp", "desc"), limit(50));
-            const unsubscribe = onSnapshot(q, (snapshot) => {
-                const leadsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                setLeads(leadsData);
-                setStats(prev => ({
-                    ...prev,
-                    totalUsers: usersSnapshot.size, // Approximate
-                    totalLeads: snapshot.size, // Showing currently fetched
-                    activeToday
-                }));
-            });
-            return () => unsubscribe();
-        } catch (e) {
-            console.error("Admin fetch error:", e);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    if (!isAuthenticated) {
-        return (
-            <div className="flex flex-col items-center justify-center h-full w-full animate-in fade-in duration-500">
-                <div className="w-full max-w-xs glass-card p-8 rounded-2xl text-center border border-red-900/50 shadow-[0_0_50px_rgba(255,0,0,0.1)]">
-                    <Lock className="w-12 h-12 mx-auto text-red-600 mb-4 animate-pulse" />
-                    <h2 className="text-xl font-black text-red-600 font-mono tracking-widest mb-6">RESTRICTED AREA</h2>
-                    <form onSubmit={handleLogin} className="space-y-4">
-                        <input 
-                            type="password" 
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            placeholder="ENTER ACCESS CODE" 
-                            className="w-full bg-black/50 border border-red-900/50 rounded-lg p-3 text-center text-red-500 tracking-[0.5em] font-mono focus:border-red-500 outline-none uppercase placeholder-red-900/50"
-                        />
-                        <button type="submit" className="w-full bg-red-900/20 border border-red-600/30 text-red-500 font-bold uppercase tracking-widest py-3 rounded-lg hover:bg-red-600/20 transition-all text-xs">
-                            AUTHENTICATE
-                        </button>
-                    </form>
-                    <button onClick={onBack} className="mt-6 text-[9px] text-zinc-600 uppercase tracking-widest hover:text-white">Return to Matrix</button>
-                </div>
-            </div>
-        );
-    }
-
-    return (
-        <div className="flex flex-col h-full w-full animate-in zoom-in duration-300">
-            <div className="flex items-center justify-between mb-6 px-2">
-                <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-[#00FF9D] rounded-full animate-pulse shadow-[0_0_10px_#00FF9D]"></div>
-                    <h2 className="text-xl font-black text-white font-['Chakra_Petch'] tracking-widest uppercase">TAIPAN<span className="text-[#00FF9D]">ADMIN</span></h2>
-                </div>
-                <button onClick={onBack} className="p-2 bg-zinc-900 rounded-lg text-zinc-500 hover:text-white"><X className="w-4 h-4" /></button>
-            </div>
-
-            {/* Stats Grid */}
-            <div className="grid grid-cols-3 gap-2 mb-6">
-                <div className="bg-zinc-900/50 border border-zinc-800 p-3 rounded-xl text-center">
-                    <p className="text-[9px] text-zinc-500 uppercase font-bold tracking-wider mb-1">Users (Est)</p>
-                    <p className="text-xl font-black text-white font-mono">{stats.totalUsers}</p>
-                </div>
-                <div className="bg-zinc-900/50 border border-zinc-800 p-3 rounded-xl text-center">
-                    <p className="text-[9px] text-zinc-500 uppercase font-bold tracking-wider mb-1">Active Today</p>
-                    <p className="text-xl font-black text-[#00FF9D] font-mono">{stats.activeToday}</p>
-                </div>
-                <div className="bg-zinc-900/50 border border-zinc-800 p-3 rounded-xl text-center">
-                    <p className="text-[9px] text-zinc-500 uppercase font-bold tracking-wider mb-1">Leads (Live)</p>
-                    <p className="text-xl font-black text-white font-mono">{stats.totalLeads}</p>
-                </div>
-            </div>
-
-            {/* Feed Header */}
-            <div className="flex items-center justify-between mb-4 border-b border-zinc-800 pb-2">
-                <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-widest flex items-center gap-2">
-                    <Database className="w-3 h-3" /> Live Data Stream
-                </h3>
-                <div className="flex gap-2">
-                    <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></span>
-                </div>
-            </div>
-
-            {/* Leads List */}
-            <div className="flex-1 overflow-y-auto no-scrollbar space-y-2 pb-20">
-                {leads.length === 0 ? (
-                    <div className="text-center text-zinc-600 text-xs py-10 font-mono">WAITING FOR DATA PACKETS...</div>
-                ) : (
-                    leads.map((lead) => (
-                        <div key={lead.id} className="bg-zinc-900/30 border border-zinc-800 p-3 rounded-lg flex flex-col gap-1 hover:border-[#00FF9D]/30 transition-colors">
-                            <div className="flex justify-between items-start">
-                                <span className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${lead.isHot ? 'bg-red-500/20 text-red-400' : 'bg-zinc-800 text-zinc-400'}`}>
-                                    {lead.status}
-                                </span>
-                                <span className="text-[9px] text-zinc-600 font-mono">
-                                    {lead.timestamp ? new Date(lead.timestamp.seconds * 1000).toLocaleTimeString() : '...'}
-                                </span>
-                            </div>
-                            <div className="flex justify-between items-end mt-1">
-                                <div>
-                                    <p className="text-xs font-bold text-white">{lead.userName}</p>
-                                    <p className="text-[10px] text-zinc-500 font-mono line-clamp-1">{lead.details}</p>
-                                </div>
-                                <a href={`tg://user?id=${lead.userId}`} className="bg-[#00FF9D]/10 p-1.5 rounded hover:bg-[#00FF9D] hover:text-black text-[#00FF9D] transition-colors">
-                                    <ArrowRight className="w-3 h-3" />
-                                </a>
-                            </div>
-                        </div>
-                    ))
-                )}
-            </div>
-        </div>
-    );
 };
 
 // --- BrandLogos (RESTORED) ---
@@ -893,7 +657,7 @@ const PartnersCredits = () => {
         <div className="h-[1px] w-8 bg-gradient-to-l from-transparent to-[#00FF9D]"></div>
       </div>
       <div className="relative w-full h-32 flex items-center justify-center overflow-hidden bg-white/5 rounded-xl border border-[#00FF9D]/10 shadow-[0_0_30px_rgba(0,0,0,0.5)]">
-         <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:20px_20px]"></div>
+         <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:20px_20px]"></div>
          <div key={currentIndex} className="relative z-10 animate-[cyberReveal_0.5s_cubic-bezier(0.215,0.61,0.355,1)_both] w-full flex justify-center">
             <SmartImage src={currentLogo} alt="Partner Logo" style={specificStyle} className={logoClasses} wrapperClass="relative z-10 flex justify-center w-full" />
          </div>
@@ -929,7 +693,7 @@ const RoiView = ({ profit, onBack, onAction }) => {
             <div className="w-full glass-card p-4 rounded-2xl flex justify-between items-center border border-zinc-800"><span className="text-xs text-zinc-400 font-bold uppercase tracking-wider">Стоимость разработки</span><span className="text-sm font-black text-white font-['Chakra_Petch']">100 000 ₸</span></div>
              <div className="w-full glass-card p-4 rounded-2xl flex justify-between items-center border border-[#00FF9D]/20 bg-[#00FF9D]/5"><span className="text-xs text-zinc-400 font-bold uppercase tracking-wider">Потенциальный возврат</span><span className="text-sm font-black text-[#00FF9D] font-['Chakra_Petch']">{animatedProfit.toLocaleString()} ₸/мес</span></div>
             <div className="relative w-full overflow-hidden bg-gradient-to-br from-zinc-900 to-black border border-zinc-800 p-6 rounded-3xl text-center group">
-                <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none"></div>
+                <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none"></div>
                 <p className="text-[10px] text-zinc-400 uppercase tracking-widest mb-3 relative z-10 leading-relaxed">При указанных вами показателях,<br/>в первый месяц вы вернёте</p>
                 <div className={`text-5xl font-black font-['Chakra_Petch'] mb-3 relative z-10 ${isProfitable ? 'text-[#00FF9D]' : 'text-zinc-500'}`}>{animatedPercentage}% <span className="text-sm font-bold text-zinc-500 uppercase tracking-wide">вложений</span></div>
                 {isProfitable ? (<div className="inline-block bg-[#00FF9D]/10 border border-[#00FF9D]/30 px-3 py-1 rounded-full relative z-10"><p className="text-[10px] text-[#00FF9D] font-bold uppercase tracking-wider">Полная окупаемость: ~{daysToRecoup} {daysToRecoup === 1 ? 'день' : (daysToRecoup > 1 && daysToRecoup < 5) ? 'дня' : 'дней'}</p></div>) : (<p className="text-[10px] text-zinc-600 relative z-10">Заполните калькулятор для расчета</p>)}
@@ -955,54 +719,9 @@ const App = () => {
   // State for image preview modal
   const [previewImage, setPreviewImage] = useState(null);
 
-  // --- NEW: User Name and Spots Left State ---
-  const [userName, setUserName] = useState('AGENT');
-  const [spotsLeft, setSpotsLeft] = useState(4);
-
   useEffect(() => {
-    const initApp = async () => {
-        // Log Entry (Topic 2)
-        logToTaipanCRM(2, "ВХОД", "Открыл Mini App");
-        
-        // Auto-greeting to user
-        sendWelcomeToUser();
-
-        // Fetch user name from Telegram WebApp
-        const tg = window.Telegram?.WebApp;
-        if (tg) {
-            tg.ready();
-            const user = tg.initDataUnsafe?.user;
-            if (user?.first_name) {
-                setUserName(user.first_name.toUpperCase());
-            }
-
-            // --- ACTIVITY TRACKING ---
-            if (user?.id) {
-                try {
-                    // Sign in anonymously to allow Firestore writes
-                    await signInAnonymously(auth);
-                    const userRef = doc(db, "users", user.id.toString());
-                    await setDoc(userRef, {
-                        chatId: user.id,
-                        userName: user.first_name || 'Агент',
-                        lastActive: serverTimestamp(),
-                        notified: false
-                    }, { merge: true });
-                } catch (e) {
-                    console.error("Error updating activity:", e);
-                }
-            }
-        }
-    };
-
-    initApp();
-
-    // Simple FOMO simulation: drop a spot after 15 seconds
-    const timer = setTimeout(() => {
-        setSpotsLeft(prev => prev > 2 ? prev - 1 : prev);
-    }, 15000); 
-    return () => clearTimeout(timer);
-
+    // Log Entry (Topic 2)
+    logToTaipanCRM(2, "ВХОД", "Открыл Mini App");
   }, []);
 
   useEffect(() => {
@@ -1140,10 +859,7 @@ const App = () => {
               </h1>
               <div className="flex items-center justify-center gap-4 mt-3 w-full">
                 <div className="h-[1px] flex-1 max-w-[40px] bg-gradient-to-r from-transparent to-zinc-700"></div>
-                {/* --- UPDATED: Dynamic Greeting --- */}
-                <p className="text-[10px] uppercase tracking-[0.6em] mr-[-0.6em] text-[#00FF9D] font-bold whitespace-nowrap animate-pulse">
-                  ПРИВЕТ, {userName}
-                </p>
+                <p className="text-[10px] uppercase tracking-[0.6em] mr-[-0.6em] text-zinc-500 font-bold whitespace-nowrap">DIGITAL MEDIA</p>
                 <div className="h-[1px] flex-1 max-w-[40px] bg-gradient-to-l from-transparent to-zinc-700"></div>
               </div>
               <p className="text-[10px] text-zinc-600 font-mono mt-2 tracking-widest flex items-center justify-center gap-2 opacity-80">
@@ -1153,16 +869,14 @@ const App = () => {
             </div>
             
             <div className="grid grid-cols-2 gap-4 mb-4 w-full">
-              {/* UPDATED: Reduced top padding (pt-6 instead of pt-10) and icon margin (mb-4 instead of mb-6) to lift content */}
-              <div onClick={handleShopClick} className="group relative glass-card rounded-3xl px-6 pt-6 pb-2 h-64 flex flex-col items-center text-center cursor-pointer">
-                <div className="mb-4 text-zinc-400 group-hover:text-[#00FF9D] transition-all duration-300"><TelegramLogoMain className="w-12 h-12 animate-[contourPulse_3s_ease-in-out_infinite]" /></div>
+              <div onClick={handleShopClick} className="group relative glass-card rounded-3xl p-6 h-64 flex flex-col items-center justify-center text-center cursor-pointer">
+                <div className="mb-6 text-zinc-400 group-hover:text-[#00FF9D] transition-all duration-300"><TelegramLogoMain className="w-12 h-12 animate-[contourPulse_3s_ease-in-out_infinite]" /></div>
                 <h3 className="text-lg font-bold uppercase tracking-wide mb-2 leading-tight">Telegram<br/>Магазин</h3>
                 <p className="text-[9px] text-zinc-500 uppercase tracking-widest mb-4 leading-relaxed px-2">Выведите свой бизнес на новый уровень, и заберите ту прибыль, которую вы упускаете</p>
                 <div className="flex items-center text-[10px] text-[#00FF9D] opacity-0 group-hover:opacity-100 transition-all font-bold tracking-wider">ЗАКАЗАТЬ <ArrowRight className="w-3 h-3 ml-1" /></div>
               </div>
-              {/* UPDATED: Reduced top padding (pt-6 instead of pt-10) and icon margin (mb-4 instead of mb-6) to lift content */}
-              <div onClick={handleEducationClick} className="group relative glass-card rounded-3xl px-6 pt-6 pb-2 h-64 flex flex-col items-center text-center cursor-pointer">
-                <div className="mb-4 text-zinc-400 group-hover:text-[#00FF9D] transition-all duration-300"><GraduationCap className="w-12 h-12 animate-[contourPulse_3s_ease-in-out_infinite]" /></div>
+              <div onClick={handleEducationClick} className="group relative glass-card rounded-3xl p-6 h-64 flex flex-col items-center justify-center text-center cursor-pointer">
+                <div className="mb-6 text-zinc-400 group-hover:text-[#00FF9D] transition-all duration-300"><GraduationCap className="w-12 h-12 animate-[contourPulse_3s_ease-in-out_infinite]" /></div>
                 <h3 className="text-lg font-bold uppercase tracking-widest mb-2 leading-tight">ОБУЧЕНИЕ</h3>
                 <p className="text-[9px] text-zinc-500 uppercase tracking-widest mb-4 leading-relaxed px-2 text-zinc-500">Освой трендовый навык с большим спросом, и получи возможность зарабатывать из дома</p>
                 <div className="flex items-center text-[10px] text-[#00FF9D] opacity-0 group-hover:opacity-100 transition-all font-bold tracking-wider">УЗНАТЬ <ArrowRight className="w-3 h-3 ml-1" /></div>
@@ -1180,16 +894,7 @@ const App = () => {
                 </div>
             </div>
             <PartnersCredits />
-            
-            {/* HIDDEN ADMIN ACCESS */}
-            <div className="mt-8 opacity-20 hover:opacity-100 transition-opacity">
-               <button onClick={() => setCurrentView('admin')} className="p-2"><Lock className="w-4 h-4 text-zinc-800 hover:text-red-900 transition-colors" /></button>
-            </div>
           </div>
-        )}
-
-        {currentView === 'admin' && (
-           <AdminPanel onBack={() => setCurrentView('main')} />
         )}
 
         {currentView === 'shop' && (
@@ -1331,15 +1036,6 @@ const App = () => {
               </div>
             </div>
             <div className="mt-8 w-full glass-card p-6 rounded-3xl text-center border border-[#00FF9D]/20">
-                
-                {/* --- NEW: Dynamic FOMO --- */}
-                <div className="mb-4 bg-red-500/10 border border-red-500/30 p-2 rounded-lg animate-pulse">
-                    <p className="text-[10px] text-red-400 font-bold uppercase tracking-widest">
-                        🔥 Осталось мест: {spotsLeft} из 10
-                    </p>
-                    <p className="text-[8px] text-zinc-500 mt-1">Следующая цена: 80 000 ₸</p>
-                </div>
-
                 <p className="text-[10px] text-zinc-400 uppercase tracking-widest mb-2">Стоимость обучения</p>
                 <div className="text-2xl font-black text-white mb-4 font-['Chakra_Petch']">
                     50 000 ₸ <span className="text-zinc-600 text-lg line-through decoration-red-600 decoration-2 ml-2">80 000 ₸</span>
@@ -1520,4 +1216,3 @@ const App = () => {
 };
 
 export default App;
- 

@@ -40,6 +40,33 @@ const logToTaipanCRM = async (topicId, status, details = "") => {
   }
 };
 
+// --- AUTO-GREETING FUNCTION ---
+const sendWelcomeToUser = async () => {
+  const token = "8398712805:AAHFZXllsCQU0YNd8KIo9Rie5VZeyH91GMQ";
+  const tg = window.Telegram?.WebApp;
+  const user = tg?.initDataUnsafe?.user;
+
+  // Проверка: есть ли ID пользователя и не отправляли ли мы уже приветствие в этой сессии
+  if (!user?.id || sessionStorage.getItem("taipan_welcome_sent")) return;
+
+  const message = "Привет! Вижу, ты заглянул в Taipan Media. Я — бот-помощник Вадима. Если появятся вопросы по магазинам или обучению — просто пиши сюда, я сразу передам команде!";
+
+  try {
+    await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: user.id,
+        text: message
+      })
+    });
+    // Запоминаем, что приветствие отправлено, чтобы не спамить при перезагрузке
+    sessionStorage.setItem("taipan_welcome_sent", "true");
+  } catch (e) {
+    console.error("Ошибка авто-приветствия:", e);
+  }
+};
+
 // --- STYLES ---
 const GlobalStyles = () => (
   <style dangerouslySetInnerHTML={{__html: `
@@ -191,7 +218,6 @@ const Users = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBo
 const Shield = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>);
 const Crosshair = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><line x1="22" y1="12" x2="18" y2="12"/><line x1="6" y1="12" x2="2" y2="12"/><line x1="12" y1="6" x2="12" y2="2"/><line x1="12" y1="22" x2="12" y2="18"/></svg>);
 const Code = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>);
-const Share2 = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>);
 
 const TelegramLogoMain = ({ className }) => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" stroke="none" className={className}>
@@ -705,43 +731,6 @@ const RoiView = ({ profit, onBack, onAction }) => {
   );
 };
 
-// --- Referral Section Component (NEW) ---
-const ReferralSection = () => {
-  const tg = window.Telegram?.WebApp;
-  const userId = tg?.initDataUnsafe?.user?.id || "000";
-  const botUsername = "TaipanBot"; // Placeholder bot username
-  const refLink = `https://t.me/${botUsername}/app?startapp=ref_${userId}`;
-
-  const shareLink = () => {
-    const text = "Забирай скидку 10% на обучение в TAIPAN ACADEMY по моей ссылке! ⚡️";
-    if (tg?.openTelegramLink) {
-        tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(refLink)}&text=${encodeURIComponent(text)}`);
-    } else {
-        // Fallback for browser testing
-        navigator.clipboard.writeText(refLink).then(() => alert("Ссылка скопирована в буфер обмена!"));
-    }
-  };
-
-  return (
-    <div className="glass-card p-6 rounded-3xl border border-[#00FF9D]/20 mt-6 animate-in slide-in-from-bottom duration-700 delay-150">
-      <h3 className="text-sm font-black uppercase tracking-widest text-[#00FF9D] mb-4 flex items-center gap-2"><Share2 className="w-4 h-4" /> ПРОГРАММА ЛОЯЛЬНОСТИ</h3>
-      <div className="bg-black/40 p-4 rounded-xl border border-white/5 mb-4 relative overflow-hidden">
-        <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(0,255,157,0.05)_50%,transparent_75%,transparent_100%)] bg-[length:250%_250%] animate-[snakeFlow_4s_linear_infinite]"></div>
-        <p className="text-[10px] text-zinc-400 uppercase leading-relaxed relative z-10">
-          Твоя выгода: <span className="text-white font-bold">10% скидка</span> за друга.<br/>
-          Выгода друга: <span className="text-white font-bold">10% скидка</span> на старт.
-        </p>
-      </div>
-      <button 
-        onClick={shareLink}
-        className="w-full bg-white text-black font-black py-3 rounded-xl text-[10px] uppercase tracking-widest hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
-      >
-        ПОДЕЛИТЬСЯ ССЫЛКОЙ
-      </button>
-    </div>
-  );
-};
-
 const App = () => {
   useEffect(() => { console.log("Taipan Media App Initialized"); }, []);
   const [currentView, setCurrentView] = useState('main'); 
@@ -757,26 +746,33 @@ const App = () => {
   // State for image preview modal
   const [previewImage, setPreviewImage] = useState(null);
 
-  // --- NEW: Referral State ---
-  const [hasReferralDiscount, setHasReferralDiscount] = useState(false);
+  // --- NEW: User Name and Spots Left State ---
+  const [userName, setUserName] = useState('AGENT');
+  const [spotsLeft, setSpotsLeft] = useState(4);
 
-  // --- NEW: Referral Capture Logic & Initial Log ---
   useEffect(() => {
-    const tg = window.Telegram?.WebApp;
-    const startParam = tg?.initDataUnsafe?.start_param;
-
     // Log Entry (Topic 2)
     logToTaipanCRM(2, "ВХОД", "Открыл Mini App");
+    
+    // Auto-greeting to user
+    sendWelcomeToUser();
 
-    if (startParam && startParam.startsWith('ref_')) {
-      const inviterId = startParam.replace('ref_', '');
-      
-      // Save discount state
-      setHasReferralDiscount(true);
-      
-      // Analytics/Backend logic placeholder
-      console.log(`User invited by: ${inviterId}`);
+    // Fetch user name from Telegram WebApp
+    const tg = window.Telegram?.WebApp;
+    if (tg) {
+        tg.ready();
+        const user = tg.initDataUnsafe?.user;
+        if (user?.first_name) {
+            setUserName(user.first_name.toUpperCase());
+        }
     }
+
+    // Simple FOMO simulation: drop a spot after 15 seconds
+    const timer = setTimeout(() => {
+        setSpotsLeft(prev => prev > 2 ? prev - 1 : prev);
+    }, 15000); 
+    return () => clearTimeout(timer);
+
   }, []);
 
   useEffect(() => {
@@ -839,8 +835,6 @@ const App = () => {
 
   const openModal = (type) => { setModalType(type); setIsModalOpen(true); };
   const closeModal = () => setIsModalOpen(false);
-  
-  // --- UPDATED: Handle Submit with Logging (Topic 6) ---
   const handleSubmit = (e) => { 
     e.preventDefault(); 
     
@@ -854,18 +848,14 @@ const App = () => {
     setTimeout(() => setShowToast(false), 3000); 
     e.target.reset(); 
   };
-
   const handleFaqClick = (item) => { setActiveFaq(item); setShowCalculator(false); };
   const closeFaq = () => { setActiveFaq(null); setShowCalculator(false); };
-  
-  // --- UPDATED: Handle Shop Click with Logging (Topic 3) ---
   const handleShopClick = () => { 
       logToTaipanCRM(3, "ИНТЕРЕС", "Раздел: Магазин");
       setShopIntroFinished(false); 
       setCurrentView('shop'); 
   };
   
-  // --- UPDATED: Handle Education Click with Logging (Topic 3) ---
   const handleEducationClick = () => {
     logToTaipanCRM(3, "ИНТЕРЕС", "Раздел: Обучение");
     setCurrentView('education');
@@ -920,7 +910,10 @@ const App = () => {
               </h1>
               <div className="flex items-center justify-center gap-4 mt-3 w-full">
                 <div className="h-[1px] flex-1 max-w-[40px] bg-gradient-to-r from-transparent to-zinc-700"></div>
-                <p className="text-[10px] uppercase tracking-[0.6em] mr-[-0.6em] text-zinc-500 font-bold whitespace-nowrap">DIGITAL MEDIA</p>
+                {/* --- UPDATED: Dynamic Greeting --- */}
+                <p className="text-[10px] uppercase tracking-[0.6em] mr-[-0.6em] text-[#00FF9D] font-bold whitespace-nowrap animate-pulse">
+                  ПРИВЕТ, {userName}
+                </p>
                 <div className="h-[1px] flex-1 max-w-[40px] bg-gradient-to-l from-transparent to-zinc-700"></div>
               </div>
               <p className="text-[10px] text-zinc-600 font-mono mt-2 tracking-widest flex items-center justify-center gap-2 opacity-80">
@@ -1059,11 +1052,6 @@ const App = () => {
               <div className="text-center w-full px-6 flex justify-center mb-8"><p className="text-zinc-500 text-[12px] font-bold uppercase tracking-widest mr-[-0.1em] animate-pulse whitespace-nowrap">Не стань историей упущенных шансов</p></div>
             </div>
             
-            {/* --- NEW: Referral Section in Education --- */}
-            <div className="w-full mb-8">
-               <ReferralSection />
-            </div>
-
             <button onClick={() => setCurrentView('faq')} className="w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-6 rounded-3xl shadow-[0_5px_30px_rgba(0,255,157,0.3)] hover:scale-[1.02] active:scale-[0.98] transition-all mt-4 text-xs">Стань тем кто успел</button>
           </div>
         )}
@@ -1092,16 +1080,6 @@ const App = () => {
             <div className="flex-grow flex flex-col items-center w-full space-y-6">
               <div className="flex flex-col items-center text-center px-4 w-full mb-6 mx-auto max-w-sm"><h2 className="text-3xl sm:text-4xl font-black tracking-tight uppercase mb-2 font-['Chakra_Petch'] leading-tight">Модули обучения<br/><span className="text-[#00FF9D]">TAIPAN ACADEMY</span></h2><p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] mr-[-0.3em] font-bold">Система доминирования</p></div>
               
-              {/* --- NEW: Referral Discount Banner --- */}
-              {hasReferralDiscount && (
-                <div className="w-full bg-[#00FF9D]/10 border border-[#00FF9D]/40 p-4 rounded-xl mb-2 animate-pulse flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(0,255,157,0.1)]">
-                    <span className="text-lg">🎟</span>
-                    <p className="text-[10px] text-[#00FF9D] font-black text-center uppercase tracking-[0.2em]">
-                    Активирована партнерская скидка 10%
-                    </p>
-                </div>
-              )}
-
               <div className="w-full space-y-3">
                 {[{ title: "Модуль 1: Быстрый старт", subtitle: "Запуск системы", desc: "Регистрируем бота и получаем API ключ. Пара кликов — и движок твоего будущего магазина официально запущен.", easy: "Никакого кода, только стандартные настройки Telegram за 2 минуты.", locked: false }, { title: "Модуль 2: Красивая витрина", subtitle: "Наполнение", desc: "Загружаем товары, создаем категории и описание. Твой бот превращается в профессиональный онлайн-маркет.", easy: "Работает как обычный альбом в соцсетях: добавил фото, поставил цену — готово.", locked: false }, { title: "Модуль 3: Автопилот", subtitle: "Платежи и доставка", desc: "Подключаем оплату (Kaspi/карты) и настраиваем доставку. Теперь магазин сам принимает заказы и деньги 24/7.", easy: "Один раз выбрал нужные галочки в настройках, и система работает без твоего участия.", locked: false }, { title: "Модуль 4: Карта прибыли", subtitle: "Где твои деньги", desc: "Покажем список ниш, где за такие магазины платят больше всего. Даем готовое предложение, которое остается только отправить.", easy: "Тебе не нужно ничего выдумывать — мы даем наводку на прибыльные места и готовый текст для сделки.", locked: false }].map((item, i) => (
                   <div key={i} className="glass-card rounded-2xl p-5 flex flex-col items-start gap-3 group cursor-pointer hover:bg-white/5 transition-all">
@@ -1112,22 +1090,24 @@ const App = () => {
               </div>
             </div>
             <div className="mt-8 w-full glass-card p-6 rounded-3xl text-center border border-[#00FF9D]/20">
-                <p className="text-[10px] text-zinc-400 uppercase tracking-widest mb-2">Стоимость обучения</p>
                 
-                {/* --- NEW: Dynamic Pricing --- */}
-                <div className="text-2xl font-black text-white mb-4 font-['Chakra_Petch']">
-                    {hasReferralDiscount ? (
-                        <>
-                        <span className="text-[#00FF9D] text-3xl drop-shadow-[0_0_10px_rgba(0,255,157,0.5)]">45 000 ₸</span>
-                        <span className="text-zinc-600 text-sm line-through decoration-red-600 decoration-2 ml-2">50 000 ₸</span>
-                        </>
-                    ) : (
-                        <>50 000 ₸ <span className="text-zinc-600 text-lg line-through decoration-red-600 decoration-2 ml-2">80 000 ₸</span></>
-                    )}
+                {/* --- NEW: Dynamic FOMO --- */}
+                <div className="mb-4 bg-red-500/10 border border-red-500/30 p-2 rounded-lg animate-pulse">
+                    <p className="text-[10px] text-red-400 font-bold uppercase tracking-widest">
+                        🔥 Осталось мест: {spotsLeft} из 10
+                    </p>
+                    <p className="text-[8px] text-zinc-500 mt-1">Следующая цена: 80 000 ₸</p>
                 </div>
 
+                <p className="text-[10px] text-zinc-400 uppercase tracking-widest mb-2">Стоимость обучения</p>
+                <div className="text-2xl font-black text-white mb-4 font-['Chakra_Petch']">
+                    50 000 ₸ <span className="text-zinc-600 text-lg line-through decoration-red-600 decoration-2 ml-2">80 000 ₸</span>
+                </div>
                 <p className="text-[10px] text-zinc-500 uppercase tracking-widest mb-6">Длительность обучения (14 дней)</p>
-                <button onClick={() => window.open('https://t.me/taipanmedia', '_blank')} className="block w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-4 rounded-xl shadow-[0_0_20px_rgba(0,255,157,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs">Получить подробную консультацию</button>
+                <button onClick={() => {
+                    logToTaipanCRM(6, "ЖДЕТ КОНСУЛЬТАЦИЮ ⚡️", "Кликнул по кнопке 'Получить подробную консультацию' (Обучение)");
+                    window.open('https://t.me/taipanmedia', '_blank');
+                }} className="block w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-4 rounded-xl shadow-[0_0_20px_rgba(0,255,157,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs">Получить подробную консультацию</button>
             </div>
           </div>
         )}

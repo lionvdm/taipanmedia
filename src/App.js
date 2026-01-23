@@ -1,4 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+// --- FIREBASE INTEGRATION ---
+import { db, auth } from './firebaseConfig'; 
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { signInAnonymously } from 'firebase/auth';
 
 // --- CRM LOGGING FUNCTION (GLOBAL) ---
 const logToTaipanCRM = async (topicId, status, details = "") => {
@@ -719,9 +723,52 @@ const App = () => {
   // State for image preview modal
   const [previewImage, setPreviewImage] = useState(null);
 
+  // --- User State ---
+  const [userName, setUserName] = useState('AGENT');
+  const [spotsLeft, setSpotsLeft] = useState(4);
+
+  // --- FIREBASE TRACKING EFFECT ---
   useEffect(() => {
-    // Log Entry (Topic 2)
-    logToTaipanCRM(2, "ВХОД", "Открыл Mini App");
+    const initApp = async () => {
+        // 1. CRM Log (Topic 2)
+        logToTaipanCRM(2, "ВХОД", "Открыл Mini App");
+        
+        const tg = window.Telegram?.WebApp;
+        if (tg) {
+            tg.ready();
+            const user = tg.initDataUnsafe?.user;
+            if (user?.first_name) {
+                setUserName(user.first_name.toUpperCase());
+            }
+
+            // --- FIREBASE LOGGING ---
+            if (user?.id) {
+                try {
+                    // Анонимная авторизация для прав записи
+                    await signInAnonymously(auth);
+                    
+                    const userRef = doc(db, "users", user.id.toString());
+                    await setDoc(userRef, {
+                        chatId: user.id,
+                        userName: user.first_name || 'Агент',
+                        lastActive: serverTimestamp(),
+                        notified: false // Сброс флага для робота
+                    }, { merge: true });
+                    console.log("📡 СВЯЗЬ С ТЕРМИНАЛОМ УСТАНОВЛЕНА");
+                } catch (e) {
+                    console.error("Ошибка синхронизации с базой:", e);
+                }
+            }
+        }
+    };
+
+    initApp();
+
+    // FOMO simulation
+    const timer = setTimeout(() => {
+        setSpotsLeft(prev => prev > 2 ? prev - 1 : prev);
+    }, 15000); 
+    return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {
@@ -859,7 +906,10 @@ const App = () => {
               </h1>
               <div className="flex items-center justify-center gap-4 mt-3 w-full">
                 <div className="h-[1px] flex-1 max-w-[40px] bg-gradient-to-r from-transparent to-zinc-700"></div>
-                <p className="text-[10px] uppercase tracking-[0.6em] mr-[-0.6em] text-zinc-500 font-bold whitespace-nowrap">DIGITAL MEDIA</p>
+                {/* --- DYNAMIC GREETING --- */}
+                <p className="text-[10px] uppercase tracking-[0.6em] mr-[-0.6em] text-[#00FF9D] font-bold whitespace-nowrap animate-pulse">
+                  ПРИВЕТ, {userName}
+                </p>
                 <div className="h-[1px] flex-1 max-w-[40px] bg-gradient-to-l from-transparent to-zinc-700"></div>
               </div>
               <p className="text-[10px] text-zinc-600 font-mono mt-2 tracking-widest flex items-center justify-center gap-2 opacity-80">
@@ -869,13 +919,13 @@ const App = () => {
             </div>
             
             <div className="grid grid-cols-2 gap-4 mb-4 w-full">
-              <div onClick={handleShopClick} className="group relative glass-card rounded-3xl p-6 h-64 flex flex-col items-center justify-center text-center cursor-pointer">
+              <div onClick={handleShopClick} className="group relative glass-card rounded-3xl px-6 pt-10 pb-2 h-64 flex flex-col items-center text-center cursor-pointer">
                 <div className="mb-6 text-zinc-400 group-hover:text-[#00FF9D] transition-all duration-300"><TelegramLogoMain className="w-12 h-12 animate-[contourPulse_3s_ease-in-out_infinite]" /></div>
                 <h3 className="text-lg font-bold uppercase tracking-wide mb-2 leading-tight">Telegram<br/>Магазин</h3>
                 <p className="text-[9px] text-zinc-500 uppercase tracking-widest mb-4 leading-relaxed px-2">Выведите свой бизнес на новый уровень, и заберите ту прибыль, которую вы упускаете</p>
                 <div className="flex items-center text-[10px] text-[#00FF9D] opacity-0 group-hover:opacity-100 transition-all font-bold tracking-wider">ЗАКАЗАТЬ <ArrowRight className="w-3 h-3 ml-1" /></div>
               </div>
-              <div onClick={handleEducationClick} className="group relative glass-card rounded-3xl p-6 h-64 flex flex-col items-center justify-center text-center cursor-pointer">
+              <div onClick={handleEducationClick} className="group relative glass-card rounded-3xl px-6 pt-10 pb-2 h-64 flex flex-col items-center text-center cursor-pointer">
                 <div className="mb-6 text-zinc-400 group-hover:text-[#00FF9D] transition-all duration-300"><GraduationCap className="w-12 h-12 animate-[contourPulse_3s_ease-in-out_infinite]" /></div>
                 <h3 className="text-lg font-bold uppercase tracking-widest mb-2 leading-tight">ОБУЧЕНИЕ</h3>
                 <p className="text-[9px] text-zinc-500 uppercase tracking-widest mb-4 leading-relaxed px-2 text-zinc-500">Освой трендовый навык с большим спросом, и получи возможность зарабатывать из дома</p>
@@ -897,6 +947,7 @@ const App = () => {
           </div>
         )}
 
+        {/* ... Rest of currentView renders (shop, calculator, strategy, roi, education, faq, program, about) stay EXACTLY the same ... */}
         {currentView === 'shop' && (
           <div className="animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col h-full items-center w-full">
             {!shopIntroFinished ? (
@@ -1036,6 +1087,15 @@ const App = () => {
               </div>
             </div>
             <div className="mt-8 w-full glass-card p-6 rounded-3xl text-center border border-[#00FF9D]/20">
+                
+                {/* DYNAMIC FOMO */}
+                <div className="mb-4 bg-red-500/10 border border-red-500/30 p-2 rounded-lg animate-pulse">
+                    <p className="text-[10px] text-red-400 font-bold uppercase tracking-widest">
+                        🔥 Осталось мест: {spotsLeft} из 10
+                    </p>
+                    <p className="text-[8px] text-zinc-500 mt-1">Следующая цена: 80 000 ₸</p>
+                </div>
+
                 <p className="text-[10px] text-zinc-400 uppercase tracking-widest mb-2">Стоимость обучения</p>
                 <div className="text-2xl font-black text-white mb-4 font-['Chakra_Petch']">
                     50 000 ₸ <span className="text-zinc-600 text-lg line-through decoration-red-600 decoration-2 ml-2">80 000 ₸</span>
@@ -1160,6 +1220,7 @@ const App = () => {
         )}
       </div>
 
+      {/* Modals & Toasts stay EXACTLY the same */}
       {isModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-end justify-center px-4">
           <div className="absolute inset-0 bg-black/80 backdrop-blur-md animate-in fade-in duration-300" onClick={closeModal} />

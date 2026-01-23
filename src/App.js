@@ -7,21 +7,23 @@ const logToTaipanCRM = async (topicId, status, details = "") => {
   const tg = window.Telegram?.WebApp;
   const user = tg?.initDataUnsafe?.user;
 
-  // Формируем ссылку на личку пользователя
+  // Формируем прямую ссылку на чат с клиентом
   const userLink = user?.username 
     ? `https://t.me/${user.username}` 
     : `tg://user?id=${user?.id}`;
 
+  // Визуально "отцентрованный" шаблон
   const message = `
-📊 **СТАТУС: ${status}**
---------------------------
-👤 **Юзер:** ${user?.first_name || 'Incognito'} (@${user?.username || 'нет'})
-🆔 **ID:** \`${user?.id || '---'}\`
-🔹 **Детали:** ${details}
+       📡 **TAIPAN MONITORING** 📡
 
-👉 [НАПИСАТЬ КЛИЕНТУ](${userLink})
---------------------------
-  `;
+\`\`\`
+   СТАТУС : ${status.toUpperCase()}
+   ЮЗЕР   : ${user?.first_name || 'AGENT'}
+   ID     : ${user?.id || '---'}
+   ЭКШН   : ${details}
+\`\`\`
+    👤 [ПЕРЕЙТИ К ДИАЛОГУ](${userLink})
+`;
 
   try {
     await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {

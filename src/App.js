@@ -1,5 +1,45 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 
+// --- CRM LOGGING FUNCTION (GLOBAL) ---
+const logToTaipanCRM = async (topicId, status, details = "") => {
+  const token = "8398712805:AAHFZXllsCQU0YNd8KIo9Rie5VZeyH91GMQ";
+  const chatId = "-1003690228596"; // Your group ID
+  const tg = window.Telegram?.WebApp;
+  const user = tg?.initDataUnsafe?.user;
+
+  // Формируем ссылку на личку пользователя
+  const userLink = user?.username 
+    ? `https://t.me/${user.username}` 
+    : `tg://user?id=${user?.id}`;
+
+  const message = `
+📊 **СТАТУС: ${status}**
+--------------------------
+👤 **Юзер:** ${user?.first_name || 'Incognito'} (@${user?.username || 'нет'})
+🆔 **ID:** \`${user?.id || '---'}\`
+🔹 **Детали:** ${details}
+
+👉 [НАПИСАТЬ КЛИЕНТУ](${userLink})
+--------------------------
+  `;
+
+  try {
+    await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: chatId,
+        message_thread_id: topicId,
+        text: message,
+        parse_mode: "Markdown",
+        disable_web_page_preview: true
+      })
+    });
+  } catch (e) {
+    console.error("Ошибка CRM:", e);
+  }
+};
+
 // --- STYLES ---
 const GlobalStyles = () => (
   <style dangerouslySetInnerHTML={{__html: `
@@ -638,7 +678,12 @@ const RoiView = ({ profit, onBack, onAction }) => {
   const returnPercentage = Math.round((conservativeProfit / investment) * 100);
   const daysToRecoup = conservativeProfit > 0 ? Math.ceil(investment / (conservativeProfit / 30)) : Infinity;
   const isProfitable = returnPercentage > 0;
-  const handleConsultation = () => { window.open('https://t.me/taipanmedia', '_blank'); };
+  // --- UPDATED: Handle Consultation with Logging ---
+  const handleConsultation = () => {
+      logToTaipanCRM(6, "ЖДЕТ КОНСУЛЬТАЦИЮ ⚡️", "Кликнул по кнопке 'Получить консультацию'");
+      window.open('https://t.me/taipanmedia', '_blank');
+  };
+  
   const animatedProfit = useOdometer(conservativeProfit);
   const animatedPercentage = useOdometer(returnPercentage);
   return (
@@ -714,37 +759,6 @@ const App = () => {
 
   // --- NEW: Referral State ---
   const [hasReferralDiscount, setHasReferralDiscount] = useState(false);
-
-  // --- CRM LOGGING FUNCTION ---
-  const logToTaipanCRM = async (topicId, status, details = "") => {
-    const token = "8398712805:AAHFZXllsCQU0YNd8KIo9Rie5VZeyH91GMQ";
-    const chatId = "-1003690228596"; // Your group ID
-    const tg = window.Telegram?.WebApp;
-    const user = tg?.initDataUnsafe?.user;
-
-    const message = `
-📊 **СТАТУС: ${status}**
---------------------------
-👤 **Юзер:** ${user?.first_name || 'Incognito'} (@${user?.username || 'нет'})
-🆔 **ID:** \`${user?.id || '---'}\`${details ? `\n🔹 **Детали:** ${details}` : ""}
---------------------------
-    `;
-
-    try {
-      await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          chat_id: chatId,
-          message_thread_id: topicId,
-          text: message,
-          parse_mode: "Markdown"
-        })
-      });
-    } catch (e) {
-      console.error("Ошибка CRM:", e);
-    }
-  };
 
   // --- NEW: Referral Capture Logic & Initial Log ---
   useEffect(() => {
@@ -967,7 +981,10 @@ const App = () => {
                   </div>
                   <div className="mt-4 w-full glass-card p-6 rounded-3xl text-center border border-[#00FF9D]/20 relative overflow-hidden group">
                       <div className="absolute inset-0 bg-gradient-to-t from-[#00FF9D]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                      <button onClick={() => setCurrentView('calculator')} className="w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-4 rounded-xl shadow-[0_0_20px_rgba(0,255,157,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs relative z-10 flex items-center justify-center gap-2 animate-pulse">РАССЧИТАТЬ УПУЩЕННУЮ ПРИБЫЛЬ</button>
+                      <button onClick={() => {
+                          logToTaipanCRM(3, "АКТИВНОСТЬ", "Считает прибыль в калькуляторе");
+                          setCurrentView('calculator');
+                      }} className="w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-4 rounded-xl shadow-[0_0_20px_rgba(0,255,157,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs relative z-10 flex items-center justify-center gap-2 animate-pulse">РАССЧИТАТЬ УПУЩЕННУЮ ПРИБЫЛЬ</button>
                   </div>
                 </div>
               </React.Fragment>

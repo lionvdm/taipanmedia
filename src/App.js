@@ -1,52 +1,12 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 
+// --- FIREBASE INTEGRATION ---
 
+import { db, auth } from './firebaseConfig'; 
 
-// ==========================================
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 
-// 🛠 ИНСТРУКЦИЯ ДЛЯ ДЕПЛОЯ (VERCEL / GITHUB)
-
-// ==========================================
-
-// Когда будете загружать код в свой проект:
-
-// 1. Раскомментируйте строку ниже:
-
-// import { db, auth } from './firebaseConfig';
-
-//
-
-// 2. ЗАКОММЕНТИРУЙТЕ или удалите блок "PREVIEW CONFIG", который идет следом.
-
-
-
-// ==========================================
-
-// 🚀 PREVIEW CONFIG (РАБОТАЕТ ЗДЕСЬ И СЕЙЧАС)
-
-// ==========================================
-
-import { initializeApp } from 'firebase/app';
-
-import { getFirestore, doc, setDoc, serverTimestamp } from 'firebase/firestore';
-
-import { getAuth, signInAnonymously } from 'firebase/auth';
-
-
-
-// Эта часть нужна, чтобы код работал в предпросмотре без отдельного файла конфига
-
-const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-
-const app = initializeApp(firebaseConfig);
-
-const db = getFirestore(app);
-
-const auth = getAuth(app);
-
-// ==========================================
-
-
+import { signInAnonymously } from 'firebase/auth';
 
 
 
@@ -64,7 +24,7 @@ const logToTaipanCRM = async (topicId, status, details = "") => {
 
 
 
-  // Формируем прямую ссылку на чат с клиентом
+  // Формируем ссылку на личку пользователя
 
   const userLink = user?.username 
 
@@ -74,29 +34,25 @@ const logToTaipanCRM = async (topicId, status, details = "") => {
 
 
 
-  // Визуально "отцентрованный" шаблон "Premium Terminal"
-
   const message = `
 
-       📡 **TAIPAN MONITORING** 📡
+📊 **СТАТУС: ${status}**
+
+--------------------------
+
+👤 **Юзер:** ${user?.first_name || 'Incognito'} (@${user?.username || 'нет'})
+
+🆔 **ID:** \`${user?.id || '---'}\`
+
+🔹 **Детали:** ${details}
 
 
 
-\`\`\`
+👉 [НАПИСАТЬ КЛИЕНТУ](${userLink})
 
-   СТАТУС : ${status.toUpperCase()}
+--------------------------
 
-   ЮЗЕР   : ${user?.first_name || 'AGENT'}
-
-   ID     : ${user?.id || '---'}
-
-   ЭКШН   : ${details}
-
-\`\`\`
-
-    👤 [ПЕРЕЙТИ К ДИАЛОГУ](${userLink})
-
-`;
+  `;
 
 
 
@@ -127,60 +83,6 @@ const logToTaipanCRM = async (topicId, status, details = "") => {
   } catch (e) {
 
     console.error("Ошибка CRM:", e);
-
-  }
-
-};
-
-
-
-// --- AUTO-GREETING FUNCTION ---
-
-const sendWelcomeToUser = async () => {
-
-  const token = "8398712805:AAHFZXllsCQU0YNd8KIo9Rie5VZeyH91GMQ";
-
-  const tg = window.Telegram?.WebApp;
-
-  const user = tg?.initDataUnsafe?.user;
-
-
-
-  // Проверка: есть ли ID пользователя и не отправляли ли мы уже приветствие в этой сессии
-
-  if (!user?.id || sessionStorage.getItem("taipan_welcome_sent")) return;
-
-
-
-  const message = "Привет! Вижу, ты заглянул в Taipan Media. Я — бот-помощник Вадима. Если появятся вопросы по магазинам или обучению — просто пиши сюда, я сразу передам команде!";
-
-
-
-  try {
-
-    await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-
-      method: "POST",
-
-      headers: { "Content-Type": "application/json" },
-
-      body: JSON.stringify({
-
-        chat_id: user.id,
-
-        text: message
-
-      })
-
-    });
-
-    // Запоминаем, что приветствие отправлено, чтобы не спамить при перезагрузке
-
-    sessionStorage.setItem("taipan_welcome_sent", "true");
-
-  } catch (e) {
-
-    console.error("Ошибка авто-приветствия:", e);
 
   }
 
@@ -830,7 +732,7 @@ const HackerProof = () => {
 
         <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-md rounded-full p-1.5 opacity-60 group-hover:opacity-100 transition-opacity border border-[#00FF9D]/30 z-10"><Search className="w-3 h-3 text-[#00FF9D]" /></div>
 
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none z-10"></div>
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none z-10"></div>
 
         <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-[#00FF9D]/10 to-transparent animate-[scanLine_2.5s_linear_infinite] z-10"></div>
 
@@ -886,7 +788,7 @@ const ClientDemandProof = () => {
 
         <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-md rounded-full p-1.5 opacity-60 group-hover:opacity-100 transition-opacity border border-[#00FF9D]/30 z-10"><Search className="w-3 h-3 text-[#00FF9D]" /></div>
 
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none z-10"></div>
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none z-10"></div>
 
         <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-[#00FF9D]/10 to-transparent animate-[scanLine_2.5s_linear_infinite] z-10"></div>
 
@@ -930,7 +832,7 @@ const SkillScanner = () => (
 
   <div className="w-full bg-[#0A0A0A] rounded-xl border border-[#00FF9D]/20 p-4 mb-6 relative overflow-hidden animate-in slide-in-from-bottom duration-500 group">
 
-    <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none"></div>
+    <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none"></div>
 
     <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-[#00FF9D]/05 to-transparent animate-[scanLine_4s_linear_infinite]"></div>
 
@@ -1042,7 +944,7 @@ const WordstatGraph = () => {
 
           <SmartImage src="https://i.ibb.co.com/Y7WjS1Tc/2026-01-16-014054.png" alt="Real Wordstat Data" className="w-full h-auto object-cover opacity-90 group-hover:opacity-100 transition-opacity duration-300" />
 
-          <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none z-10"></div>
+          <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none z-10"></div>
 
           <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-[#00FF9D]/10 to-transparent animate-[scanLine_2.5s_linear_infinite] z-10"></div>
 
@@ -1422,7 +1324,7 @@ const PartnersCredits = () => {
 
       <div className="relative w-full h-32 flex items-center justify-center overflow-hidden bg-white/5 rounded-xl border border-[#00FF9D]/10 shadow-[0_0_30px_rgba(0,0,0,0.5)]">
 
-         <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:20px_20px]"></div>
+         <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:20px_20px]"></div>
 
          <div key={currentIndex} className="relative z-10 animate-[cyberReveal_0.5s_cubic-bezier(0.215,0.61,0.355,1)_both] w-full flex justify-center">
 
@@ -1494,7 +1396,7 @@ const RoiView = ({ profit, onBack, onAction }) => {
 
             <div className="relative w-full overflow-hidden bg-gradient-to-br from-zinc-900 to-black border border-zinc-800 p-6 rounded-3xl text-center group">
 
-                <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none"></div>
+                <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none"></div>
 
                 <p className="text-[10px] text-zinc-400 uppercase tracking-widest mb-3 relative z-10 leading-relaxed">При указанных вами показателях,<br/>в первый месяц вы вернёте</p>
 
@@ -1546,7 +1448,7 @@ const App = () => {
 
 
 
-  // --- NEW: User Name and Spots Left State ---
+  // --- User State ---
 
   const [userName, setUserName] = useState('AGENT');
 
@@ -1554,23 +1456,17 @@ const App = () => {
 
 
 
+  // --- FIREBASE TRACKING EFFECT ---
+
   useEffect(() => {
 
     const initApp = async () => {
 
-        // Log Entry (Topic 2)
+        // 1. CRM Log (Topic 2)
 
         logToTaipanCRM(2, "ВХОД", "Открыл Mini App");
 
         
-
-        // Auto-greeting to user
-
-        sendWelcomeToUser();
-
-
-
-        // Fetch user name from Telegram WebApp
 
         const tg = window.Telegram?.WebApp;
 
@@ -1588,15 +1484,17 @@ const App = () => {
 
 
 
-            // --- ACTIVITY TRACKING ---
+            // --- FIREBASE LOGGING ---
 
             if (user?.id) {
 
                 try {
 
-                    // Sign in anonymously to allow Firestore writes
+                    // Анонимная авторизация для прав записи
 
                     await signInAnonymously(auth);
+
+                    
 
                     const userRef = doc(db, "users", user.id.toString());
 
@@ -1608,13 +1506,15 @@ const App = () => {
 
                         lastActive: serverTimestamp(),
 
-                        notified: false
+                        notified: false // Сброс флага для робота
 
                     }, { merge: true });
 
+                    console.log("📡 СВЯЗЬ С ТЕРМИНАЛОМ УСТАНОВЛЕНА");
+
                 } catch (e) {
 
-                    console.error("Error updating activity:", e);
+                    console.error("Ошибка синхронизации с базой:", e);
 
                 }
 
@@ -1630,7 +1530,7 @@ const App = () => {
 
 
 
-    // Simple FOMO simulation: drop a spot after 15 seconds
+    // FOMO simulation
 
     const timer = setTimeout(() => {
 
@@ -1639,8 +1539,6 @@ const App = () => {
     }, 15000); 
 
     return () => clearTimeout(timer);
-
-
 
   }, []);
 
@@ -1916,7 +1814,7 @@ const App = () => {
 
                 <div className="h-[1px] flex-1 max-w-[40px] bg-gradient-to-r from-transparent to-zinc-700"></div>
 
-                {/* --- UPDATED: Dynamic Greeting --- */}
+                {/* --- DYNAMIC GREETING --- */}
 
                 <p className="text-[10px] uppercase tracking-[0.6em] mr-[-0.6em] text-[#00FF9D] font-bold whitespace-nowrap animate-pulse">
 
@@ -1942,11 +1840,9 @@ const App = () => {
 
             <div className="grid grid-cols-2 gap-4 mb-4 w-full">
 
-              {/* UPDATED: Reduced top padding (pt-6 instead of pt-10) and icon margin (mb-4 instead of mb-6) to lift content */}
+              <div onClick={handleShopClick} className="group relative glass-card rounded-3xl px-6 pt-10 pb-2 h-64 flex flex-col items-center text-center cursor-pointer">
 
-              <div onClick={handleShopClick} className="group relative glass-card rounded-3xl px-6 pt-6 pb-2 h-64 flex flex-col items-center text-center cursor-pointer">
-
-                <div className="mb-4 text-zinc-400 group-hover:text-[#00FF9D] transition-all duration-300"><TelegramLogoMain className="w-12 h-12 animate-[contourPulse_3s_ease-in-out_infinite]" /></div>
+                <div className="mb-6 text-zinc-400 group-hover:text-[#00FF9D] transition-all duration-300"><TelegramLogoMain className="w-12 h-12 animate-[contourPulse_3s_ease-in-out_infinite]" /></div>
 
                 <h3 className="text-lg font-bold uppercase tracking-wide mb-2 leading-tight">Telegram<br/>Магазин</h3>
 
@@ -1956,11 +1852,9 @@ const App = () => {
 
               </div>
 
-              {/* UPDATED: Reduced top padding (pt-6 instead of pt-10) and icon margin (mb-4 instead of mb-6) to lift content */}
+              <div onClick={handleEducationClick} className="group relative glass-card rounded-3xl px-6 pt-10 pb-2 h-64 flex flex-col items-center text-center cursor-pointer">
 
-              <div onClick={handleEducationClick} className="group relative glass-card rounded-3xl px-6 pt-6 pb-2 h-64 flex flex-col items-center text-center cursor-pointer">
-
-                <div className="mb-4 text-zinc-400 group-hover:text-[#00FF9D] transition-all duration-300"><GraduationCap className="w-12 h-12 animate-[contourPulse_3s_ease-in-out_infinite]" /></div>
+                <div className="mb-6 text-zinc-400 group-hover:text-[#00FF9D] transition-all duration-300"><GraduationCap className="w-12 h-12 animate-[contourPulse_3s_ease-in-out_infinite]" /></div>
 
                 <h3 className="text-lg font-bold uppercase tracking-widest mb-2 leading-tight">ОБУЧЕНИЕ</h3>
 
@@ -2001,6 +1895,8 @@ const App = () => {
         )}
 
 
+
+        {/* ... Rest of currentView renders (shop, calculator, strategy, roi, education, faq, program, about) stay EXACTLY the same ... */}
 
         {currentView === 'shop' && (
 
@@ -2282,7 +2178,7 @@ const App = () => {
 
                 
 
-                {/* --- NEW: Dynamic FOMO --- */}
+                {/* DYNAMIC FOMO */}
 
                 <div className="mb-4 bg-red-500/10 border border-red-500/30 p-2 rounded-lg animate-pulse">
 
@@ -2545,6 +2441,8 @@ const App = () => {
       </div>
 
 
+
+      {/* Modals & Toasts stay EXACTLY the same */}
 
       {isModalOpen && (
 

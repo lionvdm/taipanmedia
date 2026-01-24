@@ -193,6 +193,13 @@ const GlobalStyles = () => (
       50% { filter: drop-shadow(0 0 6px rgba(0, 255, 157, 0.6)); opacity: 1; }
       100% { filter: drop-shadow(0 0 1px rgba(0, 255, 157, 0.3)); opacity: 0.8; }
     }
+
+    @keyframes goldPulse {
+      0% { filter: drop-shadow(0 0 1px rgba(229, 192, 123, 0.2)); opacity: 0.9; }
+      50% { filter: drop-shadow(0 0 8px rgba(229, 192, 123, 0.5)); opacity: 1; }
+      100% { filter: drop-shadow(0 0 1px rgba(229, 192, 123, 0.2)); opacity: 0.9; }
+    }
+
     @keyframes snakeFlow {
       0% { background-position: 200% center; }
       100% { background-position: -200% center; }
@@ -1297,6 +1304,7 @@ const App = () => {
   const [previewImage, setPreviewImage] = useState(null);
   // --- User State ---
   const [userName, setUserName] = useState('AGENT');
+  const [currentUserId, setCurrentUserId] = useState(null); // Добавлено состояние для ID
   const [spotsLeft, setSpotsLeft] = useState(4);
 
   // --- FIREBASE AUTH LISTENER ---
@@ -1319,6 +1327,7 @@ const App = () => {
                 setUserName(user.first_name.toUpperCase());
             }
             if (user?.id) {
+                setCurrentUserId(user.id); // Сохраняем ID пользователя для проверки админки
                 try {
                     await signInAnonymously(auth);
                     // Using "app_visitors" collection to avoid "users" conflicts
@@ -1499,7 +1508,17 @@ const App = () => {
       setTapCount(prev => {
           const newCount = prev + 1;
           if (newCount >= 5) {
-              setIsAdminAuthOpen(true);
+              // --- SECURITY CHECK ---
+              const ALLOWED_ADMINS = [
+                  8469497672, // Ваш ID
+              ];
+              
+              if (currentUserId && ALLOWED_ADMINS.includes(currentUserId)) {
+                  setIsAdminAuthOpen(true);
+              } else {
+                  // Для отладки или защиты показываем, что доступ запрещен
+                  alert(`ACCESS DENIED. Your ID: ${currentUserId || 'UNKNOWN'}`); 
+              }
               return 0;
           }
           return newCount;
@@ -1563,24 +1582,25 @@ const App = () => {
             
             <div className="grid grid-cols-2 gap-4 mb-4 w-full">
               <div onClick={handleShopClick} className="group relative glass-card grid-bg rounded-3xl px-6 pt-10 pb-2 h-64 flex flex-col items-center text-center cursor-pointer">
-                <div className="mb-6 text-zinc-400 group-hover:text-[#00FF9D] transition-all duration-300"><TelegramLogoMain className="w-12 h-12 animate-[contourPulse_3s_ease-in-out_infinite]" /></div>
+                <div className="mb-6 text-zinc-400 group-hover:text-[#E5C07B] transition-all duration-300"><TelegramLogoMain className="w-12 h-12 animate-[goldPulse_3s_ease-in-out_infinite]" /></div>
                 <h3 className="text-lg font-bold uppercase tracking-wide mb-2 leading-tight">Telegram<br/>Магазин</h3>
-                <p className="text-[9px] text-zinc-500 uppercase tracking-widest mb-4 leading-relaxed px-2">Выведите свой бизнес на новый уровень, и заберите ту прибыль, которую вы упускаете</p>
+                <p className="text-[9px] text-zinc-500 uppercase tracking-widest mb-4 leading-relaxed px-2">Решение<br/>для роста прибыли в вашем бизнесе</p>
               </div>
               <div onClick={handleEducationClick} className="group relative glass-card grid-bg rounded-3xl px-6 pt-10 pb-2 h-64 flex flex-col items-center text-center cursor-pointer">
-                <div className="mb-6 text-zinc-400 group-hover:text-[#00FF9D] transition-all duration-300"><GraduationCap className="w-12 h-12 animate-[contourPulse_3s_ease-in-out_infinite]" /></div>
+                <div className="mb-6 text-zinc-400 group-hover:text-[#E5C07B] transition-all duration-300"><GraduationCap className="w-12 h-12 animate-[goldPulse_3s_ease-in-out_infinite]" /></div>
                 <h3 className="text-lg font-bold uppercase tracking-widest mb-2 leading-tight">ОБУЧЕНИЕ</h3>
-                <p className="text-[9px] text-zinc-500 uppercase tracking-widest mb-4 leading-relaxed px-2 text-zinc-500">Освой трендовый навык с большим спросом, и получи возможность зарабатывать из дома</p>
+                <p className="text-[9px] text-zinc-500 uppercase tracking-widest mb-4 leading-relaxed px-2 text-zinc-500">Ваша финансовая независимость<br/>через пользу для бизнеса</p>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4 w-full">
                 <div onClick={() => openModal('Mini App')} className="group relative glass-card grid-bg rounded-3xl p-6 flex flex-col items-center justify-center cursor-pointer text-center w-full h-40">
-                    <h3 className="text-lg font-bold uppercase tracking-widest mb-2 group-hover:text-[#00FF9D] transition-colors">MINI APP</h3>
-                    <p className="text-[10px] text-zinc-500 uppercase tracking-widest group-hover:text-white transition-colors leading-tight">Заказать персональный mini app</p>
+                    <Code className="w-8 h-8 mb-3 text-zinc-500 group-hover:text-[#E5C07B] animate-[goldPulse_3s_ease-in-out_infinite] transition-colors" />
+                    <h3 className="text-lg font-bold uppercase tracking-widest mb-2 group-hover:text-[#E5C07B] transition-colors">MINI APP</h3>
+                    <p className="text-[10px] text-zinc-500 uppercase tracking-widest group-hover:text-white transition-colors leading-tight">Заказать персональный<br/>mini app</p>
                 </div>
                  <div onClick={handleAboutClick} className="group relative glass-card grid-bg rounded-3xl p-6 flex flex-col items-center justify-center cursor-pointer text-center w-full h-40">
-                    <Users className="w-8 h-8 mb-3 text-zinc-500 group-hover:text-[#00FF9D] transition-colors" />
-                    <h3 className="text-lg font-bold uppercase tracking-widest mb-2 group-hover:text-[#00FF9D] transition-colors">КТО МЫ?</h3>
+                    <Users className="w-8 h-8 mb-3 text-zinc-500 group-hover:text-[#E5C07B] animate-[goldPulse_3s_ease-in-out_infinite] transition-colors" />
+                    <h3 className="text-lg font-bold uppercase tracking-widest mb-2 group-hover:text-[#E5C07B] transition-colors">КТО МЫ?</h3>
                     <p className="text-[10px] text-zinc-500 uppercase tracking-widest group-hover:text-white transition-colors leading-tight">О команде и миссии</p>
                 </div>
             </div>

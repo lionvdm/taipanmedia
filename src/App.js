@@ -1,56 +1,96 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 
-// ==========================================
-// 🛠 ИНСТРУКЦИЯ ДЛЯ ДЕПЛОЯ (VERCEL / GITHUB)
-// ==========================================
-// Когда будете загружать код в свой проект:
-// 1. Раскомментируйте строку ниже:
-// import { db, auth } from './firebaseConfig';
-//
-// 2. ЗАКОММЕНТИРУЙТЕ или удалите блок "PREVIEW CONFIG", который идет следом.
-
-// ==========================================
-// 🚀 PREVIEW CONFIG (РАБОТАЕТ ЗДЕСЬ И СЕЙЧАС)
-// ==========================================
+// --- FIREBASE INTEGRATION ---
 import { initializeApp } from 'firebase/app';
-import { getFirestore, doc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { getAuth, signInAnonymously } from 'firebase/auth';
+import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
+import { getFirestore, doc, setDoc, updateDoc, serverTimestamp, collection, query, onSnapshot, deleteDoc } from 'firebase/firestore';
 
-// Эта часть нужна, чтобы код работал в предпросмотре без отдельного файла конфига
-const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-const auth = getAuth(app);
-// ==========================================
+// --- CONFIGURATION & INIT ---
+// Проверка наличия конфига для предотвращения ошибок в Vercel
+let app, auth, db;
+let isFirebaseInitialized = false;
 
+// Получаем ID приложения
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
+try {
+    let config;
+    
+    // 1. Пытаемся получить конфиг из среды Canvas
+    if (typeof __firebase_config !== 'undefined') {
+        config = JSON.parse(__firebase_config);
+    } 
+    // 2. Иначе используем настройки для Vercel (Замените значения на свои из консоли Firebase!)
+    else {
+        config = {
+            apiKey: process.env.REACT_APP_FIREBASE_API_KEY || "ЗАМЕНИТЕ_НА_ВАШ_API_KEY",
+            authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN || "ваше-приложение.firebaseapp.com",
+            projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID || "ваше-приложение",
+            storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET || "ваше-приложение.appspot.com",
+            messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID || "123456789",
+            appId: process.env.REACT_APP_FIREBASE_APP_ID || "1:123456789:web:..."
+        };
+    }
+
+    // Инициализация
+    if (config.apiKey && config.apiKey !== "ЗАМЕНИТЕ_НА_ВАШ_API_KEY") {
+        app = initializeApp(config);
+        auth = getAuth(app);
+        db = getFirestore(app);
+        isFirebaseInitialized = true;
+    } else {
+        console.warn("⚠️ Firebase config is missing. App running in UI-only mode.");
+    }
+} catch (e) {
+    console.error("Firebase Initialization Error:", e);
+}
+
+// --- TELEGRAM API HELPERS ---
+const BOT_TOKEN = "8398712805:AAHFZXllsCQU0YNd8KIo9Rie5VZeyH91GMQ"; // В продакшене лучше использовать Cloud Function!
+
+const sendTelegramMessage = async (chatId, text) => {
+    try {
+        await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                chat_id: chatId,
+                text: text,
+                parse_mode: "Markdown"
+            })
+        });
+        return true;
+    } catch (e) {
+        console.error(`Failed to send to ${chatId}:`, e);
+        return false;
+    }
+};
 
 // --- CRM LOGGING FUNCTION (GLOBAL) ---
 const logToTaipanCRM = async (topicId, status, details = "") => {
-  const token = "8398712805:AAHFZXllsCQU0YNd8KIo9Rie5VZeyH91GMQ";
   const chatId = "-1003690228596"; // Your group ID
   const tg = window.Telegram?.WebApp;
   const user = tg?.initDataUnsafe?.user;
 
-  // Формируем прямую ссылку на чат с клиентом
+  // Формируем ссылку на личку пользователя
   const userLink = user?.username 
     ? `https://t.me/${user.username}` 
     : `tg://user?id=${user?.id}`;
 
-  // Визуально "отцентрованный" шаблон "Premium Terminal"
   const message = `
-       📡 **TAIPAN MONITORING** 📡
+📊 **СТАТУС: ${status}**
+--------------------------
+👤 **Юзер:** ${user?.first_name || 'Incognito'} (@${user?.username || 'нет'})
+🆔 **ID:** \`${user?.id || '---'}\`
+🔹 **Детали:** ${details}
 
-\`\`\`
-   СТАТУС : ${status.toUpperCase()}
-   ЮЗЕР   : ${user?.first_name || 'AGENT'}
-   ID     : ${user?.id || '---'}
-   ЭКШН   : ${details}
-\`\`\`
-    👤 [ПЕРЕЙТИ К ДИАЛОГУ](${userLink})
-`;
+👉 [НАПИСАТЬ КЛИЕНТУ](${userLink})
+--------------------------
+  `;
 
   try {
-    await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+    // Отправляем асинхронно, не блокируя UI
+    fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -60,43 +100,65 @@ const logToTaipanCRM = async (topicId, status, details = "") => {
         parse_mode: "Markdown",
         disable_web_page_preview: true
       })
-    });
+    }).catch(e => console.error("CRM Error (Background):", e));
   } catch (e) {
-    console.error("Ошибка CRM:", e);
+    console.error("CRM Error:", e);
   }
 };
 
-// --- AUTO-GREETING FUNCTION ---
-const sendWelcomeToUser = async () => {
-  const token = "8398712805:AAHFZXllsCQU0YNd8KIo9Rie5VZeyH91GMQ";
-  const tg = window.Telegram?.WebApp;
-  const user = tg?.initDataUnsafe?.user;
+// --- OPTIMIZED MATRIX BACKGROUND (Prevents Re-renders & CPU Hogging) ---
+const MatrixBackground = React.memo(() => {
+  const canvasRef = useRef(null);
 
-  // Проверка: есть ли ID пользователя и не отправляли ли мы уже приветствие в этой сессии
-  if (!user?.id || sessionStorage.getItem("taipan_welcome_sent")) return;
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    let width = canvas.width = window.innerWidth;
+    let height = canvas.height = window.innerHeight;
+    
+    const chars = "TAIPAN0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    const columns = Math.floor(width / 25);
+    const drops = Array(columns).fill(0).map(() => Math.random() * -100);
 
-  const message = "Привет! Вижу, ты заглянул в Taipan Media. Я — бот-помощник Вадима. Если появятся вопросы по магазинам или обучению — просто пиши сюда, я сразу передам команде!";
+    const drawMatrix = () => {
+      // Use slightly higher opacity for "trail" effect
+      ctx.fillStyle = 'rgba(5, 5, 5, 0.1)'; 
+      ctx.fillRect(0, 0, width, height);
+      ctx.fillStyle = '#00FF9D';
+      ctx.font = '14px monospace';
+      
+      for (let i = 0; i < drops.length; i++) {
+        const text = chars.charAt(Math.floor(Math.random() * chars.length));
+        ctx.fillText(text, i * 25, drops[i] * 25);
+        if (drops[i] * 25 > height && Math.random() > 0.975) drops[i] = 0;
+        drops[i]++;
+      }
+    };
 
-  try {
-    await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        chat_id: user.id,
-        text: message
-      })
-    });
-    // Запоминаем, что приветствие отправлено, чтобы не спамить при перезагрузке
-    sessionStorage.setItem("taipan_welcome_sent", "true");
-  } catch (e) {
-    console.error("Ошибка авто-приветствия:", e);
-  }
-};
+    // OPTIMIZATION 2: Delay start to unblock main thread during initial render
+    let interval;
+    const startTimeout = setTimeout(() => {
+        interval = setInterval(drawMatrix, 75);
+    }, 800);
+
+    const handleResize = () => { width = canvas.width = window.innerWidth; height = canvas.height = window.innerHeight; };
+    window.addEventListener('resize', handleResize);
+    
+    return () => { 
+        clearTimeout(startTimeout);
+        if (interval) clearInterval(interval); 
+        window.removeEventListener('resize', handleResize); 
+    };
+  }, []);
+
+  return <canvas ref={canvasRef} className="absolute inset-0 opacity-20 mix-blend-screen pointer-events-none" />;
+});
 
 // --- STYLES ---
 const GlobalStyles = () => (
   <style dangerouslySetInnerHTML={{__html: `
-    body { margin: 0; background-color: #050505; color: white; overflow-x: hidden; }
+    body { margin: 0; background-color: #050505; color: white; overflow-x: hidden; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
     /* Hide scrollbar */
     ::-webkit-scrollbar { display: none; }
     body { -ms-overflow-style: none; scrollbar-width: none; }
@@ -119,6 +181,7 @@ const GlobalStyles = () => (
         border-color: rgba(0, 255, 157, 0.4);
         box-shadow: 0 0 15px rgba(0, 255, 157, 0.1);
     }
+    .glass-card:active { transform: scale(0.98); }
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
@@ -127,6 +190,20 @@ const GlobalStyles = () => (
         background-image: linear-gradient(rgba(0, 255, 157, 0.05) 1px, transparent 1px),
         linear-gradient(90deg, rgba(0, 255, 157, 0.05) 1px, transparent 1px);
         background-size: 20px 20px;
+    }
+    
+    /* OPTIMIZATION 4: GPU Acceleration Class */
+    .optimize-gpu {
+        will-change: transform, opacity;
+        transform: translateZ(0);
+        backface-visibility: hidden;
+    }
+    
+    /* Hardware Acceleration Class for Images */
+    .hw-accelerated {
+        will-change: transform, opacity;
+        transform: translateZ(0);
+        backface-visibility: hidden;
     }
 
     /* Animations */
@@ -229,30 +306,42 @@ const useOdometer = (targetValue, duration = 1000) => {
   return displayValue;
 };
 
-// --- ICON COMPONENTS ---
-const GraduationCap = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M22 10v6M2 10l10-5 10 5-10 5z" /><path d="M6 12v5c3 3 9 3 12 0v-5" /></svg>);
-const ArrowRight = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>);
-const ChevronLeft = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m15 18-6-6 6-6" /></svg>);
-const CheckCircle2 = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10" /><path d="m9 12 2 2 4-4" /></svg>);
-const Lock = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect width="18" height="11" x="3" y="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>);
-const TrendingUp = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="23 6 13.5 15.5 8.5 10.5 1 18" /><polyline points="17 6 23 6 23 12" /></svg>);
-const Wallet = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4" /><path d="M4 6v12c0 1.1.9 2 2 2h14v-4" /><path d="M18 12a2 2 0 0 0-2 2c0 1.1.9 2 2 2h4v-4h-4z" /></svg>);
-const X = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>);
-const Zap = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></svg>);
-const Search = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>);
-const Users = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>);
-const Shield = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>);
-const Crosshair = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><line x1="22" y1="12" x2="18" y2="12"/><line x1="6" y1="12" x2="2" y2="12"/><line x1="12" y1="6" x2="12" y2="2"/><line x1="12" y1="22" x2="12" y2="18"/></svg>);
-const Code = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>);
+// --- ICON COMPONENTS (Memoized for perf) ---
+const GraduationCap = React.memo(({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M22 10v6M2 10l10-5 10 5-10 5z" /><path d="M6 12v5c3 3 9 3 12 0v-5" /></svg>));
+const ArrowRight = React.memo(({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>));
+const ChevronLeft = React.memo(({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m15 18-6-6 6-6" /></svg>));
+const CheckCircle2 = React.memo(({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10" /><path d="m9 12 2 2 4-4" /></svg>));
+const Lock = React.memo(({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect width="18" height="11" x="3" y="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>));
+const TrendingUp = React.memo(({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="23 6 13.5 15.5 8.5 10.5 1 18" /><polyline points="17 6 23 6 23 12" /></svg>));
+const Wallet = React.memo(({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4" /><path d="M4 6v12c0 1.1.9 2 2 2h14v-4" /><path d="M18 12a2 2 0 0 0-2 2c0 1.1.9 2 2 2h4v-4h-4z" /></svg>));
+const X = React.memo(({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>));
+const Zap = React.memo(({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></svg>));
+const Search = React.memo(({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>));
+const Users = React.memo(({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>));
+const Shield = React.memo(({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>));
+const Crosshair = React.memo(({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><line x1="22" y1="12" x2="18" y2="12"/><line x1="6" y1="12" x2="2" y2="12"/><line x1="12" y1="6" x2="12" y2="2"/><line x1="12" y1="22" x2="12" y2="18"/></svg>));
+const Code = React.memo(({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>));
+const Database = React.memo(({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>));
+const Trash2 = React.memo(({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M3 6h18"/><path d="M19 6v14c0 1.1-.9 2-2 2H7c-1.1 0-2-.9-2-2V6"/><path d="M8 6V4c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2"/></svg>));
+const Activity = React.memo(({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>));
+const Edit2 = React.memo(({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>));
+const Save = React.memo(({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>));
+const Megaphone = React.memo(({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>));
+const Send = React.memo(({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>));
+const Filter = React.memo(({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>));
+const BarChart2 = React.memo(({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>));
+const PieChart = React.memo(({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>));
 
-const TelegramLogoMain = ({ className }) => (
+const TelegramLogoMain = React.memo(({ className }) => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" stroke="none" className={className}>
     <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.446 1.394c-.16.16-.295.293-.605.293l.214-3.054 5.56-5.022c.24-.213-.054-.334-.373-.121l-6.869 4.326-2.962-.924c-.64-.203-.658-.64.135-.954l11.566-4.458c.538-.196 1.006.128.832.942z"/>
   </svg>
-);
+));
 
-// --- COMPONENT: SmartImage ---
-const SmartImage = ({ src, alt, className, style, wrapperClass = "", overflowHidden = true }) => {
+// --- OPTIMIZED COMPONENT: SmartImage ---
+// Wrapped in memo to prevent re-renders on parent state changes
+// OPTIMIZATION 1: Added priority prop for Eager Loading
+const SmartImage = React.memo(({ src, alt, className, style, wrapperClass = "", overflowHidden = true, priority = false }) => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
 
@@ -264,21 +353,23 @@ const SmartImage = ({ src, alt, className, style, wrapperClass = "", overflowHid
       <img
         src={src}
         alt={alt}
-        loading="lazy"
+        loading={priority ? "eager" : "lazy"}
         decoding="async"
+        fetchpriority={priority ? "high" : "auto"}
         onLoad={() => setIsLoaded(true)}
         onError={(e) => {
            setHasError(true);
            if (e.target.src !== "https://via.placeholder.com/400x200?text=Error") {
-             e.target.style.display = 'none'; // Hide broken image if no fallback
+             e.target.style.display = 'none'; 
            }
         }}
-        className={`${className} transition-opacity duration-700 ease-out ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
-        style={style}
+        // Added hw-accelerated class for better scrolling performance
+        className={`${className} hw-accelerated transition-opacity duration-700 ease-out ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
+        style={{ ...style, contentVisibility: 'auto' }} // CSS Content Visibility optimization
       />
     </div>
   );
-};
+});
 
 // --- INPUT FIELD COMPONENT ---
 const InputField = ({ label, value, setValue, suffix = "" }) => (
@@ -361,7 +452,7 @@ const BaneIntro = ({ onComplete }) => {
     }, [onComplete]);
 
     return (
-        <div className="fixed inset-0 z-[300] bg-black flex flex-col items-center justify-center p-6 text-center cursor-pointer" onClick={onComplete}>
+        <div className="fixed inset-0 z-[300] bg-black flex flex-col items-center justify-center p-6 text-center cursor-pointer optimize-gpu" onClick={onComplete}>
             <div className="max-w-md w-full relative">
                  {/* Voice Visualizer */}
                 <div className="flex justify-center items-end gap-1 h-16 mb-12 opacity-50">
@@ -403,18 +494,18 @@ const BaneIntro = ({ onComplete }) => {
     );
 };
 
-// --- HackerProof ---
-const HackerProof = () => {
+// --- HackerProof (OPTIMIZED) ---
+const HackerProof = React.memo(() => {
   const [isExpanded, setIsExpanded] = useState(false);
   return (
     <React.Fragment>
       <div 
-        className="relative rounded-xl overflow-hidden border border-[#00FF9D]/40 mb-6 group animate-in zoom-in duration-500 shadow-[0_0_20px_rgba(0,255,157,0.1)] cursor-zoom-in"
+        className="relative rounded-xl overflow-hidden border border-[#00FF9D]/40 mb-6 group animate-in zoom-in duration-500 shadow-[0_0_20px_rgba(0,255,157,0.1)] cursor-zoom-in optimize-gpu"
         onClick={(e) => { e.stopPropagation(); setIsExpanded(true); }}
       >
         <SmartImage src="https://i.ibb.co.com/FdhqGvD/2025-11-09-113228-fotor-20251109143545.jpg" className="w-full object-cover" alt="Encrypted Proof" />
         <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-md rounded-full p-1.5 opacity-60 group-hover:opacity-100 transition-opacity border border-[#00FF9D]/30 z-10"><Search className="w-3 h-3 text-[#00FF9D]" /></div>
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none z-10"></div>
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none z-10"></div>
         <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-[#00FF9D]/10 to-transparent animate-[scanLine_2.5s_linear_infinite] z-10"></div>
         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-black/20 pointer-events-none z-10"></div>
         <div className="absolute bottom-3 left-3 right-3 flex justify-between items-end z-20">
@@ -423,26 +514,26 @@ const HackerProof = () => {
         </div>
       </div>
       {isExpanded && (
-        <div className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 animate-in fade-in duration-300" onClick={(e) => { e.stopPropagation(); setIsExpanded(false); }}>
+        <div className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 animate-in fade-in duration-300 optimize-gpu" onClick={(e) => { e.stopPropagation(); setIsExpanded(false); }}>
           <div className="relative w-full max-w-2xl">
-             <SmartImage src="https://i.ibb.co.com/FdhqGvD/2025-11-09-113228-fotor-20251109143545.jpg" className="w-full h-auto rounded-lg border border-[#00FF9D]/50 shadow-[0_0_50px_rgba(0,255,157,0.2)]" alt="Proof Full" />
+             <SmartImage src="https://i.ibb.co.com/FdhqGvD/2025-11-09-113228-fotor-20251109143545.jpg" className="w-full h-auto rounded-lg border border-[#00FF9D]/50 shadow-[0_0_50px_rgba(0,255,157,0.2)]" alt="Proof Full" priority={true} />
              <p className="text-center text-zinc-500 font-mono text-[10px] mt-4 uppercase animate-pulse">Нажмите в любом месте, чтобы закрыть</p>
           </div>
         </div>
       )}
     </React.Fragment>
   );
-};
+});
 
-// --- ClientDemandProof ---
-const ClientDemandProof = () => {
+// --- ClientDemandProof (OPTIMIZED) ---
+const ClientDemandProof = React.memo(() => {
   const [isExpanded, setIsExpanded] = useState(false);
   return (
     <React.Fragment>
-      <div className="relative rounded-xl overflow-hidden border border-[#00FF9D]/40 mb-6 group animate-in zoom-in duration-500 shadow-[0_0_20px_rgba(0,255,157,0.1)] cursor-zoom-in" onClick={(e) => { e.stopPropagation(); setIsExpanded(true); }}>
+      <div className="relative rounded-xl overflow-hidden border border-[#00FF9D]/40 mb-6 group animate-in zoom-in duration-500 shadow-[0_0_20px_rgba(0,255,157,0.1)] cursor-zoom-in optimize-gpu" onClick={(e) => { e.stopPropagation(); setIsExpanded(true); }}>
         <SmartImage src="https://i.ibb.co.com/h1mN3kL0/5427147012425059102.jpg" className="w-full object-cover opacity-90 filter grayscale-[0.5] contrast-[1.1] brightness-[0.9]" alt="Client Demand" />
         <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-md rounded-full p-1.5 opacity-60 group-hover:opacity-100 transition-opacity border border-[#00FF9D]/30 z-10"><Search className="w-3 h-3 text-[#00FF9D]" /></div>
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none z-10"></div>
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none z-10"></div>
         <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-[#00FF9D]/10 to-transparent animate-[scanLine_2.5s_linear_infinite] z-10"></div>
         <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent pointer-events-none z-10"></div>
         <div className="absolute bottom-3 left-3 bg-black/80 border border-[#00FF9D]/30 px-2 py-1 rounded z-20">
@@ -450,21 +541,21 @@ const ClientDemandProof = () => {
         </div>
       </div>
        {isExpanded && (
-        <div className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 animate-in fade-in duration-300" onClick={(e) => { e.stopPropagation(); setIsExpanded(false); }}>
+        <div className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 animate-in fade-in duration-300 optimize-gpu" onClick={(e) => { e.stopPropagation(); setIsExpanded(false); }}>
           <div className="relative w-full max-w-2xl">
-             <SmartImage src="https://i.ibb.co.com/h1mN3kL0/5427147012425059102.jpg" className="w-full h-auto rounded-lg border border-[#00FF9D]/50 shadow-[0_0_50px_rgba(0,255,157,0.2)]" alt="Demand Full" />
+             <SmartImage src="https://i.ibb.co.com/h1mN3kL0/5427147012425059102.jpg" className="w-full h-auto rounded-lg border border-[#00FF9D]/50 shadow-[0_0_50px_rgba(0,255,157,0.2)]" alt="Demand Full" priority={true} />
              <p className="text-center text-zinc-500 font-mono text-[10px] mt-4 uppercase animate-pulse">Нажмите в любом месте, чтобы закрыть</p>
           </div>
         </div>
       )}
     </React.Fragment>
   );
-};
+});
 
 // --- SkillScanner ---
 const SkillScanner = () => (
-  <div className="w-full bg-[#0A0A0A] rounded-xl border border-[#00FF9D]/20 p-4 mb-6 relative overflow-hidden animate-in slide-in-from-bottom duration-500 group">
-    <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none"></div>
+  <div className="w-full bg-[#0A0A0A] rounded-xl border border-[#00FF9D]/20 p-4 mb-6 relative overflow-hidden animate-in slide-in-from-bottom duration-500 group optimize-gpu">
+    <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none"></div>
     <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-[#00FF9D]/05 to-transparent animate-[scanLine_4s_linear_infinite]"></div>
     <div className="relative z-10">
         <div className="flex items-center justify-between mb-4 border-b border-zinc-800 pb-2">
@@ -508,32 +599,32 @@ const SetupTimeline = () => {
   );
 };
 
-// --- WordstatGraph ---
-const WordstatGraph = () => {
+// --- WordstatGraph (OPTIMIZED) ---
+const WordstatGraph = React.memo(() => {
   const [isExpanded, setIsExpanded] = useState(false);
   return (
     <React.Fragment>
-      <div className="w-full bg-[#1c1c1e] rounded-xl border border-zinc-700 overflow-hidden mb-6 font-sans shadow-xl cursor-zoom-in relative group" onClick={(e) => { e.stopPropagation(); setIsExpanded(true); }}>
+      <div className="w-full bg-[#1c1c1e] rounded-xl border border-zinc-700 overflow-hidden mb-6 font-sans shadow-xl cursor-zoom-in relative group optimize-gpu" onClick={(e) => { e.stopPropagation(); setIsExpanded(true); }}>
         <div className="bg-[#242426] px-4 py-3 border-b border-zinc-700 flex justify-between items-center">
           <div><div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span><span className="text-[11px] text-zinc-300 font-bold">История запросов (Яндекс Вордстат)</span></div><p className="text-[13px] text-white mt-0.5 font-medium">«телеграм магазин»</p></div>
           <div className="text-right"><p className="text-[9px] text-zinc-500 uppercase tracking-wider">Всего показов</p><p className="text-[16px] font-bold text-white">6 650</p></div>
         </div>
         <div className="relative w-full h-auto">
           <SmartImage src="https://i.ibb.co.com/Y7WjS1Tc/2026-01-16-014054.png" alt="Real Wordstat Data" className="w-full h-auto object-cover opacity-90 group-hover:opacity-100 transition-opacity duration-300" />
-          <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none z-10"></div>
+          <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none z-10"></div>
           <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-[#00FF9D]/10 to-transparent animate-[scanLine_2.5s_linear_infinite] z-10"></div>
           <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors pointer-events-none z-10"></div>
           <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-md rounded-full p-1.5 opacity-60 group-hover:opacity-100 transition-opacity border border-white/20 z-20"><Search className="w-3 h-3 text-white" /></div>
         </div>
       </div>
        {isExpanded && (
-        <div className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 animate-in fade-in duration-300" onClick={(e) => { e.stopPropagation(); setIsExpanded(false); }}>
-          <div className="relative w-full max-w-4xl"><SmartImage src="https://i.ibb.co.com/Y7WjS1Tc/2026-01-16-014054.png" className="w-full h-auto rounded-lg border border-zinc-700 shadow-2xl" alt="Wordstat Full" /><p className="text-center text-zinc-500 font-mono text-[10px] mt-4 uppercase animate-pulse">Нажмите в любом месте, чтобы закрыть</p></div>
+        <div className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 animate-in fade-in duration-300 optimize-gpu" onClick={(e) => { e.stopPropagation(); setIsExpanded(false); }}>
+          <div className="relative w-full max-w-4xl"><SmartImage src="https://i.ibb.co.com/Y7WjS1Tc/2026-01-16-014054.png" className="w-full h-auto rounded-lg border border-zinc-700 shadow-2xl" alt="Wordstat Full" priority={true} /><p className="text-center text-zinc-500 font-mono text-[10px] mt-4 uppercase animate-pulse">Нажмите в любом месте, чтобы закрыть</p></div>
         </div>
       )}
     </React.Fragment>
   );
-};
+});
 
 // --- BrandLogos (RESTORED) ---
 const BrandLogos = {
@@ -710,7 +801,7 @@ const PartnersCredits = () => {
         <div className="h-[1px] w-8 bg-gradient-to-l from-transparent to-[#00FF9D]"></div>
       </div>
       <div className="relative w-full h-32 flex items-center justify-center overflow-hidden bg-white/5 rounded-xl border border-[#00FF9D]/10 shadow-[0_0_30px_rgba(0,0,0,0.5)]">
-         <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:20px_20px]"></div>
+         <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:20px_20px]"></div>
          <div key={currentIndex} className="relative z-10 animate-[cyberReveal_0.5s_cubic-bezier(0.215,0.61,0.355,1)_both] w-full flex justify-center">
             <SmartImage src={currentLogo} alt="Partner Logo" style={specificStyle} className={logoClasses} wrapperClass="relative z-10 flex justify-center w-full" />
          </div>
@@ -730,12 +821,10 @@ const RoiView = ({ profit, onBack, onAction }) => {
   const returnPercentage = Math.round((conservativeProfit / investment) * 100);
   const daysToRecoup = conservativeProfit > 0 ? Math.ceil(investment / (conservativeProfit / 30)) : Infinity;
   const isProfitable = returnPercentage > 0;
-  // --- UPDATED: Handle Consultation with Logging ---
   const handleConsultation = () => {
       logToTaipanCRM(6, "ЖДЕТ КОНСУЛЬТАЦИЮ ⚡️", "Кликнул по кнопке 'Получить консультацию'");
       window.open('https://t.me/taipanmedia', '_blank');
   };
-  
   const animatedProfit = useOdometer(conservativeProfit);
   const animatedPercentage = useOdometer(returnPercentage);
   return (
@@ -746,7 +835,7 @@ const RoiView = ({ profit, onBack, onAction }) => {
             <div className="w-full glass-card p-4 rounded-2xl flex justify-between items-center border border-zinc-800"><span className="text-xs text-zinc-400 font-bold uppercase tracking-wider">Стоимость разработки</span><span className="text-sm font-black text-white font-['Chakra_Petch']">100 000 ₸</span></div>
              <div className="w-full glass-card p-4 rounded-2xl flex justify-between items-center border border-[#00FF9D]/20 bg-[#00FF9D]/5"><span className="text-xs text-zinc-400 font-bold uppercase tracking-wider">Потенциальный возврат</span><span className="text-sm font-black text-[#00FF9D] font-['Chakra_Petch']">{animatedProfit.toLocaleString()} ₸/мес</span></div>
             <div className="relative w-full overflow-hidden bg-gradient-to-br from-zinc-900 to-black border border-zinc-800 p-6 rounded-3xl text-center group">
-                <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none"></div>
+                <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none"></div>
                 <p className="text-[10px] text-zinc-400 uppercase tracking-widest mb-3 relative z-10 leading-relaxed">При указанных вами показателях,<br/>в первый месяц вы вернёте</p>
                 <div className={`text-5xl font-black font-['Chakra_Petch'] mb-3 relative z-10 ${isProfitable ? 'text-[#00FF9D]' : 'text-zinc-500'}`}>{animatedPercentage}% <span className="text-sm font-bold text-zinc-500 uppercase tracking-wide">вложений</span></div>
                 {isProfitable ? (<div className="inline-block bg-[#00FF9D]/10 border border-[#00FF9D]/30 px-3 py-1 rounded-full relative z-10"><p className="text-[10px] text-[#00FF9D] font-bold uppercase tracking-wider">Полная окупаемость: ~{daysToRecoup} {daysToRecoup === 1 ? 'день' : (daysToRecoup > 1 && daysToRecoup < 5) ? 'дня' : 'дней'}</p></div>) : (<p className="text-[10px] text-zinc-600 relative z-10">Заполните калькулятор для расчета</p>)}
@@ -755,6 +844,324 @@ const RoiView = ({ profit, onBack, onAction }) => {
         </div>
     </div>
   );
+};
+
+// --- Admin Panel Component ---
+const AdminPanel = ({ leads, visitors, onBack, onClearLeads, onUpdateLead, onUpdateVisitor }) => {
+    const [activeTab, setActiveTab] = useState('visitors');
+    const [editingItem, setEditingItem] = useState(null); 
+    const [editCollection, setEditCollection] = useState(''); 
+    
+    // Broadcast State
+    const [broadcastMessage, setBroadcastMessage] = useState("");
+    const [isSending, setIsSending] = useState(false);
+    const [sendProgress, setSendProgress] = useState({ current: 0, total: 0 });
+    const [broadcastTarget, setBroadcastTarget] = useState('all'); 
+
+    const handleEditClick = (item, collectionType) => {
+        setEditingItem(item);
+        setEditCollection(collectionType);
+    };
+
+    const handleSave = (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const updates = Object.fromEntries(formData.entries());
+
+        if (editCollection === 'leads') {
+            onUpdateLead(editingItem.id, updates);
+        } else if (editCollection === 'visitors') {
+            onUpdateVisitor(editingItem.id, updates);
+        }
+        setEditingItem(null);
+    };
+
+    // --- BROADCAST LOGIC ---
+    const handleBroadcast = async (e) => {
+        e.preventDefault();
+        if (!broadcastMessage.trim()) return;
+
+        // 1. Calculate Cutoff Date (3 days ago)
+        const cutoff = new Date();
+        cutoff.setDate(cutoff.getDate() - 3);
+
+        // 2. Filter Targets
+        const targets = visitors.filter(v => {
+            if (!v.chatId) return false;
+            
+            if (broadcastTarget === 'all') return true;
+            
+            if (broadcastTarget === 'inactive') {
+                if (!v.lastActive) return true; // Assume inactive if no date
+                // Handle Firestore Timestamp or JS Date
+                const lastActiveDate = v.lastActive.toDate ? v.lastActive.toDate() : new Date(v.lastActive);
+                return lastActiveDate < cutoff;
+            }
+            return false;
+        });
+
+        if (targets.length === 0) {
+            alert("Нет доступных пользователей для рассылки по выбранному фильтру.");
+            return;
+        }
+
+        if (!confirm(`Отправить сообщение ${targets.length} пользователям (${broadcastTarget === 'all' ? 'Все' : 'Неактивные > 3 дней'})?`)) return;
+
+        setIsSending(true);
+        setSendProgress({ current: 0, total: targets.length });
+
+        let successCount = 0;
+
+        for (let i = 0; i < targets.length; i++) {
+            const user = targets[i];
+            const success = await sendTelegramMessage(user.chatId, broadcastMessage);
+            if (success) successCount++;
+            
+            setSendProgress(prev => ({ ...prev, current: i + 1 }));
+            await new Promise(r => setTimeout(r, 300)); // Rate limit protection
+        }
+
+        setIsSending(false);
+        setBroadcastMessage("");
+        alert(`Рассылка завершена! Успешно: ${successCount} из ${targets.length}`);
+    };
+
+    return (
+        <div className="animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col h-full items-center w-full relative">
+            <button onClick={onBack} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-4 hover:opacity-70 transition-all w-fit">
+                <ChevronLeft className="w-4 h-4 mr-1" /> ВЫХОД ИЗ СИСТЕМЫ
+            </button>
+            
+            <div className="w-full flex flex-col items-center mb-6">
+                <div className="w-16 h-16 bg-zinc-900 border border-[#00FF9D]/30 rounded-full flex items-center justify-center mb-4 relative">
+                    <div className="absolute inset-0 rounded-full animate-ping bg-[#00FF9D]/10"></div>
+                    <Shield className="w-8 h-8 text-[#00FF9D]" />
+                </div>
+                <h2 className="text-2xl font-black font-['Chakra_Petch'] uppercase tracking-widest">ПАНЕЛЬ УПРАВЛЕНИЯ</h2>
+                <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] font-bold">Admin Mode: ACCESS GRANTED</p>
+            </div>
+
+            <div className="flex w-full mb-4 bg-zinc-900/50 p-1 rounded-lg border border-zinc-800 gap-1 overflow-x-auto no-scrollbar">
+                <button onClick={() => setActiveTab('stats')} className={`flex-1 py-2 px-2 whitespace-nowrap text-[9px] font-bold uppercase tracking-widest rounded-md transition-all ${activeTab === 'stats' ? 'bg-[#00FF9D] text-black shadow-lg shadow-[#00FF9D]/20' : 'text-zinc-500 hover:text-white'}`}>📊 Статистика</button>
+                <button onClick={() => setActiveTab('leads')} className={`flex-1 py-2 px-2 whitespace-nowrap text-[9px] font-bold uppercase tracking-widest rounded-md transition-all ${activeTab === 'leads' ? 'bg-[#00FF9D] text-black shadow-lg shadow-[#00FF9D]/20' : 'text-zinc-500 hover:text-white'}`}>Заявки ({leads.length})</button>
+                <button onClick={() => setActiveTab('visitors')} className={`flex-1 py-2 px-2 whitespace-nowrap text-[9px] font-bold uppercase tracking-widest rounded-md transition-all ${activeTab === 'visitors' ? 'bg-[#00FF9D] text-black shadow-lg shadow-[#00FF9D]/20' : 'text-zinc-500 hover:text-white'}`}>Посетители</button>
+                <button onClick={() => setActiveTab('broadcast')} className={`flex-1 py-2 px-2 whitespace-nowrap text-[9px] font-bold uppercase tracking-widest rounded-md transition-all flex items-center justify-center gap-1 ${activeTab === 'broadcast' ? 'bg-[#00FF9D] text-black shadow-lg shadow-[#00FF9D]/20' : 'text-zinc-500 hover:text-white'}`}><Megaphone className="w-3 h-3" /> Рассылка</button>
+            </div>
+
+            <div className="w-full flex-grow overflow-hidden flex flex-col">
+                <div className="flex items-center justify-between mb-3 px-1">
+                    <p className="text-[10px] text-zinc-400 uppercase tracking-widest font-bold">
+                        {activeTab === 'leads' ? 'ВХОДЯЩИЕ ЛИДЫ' : activeTab === 'visitors' ? 'АКТИВНЫЙ ТРАФИК' : activeTab === 'stats' ? 'ОТЧЕТЫ СИСТЕМЫ' : 'МАССОВАЯ ОТПРАВКА'}
+                    </p>
+                    {(activeTab === 'leads' || activeTab === 'stats') && (
+                        <button onClick={onClearLeads} className="text-[9px] text-red-500 uppercase font-bold hover:text-red-400 flex items-center gap-1">
+                            <Trash2 className="w-3 h-3" /> {activeTab === 'stats' ? 'СБРОСИТЬ ВСЁ' : 'ОЧИСТИТЬ'}
+                        </button>
+                    )}
+                </div>
+                
+                <div className="flex-grow overflow-y-auto no-scrollbar space-y-2 pb-20">
+                    
+                    {/* STATS TAB (NEW) */}
+                    {activeTab === 'stats' && <AnalyticsChart leads={leads} />}
+
+                    {/* LEADS TAB */}
+                    {activeTab === 'leads' && (
+                        leads.length === 0 ? (
+                            <div className="text-center py-10 border border-dashed border-zinc-800 rounded-xl">
+                                <Database className="w-8 h-8 text-zinc-700 mx-auto mb-2" />
+                                <p className="text-[10px] text-zinc-600 uppercase tracking-wider">Нет новых заявок</p>
+                            </div>
+                        ) : (
+                            leads.map((lead) => (
+                                <div key={lead.id} className="glass-card p-3 rounded-lg border border-zinc-800 flex items-center justify-between group hover:border-[#00FF9D]/30 transition-all">
+                                    <div className="flex-grow">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <div className="w-1.5 h-1.5 bg-[#00FF9D] rounded-full animate-pulse"></div>
+                                            <p className="text-xs font-bold text-white font-mono">{lead.name}</p>
+                                        </div>
+                                        <p className="text-[10px] text-zinc-400 font-mono">{lead.contact}</p>
+                                        <p className="text-[8px] text-zinc-600 mt-1 uppercase tracking-wider">{lead.type}</p>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <div className="text-right">
+                                            <p className="text-[9px] text-zinc-500 font-mono">{lead.time}</p>
+                                            <a href={`https://t.me/${lead.contact.replace('@', '')}`} target="_blank" rel="noreferrer" className="mt-2 inline-block bg-[#00FF9D]/10 text-[#00FF9D] text-[8px] font-bold px-2 py-1 rounded border border-[#00FF9D]/20 hover:bg-[#00FF9D]/20">
+                                                НАПИСАТЬ
+                                            </a>
+                                        </div>
+                                        <button onClick={() => handleEditClick(lead, 'leads')} className="p-2 bg-zinc-800 rounded-full hover:bg-zinc-700 text-zinc-400 hover:text-white transition-colors">
+                                            <Edit2 className="w-3 h-3" />
+                                        </button>
+                                    </div>
+                                </div>
+                            ))
+                        )
+                    )}
+
+                    {/* VISITORS TAB */}
+                    {activeTab === 'visitors' && (
+                        visitors.length === 0 ? (
+                            <div className="text-center py-10 border border-dashed border-zinc-800 rounded-xl">
+                                <Activity className="w-8 h-8 text-zinc-700 mx-auto mb-2" />
+                                <p className="text-[10px] text-zinc-600 uppercase tracking-wider">Загрузка трафика...</p>
+                            </div>
+                        ) : (
+                            visitors.map((user) => (
+                                <div key={user.id} className="glass-card p-3 rounded-lg border border-zinc-800 flex items-center justify-between group hover:bg-[#00FF9D]/5 transition-all">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center text-[10px] font-bold text-[#00FF9D] border border-zinc-700">
+                                            {user.userName?.charAt(0)}
+                                        </div>
+                                        <div>
+                                            <p className="text-xs font-bold text-white font-mono">{user.userName}</p>
+                                            <p className="text-[9px] text-zinc-500 font-mono">ID: {user.chatId}</p>
+                                            {user.notes && <p className="text-[8px] text-[#00FF9D] mt-1 bg-[#00FF9D]/10 px-1 rounded inline-block">{user.notes}</p>}
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <div className="text-right">
+                                            <div className="flex items-center justify-end gap-1.5 mb-1">
+                                                <div className="w-1.5 h-1.5 bg-[#00FF9D] rounded-full animate-pulse shadow-[0_0_5px_#00FF9D]"></div>
+                                                <span className="text-[9px] text-[#00FF9D] font-bold uppercase">ONLINE</span>
+                                            </div>
+                                            <p className="text-[8px] text-zinc-600 font-mono">
+                                                {user.lastActive?.toDate ? user.lastActive.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Сейчас'}
+                                            </p>
+                                        </div>
+                                        <button onClick={() => handleEditClick(user, 'visitors')} className="p-2 bg-zinc-800 rounded-full hover:bg-zinc-700 text-zinc-400 hover:text-white transition-colors">
+                                            <Edit2 className="w-3 h-3" />
+                                        </button>
+                                    </div>
+                                </div>
+                            ))
+                        )
+                    )}
+
+                    {/* BROADCAST TAB */}
+                    {activeTab === 'broadcast' && (
+                        <div className="w-full flex flex-col h-full">
+                             <div className="glass-card p-4 rounded-xl border border-zinc-800 mb-4 bg-zinc-900/40">
+                                {/* ... Broadcast UI ... */}
+                                <div className="flex bg-black p-1 rounded-lg border border-zinc-800 mb-4">
+                                    <button 
+                                        onClick={() => setBroadcastTarget('all')}
+                                        className={`flex-1 py-1.5 text-[9px] font-bold uppercase tracking-wider rounded-md transition-all ${broadcastTarget === 'all' ? 'bg-[#00FF9D]/20 text-[#00FF9D] border border-[#00FF9D]/30' : 'text-zinc-500 hover:text-white'}`}
+                                    >
+                                        ВСЕ ПОЛЬЗОВАТЕЛИ
+                                    </button>
+                                    <button 
+                                        onClick={() => setBroadcastTarget('inactive')}
+                                        className={`flex-1 py-1.5 text-[9px] font-bold uppercase tracking-wider rounded-md transition-all flex items-center justify-center gap-1 ${broadcastTarget === 'inactive' ? 'bg-[#00FF9D]/20 text-[#00FF9D] border border-[#00FF9D]/30' : 'text-zinc-500 hover:text-white'}`}
+                                    >
+                                        <Filter className="w-3 h-3" /> СПЯЩИЕ {'>'} 3 ДНЕЙ
+                                    </button>
+                                </div>
+
+                                <div className="flex justify-between items-center mb-4">
+                                     <p className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">СООБЩЕНИЕ</p>
+                                     <p className="text-xs font-bold text-[#00FF9D] font-mono">
+                                         TARGET: {
+                                            visitors.filter(v => {
+                                                if (!v.chatId) return false;
+                                                if (broadcastTarget === 'all') return true;
+                                                if (broadcastTarget === 'inactive') {
+                                                    const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 3);
+                                                    if (!v.lastActive) return true;
+                                                    const lastActiveDate = v.lastActive.toDate ? v.lastActive.toDate() : new Date(v.lastActive);
+                                                    return lastActiveDate < cutoff;
+                                                }
+                                                return false;
+                                            }).length
+                                         }
+                                     </p>
+                                </div>
+                                <form onSubmit={handleBroadcast} className="flex flex-col gap-3">
+                                    <textarea 
+                                        value={broadcastMessage}
+                                        onChange={(e) => setBroadcastMessage(e.target.value)}
+                                        placeholder="Введите сообщение для рассылки..." 
+                                        className="w-full bg-black border border-zinc-700 rounded-lg p-3 text-xs text-white focus:border-[#00FF9D] outline-none h-32 resize-none placeholder-zinc-700 font-mono"
+                                        disabled={isSending}
+                                    />
+                                    {isSending ? (
+                                        <div className="w-full bg-zinc-800 rounded-xl h-10 flex items-center justify-center relative overflow-hidden">
+                                             <div className="absolute left-0 top-0 bottom-0 bg-[#00FF9D]/20 transition-all duration-300" style={{ width: `${(sendProgress.current / sendProgress.total) * 100}%` }}></div>
+                                             <span className="relative z-10 text-[10px] font-bold text-white font-mono animate-pulse">ОТПРАВКА... {sendProgress.current} / {sendProgress.total}</span>
+                                        </div>
+                                    ) : (
+                                        <button type="submit" className="w-full bg-[#00FF9D] hover:bg-[#00FF9D]/90 text-black font-bold uppercase text-xs py-3 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-[0.98]">
+                                            <Send className="w-4 h-4" /> ОТПРАВИТЬ
+                                        </button>
+                                    )}
+                                </form>
+                             </div>
+                             <div className="px-2">
+                                <p className="text-[9px] text-zinc-600 uppercase tracking-wide mb-2">ВАЖНО:</p>
+                                <ul className="list-disc pl-4 space-y-1 text-[9px] text-zinc-500">
+                                    <li>Сообщение получат только те, кто не заблокировал бота.</li>
+                                    <li>Рассылка "Спящим" выбирает тех, кто не заходил в Mini App более 72 часов.</li>
+                                    <li>Задержка 0.3 сек для защиты от спам-фильтров.</li>
+                                </ul>
+                             </div>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* EDIT MODAL */}
+            {editingItem && (
+                <div className="absolute inset-0 z-50 bg-black/95 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in zoom-in duration-200">
+                    <div className="w-full max-w-sm bg-[#0F0F0F] border border-[#00FF9D]/30 p-6 rounded-2xl shadow-2xl relative">
+                        <button 
+                            onClick={() => setEditingItem(null)} 
+                            className="absolute top-4 right-4 text-zinc-500 hover:text-white"
+                        >
+                            <X className="w-5 h-5" />
+                        </button>
+                        <h3 className="text-lg font-bold text-white mb-4 uppercase tracking-wider font-mono flex items-center gap-2">
+                            <Edit2 className="w-4 h-4 text-[#00FF9D]" /> 
+                            Редактирование
+                        </h3>
+                        
+                        <form onSubmit={handleSave} className="space-y-3">
+                            {editCollection === 'leads' ? (
+                                <>
+                                    <div>
+                                        <label className="text-[9px] text-zinc-500 uppercase font-bold block mb-1">Имя</label>
+                                        <input name="name" defaultValue={editingItem.name} className="w-full bg-zinc-900 border border-zinc-700 rounded p-2 text-xs text-white focus:border-[#00FF9D] outline-none" />
+                                    </div>
+                                    <div>
+                                        <label className="text-[9px] text-zinc-500 uppercase font-bold block mb-1">Контакт</label>
+                                        <input name="contact" defaultValue={editingItem.contact} className="w-full bg-zinc-900 border border-zinc-700 rounded p-2 text-xs text-white focus:border-[#00FF9D] outline-none" />
+                                    </div>
+                                    <div>
+                                        <label className="text-[9px] text-zinc-500 uppercase font-bold block mb-1">Услуга</label>
+                                        <input name="type" defaultValue={editingItem.type} className="w-full bg-zinc-900 border border-zinc-700 rounded p-2 text-xs text-white focus:border-[#00FF9D] outline-none" />
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                                    <div className="mb-2">
+                                        <p className="text-[10px] text-zinc-400">ID: {editingItem.chatId}</p>
+                                        <p className="text-[10px] text-zinc-400">Name: {editingItem.userName}</p>
+                                    </div>
+                                    <div>
+                                        <label className="text-[9px] text-zinc-500 uppercase font-bold block mb-1">Заметки о клиенте</label>
+                                        <textarea name="notes" defaultValue={editingItem.notes || ''} placeholder="Например: интересовался обучением..." className="w-full bg-zinc-900 border border-zinc-700 rounded p-2 text-xs text-white focus:border-[#00FF9D] outline-none h-20 resize-none" />
+                                    </div>
+                                </>
+                            )}
+                            
+                            <button type="submit" className="w-full bg-[#00FF9D] hover:bg-[#00FF9D]/90 text-black font-bold uppercase text-xs py-3 rounded-xl mt-4 flex items-center justify-center gap-2">
+                                <Save className="w-4 h-4" /> Сохранить
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
 };
 
 const App = () => {
@@ -766,25 +1173,39 @@ const App = () => {
   const [activeSlide, setActiveSlide] = useState(0);
   const [onlineCount, setOnlineCount] = useState(0);
   
+  // Admin & Leads State
+  const [isAdminAuthOpen, setIsAdminAuthOpen] = useState(false);
+  const [tapCount, setTapCount] = useState(0);
+  const [leads, setLeads] = useState([
+      { id: 1, name: 'Алибек', contact: '@alibek_kz', type: 'Обучение', time: '10:42' },
+      { id: 2, name: 'Мария', contact: '@maria_shop', type: 'Магазин', time: '09:15' },
+      { id: 3, name: 'Тест', contact: '@test', type: 'Mini App', time: '11:00' }, // Added for demo stats
+  ]); 
+  
+  // --- REAL VISITORS STATE ---
+  const [visitors, setVisitors] = useState([]);
+  const [firebaseUser, setFirebaseUser] = useState(null);
+
   // State for Bane Intro
   const [baneIntroActive, setBaneIntroActive] = useState(false);
-  
   // State for image preview modal
   const [previewImage, setPreviewImage] = useState(null);
-
-  // --- NEW: User Name and Spots Left State ---
+  // --- User State ---
   const [userName, setUserName] = useState('AGENT');
   const [spotsLeft, setSpotsLeft] = useState(4);
 
+  // --- FIREBASE AUTH LISTENER ---
+  useEffect(() => {
+      const unsubscribe = onAuthStateChanged(auth, (user) => {
+          setFirebaseUser(user);
+      });
+      return () => unsubscribe();
+  }, []);
+
+  // --- FIREBASE TRACKING EFFECT ---
   useEffect(() => {
     const initApp = async () => {
-        // Log Entry (Topic 2)
         logToTaipanCRM(2, "ВХОД", "Открыл Mini App");
-        
-        // Auto-greeting to user
-        sendWelcomeToUser();
-
-        // Fetch user name from Telegram WebApp
         const tg = window.Telegram?.WebApp;
         if (tg) {
             tg.ready();
@@ -792,35 +1213,73 @@ const App = () => {
             if (user?.first_name) {
                 setUserName(user.first_name.toUpperCase());
             }
-
-            // --- ACTIVITY TRACKING ---
             if (user?.id) {
                 try {
-                    // Sign in anonymously to allow Firestore writes
                     await signInAnonymously(auth);
-                    const userRef = doc(db, "users", user.id.toString());
+                    // Using "app_visitors" collection to avoid "users" conflicts
+                    const userRef = doc(db, 'artifacts', appId, 'public', 'data', 'app_visitors', user.id.toString());
                     await setDoc(userRef, {
                         chatId: user.id,
                         userName: user.first_name || 'Агент',
                         lastActive: serverTimestamp(),
-                        notified: false
+                        notified: false 
                     }, { merge: true });
+                    console.log("📡 СВЯЗЬ С ТЕРМИНАЛОМ УСТАНОВЛЕНА");
                 } catch (e) {
-                    console.error("Error updating activity:", e);
+                    console.error("Ошибка синхронизации с базой:", e);
                 }
             }
         }
     };
-
     initApp();
-
-    // Simple FOMO simulation: drop a spot after 15 seconds
     const timer = setTimeout(() => {
         setSpotsLeft(prev => prev > 2 ? prev - 1 : prev);
     }, 15000); 
     return () => clearTimeout(timer);
-
   }, []);
+
+  // --- FETCH REAL VISITORS FOR ADMIN ---
+  useEffect(() => {
+      // Only fetch if admin panel is active AND user is authenticated
+      if (currentView === 'admin' && firebaseUser) {
+          // Use the strict path for fetching users
+          const usersCollection = collection(db, 'artifacts', appId, 'public', 'data', 'app_visitors');
+          // Fetch all users and sort in memory (to avoid index requirement)
+          const unsubscribe = onSnapshot(usersCollection, (snapshot) => {
+              const usersData = snapshot.docs.map(doc => ({
+                  id: doc.id,
+                  ...doc.data()
+              }));
+              
+              // Sort by lastActive descending in JS
+              usersData.sort((a, b) => {
+                   const timeA = a.lastActive?.toMillis ? a.lastActive.toMillis() : 0;
+                   const timeB = b.lastActive?.toMillis ? b.lastActive.toMillis() : 0;
+                   return timeB - timeA;
+              });
+
+              setVisitors(usersData.slice(0, 50)); // Limit to top 50
+          }, (error) => {
+              console.error("Admin fetch error:", error);
+          });
+          return () => unsubscribe();
+      }
+  }, [currentView, firebaseUser]);
+
+  // --- UPDATE FUNCTIONS ---
+  const updateLead = (id, newData) => {
+      setLeads(prev => prev.map(lead => lead.id === id ? { ...lead, ...newData } : lead));
+  };
+
+  const updateVisitor = async (id, newData) => {
+      try {
+          const visitorRef = doc(db, 'artifacts', appId, 'public', 'data', 'app_visitors', id);
+          await updateDoc(visitorRef, newData);
+          console.log("Visitor updated successfully");
+      } catch (e) {
+          console.error("Error updating visitor:", e);
+      }
+  };
 
   useEffect(() => {
     setOnlineCount(Math.floor(Math.random() * 16)); 
@@ -888,6 +1347,16 @@ const App = () => {
     const name = e.target[0].value;
     const contact = e.target[1].value;
 
+    // Add to local leads state
+    const newLead = {
+        id: Date.now(), // Generate ID
+        name: name,
+        contact: contact,
+        type: modalType,
+        time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+    };
+    setLeads(prev => [newLead, ...prev]);
+
     logToTaipanCRM(6, "ГОРЯЧИЙ ЛИД 🔥", `Имя: ${name}\n🔹 Контакт: ${contact}\n🔹 Услуга: ${modalType}`);
 
     closeModal(); 
@@ -902,29 +1371,47 @@ const App = () => {
       setShopIntroFinished(false); 
       setCurrentView('shop'); 
   };
-  
   const handleEducationClick = () => {
     logToTaipanCRM(3, "ИНТЕРЕС", "Раздел: Обучение");
     setCurrentView('education');
   }
-
   const handleStrategyClick = () => {
        setCurrentView('strategy');
   };
-
   const handleBackClick = (target) => {
     setCurrentView(target);
   }
-
-  // Handler for "Who We Are"
   const handleAboutClick = () => {
        setBaneIntroActive(true);
   }
-
   const handleBaneIntroComplete = () => {
        setBaneIntroActive(false);
        setCurrentView('about');
   }
+
+  // --- Admin Logic ---
+  const handleTitleClick = () => {
+      setTapCount(prev => {
+          const newCount = prev + 1;
+          if (newCount >= 5) {
+              setIsAdminAuthOpen(true);
+              return 0;
+          }
+          return newCount;
+      });
+  };
+
+  const handleAdminAuth = (e) => {
+      e.preventDefault();
+      const code = e.target[0].value;
+      if (code === 'admin') {
+          setIsAdminAuthOpen(false);
+          setCurrentView('admin');
+          logToTaipanCRM(2, "ADMIN", "Вход в админ панель");
+      } else {
+          alert("ACCESS DENIED");
+      }
+  };
 
   const faqItems = [
     { id: 'stats', question: "Это вообще покупают?", icon: <TrendingUp className="w-5 h-5 text-[#00FF9D]" />, component: (<div className="w-full"><WordstatGraph /><h3 className="text-white font-bold mb-3 uppercase tracking-wide text-sm font-['Chakra_Petch'] leading-tight">6 650 человек ищут тебя. Как долго ты будешь их игнорировать?</h3><p className="text-sm text-zinc-300 leading-relaxed border-l-2 border-[#00FF9D]/50 pl-4 mb-4">Это официальная статистика Яндекса: <span className="text-[#00FF9D] font-bold">6 650</span> прямых запросов на ТГ-магазины в месяц.<br/><br/>Пока ты ищешь «подходящий момент», наши ученики уже забирают эти чеки по <span className="text-white font-bold">100 000₸</span>, просто потому что они оказались на связи.<br/><br/>Мы даем тебе все инструменты и доступ к этому потоку. Твой результат — это просто вопрос того, возьмешь ли ты готовую систему и начнешь ли по ней работать.<br/><br/><span className="text-[#00FF9D] italic font-medium">Рынок платит тем, кто действует, а не тем, кто наблюдает.</span></p></div>) },
@@ -951,13 +1438,13 @@ const App = () => {
         
         {currentView === 'main' && (
           <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 flex flex-col items-center">
-            <div className="mb-14 w-full text-center">
-              <h1 className="font-['Chakra_Petch'] font-[700] uppercase tracking-[0.15em] whitespace-nowrap overflow-visible relative block w-full text-center" style={{ fontSize: 'clamp(1.5rem, 8.5vw, 3.5rem)', textShadow: '0 0 20px rgba(0,255,157,0.3)', color: '#ffffff' }}>
+            <div className="mb-14 w-full text-center" onClick={handleTitleClick}>
+              <h1 className="font-['Chakra_Petch'] font-[700] uppercase tracking-[0.15em] whitespace-nowrap overflow-visible relative block w-full text-center select-none cursor-pointer active:scale-95 transition-transform" style={{ fontSize: 'clamp(1.5rem, 8.5vw, 3.5rem)', textShadow: '0 0 20px rgba(0,255,157,0.3)', color: '#ffffff' }}>
                 <span className="relative inline-block mr-[-0.15em]">TAIPAN MEDIA<span className="absolute inset-0 -z-10 opacity-40 blur-[12px] animate-pulse text-[#00FF9D]">TAIPAN MEDIA</span></span>
               </h1>
               <div className="flex items-center justify-center gap-4 mt-3 w-full">
                 <div className="h-[1px] flex-1 max-w-[40px] bg-gradient-to-r from-transparent to-zinc-700"></div>
-                {/* --- UPDATED: Dynamic Greeting --- */}
+                {/* --- DYNAMIC GREETING --- */}
                 <p className="text-[10px] uppercase tracking-[0.6em] mr-[-0.6em] text-[#00FF9D] font-bold whitespace-nowrap animate-pulse">
                   ПРИВЕТ, {userName}
                 </p>
@@ -970,16 +1457,14 @@ const App = () => {
             </div>
             
             <div className="grid grid-cols-2 gap-4 mb-4 w-full">
-              {/* UPDATED: Reduced top padding (pt-6 instead of pt-10) and icon margin (mb-4 instead of mb-6) to lift content */}
-              <div onClick={handleShopClick} className="group relative glass-card rounded-3xl px-6 pt-6 pb-2 h-64 flex flex-col items-center text-center cursor-pointer">
-                <div className="mb-4 text-zinc-400 group-hover:text-[#00FF9D] transition-all duration-300"><TelegramLogoMain className="w-12 h-12 animate-[contourPulse_3s_ease-in-out_infinite]" /></div>
+              <div onClick={handleShopClick} className="group relative glass-card rounded-3xl px-6 pt-10 pb-2 h-64 flex flex-col items-center text-center cursor-pointer">
+                <div className="mb-6 text-zinc-400 group-hover:text-[#00FF9D] transition-all duration-300"><TelegramLogoMain className="w-12 h-12 animate-[contourPulse_3s_ease-in-out_infinite]" /></div>
                 <h3 className="text-lg font-bold uppercase tracking-wide mb-2 leading-tight">Telegram<br/>Магазин</h3>
                 <p className="text-[9px] text-zinc-500 uppercase tracking-widest mb-4 leading-relaxed px-2">Выведите свой бизнес на новый уровень, и заберите ту прибыль, которую вы упускаете</p>
                 <div className="flex items-center text-[10px] text-[#00FF9D] opacity-0 group-hover:opacity-100 transition-all font-bold tracking-wider">ЗАКАЗАТЬ <ArrowRight className="w-3 h-3 ml-1" /></div>
               </div>
-              {/* UPDATED: Reduced top padding (pt-6 instead of pt-10) and icon margin (mb-4 instead of mb-6) to lift content */}
-              <div onClick={handleEducationClick} className="group relative glass-card rounded-3xl px-6 pt-6 pb-2 h-64 flex flex-col items-center text-center cursor-pointer">
-                <div className="mb-4 text-zinc-400 group-hover:text-[#00FF9D] transition-all duration-300"><GraduationCap className="w-12 h-12 animate-[contourPulse_3s_ease-in-out_infinite]" /></div>
+              <div onClick={handleEducationClick} className="group relative glass-card rounded-3xl px-6 pt-10 pb-2 h-64 flex flex-col items-center text-center cursor-pointer">
+                <div className="mb-6 text-zinc-400 group-hover:text-[#00FF9D] transition-all duration-300"><GraduationCap className="w-12 h-12 animate-[contourPulse_3s_ease-in-out_infinite]" /></div>
                 <h3 className="text-lg font-bold uppercase tracking-widest mb-2 leading-tight">ОБУЧЕНИЕ</h3>
                 <p className="text-[9px] text-zinc-500 uppercase tracking-widest mb-4 leading-relaxed px-2 text-zinc-500">Освой трендовый навык с большим спросом, и получи возможность зарабатывать из дома</p>
                 <div className="flex items-center text-[10px] text-[#00FF9D] opacity-0 group-hover:opacity-100 transition-all font-bold tracking-wider">УЗНАТЬ <ArrowRight className="w-3 h-3 ml-1" /></div>
@@ -1000,6 +1485,7 @@ const App = () => {
           </div>
         )}
 
+        {/* ... Rest of currentView renders (shop, calculator, strategy, roi, education, faq, program, about) stay EXACTLY the same ... */}
         {currentView === 'shop' && (
           <div className="animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col h-full items-center w-full">
             {!shopIntroFinished ? (
@@ -1100,7 +1586,6 @@ const App = () => {
               </div>
               <div className="text-center w-full px-6 flex justify-center mb-8"><p className="text-zinc-500 text-[12px] font-bold uppercase tracking-widest mr-[-0.1em] animate-pulse whitespace-nowrap">Не стань историей упущенных шансов</p></div>
             </div>
-            
             <button onClick={() => setCurrentView('faq')} className="w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-6 rounded-3xl shadow-[0_5px_30px_rgba(0,255,157,0.3)] hover:scale-[1.02] active:scale-[0.98] transition-all mt-4 text-xs">Стань тем кто успел</button>
           </div>
         )}
@@ -1139,15 +1624,12 @@ const App = () => {
               </div>
             </div>
             <div className="mt-8 w-full glass-card p-6 rounded-3xl text-center border border-[#00FF9D]/20">
-                
-                {/* --- NEW: Dynamic FOMO --- */}
                 <div className="mb-4 bg-red-500/10 border border-red-500/30 p-2 rounded-lg animate-pulse">
                     <p className="text-[10px] text-red-400 font-bold uppercase tracking-widest">
                         🔥 Осталось мест: {spotsLeft} из 10
                     </p>
                     <p className="text-[8px] text-zinc-500 mt-1">Следующая цена: 80 000 ₸</p>
                 </div>
-
                 <p className="text-[10px] text-zinc-400 uppercase tracking-widest mb-2">Стоимость обучения</p>
                 <div className="text-2xl font-black text-white mb-4 font-['Chakra_Petch']">
                     50 000 ₸ <span className="text-zinc-600 text-lg line-through decoration-red-600 decoration-2 ml-2">80 000 ₸</span>
@@ -1161,117 +1643,20 @@ const App = () => {
           </div>
         )}
 
-        {currentView === 'about' && (
-          <div className="animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col h-full items-center">
-            <button onClick={() => handleBackClick('main')} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-6 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
-            <div className="flex-grow flex flex-col items-center w-full space-y-6">
-                <div className="text-center px-4 w-full mb-4">
-                    <h2 className="text-4xl font-black tracking-tighter uppercase mb-2 font-['Chakra_Petch'] whitespace-nowrap">КТО <span className="text-[#00FF9D]">МЫ</span></h2>
-                    <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] mr-[-0.3em] font-bold">И КАКОЙ У НАС ПЛАН</p>
-                </div>
-                
-                <div className="relative w-full glass-card p-6 rounded-sm border border-[#00FF9D]/30 overflow-hidden bg-black/40 tactical-grid">
-                    <div className="absolute top-0 right-0 p-2 opacity-30"><Code className="w-16 h-16 text-[#00FF9D]" /></div>
-                    <div className="absolute bottom-0 left-0 p-1 opacity-50 text-[8px] font-mono text-[#00FF9D]">SYS.INIT_SEQ_2026</div>
-
-                    <p className="text-sm font-bold text-white mb-4 relative z-10 leading-relaxed font-mono uppercase border-l-2 border-[#00FF9D] pl-3">
-                        «Наш план: позволить таргету доводить каждого лида до товара, без молчания и тишины».
-                    </p>
-                    
-                    <p className="text-[10px] text-zinc-400 leading-relaxed relative z-10 font-mono">
-                        Личности не имеют значения. Значение имеет только результат.
-                    </p>
-                </div>
-
-                <div className="grid grid-cols-1 gap-3 w-full">
-                    {/* Block 1 */}
-                    <div className="glass-card p-4 rounded-sm border border-zinc-800 flex items-start gap-4 hover:border-[#00FF9D]/40 transition-colors group">
-                        <div className="mt-1"><Shield className="w-6 h-6 text-[#00FF9D] opacity-80 group-hover:opacity-100 group-hover:drop-shadow-[0_0_8px_#00FF9D] transition-all" /></div>
-                        <div>
-                             <div className="flex items-baseline gap-2 mb-1">
-                                 <span className="text-xs font-bold text-white font-mono uppercase tracking-wider">Опыт в продажах и разработках</span>
-                                 <span className="text-[10px] text-[#00FF9D] font-mono">[10 ЛЕТ]</span>
-                             </div>
-                             <p className="text-[10px] text-zinc-400 leading-relaxed font-mono">10 лет в продажах позволяют нам знать что хочет клиент, что ему доставляет комфорт и позволяет плавно совершать покупку.</p>
-                        </div>
-                    </div>
-                    {/* Block 2 */}
-                     <div className="glass-card p-4 rounded-sm border border-zinc-800 flex items-start gap-4 hover:border-[#00FF9D]/40 transition-colors group">
-                        <div className="mt-1"><Zap className="w-6 h-6 text-[#00FF9D] opacity-80 group-hover:opacity-100 group-hover:drop-shadow-[0_0_8px_#00FF9D] transition-all" /></div>
-                        <div>
-                             <div className="flex items-baseline gap-2 mb-1">
-                                 <span className="text-xs font-bold text-white font-mono uppercase tracking-wider">Оперативность</span>
-                                 <span className="text-[10px] text-[#00FF9D] font-mono">[ОТ 7 ДНЕЙ]</span>
-                             </div>
-                             <p className="text-[10px] text-zinc-400 leading-relaxed font-mono">Мы не ведем переговоры месяцами. Мы запускаем MVP и улучшаем его под ваши запросы. Наша цель, не затягивать то, что может приносить вам доход уже завтра.</p>
-                        </div>
-                    </div>
-                    {/* Block 3 */}
-                    <div className="glass-card p-4 rounded-sm border border-zinc-800 flex items-start gap-4 hover:border-[#00FF9D]/40 transition-colors group">
-                        <div className="mt-1"><GraduationCap className="w-6 h-6 text-[#00FF9D] opacity-80 group-hover:opacity-100 group-hover:drop-shadow-[0_0_8px_#00FF9D] transition-all" /></div>
-                        <div>
-                             <div className="flex items-baseline gap-2 mb-1">
-                                 <span className="text-xs font-bold text-white font-mono uppercase tracking-wider">ОБУЧЕНИЕ</span>
-                                 <span className="text-[10px] text-[#00FF9D] font-mono">[100%]</span>
-                             </div>
-                             <p className="text-[10px] text-zinc-400 leading-relaxed font-mono">Мы не только разрабатываем телеграм-магазины, мы обучаем ваш персонал использовать его на 100%.</p>
-                             <p className="text-[10px] text-zinc-400 leading-relaxed font-mono mt-2 pt-2 border-t border-zinc-800">Так же мы обучаем физ.лиц, которые хотят освоить трендовый навык, и обеспечить себе дополнительный доход с нашей командой.</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="w-full space-y-4 pt-4 border-t border-zinc-800">
-                    <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] font-bold mb-2 pl-2">СТАДИИ ВНЕДРЕНИЯ</p>
-                    
-                    <div className="relative pl-6 border-l border-[#00FF9D]/30 ml-2 space-y-6">
-                        {/* Stage 1 */}
-                        <div className="relative">
-                            <div className="absolute -left-[29px] top-0 w-3 h-3 bg-[#050505] border border-[#00FF9D] rounded-full"></div>
-                            <h4 className="text-xs font-bold text-white uppercase tracking-wider mb-1 font-mono">01 // АНАЛИЗ ЦЕЛИ</h4>
-                            <p className="text-[10px] text-zinc-500 font-mono">Детальный разбор вашего продукта и аудитории.</p>
-                        </div>
-                         {/* Stage 2 */}
-                        <div className="relative">
-                            <div className="absolute -left-[29px] top-0 w-3 h-3 bg-[#050505] border border-[#00FF9D] rounded-full"></div>
-                            <h4 className="text-xs font-bold text-white uppercase tracking-wider mb-1 font-mono">02 // СБОРКА АРСЕНАЛА</h4>
-                            <p className="text-[10px] text-zinc-500 font-mono">Проектирование Mini App с учетом психологии захвата внимания покупателя.</p>
-                        </div>
-                         {/* Stage 3 */}
-                        <div className="relative">
-                            <div className="absolute -left-[29px] top-0 w-3 h-3 bg-[#00FF9D] rounded-full shadow-[0_0_10px_#00FF9D]"></div>
-                            <h4 className="text-xs font-bold text-[#00FF9D] uppercase tracking-wider mb-1 font-mono">03 // ЗАПУСК</h4>
-                            <p className="text-[10px] text-zinc-400 font-mono">Активация системы и начало приема оплат.</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="w-full pt-4">
-                      <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] font-bold mb-3 pl-2">УСПЕШНЫЕ ОПЕРАЦИИ</p>
-                      <div className="grid grid-cols-2 gap-3">
-                          <div className="glass-card p-3 rounded-sm border border-zinc-800 flex flex-col items-center justify-center h-24 opacity-80 hover:opacity-100 hover:border-[#00FF9D]/30 transition-all cursor-pointer" onClick={() => setPreviewImage("https://i.ibb.co.com/ks9Sz9zz/5438294939344244554.jpg")}>
-                              <SmartImage src="https://i.ibb.co.com/ks9Sz9zz/5438294939344244554.jpg" className="w-full h-full object-cover opacity-60 hover:opacity-100 transition-opacity rounded-sm" alt="ROMANTIC Case" />
-                              <div className="absolute inset-0 flex items-center justify-center bg-black/60 hover:bg-black/40 transition-colors">
-                                  <span className="text-[10px] font-bold text-white font-mono tracking-wider">ROMANTIC</span>
-                              </div>
-                          </div>
-                          <div className="glass-card p-3 rounded-sm border border-zinc-800 flex flex-col items-center justify-center h-24 opacity-80 hover:opacity-100 hover:border-[#00FF9D]/30 transition-all cursor-pointer" onClick={() => setPreviewImage("https://i.ibb.co.com/gMTG4QXt/5438294939344244553.jpg")}>
-                              <SmartImage src="https://i.ibb.co.com/gMTG4QXt/5438294939344244553.jpg" className="w-full h-full object-cover opacity-60 hover:opacity-100 transition-opacity rounded-sm" alt="FOOD Case" />
-                              <div className="absolute inset-0 flex items-center justify-center bg-black/60 hover:bg-black/40 transition-colors">
-                                  <span className="text-[10px] font-bold text-white font-mono tracking-wider">КАСТРЮЛЬКА</span>
-                              </div>
-                          </div>
-                      </div>
-                </div>
-
-                 <button onClick={() => window.open('https://t.me/taipanmedia', '_blank')} className="w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-4 rounded-sm shadow-[0_0_20px_rgba(0,255,157,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs mt-4 font-mono flex items-center justify-center gap-2">
-                    <Crosshair className="w-4 h-4" />
-                    ОБСУДИТЬ ПЛАН
-                 </button>
-            </div>
-          </div>
+        {/* VIEW: ADMIN PANEL */}
+        {currentView === 'admin' && (
+            <AdminPanel 
+                leads={leads}
+                visitors={visitors} 
+                onBack={() => setCurrentView('main')} 
+                onClearLeads={() => setLeads([])}
+                onUpdateLead={updateLead}
+                onUpdateVisitor={updateVisitor}
+            />
         )}
       </div>
 
+      {/* Modals & Toasts stay EXACTLY the same */}
       {isModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-end justify-center px-4">
           <div className="absolute inset-0 bg-black/80 backdrop-blur-md animate-in fade-in duration-300" onClick={closeModal} />
@@ -1283,6 +1668,23 @@ const App = () => {
               <input type="text" placeholder="Ваше Имя" required className="w-full bg-black border border-white/5 rounded-2xl p-4 text-center text-white focus:border-[#00FF9D]/50 outline-none transition-all placeholder-zinc-700" />
               <input type="text" placeholder="@username" required className="w-full bg-black border border-white/5 rounded-2xl p-4 text-center text-white focus:border-[#00FF9D]/50 outline-none transition-all placeholder-zinc-700" />
               <button type="submit" className="w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-5 rounded-2xl mt-4 text-xs">Связаться со мной</button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ADMIN AUTH MODAL */}
+      {isAdminAuthOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
+          <div className="absolute inset-0 bg-black/90 backdrop-blur-md animate-in fade-in duration-300" onClick={() => setIsAdminAuthOpen(false)} />
+          <div className="relative w-full max-w-sm bg-[#0A0A0A] border border-[#00FF9D]/50 p-6 rounded-sm shadow-[0_0_50px_rgba(0,255,157,0.1)]">
+            <div className="text-center mb-6">
+                <Shield className="w-12 h-12 text-[#00FF9D] mx-auto mb-2 animate-pulse" />
+                <h2 className="text-xl font-black text-[#00FF9D] font-mono tracking-widest">SECURE LOGIN</h2>
+            </div>
+            <form onSubmit={handleAdminAuth} className="space-y-4">
+              <input type="password" placeholder="ACCESS CODE" required className="w-full bg-black border border-zinc-700 p-3 text-center text-[#00FF9D] font-mono tracking-[0.5em] focus:border-[#00FF9D] outline-none" autoFocus />
+              <button type="submit" className="w-full bg-[#00FF9D] text-black font-bold font-mono tracking-widest py-3 hover:bg-[#00FF9D]/80">AUTHENTICATE</button>
             </form>
           </div>
         </div>

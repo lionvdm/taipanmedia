@@ -6,47 +6,27 @@ import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 import { getFirestore, doc, setDoc, updateDoc, serverTimestamp, collection, query, onSnapshot, deleteDoc } from 'firebase/firestore';
 
 // --- CONFIGURATION & INIT ---
-// Проверка наличия конфига для предотвращения ошибок в Vercel
-let app, auth, db;
-let isFirebaseInitialized = false;
+const firebaseConfig = {
+  apiKey: "AIzaSyCdcj_56EdygidWa8pQm17fegnF39XB8Xg",
+  authDomain: "taipan-680b2.firebaseapp.com",
+  projectId: "taipan-680b2",
+  storageBucket: "taipan-680b2.firebasestorage.app",
+  messagingSenderId: "990538734233",
+  appId: "1:990538734233:web:dbfe47aed6d87626207608",
+  measurementId: "G-QFJTFTCNNY"
+};
 
-// Получаем ID приложения
+// Инициализация Firebase
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const isFirebaseInitialized = true;
+
+// Получаем ID приложения для формирования правильных путей (или используем дефолтный)
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
-try {
-    let config;
-    
-    // 1. Пытаемся получить конфиг из среды Canvas
-    if (typeof __firebase_config !== 'undefined') {
-        config = JSON.parse(__firebase_config);
-    } 
-    // 2. Иначе используем настройки для Vercel (Замените значения на свои из консоли Firebase!)
-    else {
-        config = {
-            apiKey: process.env.REACT_APP_FIREBASE_API_KEY || "ЗАМЕНИТЕ_НА_ВАШ_API_KEY",
-            authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN || "ваше-приложение.firebaseapp.com",
-            projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID || "ваше-приложение",
-            storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET || "ваше-приложение.appspot.com",
-            messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID || "123456789",
-            appId: process.env.REACT_APP_FIREBASE_APP_ID || "1:123456789:web:..."
-        };
-    }
-
-    // Инициализация
-    if (config.apiKey && config.apiKey !== "ЗАМЕНИТЕ_НА_ВАШ_API_KEY") {
-        app = initializeApp(config);
-        auth = getAuth(app);
-        db = getFirestore(app);
-        isFirebaseInitialized = true;
-    } else {
-        console.warn("⚠️ Firebase config is missing. App running in UI-only mode.");
-    }
-} catch (e) {
-    console.error("Firebase Initialization Error:", e);
-}
-
 // --- TELEGRAM API HELPERS ---
-const BOT_TOKEN = "8398712805:AAHFZXllsCQU0YNd8KIo9Rie5VZeyH91GMQ"; // В продакшене лучше использовать Cloud Function!
+const BOT_TOKEN = "8398712805:AAHFZXllsCQU0YNd8KIo9Rie5VZeyH91GMQ"; // В продакшене храните это на сервере!
 
 const sendTelegramMessage = async (chatId, text) => {
     try {
@@ -89,8 +69,7 @@ const logToTaipanCRM = async (topicId, status, details = "") => {
   `;
 
   try {
-    // Отправляем асинхронно, не блокируя UI
-    fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+    await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -100,13 +79,13 @@ const logToTaipanCRM = async (topicId, status, details = "") => {
         parse_mode: "Markdown",
         disable_web_page_preview: true
       })
-    }).catch(e => console.error("CRM Error (Background):", e));
+    });
   } catch (e) {
-    console.error("CRM Error:", e);
+    console.error("Ошибка CRM:", e);
   }
 };
 
-// --- OPTIMIZED MATRIX BACKGROUND (Prevents Re-renders & CPU Hogging) ---
+// --- OPTIMIZED MATRIX BACKGROUND (Prevents Re-renders) ---
 const MatrixBackground = React.memo(() => {
   const canvasRef = useRef(null);
 
@@ -136,20 +115,10 @@ const MatrixBackground = React.memo(() => {
       }
     };
 
-    // OPTIMIZATION 2: Delay start to unblock main thread during initial render
-    let interval;
-    const startTimeout = setTimeout(() => {
-        interval = setInterval(drawMatrix, 75);
-    }, 800);
-
+    const interval = setInterval(drawMatrix, 75);
     const handleResize = () => { width = canvas.width = window.innerWidth; height = canvas.height = window.innerHeight; };
     window.addEventListener('resize', handleResize);
-    
-    return () => { 
-        clearTimeout(startTimeout);
-        if (interval) clearInterval(interval); 
-        window.removeEventListener('resize', handleResize); 
-    };
+    return () => { clearInterval(interval); window.removeEventListener('resize', handleResize); };
   }, []);
 
   return <canvas ref={canvasRef} className="absolute inset-0 opacity-20 mix-blend-screen pointer-events-none" />;
@@ -190,13 +159,6 @@ const GlobalStyles = () => (
         background-image: linear-gradient(rgba(0, 255, 157, 0.05) 1px, transparent 1px),
         linear-gradient(90deg, rgba(0, 255, 157, 0.05) 1px, transparent 1px);
         background-size: 20px 20px;
-    }
-    
-    /* OPTIMIZATION 4: GPU Acceleration Class */
-    .optimize-gpu {
-        will-change: transform, opacity;
-        transform: translateZ(0);
-        backface-visibility: hidden;
     }
     
     /* Hardware Acceleration Class for Images */
@@ -340,8 +302,7 @@ const TelegramLogoMain = React.memo(({ className }) => (
 
 // --- OPTIMIZED COMPONENT: SmartImage ---
 // Wrapped in memo to prevent re-renders on parent state changes
-// OPTIMIZATION 1: Added priority prop for Eager Loading
-const SmartImage = React.memo(({ src, alt, className, style, wrapperClass = "", overflowHidden = true, priority = false }) => {
+const SmartImage = React.memo(({ src, alt, className, style, wrapperClass = "", overflowHidden = true }) => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
 
@@ -353,9 +314,8 @@ const SmartImage = React.memo(({ src, alt, className, style, wrapperClass = "", 
       <img
         src={src}
         alt={alt}
-        loading={priority ? "eager" : "lazy"}
+        loading="lazy"
         decoding="async"
-        fetchpriority={priority ? "high" : "auto"}
         onLoad={() => setIsLoaded(true)}
         onError={(e) => {
            setHasError(true);
@@ -452,7 +412,7 @@ const BaneIntro = ({ onComplete }) => {
     }, [onComplete]);
 
     return (
-        <div className="fixed inset-0 z-[300] bg-black flex flex-col items-center justify-center p-6 text-center cursor-pointer optimize-gpu" onClick={onComplete}>
+        <div className="fixed inset-0 z-[300] bg-black flex flex-col items-center justify-center p-6 text-center cursor-pointer" onClick={onComplete}>
             <div className="max-w-md w-full relative">
                  {/* Voice Visualizer */}
                 <div className="flex justify-center items-end gap-1 h-16 mb-12 opacity-50">
@@ -500,7 +460,7 @@ const HackerProof = React.memo(() => {
   return (
     <React.Fragment>
       <div 
-        className="relative rounded-xl overflow-hidden border border-[#00FF9D]/40 mb-6 group animate-in zoom-in duration-500 shadow-[0_0_20px_rgba(0,255,157,0.1)] cursor-zoom-in optimize-gpu"
+        className="relative rounded-xl overflow-hidden border border-[#00FF9D]/40 mb-6 group animate-in zoom-in duration-500 shadow-[0_0_20px_rgba(0,255,157,0.1)] cursor-zoom-in"
         onClick={(e) => { e.stopPropagation(); setIsExpanded(true); }}
       >
         <SmartImage src="https://i.ibb.co.com/FdhqGvD/2025-11-09-113228-fotor-20251109143545.jpg" className="w-full object-cover" alt="Encrypted Proof" />
@@ -514,9 +474,9 @@ const HackerProof = React.memo(() => {
         </div>
       </div>
       {isExpanded && (
-        <div className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 animate-in fade-in duration-300 optimize-gpu" onClick={(e) => { e.stopPropagation(); setIsExpanded(false); }}>
+        <div className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 animate-in fade-in duration-300" onClick={(e) => { e.stopPropagation(); setIsExpanded(false); }}>
           <div className="relative w-full max-w-2xl">
-             <SmartImage src="https://i.ibb.co.com/FdhqGvD/2025-11-09-113228-fotor-20251109143545.jpg" className="w-full h-auto rounded-lg border border-[#00FF9D]/50 shadow-[0_0_50px_rgba(0,255,157,0.2)]" alt="Proof Full" priority={true} />
+             <SmartImage src="https://i.ibb.co.com/FdhqGvD/2025-11-09-113228-fotor-20251109143545.jpg" className="w-full h-auto rounded-lg border border-[#00FF9D]/50 shadow-[0_0_50px_rgba(0,255,157,0.2)]" alt="Proof Full" />
              <p className="text-center text-zinc-500 font-mono text-[10px] mt-4 uppercase animate-pulse">Нажмите в любом месте, чтобы закрыть</p>
           </div>
         </div>
@@ -530,7 +490,7 @@ const ClientDemandProof = React.memo(() => {
   const [isExpanded, setIsExpanded] = useState(false);
   return (
     <React.Fragment>
-      <div className="relative rounded-xl overflow-hidden border border-[#00FF9D]/40 mb-6 group animate-in zoom-in duration-500 shadow-[0_0_20px_rgba(0,255,157,0.1)] cursor-zoom-in optimize-gpu" onClick={(e) => { e.stopPropagation(); setIsExpanded(true); }}>
+      <div className="relative rounded-xl overflow-hidden border border-[#00FF9D]/40 mb-6 group animate-in zoom-in duration-500 shadow-[0_0_20px_rgba(0,255,157,0.1)] cursor-zoom-in" onClick={(e) => { e.stopPropagation(); setIsExpanded(true); }}>
         <SmartImage src="https://i.ibb.co.com/h1mN3kL0/5427147012425059102.jpg" className="w-full object-cover opacity-90 filter grayscale-[0.5] contrast-[1.1] brightness-[0.9]" alt="Client Demand" />
         <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-md rounded-full p-1.5 opacity-60 group-hover:opacity-100 transition-opacity border border-[#00FF9D]/30 z-10"><Search className="w-3 h-3 text-[#00FF9D]" /></div>
         <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none z-10"></div>
@@ -541,9 +501,9 @@ const ClientDemandProof = React.memo(() => {
         </div>
       </div>
        {isExpanded && (
-        <div className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 animate-in fade-in duration-300 optimize-gpu" onClick={(e) => { e.stopPropagation(); setIsExpanded(false); }}>
+        <div className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 animate-in fade-in duration-300" onClick={(e) => { e.stopPropagation(); setIsExpanded(false); }}>
           <div className="relative w-full max-w-2xl">
-             <SmartImage src="https://i.ibb.co.com/h1mN3kL0/5427147012425059102.jpg" className="w-full h-auto rounded-lg border border-[#00FF9D]/50 shadow-[0_0_50px_rgba(0,255,157,0.2)]" alt="Demand Full" priority={true} />
+             <SmartImage src="https://i.ibb.co.com/h1mN3kL0/5427147012425059102.jpg" className="w-full h-auto rounded-lg border border-[#00FF9D]/50 shadow-[0_0_50px_rgba(0,255,157,0.2)]" alt="Demand Full" />
              <p className="text-center text-zinc-500 font-mono text-[10px] mt-4 uppercase animate-pulse">Нажмите в любом месте, чтобы закрыть</p>
           </div>
         </div>
@@ -554,7 +514,7 @@ const ClientDemandProof = React.memo(() => {
 
 // --- SkillScanner ---
 const SkillScanner = () => (
-  <div className="w-full bg-[#0A0A0A] rounded-xl border border-[#00FF9D]/20 p-4 mb-6 relative overflow-hidden animate-in slide-in-from-bottom duration-500 group optimize-gpu">
+  <div className="w-full bg-[#0A0A0A] rounded-xl border border-[#00FF9D]/20 p-4 mb-6 relative overflow-hidden animate-in slide-in-from-bottom duration-500 group">
     <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none"></div>
     <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-[#00FF9D]/05 to-transparent animate-[scanLine_4s_linear_infinite]"></div>
     <div className="relative z-10">
@@ -604,7 +564,7 @@ const WordstatGraph = React.memo(() => {
   const [isExpanded, setIsExpanded] = useState(false);
   return (
     <React.Fragment>
-      <div className="w-full bg-[#1c1c1e] rounded-xl border border-zinc-700 overflow-hidden mb-6 font-sans shadow-xl cursor-zoom-in relative group optimize-gpu" onClick={(e) => { e.stopPropagation(); setIsExpanded(true); }}>
+      <div className="w-full bg-[#1c1c1e] rounded-xl border border-zinc-700 overflow-hidden mb-6 font-sans shadow-xl cursor-zoom-in relative group" onClick={(e) => { e.stopPropagation(); setIsExpanded(true); }}>
         <div className="bg-[#242426] px-4 py-3 border-b border-zinc-700 flex justify-between items-center">
           <div><div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span><span className="text-[11px] text-zinc-300 font-bold">История запросов (Яндекс Вордстат)</span></div><p className="text-[13px] text-white mt-0.5 font-medium">«телеграм магазин»</p></div>
           <div className="text-right"><p className="text-[9px] text-zinc-500 uppercase tracking-wider">Всего показов</p><p className="text-[16px] font-bold text-white">6 650</p></div>
@@ -618,8 +578,8 @@ const WordstatGraph = React.memo(() => {
         </div>
       </div>
        {isExpanded && (
-        <div className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 animate-in fade-in duration-300 optimize-gpu" onClick={(e) => { e.stopPropagation(); setIsExpanded(false); }}>
-          <div className="relative w-full max-w-4xl"><SmartImage src="https://i.ibb.co.com/Y7WjS1Tc/2026-01-16-014054.png" className="w-full h-auto rounded-lg border border-zinc-700 shadow-2xl" alt="Wordstat Full" priority={true} /><p className="text-center text-zinc-500 font-mono text-[10px] mt-4 uppercase animate-pulse">Нажмите в любом месте, чтобы закрыть</p></div>
+        <div className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 animate-in fade-in duration-300" onClick={(e) => { e.stopPropagation(); setIsExpanded(false); }}>
+          <div className="relative w-full max-w-4xl"><SmartImage src="https://i.ibb.co.com/Y7WjS1Tc/2026-01-16-014054.png" className="w-full h-auto rounded-lg border border-zinc-700 shadow-2xl" alt="Wordstat Full" /><p className="text-center text-zinc-500 font-mono text-[10px] mt-4 uppercase animate-pulse">Нажмите в любом месте, чтобы закрыть</p></div>
         </div>
       )}
     </React.Fragment>
@@ -845,6 +805,112 @@ const RoiView = ({ profit, onBack, onAction }) => {
     </div>
   );
 };
+
+// --- ANALYTICS CHART COMPONENT ---
+const AnalyticsChart = ({ leads }) => {
+    // 1. Calculate Stats
+    const stats = useMemo(() => {
+        const counts = leads.reduce((acc, lead) => {
+            const type = lead.type || 'Не указано';
+            acc[type] = (acc[type] || 0) + 1;
+            return acc;
+        }, {});
+        
+        const total = leads.length;
+        
+        return Object.keys(counts).map(key => ({
+            label: key,
+            count: counts[key],
+            percentage: total > 0 ? Math.round((counts[key] / total) * 100) : 0
+        })).sort((a, b) => b.count - a.count);
+    }, [leads]);
+
+    const maxCount = Math.max(...stats.map(s => s.count), 1);
+
+    return (
+        <div className="w-full space-y-6 animate-in fade-in duration-500">
+             {/* SUMMARY CARDS */}
+             <div className="grid grid-cols-2 gap-3">
+                 <div className="glass-card p-4 rounded-xl border border-zinc-800">
+                     <p className="text-[9px] text-zinc-500 uppercase tracking-wider mb-1">ВСЕГО ЛИДОВ</p>
+                     <p className="text-3xl font-black text-white font-mono">{leads.length}</p>
+                 </div>
+                 <div className="glass-card p-4 rounded-xl border border-zinc-800">
+                     <p className="text-[9px] text-zinc-500 uppercase tracking-wider mb-1">TOP ВЫБОР</p>
+                     <p className="text-xl font-bold text-[#00FF9D] truncate">{stats[0]?.label || '---'}</p>
+                 </div>
+             </div>
+
+             {/* BAR CHART */}
+             <div className="glass-card p-5 rounded-xl border border-zinc-800">
+                 <div className="flex items-center justify-between mb-4">
+                     <h3 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                         <BarChart2 className="w-4 h-4 text-[#00FF9D]" />
+                         Популярность услуг
+                     </h3>
+                 </div>
+                 
+                 <div className="space-y-4">
+                     {stats.map((item, idx) => (
+                         <div key={idx} className="relative">
+                             <div className="flex justify-between items-end mb-1">
+                                 <span className="text-[10px] font-bold text-zinc-300">{item.label}</span>
+                                 <span className="text-[10px] font-mono text-[#00FF9D]">{item.count} ({item.percentage}%)</span>
+                             </div>
+                             <div className="w-full h-2 bg-zinc-900 rounded-full overflow-hidden">
+                                 <div 
+                                    className="h-full bg-gradient-to-r from-[#00FF9D]/50 to-[#00FF9D] rounded-full transition-all duration-1000 ease-out relative"
+                                    style={{ width: `${(item.count / maxCount) * 100}%` }}
+                                 >
+                                     <div className="absolute right-0 top-0 bottom-0 w-2 bg-white/50 blur-[2px]"></div>
+                                 </div>
+                             </div>
+                         </div>
+                     ))}
+                     {stats.length === 0 && <p className="text-center text-[10px] text-zinc-600 py-4">Нет данных для отображения</p>}
+                 </div>
+             </div>
+
+             {/* DONUT CHART SIMULATION (CSS CONIC) */}
+             <div className="glass-card p-5 rounded-xl border border-zinc-800 flex items-center justify-between">
+                 <div>
+                    <h3 className="text-xs font-bold text-white uppercase tracking-wider mb-1 flex items-center gap-2">
+                        <PieChart className="w-4 h-4 text-[#00FF9D]" />
+                        Доли трафика
+                    </h3>
+                    <p className="text-[9px] text-zinc-500 leading-relaxed max-w-[150px]">
+                        Распределение интереса аудитории по категориям услуг.
+                    </p>
+                 </div>
+                 <div className="relative w-20 h-20 flex-shrink-0">
+                     <svg viewBox="0 0 36 36" className="w-full h-full rotate-[-90deg]">
+                        <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#111" strokeWidth="4" />
+                        {stats.map((item, i) => {
+                             // Simple calc for demo visualization of top item
+                             if (i > 0) return null; 
+                             return (
+                                <path 
+                                    key={i}
+                                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831" 
+                                    fill="none" 
+                                    stroke="#00FF9D" 
+                                    strokeWidth="4" 
+                                    strokeDasharray={`${item.percentage}, 100`}
+                                    className="animate-[widthGrow_1s_ease-out]"
+                                />
+                             )
+                        })}
+                     </svg>
+                     <div className="absolute inset-0 flex items-center justify-center flex-col">
+                         <span className="text-[8px] text-zinc-500 font-bold">TOP</span>
+                         <span className="text-[10px] font-bold text-white">{stats[0]?.percentage || 0}%</span>
+                     </div>
+                 </div>
+             </div>
+        </div>
+    );
+};
+
 
 // --- Admin Panel Component ---
 const AdminPanel = ({ leads, visitors, onBack, onClearLeads, onUpdateLead, onUpdateVisitor }) => {
@@ -1639,6 +1705,113 @@ const App = () => {
                     logToTaipanCRM(6, "ЖДЕТ КОНСУЛЬТАЦИЮ ⚡️", "Кликнул по кнопке 'Получить подробную консультацию' (Обучение)");
                     window.open('https://t.me/taipanmedia', '_blank');
                 }} className="block w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-4 rounded-xl shadow-[0_0_20px_rgba(0,255,157,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs">Получить подробную консультацию</button>
+            </div>
+          </div>
+        )}
+
+        {currentView === 'about' && (
+          <div className="animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col h-full items-center">
+            <button onClick={() => handleBackClick('main')} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-6 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
+            <div className="flex-grow flex flex-col items-center w-full space-y-6">
+                <div className="text-center px-4 w-full mb-4">
+                    <h2 className="text-4xl font-black tracking-tighter uppercase mb-2 font-['Chakra_Petch'] whitespace-nowrap">КТО <span className="text-[#00FF9D]">МЫ</span></h2>
+                    <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] mr-[-0.3em] font-bold">И КАКОЙ У НАС ПЛАН</p>
+                </div>
+                
+                <div className="relative w-full glass-card p-6 rounded-sm border border-[#00FF9D]/30 overflow-hidden bg-black/40 tactical-grid">
+                    <div className="absolute top-0 right-0 p-2 opacity-30"><Code className="w-16 h-16 text-[#00FF9D]" /></div>
+                    <div className="absolute bottom-0 left-0 p-1 opacity-50 text-[8px] font-mono text-[#00FF9D]">SYS.INIT_SEQ_2026</div>
+                    <p className="text-sm font-bold text-white mb-4 relative z-10 leading-relaxed font-mono uppercase border-l-2 border-[#00FF9D] pl-3">
+                        «Наш план: позволить таргету доводить каждого лида до товара, без молчания и тишины».
+                    </p>
+                    <p className="text-[10px] text-zinc-400 leading-relaxed relative z-10 font-mono">
+                        Личности не имеют значения. Значение имеет только результат.
+                    </p>
+                </div>
+
+                <div className="grid grid-cols-1 gap-3 w-full">
+                    {/* Block 1 */}
+                    <div className="glass-card p-4 rounded-sm border border-zinc-800 flex items-start gap-4 hover:border-[#00FF9D]/40 transition-colors group">
+                        <div className="mt-1"><Shield className="w-6 h-6 text-[#00FF9D] opacity-80 group-hover:opacity-100 group-hover:drop-shadow-[0_0_8px_#00FF9D] transition-all" /></div>
+                        <div>
+                             <div className="flex items-baseline gap-2 mb-1">
+                                 <span className="text-xs font-bold text-white font-mono uppercase tracking-wider">Опыт в продажах и разработках</span>
+                                 <span className="text-[10px] text-[#00FF9D] font-mono">[10 ЛЕТ]</span>
+                             </div>
+                             <p className="text-[10px] text-zinc-400 leading-relaxed font-mono">10 лет в продажах позволяют нам знать что хочет клиент, что ему доставляет комфорт и позволяет плавно совершать покупку.</p>
+                        </div>
+                    </div>
+                    {/* Block 2 */}
+                     <div className="glass-card p-4 rounded-sm border border-zinc-800 flex items-start gap-4 hover:border-[#00FF9D]/40 transition-colors group">
+                        <div className="mt-1"><Zap className="w-6 h-6 text-[#00FF9D] opacity-80 group-hover:opacity-100 group-hover:drop-shadow-[0_0_8px_#00FF9D] transition-all" /></div>
+                        <div>
+                             <div className="flex items-baseline gap-2 mb-1">
+                                 <span className="text-xs font-bold text-white font-mono uppercase tracking-wider">Оперативность</span>
+                                 <span className="text-[10px] text-[#00FF9D] font-mono">[ОТ 7 ДНЕЙ]</span>
+                             </div>
+                             <p className="text-[10px] text-zinc-400 leading-relaxed font-mono">Мы не ведем переговоры месяцами. Мы запускаем MVP и улучшаем его под ваши запросы. Наша цель, не затягивать то, что может приносить вам доход уже завтра.</p>
+                        </div>
+                    </div>
+                    {/* Block 3 */}
+                    <div className="glass-card p-4 rounded-sm border border-zinc-800 flex items-start gap-4 hover:border-[#00FF9D]/40 transition-colors group">
+                        <div className="mt-1"><GraduationCap className="w-6 h-6 text-[#00FF9D] opacity-80 group-hover:opacity-100 group-hover:drop-shadow-[0_0_8px_#00FF9D] transition-all" /></div>
+                        <div>
+                             <div className="flex items-baseline gap-2 mb-1">
+                                 <span className="text-xs font-bold text-white font-mono uppercase tracking-wider">ОБУЧЕНИЕ</span>
+                                 <span className="text-[10px] text-[#00FF9D] font-mono">[100%]</span>
+                             </div>
+                             <p className="text-[10px] text-zinc-400 leading-relaxed font-mono">Мы не только разрабатываем телеграм-магазины, мы обучаем ваш персонал использовать его на 100%.</p>
+                             <p className="text-[10px] text-zinc-400 leading-relaxed font-mono mt-2 pt-2 border-t border-zinc-800">Так же мы обучаем физ.лиц, которые хотят освоить трендовый навык, и обеспечить себе дополнительный доход с нашей командой.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="w-full space-y-4 pt-4 border-t border-zinc-800">
+                    <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] font-bold mb-2 pl-2">СТАДИИ ВНЕДРЕНИЯ</p>
+                    <div className="relative pl-6 border-l border-[#00FF9D]/30 ml-2 space-y-6">
+                        {/* Stage 1 */}
+                        <div className="relative">
+                            <div className="absolute -left-[29px] top-0 w-3 h-3 bg-[#050505] border border-[#00FF9D] rounded-full"></div>
+                            <h4 className="text-xs font-bold text-white uppercase tracking-wider mb-1 font-mono">01 // АНАЛИЗ ЦЕЛИ</h4>
+                            <p className="text-[10px] text-zinc-500 font-mono">Детальный разбор вашего продукта и аудитории.</p>
+                        </div>
+                         {/* Stage 2 */}
+                        <div className="relative">
+                            <div className="absolute -left-[29px] top-0 w-3 h-3 bg-[#050505] border border-[#00FF9D] rounded-full"></div>
+                            <h4 className="text-xs font-bold text-white uppercase tracking-wider mb-1 font-mono">02 // СБОРКА АРСЕНАЛА</h4>
+                            <p className="text-[10px] text-zinc-500 font-mono">Проектирование Mini App с учетом психологии захвата внимания покупателя.</p>
+                        </div>
+                         {/* Stage 3 */}
+                        <div className="relative">
+                            <div className="absolute -left-[29px] top-0 w-3 h-3 bg-[#00FF9D] rounded-full shadow-[0_0_10px_#00FF9D]"></div>
+                            <h4 className="text-xs font-bold text-[#00FF9D] uppercase tracking-wider mb-1 font-mono">03 // ЗАПУСК</h4>
+                            <p className="text-[10px] text-zinc-400 font-mono">Активация системы и начало приема оплат.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="w-full pt-4">
+                      <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] font-bold mb-3 pl-2">УСПЕШНЫЕ ОПЕРАЦИИ</p>
+                      <div className="grid grid-cols-2 gap-3">
+                          <div className="glass-card p-3 rounded-sm border border-zinc-800 flex flex-col items-center justify-center h-24 opacity-80 hover:opacity-100 hover:border-[#00FF9D]/30 transition-all cursor-pointer" onClick={() => setPreviewImage("https://i.ibb.co.com/ks9Sz9zz/5438294939344244554.jpg")}>
+                              <SmartImage src="https://i.ibb.co.com/ks9Sz9zz/5438294939344244554.jpg" className="w-full h-full object-cover opacity-60 hover:opacity-100 transition-opacity rounded-sm" alt="ROMANTIC Case" />
+                              <div className="absolute inset-0 flex items-center justify-center bg-black/60 hover:bg-black/40 transition-colors">
+                                  <span className="text-[10px] font-bold text-white font-mono tracking-wider">ROMANTIC</span>
+                              </div>
+                          </div>
+                          <div className="glass-card p-3 rounded-sm border border-zinc-800 flex flex-col items-center justify-center h-24 opacity-80 hover:opacity-100 hover:border-[#00FF9D]/30 transition-all cursor-pointer" onClick={() => setPreviewImage("https://i.ibb.co.com/gMTG4QXt/5438294939344244553.jpg")}>
+                              <SmartImage src="https://i.ibb.co.com/gMTG4QXt/5438294939344244553.jpg" className="w-full h-full object-cover opacity-60 hover:opacity-100 transition-opacity rounded-sm" alt="FOOD Case" />
+                              <div className="absolute inset-0 flex items-center justify-center bg-black/60 hover:bg-black/40 transition-colors">
+                                  <span className="text-[10px] font-bold text-white font-mono tracking-wider">КАСТРЮЛЬКА</span>
+                              </div>
+                          </div>
+                      </div>
+                </div>
+
+                 <button onClick={() => window.open('https://t.me/taipanmedia', '_blank')} className="w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-4 rounded-sm shadow-[0_0_20px_rgba(0,255,157,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs mt-4 font-mono flex items-center justify-center gap-2">
+                    <Crosshair className="w-4 h-4" />
+                    ОБСУДИТЬ ПЛАН
+                 </button>
             </div>
           </div>
         )}

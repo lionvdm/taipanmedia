@@ -970,6 +970,43 @@ const AdminPanel = ({ leads, visitors, onBack, onClearLeads, onUpdateLead, onUpd
     const [sendProgress, setSendProgress] = useState({ current: 0, total: 0 });
     const [broadcastTarget, setBroadcastTarget] = useState('all'); 
 
+    // Filters for Broadcast
+    const broadcastFilters = [
+        { id: 'all', label: 'Все' },
+        { id: 'active_24h', label: 'Актив 24ч' },
+        { id: 'active_7d', label: 'Актив 7д' },
+        { id: 'inactive_3d', label: 'Сон > 3д' },
+        { id: 'inactive_7d', label: 'Сон > 7д' },
+    ];
+
+    const getTargetsCount = () => {
+         const now = new Date();
+         return visitors.filter(v => {
+            if (!v.chatId) return false;
+            
+            // Handle Firestore timestamp
+            let lastActiveDate = null;
+            if (v.lastActive) {
+                lastActiveDate = v.lastActive.toDate ? v.lastActive.toDate() : new Date(v.lastActive);
+            }
+
+            if (!lastActiveDate) return false; // Can't filter without date
+
+            const diffHours = (now - lastActiveDate) / (1000 * 60 * 60);
+            const diffDays = diffHours / 24;
+
+            switch (broadcastTarget) {
+                case 'all': return true;
+                case 'active_24h': return diffHours <= 24;
+                case 'active_7d': return diffDays <= 7;
+                case 'inactive_3d': return diffDays > 3;
+                case 'inactive_7d': return diffDays > 7;
+                default: return false;
+            }
+         }).length;
+    };
+
+
     const handleEditClick = (item, collectionType) => {
         setEditingItem(item);
         setEditCollection(collectionType);
@@ -993,23 +1030,30 @@ const AdminPanel = ({ leads, visitors, onBack, onClearLeads, onUpdateLead, onUpd
         e.preventDefault();
         if (!broadcastMessage.trim()) return;
 
-        // 1. Calculate Cutoff Date (3 days ago)
-        const cutoff = new Date();
-        cutoff.setDate(cutoff.getDate() - 3);
-
-        // 2. Filter Targets
+        const now = new Date();
+        
+        // Filter Targets Logic (Duplicated for consistency inside execution)
         const targets = visitors.filter(v => {
             if (!v.chatId) return false;
             
-            if (broadcastTarget === 'all') return true;
-            
-            if (broadcastTarget === 'inactive') {
-                if (!v.lastActive) return true; // Assume inactive if no date
-                // Handle Firestore Timestamp or JS Date
-                const lastActiveDate = v.lastActive.toDate ? v.lastActive.toDate() : new Date(v.lastActive);
-                return lastActiveDate < cutoff;
+            let lastActiveDate = null;
+            if (v.lastActive) {
+                lastActiveDate = v.lastActive.toDate ? v.lastActive.toDate() : new Date(v.lastActive);
             }
-            return false;
+
+            if (!lastActiveDate) return false;
+
+            const diffHours = (now - lastActiveDate) / (1000 * 60 * 60);
+            const diffDays = diffHours / 24;
+
+            switch (broadcastTarget) {
+                case 'all': return true;
+                case 'active_24h': return diffHours <= 24;
+                case 'active_7d': return diffDays <= 7;
+                case 'inactive_3d': return diffDays > 3;
+                case 'inactive_7d': return diffDays > 7;
+                default: return false;
+            }
         });
 
         if (targets.length === 0) {
@@ -1017,7 +1061,7 @@ const AdminPanel = ({ leads, visitors, onBack, onClearLeads, onUpdateLead, onUpd
             return;
         }
 
-        if (!confirm(`Отправить сообщение ${targets.length} пользователям (${broadcastTarget === 'all' ? 'Все' : 'Неактивные > 3 дней'})?`)) return;
+        if (!confirm(`Отправить сообщение ${targets.length} пользователям (Фильтр: ${broadcastFilters.find(f=>f.id===broadcastTarget)?.label})?`)) return;
 
         setIsSending(true);
         setSendProgress({ current: 0, total: targets.length });
@@ -1154,39 +1198,31 @@ const AdminPanel = ({ leads, visitors, onBack, onClearLeads, onUpdateLead, onUpd
                     {activeTab === 'broadcast' && (
                         <div className="w-full flex flex-col h-full">
                              <div className="glass-card p-4 rounded-xl border border-zinc-800 mb-4 bg-zinc-900/40">
-                                {/* ... Broadcast UI ... */}
-                                <div className="flex bg-black p-1 rounded-lg border border-zinc-800 mb-4">
-                                    <button 
-                                        onClick={() => setBroadcastTarget('all')}
-                                        className={`flex-1 py-1.5 text-[9px] font-bold uppercase tracking-wider rounded-md transition-all ${broadcastTarget === 'all' ? 'bg-[#00FF9D]/20 text-[#00FF9D] border border-[#00FF9D]/30' : 'text-zinc-500 hover:text-white'}`}
-                                    >
-                                        ВСЕ ПОЛЬЗОВАТЕЛИ
-                                    </button>
-                                    <button 
-                                        onClick={() => setBroadcastTarget('inactive')}
-                                        className={`flex-1 py-1.5 text-[9px] font-bold uppercase tracking-wider rounded-md transition-all flex items-center justify-center gap-1 ${broadcastTarget === 'inactive' ? 'bg-[#00FF9D]/20 text-[#00FF9D] border border-[#00FF9D]/30' : 'text-zinc-500 hover:text-white'}`}
-                                    >
-                                        <Filter className="w-3 h-3" /> СПЯЩИЕ {'>'} 3 ДНЕЙ
-                                    </button>
+                                {/* Filter Grid */}
+                                <p className="text-[9px] text-zinc-500 uppercase tracking-widest font-bold mb-2">Фильтр аудитории</p>
+                                <div className="grid grid-cols-3 gap-2 mb-4">
+                                    {broadcastFilters.map((filter) => (
+                                        <button 
+                                            key={filter.id}
+                                            onClick={() => setBroadcastTarget(filter.id)}
+                                            className={`py-2 px-1 text-[8px] font-bold uppercase tracking-wider rounded-md transition-all border ${
+                                                broadcastTarget === filter.id 
+                                                ? 'bg-[#00FF9D]/20 text-[#00FF9D] border-[#00FF9D]/50 shadow-[0_0_10px_rgba(0,255,157,0.1)]' 
+                                                : 'bg-zinc-900 border-zinc-800 text-zinc-500 hover:border-zinc-700 hover:text-zinc-300'
+                                            }`}
+                                        >
+                                            {filter.label}
+                                        </button>
+                                    ))}
                                 </div>
 
-                                <div className="flex justify-between items-center mb-4">
+                                <div className="flex justify-between items-center mb-4 border-t border-zinc-800 pt-3">
                                      <p className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">СООБЩЕНИЕ</p>
-                                     <p className="text-xs font-bold text-[#00FF9D] font-mono">
-                                         TARGET: {
-                                            visitors.filter(v => {
-                                                if (!v.chatId) return false;
-                                                if (broadcastTarget === 'all') return true;
-                                                if (broadcastTarget === 'inactive') {
-                                                    const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 3);
-                                                    if (!v.lastActive) return true;
-                                                    const lastActiveDate = v.lastActive.toDate ? v.lastActive.toDate() : new Date(v.lastActive);
-                                                    return lastActiveDate < cutoff;
-                                                }
-                                                return false;
-                                            }).length
-                                         }
-                                     </p>
+                                     <div className="bg-[#00FF9D]/10 px-2 py-1 rounded border border-[#00FF9D]/20">
+                                        <p className="text-[10px] font-bold text-[#00FF9D] font-mono">
+                                            TARGET: {getTargetsCount()}
+                                        </p>
+                                     </div>
                                 </div>
                                 <form onSubmit={handleBroadcast} className="flex flex-col gap-3">
                                     <textarea 
@@ -1209,11 +1245,11 @@ const AdminPanel = ({ leads, visitors, onBack, onClearLeads, onUpdateLead, onUpd
                                 </form>
                              </div>
                              <div className="px-2">
-                                <p className="text-[9px] text-zinc-600 uppercase tracking-wide mb-2">ВАЖНО:</p>
+                                <p className="text-[9px] text-zinc-600 uppercase tracking-wide mb-2">ПОДСКАЗКА:</p>
                                 <ul className="list-disc pl-4 space-y-1 text-[9px] text-zinc-500">
-                                    <li>Сообщение получат только те, кто не заблокировал бота.</li>
-                                    <li>Рассылка "Спящим" выбирает тех, кто не заходил в Mini App более 72 часов.</li>
-                                    <li>Задержка 0.3 сек для защиты от спам-фильтров.</li>
+                                    <li><span className="text-zinc-300">Актив 24ч:</span> Горячие клиенты, пиши им срочно.</li>
+                                    <li><span className="text-zinc-300">Сон &gt; 3д:</span> Напомни о себе, предложи скидку.</li>
+                                    <li><span className="text-zinc-300">Сон &gt; 7д:</span> Нужен сильный оффер для возврата.</li>
                                 </ul>
                              </div>
                         </div>
@@ -1288,12 +1324,8 @@ const App = () => {
   // Admin & Leads State
   const [isAdminAuthOpen, setIsAdminAuthOpen] = useState(false);
   const [tapCount, setTapCount] = useState(0);
-  const [leads, setLeads] = useState([
-      { id: 1, name: 'Алибек', contact: '@alibek_kz', type: 'Обучение', time: '10:42' },
-      { id: 2, name: 'Мария', contact: '@maria_shop', type: 'Магазин', time: '09:15' },
-      { id: 3, name: 'Тест', contact: '@test', type: 'Mini App', time: '11:00' }, // Added for demo stats
-  ]); 
-  
+  const [leads, setLeads] = useState([]); // Removed dummy data, default is empty
+
   // --- REAL VISITORS STATE ---
   const [visitors, setVisitors] = useState([]);
   const [firebaseUser, setFirebaseUser] = useState(null);
@@ -1508,17 +1540,9 @@ const App = () => {
       setTapCount(prev => {
           const newCount = prev + 1;
           if (newCount >= 5) {
-              // --- SECURITY CHECK ---
-              const ALLOWED_ADMINS = [
-                  8469497672, // Ваш ID
-              ];
-              
-              if (currentUserId && ALLOWED_ADMINS.includes(currentUserId)) {
-                  setIsAdminAuthOpen(true);
-              } else {
-                  // Для отладки или защиты показываем, что доступ запрещен
-                  alert(`ACCESS DENIED. Your ID: ${currentUserId || 'UNKNOWN'}`); 
-              }
+              // --- SECURITY CHECK REMOVED TEMPORARILY ---
+              // Просто открываем окно ввода пароля после 5 кликов
+              setIsAdminAuthOpen(true);
               return 0;
           }
           return newCount;
@@ -1910,11 +1934,11 @@ const App = () => {
           <div className="relative w-full max-w-sm bg-[#0A0A0A] border border-[#00FF9D]/50 p-6 rounded-sm shadow-[0_0_50px_rgba(0,255,157,0.1)]">
             <div className="text-center mb-6">
                 <Shield className="w-12 h-12 text-[#00FF9D] mx-auto mb-2 animate-pulse" />
-                <h2 className="text-xl font-black text-[#00FF9D] font-mono tracking-widest">SECURE LOGIN</h2>
+                <h2 className="text-xl font-black text-[#00FF9D] font-mono tracking-widest">БЕЗОПАСНЫЙ ВХОД</h2>
             </div>
             <form onSubmit={handleAdminAuth} className="space-y-4">
-              <input type="password" placeholder="ACCESS CODE" required className="w-full bg-black border border-zinc-700 p-3 text-center text-[#00FF9D] font-mono tracking-[0.5em] focus:border-[#00FF9D] outline-none" autoFocus />
-              <button type="submit" className="w-full bg-[#00FF9D] text-black font-bold font-mono tracking-widest py-3 hover:bg-[#00FF9D]/80">AUTHENTICATE</button>
+              <input type="password" placeholder="КОД ДОСТУПА" required className="w-full bg-black border border-zinc-700 p-3 text-center text-[#00FF9D] font-mono tracking-[0.5em] focus:border-[#00FF9D] outline-none" autoFocus />
+              <button type="submit" className="w-full bg-[#00FF9D] text-black font-bold font-mono tracking-widest py-3 hover:bg-[#00FF9D]/80">ВОЙТИ</button>
             </form>
           </div>
         </div>

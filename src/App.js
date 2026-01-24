@@ -85,43 +85,79 @@ const logToTaipanCRM = async (topicId, status, details = "") => {
   }
 };
 
-// --- OPTIMIZED MATRIX BACKGROUND (Prevents Re-renders) ---
+// --- OPTIMIZED MATRIX BACKGROUND (Performance Friendly) ---
 const MatrixBackground = React.memo(() => {
   const canvasRef = useRef(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext('2d');
+
+    const ctx = canvas.getContext('2d', { alpha: false }); // Отключаем прозрачность подложки для ускорения
+    let animationFrameId;
+    
+    // Настройка разрешения
     let width = canvas.width = window.innerWidth;
     let height = canvas.height = window.innerHeight;
-    
-    const chars = "TAIPAN0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    const columns = Math.floor(width / 25);
-    const drops = Array(columns).fill(0).map(() => Math.random() * -100);
 
-    const drawMatrix = () => {
-      // Use slightly higher opacity for "trail" effect
+    const chars = "TAIPAN0123456789XY"; // Укоротил строку, так быстрее выборка
+    const fontSize = 14;
+    const columns = Math.floor(width / 20); // Чуть шире шаг, меньше отрисовки
+    const drops = Array(columns).fill(1);
+
+    // Ограничиваем FPS до 24 (киношный вид + экономия батареи)
+    let lastTime = 0;
+    const fps = 24;
+    const interval = 1000 / fps;
+
+    const draw = (currentTime) => {
+      animationFrameId = requestAnimationFrame(draw);
+
+      const deltaTime = currentTime - lastTime;
+      if (deltaTime < interval) return;
+
+      lastTime = currentTime - (deltaTime % interval);
+
+      // Полупрозрачный черный слой для следа (Trail effect)
       ctx.fillStyle = 'rgba(5, 5, 5, 0.1)'; 
       ctx.fillRect(0, 0, width, height);
+
       ctx.fillStyle = '#00FF9D';
-      ctx.font = '14px monospace';
-      
+      ctx.font = `${fontSize}px monospace`;
+
       for (let i = 0; i < drops.length; i++) {
-        const text = chars.charAt(Math.floor(Math.random() * chars.length));
-        ctx.fillText(text, i * 25, drops[i] * 25);
-        if (drops[i] * 25 > height && Math.random() > 0.975) drops[i] = 0;
+        // Рандомим, чтобы рисовать не каждый кадр каждый символ (оптимизация)
+        if (Math.random() > 0.1) {
+            const text = chars.charAt(Math.floor(Math.random() * chars.length));
+            ctx.fillText(text, i * 20, drops[i] * fontSize);
+        }
+
+        if (drops[i] * fontSize > height && Math.random() > 0.975) {
+          drops[i] = 0;
+        }
         drops[i]++;
       }
     };
 
-    const interval = setInterval(drawMatrix, 75);
-    const handleResize = () => { width = canvas.width = window.innerWidth; height = canvas.height = window.innerHeight; };
+    // Запускаем
+    draw(0);
+
+    const handleResize = () => {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+      // При ресайзе пересчитываем колонки, но не сбрасываем drops полностью чтобы не моргало жестко
+    };
+
     window.addEventListener('resize', handleResize);
-    return () => { clearInterval(interval); window.removeEventListener('resize', handleResize); };
+
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+      window.removeEventListener('resize', handleResize);
+    };
   }, []);
 
-  return <canvas ref={canvasRef} className="absolute inset-0 opacity-20 mix-blend-screen pointer-events-none" />;
+  // Добавил will-change для подсказки браузеру
+  return <canvas ref={canvasRef} className="absolute inset-0 opacity-20 mix-blend-screen pointer-events-none" style={{ willChange: 'contents' }} />;
 });
 
 // --- STYLES ---

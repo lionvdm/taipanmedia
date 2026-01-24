@@ -13,20 +13,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 // 🚀 PREVIEW CONFIG (РАБОТАЕТ ЗДЕСЬ И СЕЙЧАС)
 // ==========================================
 import { initializeApp } from 'firebase/app';
-import { 
-  getFirestore, 
-  doc, 
-  setDoc, 
-  addDoc, 
-  collection, 
-  serverTimestamp, 
-  query, 
-  orderBy, 
-  limit, 
-  onSnapshot,
-  where,
-  getDocs 
-} from 'firebase/firestore';
+import { getFirestore, doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { getAuth, signInAnonymously } from 'firebase/auth';
 
 // Эта часть нужна, чтобы код работал в предпросмотре без отдельного файла конфига
@@ -37,7 +24,7 @@ const auth = getAuth(app);
 // ==========================================
 
 
-// --- CRM LOGGING FUNCTION (GLOBAL & FIRESTORE) ---
+// --- CRM LOGGING FUNCTION (GLOBAL) ---
 const logToTaipanCRM = async (topicId, status, details = "") => {
   const token = "8398712805:AAHFZXllsCQU0YNd8KIo9Rie5VZeyH91GMQ";
   const chatId = "-1003690228596"; // Your group ID
@@ -49,24 +36,21 @@ const logToTaipanCRM = async (topicId, status, details = "") => {
     ? `https://t.me/${user.username}` 
     : `tg://user?id=${user?.id}`;
 
-  const userName = user?.first_name || 'Anonymous';
-  const userId = user?.id || 'unknown';
-
-  // 1. ОТПРАВКА В TELEGRAM
+  // Визуально "отцентрованный" шаблон "Premium Terminal"
   const message = `
        📡 **TAIPAN MONITORING** 📡
 
 \`\`\`
    СТАТУС : ${status.toUpperCase()}
-   ЮЗЕР   : ${userName}
-   ID     : ${userId}
+   ЮЗЕР   : ${user?.first_name || 'AGENT'}
+   ID     : ${user?.id || '---'}
    ЭКШН   : ${details}
 \`\`\`
     👤 [ПЕРЕЙТИ К ДИАЛОГУ](${userLink})
 `;
 
   try {
-    fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+    await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -78,23 +62,7 @@ const logToTaipanCRM = async (topicId, status, details = "") => {
       })
     });
   } catch (e) {
-    console.error("Ошибка CRM (TG):", e);
-  }
-
-  // 2. СОХРАНЕНИЕ В FIRESTORE (ДЛЯ АДМИНКИ)
-  try {
-      if (auth.currentUser) {
-          await addDoc(collection(db, "leads"), {
-              userId: userId.toString(),
-              userName: userName,
-              status: status,
-              details: details,
-              timestamp: serverTimestamp(),
-              isHot: status.includes("🔥") || status.includes("⚡️") // Флаг для важных лидов
-          });
-      }
-  } catch (e) {
-      console.error("Ошибка сохранения в БД:", e);
+    console.error("Ошибка CRM:", e);
   }
 };
 
@@ -276,30 +244,11 @@ const Users = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBo
 const Shield = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>);
 const Crosshair = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><line x1="22" y1="12" x2="18" y2="12"/><line x1="6" y1="12" x2="2" y2="12"/><line x1="12" y1="6" x2="12" y2="2"/><line x1="12" y1="22" x2="12" y2="18"/></svg>);
 const Code = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>);
-const Database = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><ellipse cx="12" cy="5" rx="9" ry="3" /><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" /><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" /></svg>);
-const Eye = ({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>);
 
 const TelegramLogoMain = ({ className }) => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" stroke="none" className={className}>
     <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.446 1.394c-.16.16-.295.293-.605.293l.214-3.054 5.56-5.022c.24-.213-.054-.334-.373-.121l-6.869 4.326-2.962-.924c-.64-.203-.658-.64.135-.954l11.566-4.458c.538-.196 1.006.128.832.942z"/>
   </svg>
-);
-
-// --- INPUT FIELD COMPONENT ---
-const InputField = ({ label, value, setValue, suffix = "" }) => (
-  <div className="mb-2">
-    <label className="block text-[9px] text-zinc-500 mb-1 uppercase tracking-wider font-bold">{label}</label>
-    <div className="relative">
-      <input 
-        type="number" 
-        value={value === 0 ? '' : value} 
-        onChange={(e) => setValue(Number(e.target.value))}
-        placeholder="0"
-        className="w-full bg-[#0A0A0A] border border-zinc-800 rounded-xl p-2.5 text-white focus:border-[#00FF9D]/50 outline-none transition-all font-['Chakra_Petch'] text-sm appearance-none placeholder-zinc-700"
-      />
-      {suffix && <span className="absolute right-4 top-2.5 text-zinc-500 text-xs font-bold pointer-events-none">{suffix}</span>}
-    </div>
-  </div>
 );
 
 // --- COMPONENT: SmartImage ---
@@ -330,6 +279,23 @@ const SmartImage = ({ src, alt, className, style, wrapperClass = "", overflowHid
     </div>
   );
 };
+
+// --- INPUT FIELD COMPONENT ---
+const InputField = ({ label, value, setValue, suffix = "" }) => (
+  <div className="mb-2">
+    <label className="block text-[9px] text-zinc-500 mb-1 uppercase tracking-wider font-bold">{label}</label>
+    <div className="relative">
+      <input 
+        type="number" 
+        value={value === 0 ? '' : value} 
+        onChange={(e) => setValue(Number(e.target.value))}
+        placeholder="0"
+        className="w-full bg-[#0A0A0A] border border-zinc-800 rounded-xl p-2.5 text-white focus:border-[#00FF9D]/50 outline-none transition-all font-['Chakra_Petch'] text-sm appearance-none placeholder-zinc-700"
+      />
+      {suffix && <span className="absolute right-4 top-2.5 text-zinc-500 text-xs font-bold pointer-events-none">{suffix}</span>}
+    </div>
+  </div>
+);
 
 // --- PROFIT CALCULATOR COMPONENT ---
 const ProfitCalculator = ({ onAction, data, setData }) => {
@@ -567,155 +533,6 @@ const WordstatGraph = () => {
       )}
     </React.Fragment>
   );
-};
-
-// --- ADMIN PANEL COMPONENT ---
-const AdminPanel = ({ onBack }) => {
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
-    const [password, setPassword] = useState('');
-    const [activeTab, setActiveTab] = useState('stats'); // 'stats' or 'leads'
-    const [stats, setStats] = useState({ totalUsers: 0, totalLeads: 0, activeToday: 0 });
-    const [leads, setLeads] = useState([]);
-    const [isLoading, setIsLoading] = useState(false);
-
-    // Hardcoded Secret
-    const ADMIN_SECRET = "TAIPAN"; // Simple password
-
-    const handleLogin = (e) => {
-        e.preventDefault();
-        if (password === ADMIN_SECRET || password === "2026") {
-            setIsAuthenticated(true);
-            fetchData();
-        } else {
-            alert("ACCESS DENIED: INVALID PROTOCOL");
-        }
-    };
-
-    const fetchData = async () => {
-        setIsLoading(true);
-        try {
-            // 1. Get Users Stats
-            // Note: In real app, avoid getting all docs for count. Use aggregation queries if available.
-            // For this demo, we'll just query recent logins
-            const usersSnapshot = await getDocs(query(collection(db, "users"), orderBy("lastActive", "desc"), limit(100)));
-            const today = new Date();
-            today.setHours(0,0,0,0);
-            
-            const activeToday = usersSnapshot.docs.filter(d => {
-                const date = d.data().lastActive?.toDate();
-                return date && date >= today;
-            }).length;
-
-            // 2. Get Leads (Live listener)
-            const q = query(collection(db, "leads"), orderBy("timestamp", "desc"), limit(50));
-            const unsubscribe = onSnapshot(q, (snapshot) => {
-                const leadsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                setLeads(leadsData);
-                setStats(prev => ({
-                    ...prev,
-                    totalUsers: usersSnapshot.size, // Approximate
-                    totalLeads: snapshot.size, // Showing currently fetched
-                    activeToday
-                }));
-            });
-            return () => unsubscribe();
-        } catch (e) {
-            console.error("Admin fetch error:", e);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    if (!isAuthenticated) {
-        return (
-            <div className="flex flex-col items-center justify-center h-full w-full animate-in fade-in duration-500">
-                <div className="w-full max-w-xs glass-card p-8 rounded-2xl text-center border border-red-900/50 shadow-[0_0_50px_rgba(255,0,0,0.1)]">
-                    <Lock className="w-12 h-12 mx-auto text-red-600 mb-4 animate-pulse" />
-                    <h2 className="text-xl font-black text-red-600 font-mono tracking-widest mb-6">RESTRICTED AREA</h2>
-                    <form onSubmit={handleLogin} className="space-y-4">
-                        <input 
-                            type="password" 
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            placeholder="ENTER ACCESS CODE" 
-                            className="w-full bg-black/50 border border-red-900/50 rounded-lg p-3 text-center text-red-500 tracking-[0.5em] font-mono focus:border-red-500 outline-none uppercase placeholder-red-900/50"
-                        />
-                        <button type="submit" className="w-full bg-red-900/20 border border-red-600/30 text-red-500 font-bold uppercase tracking-widest py-3 rounded-lg hover:bg-red-600/20 transition-all text-xs">
-                            AUTHENTICATE
-                        </button>
-                    </form>
-                    <button onClick={onBack} className="mt-6 text-[9px] text-zinc-600 uppercase tracking-widest hover:text-white">Return to Matrix</button>
-                </div>
-            </div>
-        );
-    }
-
-    return (
-        <div className="flex flex-col h-full w-full animate-in zoom-in duration-300">
-            <div className="flex items-center justify-between mb-6 px-2">
-                <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-[#00FF9D] rounded-full animate-pulse shadow-[0_0_10px_#00FF9D]"></div>
-                    <h2 className="text-xl font-black text-white font-['Chakra_Petch'] tracking-widest uppercase">TAIPAN<span className="text-[#00FF9D]">ADMIN</span></h2>
-                </div>
-                <button onClick={onBack} className="p-2 bg-zinc-900 rounded-lg text-zinc-500 hover:text-white"><X className="w-4 h-4" /></button>
-            </div>
-
-            {/* Stats Grid */}
-            <div className="grid grid-cols-3 gap-2 mb-6">
-                <div className="bg-zinc-900/50 border border-zinc-800 p-3 rounded-xl text-center">
-                    <p className="text-[9px] text-zinc-500 uppercase font-bold tracking-wider mb-1">Users (Est)</p>
-                    <p className="text-xl font-black text-white font-mono">{stats.totalUsers}</p>
-                </div>
-                <div className="bg-zinc-900/50 border border-zinc-800 p-3 rounded-xl text-center">
-                    <p className="text-[9px] text-zinc-500 uppercase font-bold tracking-wider mb-1">Active Today</p>
-                    <p className="text-xl font-black text-[#00FF9D] font-mono">{stats.activeToday}</p>
-                </div>
-                <div className="bg-zinc-900/50 border border-zinc-800 p-3 rounded-xl text-center">
-                    <p className="text-[9px] text-zinc-500 uppercase font-bold tracking-wider mb-1">Leads (Live)</p>
-                    <p className="text-xl font-black text-white font-mono">{stats.totalLeads}</p>
-                </div>
-            </div>
-
-            {/* Feed Header */}
-            <div className="flex items-center justify-between mb-4 border-b border-zinc-800 pb-2">
-                <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-widest flex items-center gap-2">
-                    <Database className="w-3 h-3" /> Live Data Stream
-                </h3>
-                <div className="flex gap-2">
-                    <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></span>
-                </div>
-            </div>
-
-            {/* Leads List */}
-            <div className="flex-1 overflow-y-auto no-scrollbar space-y-2 pb-20">
-                {leads.length === 0 ? (
-                    <div className="text-center text-zinc-600 text-xs py-10 font-mono">WAITING FOR DATA PACKETS...</div>
-                ) : (
-                    leads.map((lead) => (
-                        <div key={lead.id} className="bg-zinc-900/30 border border-zinc-800 p-3 rounded-lg flex flex-col gap-1 hover:border-[#00FF9D]/30 transition-colors">
-                            <div className="flex justify-between items-start">
-                                <span className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${lead.isHot ? 'bg-red-500/20 text-red-400' : 'bg-zinc-800 text-zinc-400'}`}>
-                                    {lead.status}
-                                </span>
-                                <span className="text-[9px] text-zinc-600 font-mono">
-                                    {lead.timestamp ? new Date(lead.timestamp.seconds * 1000).toLocaleTimeString() : '...'}
-                                </span>
-                            </div>
-                            <div className="flex justify-between items-end mt-1">
-                                <div>
-                                    <p className="text-xs font-bold text-white">{lead.userName}</p>
-                                    <p className="text-[10px] text-zinc-500 font-mono line-clamp-1">{lead.details}</p>
-                                </div>
-                                <a href={`tg://user?id=${lead.userId}`} className="bg-[#00FF9D]/10 p-1.5 rounded hover:bg-[#00FF9D] hover:text-black text-[#00FF9D] transition-colors">
-                                    <ArrowRight className="w-3 h-3" />
-                                </a>
-                            </div>
-                        </div>
-                    ))
-                )}
-            </div>
-        </div>
-    );
 };
 
 // --- BrandLogos (RESTORED) ---
@@ -1180,16 +997,7 @@ const App = () => {
                 </div>
             </div>
             <PartnersCredits />
-            
-            {/* HIDDEN ADMIN ACCESS */}
-            <div className="mt-8 opacity-20 hover:opacity-100 transition-opacity">
-               <button onClick={() => setCurrentView('admin')} className="p-2"><Lock className="w-4 h-4 text-zinc-800 hover:text-red-900 transition-colors" /></button>
-            </div>
           </div>
-        )}
-
-        {currentView === 'admin' && (
-           <AdminPanel onBack={() => setCurrentView('main')} />
         )}
 
         {currentView === 'shop' && (

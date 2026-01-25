@@ -85,7 +85,7 @@ const logToTaipanCRM = async (topicId, status, details = "") => {
   }
 };
 
-// --- OPTIMIZED MATRIX BACKGROUND (Performance Friendly) ---
+// --- OPTIMIZED BACKGROUND: UPSIDE DOWN SPORES ---
 const MatrixBackground = React.memo(() => {
   const canvasRef = useRef(null);
 
@@ -93,21 +93,29 @@ const MatrixBackground = React.memo(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const ctx = canvas.getContext('2d', { alpha: false }); // Отключаем прозрачность подложки для ускорения
+    const ctx = canvas.getContext('2d', { alpha: false });
     let animationFrameId;
     
-    // Настройка разрешения
     let width = canvas.width = window.innerWidth;
     let height = canvas.height = window.innerHeight;
 
-    const chars = "TAIPAN0123456789XY"; // Укоротил строку, так быстрее выборка
-    const fontSize = 14;
-    const columns = Math.floor(width / 20); // Чуть шире шаг, меньше отрисовки
-    const drops = Array(columns).fill(1);
+    // Spores (Particles)
+    const particles = [];
+    const particleCount = Math.floor(width / 4); // Density
 
-    // Ограничиваем FPS до 24 (киношный вид + экономия батареи)
+    for(let i = 0; i < particleCount; i++) {
+        particles.push({
+            x: Math.random() * width,
+            y: Math.random() * height,
+            speedY: Math.random() * 0.5 + 0.1, // Float slowly
+            speedX: Math.random() * 0.4 - 0.2, // Drift sideways
+            size: Math.random() * 2 + 0.5,
+            opacity: Math.random() * 0.5 + 0.1
+        });
+    }
+
     let lastTime = 0;
-    const fps = 24;
+    const fps = 30; // Cinematic framerate
     const interval = 1000 / fps;
 
     const draw = (currentTime) => {
@@ -118,34 +126,43 @@ const MatrixBackground = React.memo(() => {
 
       lastTime = currentTime - (deltaTime % interval);
 
-      // Полупрозрачный черный слой для следа (Trail effect)
-      ctx.fillStyle = 'rgba(5, 5, 5, 0.1)'; 
+      // Clear with slight trail for atmosphere
+      ctx.fillStyle = 'rgba(5, 5, 10, 0.2)'; 
       ctx.fillRect(0, 0, width, height);
 
-      ctx.fillStyle = '#00FF9D';
-      ctx.font = `${fontSize}px monospace`;
+      // Draw Spores
+      for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
+        
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255, 36, 0, ${p.opacity})`; // Stranger Things Red
+        ctx.fill();
 
-      for (let i = 0; i < drops.length; i++) {
-        // Рандомим, чтобы рисовать не каждый кадр каждый символ (оптимизация)
-        if (Math.random() > 0.1) {
-            const text = chars.charAt(Math.floor(Math.random() * chars.length));
-            ctx.fillText(text, i * 20, drops[i] * fontSize);
-        }
+        // Update position
+        p.y += p.speedY;
+        p.x += p.speedX;
 
-        if (drops[i] * fontSize > height && Math.random() > 0.975) {
-          drops[i] = 0;
+        // Pulse opacity
+        p.opacity += (Math.random() - 0.5) * 0.05;
+        if (p.opacity < 0.1) p.opacity = 0.1;
+        if (p.opacity > 0.6) p.opacity = 0.6;
+
+        // Reset if out of bounds
+        if (p.y > height) {
+            p.y = -10;
+            p.x = Math.random() * width;
         }
-        drops[i]++;
+        if (p.x > width) p.x = 0;
+        if (p.x < 0) p.x = width;
       }
     };
 
-    // Запускаем
     draw(0);
 
     const handleResize = () => {
       width = canvas.width = window.innerWidth;
       height = canvas.height = window.innerHeight;
-      // При ресайзе пересчитываем колонки, но не сбрасываем drops полностью чтобы не моргало жестко
     };
 
     window.addEventListener('resize', handleResize);
@@ -156,14 +173,15 @@ const MatrixBackground = React.memo(() => {
     };
   }, []);
 
-  // Добавил will-change для подсказки браузеру
-  return <canvas ref={canvasRef} className="absolute inset-0 opacity-20 mix-blend-screen pointer-events-none" style={{ willChange: 'contents' }} />;
+  return <canvas ref={canvasRef} className="absolute inset-0 opacity-60 mix-blend-screen pointer-events-none" style={{ willChange: 'contents' }} />;
 });
 
 // --- STYLES ---
 const GlobalStyles = () => (
   <style dangerouslySetInnerHTML={{__html: `
-    body { margin: 0; background-color: #050505; color: white; overflow-x: hidden; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Share+Tech+Mono&display=swap');
+
+    body { margin: 0; background-color: #050508; color: #e0e0e0; overflow-x: hidden; font-family: 'Share Tech Mono', monospace; }
     /* Hide scrollbar */
     ::-webkit-scrollbar { display: none; }
     body { -ms-overflow-style: none; scrollbar-width: none; }
@@ -172,51 +190,62 @@ const GlobalStyles = () => (
     input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
     input[type=number] { -moz-appearance: textfield; }
 
+    /* FILM GRAIN OVERLAY */
+    body::after {
+        content: "";
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
+        pointer-events: none;
+        z-index: 9999;
+        opacity: 0.4;
+    }
+
+    .stranger-title {
+        font-family: 'Playfair Display', serif;
+        font-weight: 900;
+        text-transform: uppercase;
+        /* Outline effect */
+        -webkit-text-stroke: 1.5px #FF2400;
+        color: transparent; 
+        text-shadow: 0 0 15px rgba(255, 36, 0, 0.6);
+        letter-spacing: -0.05em;
+    }
+
     .glass-card {
-        background-color: rgba(15, 15, 15, 0.4);
-        /* Clean glass by default (no grid) */
-        backdrop-filter: blur(8px);
-        -webkit-backdrop-filter: blur(8px);
-        border: 1px solid rgba(0, 255, 157, 0.2);
-        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
+        background-color: rgba(10, 10, 15, 0.6);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 36, 0, 0.3);
+        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(255, 36, 0, 0.05);
         transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
         position: relative;
         overflow: hidden;
     }
     
-    /* Dedicated class for Grid Texture (Main Page Only) */
     .grid-bg {
         background-image: 
-            linear-gradient(rgba(0, 255, 157, 0.07) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(0, 255, 157, 0.07) 1px, transparent 1px);
-        background-size: 20px 20px;
+            linear-gradient(rgba(255, 36, 0, 0.07) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255, 36, 0, 0.07) 1px, transparent 1px);
+        background-size: 30px 30px;
     }
 
     .glass-card:hover {
-        background-color: rgba(0, 255, 157, 0.05);
-        border-color: rgba(0, 255, 157, 0.4);
-        box-shadow: 0 0 20px rgba(0, 255, 157, 0.1);
+        background-color: rgba(255, 36, 0, 0.05);
+        border-color: rgba(255, 36, 0, 0.6);
+        box-shadow: 0 0 25px rgba(255, 36, 0, 0.2);
     }
 
-    /* Brighter grid on hover only if grid-bg is present */
     .grid-bg:hover {
         background-image: 
-            linear-gradient(rgba(0, 255, 157, 0.1) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(0, 255, 157, 0.1) 1px, transparent 1px);
+            linear-gradient(rgba(255, 36, 0, 0.1) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255, 36, 0, 0.1) 1px, transparent 1px);
     }
 
     .glass-card:active { transform: scale(0.98); }
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-    /* Tactical Grid Background (Legacy support if used elsewhere) */
-    .tactical-grid {
-        background-image: linear-gradient(rgba(0, 255, 157, 0.05) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(0, 255, 157, 0.05) 1px, transparent 1px);
-        background-size: 20px 20px;
-    }
-    
-    /* Hardware Acceleration Class for Images */
     .hw-accelerated {
         will-change: transform, opacity;
         transform: translateZ(0);
@@ -225,15 +254,15 @@ const GlobalStyles = () => (
 
     /* Animations */
     @keyframes contourPulse {
-      0% { filter: drop-shadow(0 0 1px rgba(0, 255, 157, 0.3)); opacity: 0.8; }
-      50% { filter: drop-shadow(0 0 6px rgba(0, 255, 157, 0.6)); opacity: 1; }
-      100% { filter: drop-shadow(0 0 1px rgba(0, 255, 157, 0.3)); opacity: 0.8; }
+      0% { filter: drop-shadow(0 0 1px rgba(255, 36, 0, 0.3)); opacity: 0.8; }
+      50% { filter: drop-shadow(0 0 8px rgba(255, 36, 0, 0.7)); opacity: 1; }
+      100% { filter: drop-shadow(0 0 1px rgba(255, 36, 0, 0.3)); opacity: 0.8; }
     }
 
     @keyframes goldPulse {
-      0% { filter: drop-shadow(0 0 1px rgba(229, 192, 123, 0.2)); opacity: 0.9; }
-      50% { filter: drop-shadow(0 0 8px rgba(229, 192, 123, 0.5)); opacity: 1; }
-      100% { filter: drop-shadow(0 0 1px rgba(229, 192, 123, 0.2)); opacity: 0.9; }
+      0% { filter: drop-shadow(0 0 1px rgba(255, 36, 0, 0.3)); opacity: 0.9; }
+      50% { filter: drop-shadow(0 0 10px rgba(255, 36, 0, 0.6)); opacity: 1; }
+      100% { filter: drop-shadow(0 0 1px rgba(255, 36, 0, 0.3)); opacity: 0.9; }
     }
 
     @keyframes snakeFlow {
@@ -246,24 +275,19 @@ const GlobalStyles = () => (
       100% { transform: translateY(100%); opacity: 0; }
     }
     @keyframes cyberReveal {
-      0% { opacity: 0; transform: scale(1.5); filter: blur(20px) hue-rotate(90deg); }
+      0% { opacity: 0; transform: scale(1.5); filter: blur(20px) hue-rotate(-45deg); }
       20% { opacity: 1; transform: scale(1.2); filter: blur(0); }
-      40% { transform: scale(1.35); filter: brightness(1.5); }
+      40% { transform: scale(1.35); filter: brightness(1.5) sepia(1) saturate(5) hue-rotate(-50deg); }
       100% { opacity: 1; transform: scale(1.25); filter: none; }
     }
     @keyframes widthGrow { from { width: 0; } }
     @keyframes glitch {
-      0% { transform: translate(0) skew(0deg); opacity: 1; filter: none; }
-      10% { transform: translate(-2px, 1px) skew(-2deg); opacity: 0.8; filter: brightness(1.5); }
-      20% { transform: translate(2px, -1px) skew(2deg); opacity: 1; }
-      30% { transform: translate(-1px, 2px) skew(0deg); opacity: 0.8; filter: contrast(2); }
-      40% { transform: translate(1px, -2px) skew(0deg); opacity: 1; }
-      50% { transform: translate(-1px, 0) skew(-5deg); opacity: 0.3; filter: brightness(0.5); }
-      60% { transform: translate(1px, 0) skew(5deg); opacity: 1; }
-      70% { transform: translate(0, 1px) skew(0deg); opacity: 0.8; }
-      80% { transform: translate(0, -1px) skew(0deg); opacity: 1; filter: contrast(1.5); }
-      90% { transform: translate(-1px, 1px) skew(0deg); opacity: 0.9; }
-      100% { transform: translate(0) skew(0deg); opacity: 1; filter: none; }
+      0% { transform: translate(0) skew(0deg); opacity: 1; }
+      20% { transform: translate(-2px, 1px) skew(-2deg); opacity: 1; }
+      40% { transform: translate(2px, -1px) skew(2deg); opacity: 1; }
+      60% { transform: translate(-1px, 2px) skew(0deg); opacity: 1; }
+      80% { transform: translate(1px, -2px) skew(0deg); opacity: 1; }
+      100% { transform: translate(0) skew(0deg); opacity: 1; }
     }
     @keyframes textReveal {
       0% { opacity: 0; transform: translateY(10px); filter: blur(4px); }
@@ -276,13 +300,13 @@ const GlobalStyles = () => (
     /* OPTIMIZED INTRO ANIMATIONS */
     @keyframes aggressive-glitch-text {
       0% { opacity: 0; transform: scale(1.1); color: #333; }
-      20% { opacity: 1; transform: scale(1); color: #fff; text-shadow: 2px 0 #00FF9D; }
+      20% { opacity: 1; transform: scale(1); color: #fff; text-shadow: 2px 0 #FF2400; }
       100% { color: #e0e0e0; letter-spacing: 0.15em; }
     }
 
     @keyframes simple-glow {
-      0%, 100% { text-shadow: 0 0 10px rgba(0, 255, 157, 0.3); transform: scale(1); color: #fff; }
-      50% { text-shadow: 0 0 25px rgba(0, 255, 157, 0.8), 0 0 10px rgba(0, 255, 157, 0.5); transform: scale(1.02); color: #00FF9D; }
+      0%, 100% { text-shadow: 0 0 10px rgba(255, 36, 0, 0.3); transform: scale(1); color: #fff; }
+      50% { text-shadow: 0 0 25px rgba(255, 36, 0, 0.8), 0 0 10px rgba(255, 36, 0, 0.5); transform: scale(1.02); color: #FF2400; }
     }
 
     @keyframes smoke-fade {
@@ -403,7 +427,7 @@ const InputField = ({ label, value, setValue, suffix = "" }) => (
         value={value === 0 ? '' : value} 
         onChange={(e) => setValue(Number(e.target.value))}
         placeholder="0"
-        className="w-full bg-[#0A0A0A] border border-zinc-800 rounded-xl p-2.5 text-white focus:border-[#00FF9D]/50 outline-none transition-all font-['Chakra_Petch'] text-sm appearance-none placeholder-zinc-700"
+        className="w-full bg-[#0A0A0A] border border-zinc-800 rounded-xl p-2.5 text-white focus:border-[#FF2400]/50 outline-none transition-all font-mono text-sm appearance-none placeholder-zinc-700"
       />
       {suffix && <span className="absolute right-4 top-2.5 text-zinc-500 text-xs font-bold pointer-events-none">{suffix}</span>}
     </div>
@@ -426,22 +450,22 @@ const ProfitCalculator = ({ onAction, data, setData }) => {
       <InputField label="Средний чек" value={data.avgCheck} setValue={(v) => setData({...data, avgCheck: v})} suffix="₸" />
       <InputField label="Средний % чистой прибыли" value={data.margin} setValue={(v) => setData({...data, margin: v})} suffix="%" />
 
-      <div className="relative overflow-hidden bg-[#00FF9D]/5 border border-[#00FF9D]/30 p-5 rounded-2xl text-center group mt-4 shadow-[0_0_30px_rgba(0,255,157,0.1)]">
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,157,0.05)_1px,transparent_1px)] bg-[size:15px_15px] pointer-events-none"></div>
-        <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-[#00FF9D]/5 to-transparent animate-[scanLine_3s_linear_infinite]"></div>
+      <div className="relative overflow-hidden bg-[#FF2400]/5 border border-[#FF2400]/30 p-5 rounded-2xl text-center group mt-4 shadow-[0_0_30px_rgba(255,36,0,0.1)]">
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,36,0,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,36,0,0.05)_1px,transparent_1px)] bg-[size:15px_15px] pointer-events-none"></div>
+        <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-[#FF2400]/5 to-transparent animate-[scanLine_3s_linear_infinite]"></div>
         <div className="relative z-10">
             <div className="flex flex-col items-center justify-center mb-2">
                <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-[0.1em] mb-1">ВАШ БИЗНЕС МОЖЕТ ПРИНОСИТЬ</p>
-               <p className="text-3xl sm:text-4xl font-black text-[#00FF9D] font-['Chakra_Petch'] drop-shadow-[0_0_15px_rgba(0,255,157,0.4)] mb-1">НА {animatedProfit.toLocaleString()} ₸</p>
+               <p className="text-3xl sm:text-4xl font-black text-[#FF2400] font-mono drop-shadow-[0_0_15px_rgba(255,36,0,0.4)] mb-1">НА {animatedProfit.toLocaleString()} ₸</p>
                <p className="text-[12px] text-white font-bold uppercase tracking-[0.2em]">БОЛЬШЕ ЕЖЕМЕСЯЧНО</p>
             </div>
-            <div className="bg-[#00FF9D]/5 border-t border-b border-[#00FF9D]/10 py-3 mt-3 backdrop-blur-sm">
-               <p className="text-[10px] text-zinc-300 uppercase tracking-wider font-medium leading-relaxed">ЭТО <span className="text-[#00FF9D] font-black">{animatedSales} ПОКУПАТЕЛЕЙ</span>, КОТОРЫЕ<br/>ГОТОВЫ ПЛАТИТЬ ВАМ УЖЕ СЕЙЧАС</p>
+            <div className="bg-[#FF2400]/5 border-t border-b border-[#FF2400]/10 py-3 mt-3 backdrop-blur-sm">
+               <p className="text-[10px] text-zinc-300 uppercase tracking-wider font-medium leading-relaxed">ЭТО <span className="text-[#FF2400] font-black">{animatedSales} ПОКУПАТЕЛЕЙ</span>, КОТОРЫЕ<br/>ГОТОВЫ ПЛАТИТЬ ВАМ УЖЕ СЕЙЧАС</p>
             </div>
             <p className="text-[8px] text-zinc-500 mt-3 italic">*Мы знаем как увеличить конверсию от 20% и выше</p>
         </div>
       </div>
-      <button onClick={onAction} className="w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-3 rounded-xl shadow-[0_0_20px_rgba(0,255,157,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs flex items-center justify-center gap-2 animate-pulse mt-4">ПОЛУЧИТЬ СТРАТЕГИЮ ОТ TAIPAN GROUP</button>
+      <button onClick={onAction} className="w-full bg-[#FF2400] text-black font-black uppercase tracking-widest py-3 rounded-xl shadow-[0_0_20px_rgba(255,36,0,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs flex items-center justify-center gap-2 animate-pulse mt-4">ПОЛУЧИТЬ СТРАТЕГИЮ ОТ TAIPAN GROUP</button>
     </div>
   );
 };
@@ -479,21 +503,21 @@ const BaneIntro = ({ onComplete }) => {
                  {/* Voice Visualizer */}
                 <div className="flex justify-center items-end gap-1 h-16 mb-12 opacity-50">
                       {[...Array(12)].map((_, i) => (
-                          <div key={i} className="w-2 bg-[#00FF9D] rounded-full animate-[voiceWave_0.8s_ease-in-out_infinite]" style={{ animationDelay: `${Math.random() * 0.5}s`, height: '10%' }}></div>
+                          <div key={i} className="w-2 bg-[#FF2400] rounded-full animate-[voiceWave_0.8s_ease-in-out_infinite]" style={{ animationDelay: `${Math.random() * 0.5}s`, height: '10%' }}></div>
                       ))}
                 </div>
 
                 <div className="space-y-8 relative z-10">
                     {/* First Phrase */}
                     <div className={`transition-all duration-[1500ms] ease-out ${phase >= 1 ? 'opacity-100' : 'opacity-0'}`}>
-                        <h2 className="text-xl sm:text-2xl font-black uppercase font-['Chakra_Petch'] tracking-[0.2em] text-zinc-500 animate-[smoke-fade_2s_ease-out_forwards]">
+                        <h2 className="text-xl sm:text-2xl font-black uppercase font-mono tracking-[0.2em] text-zinc-500 animate-[smoke-fade_2s_ease-out_forwards]">
                             НЕВАЖНО КТО МЫ ТАКИЕ
                         </h2>
                     </div>
                     
                     {/* Second Phrase */}
                     <div className={`transition-all duration-[100ms] ${phase >= 2 ? 'opacity-100' : 'opacity-0'}`}>
-                        <h2 className="text-2xl sm:text-3xl font-black uppercase font-['Chakra_Petch'] tracking-widest text-white animate-[aggressive-glitch-text_0.5s_cubic-bezier(0.25,0.46,0.45,0.94)_both]">
+                        <h2 className="text-2xl sm:text-3xl font-black uppercase font-mono tracking-widest text-white animate-[aggressive-glitch-text_0.5s_cubic-bezier(0.25,0.46,0.45,0.94)_both]">
                             ВАЖНО ТО
                         </h2>
                     </div>
@@ -501,7 +525,7 @@ const BaneIntro = ({ onComplete }) => {
                     {/* Third Phrase - Main */}
                     <div className={`transition-all duration-[500ms] ${phase >= 3 ? 'opacity-100' : 'opacity-0'}`}>
                         <div className="relative inline-block">
-                            <h2 className="text-3xl sm:text-5xl font-black uppercase font-['Chakra_Petch'] tracking-widest text-[#00FF9D] animate-[simple-glow_3s_infinite_ease-in-out]">
+                            <h2 className="text-3xl sm:text-5xl font-black uppercase font-serif tracking-widest text-[#FF2400] animate-[simple-glow_3s_infinite_ease-in-out]">
                                 КАКОЙ У НАС ПЛАН
                             </h2>
                         </div>
@@ -522,23 +546,23 @@ const HackerProof = React.memo(() => {
   return (
     <React.Fragment>
       <div 
-        className="relative rounded-xl overflow-hidden border border-[#00FF9D]/40 mb-6 group animate-in zoom-in duration-500 shadow-[0_0_20px_rgba(0,255,157,0.1)] cursor-zoom-in"
+        className="relative rounded-xl overflow-hidden border border-[#FF2400]/40 mb-6 group animate-in zoom-in duration-500 shadow-[0_0_20px_rgba(255,36,0,0.1)] cursor-zoom-in"
         onClick={(e) => { e.stopPropagation(); setIsExpanded(true); }}
       >
-        <SmartImage src="https://i.ibb.co.com/FdhqGvD/2025-11-09-113228-fotor-20251109143545.jpg" className="w-full object-cover" alt="Encrypted Proof" />
-        <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-md rounded-full p-1.5 opacity-60 group-hover:opacity-100 transition-opacity border border-[#00FF9D]/30 z-10"><Search className="w-3 h-3 text-[#00FF9D]" /></div>
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none z-10"></div>
-        <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-[#00FF9D]/10 to-transparent animate-[scanLine_2.5s_linear_infinite] z-10"></div>
+        <SmartImage src="https://i.ibb.co.com/FdhqGvD/2025-11-09-113228-fotor-20251109143545.jpg" className="w-full object-cover grayscale opacity-80" alt="Encrypted Proof" />
+        <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-md rounded-full p-1.5 opacity-60 group-hover:opacity-100 transition-opacity border border-[#FF2400]/30 z-10"><Search className="w-3 h-3 text-[#FF2400]" /></div>
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,36,0,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,36,0,0.03)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none z-10"></div>
+        <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-[#FF2400]/10 to-transparent animate-[scanLine_2.5s_linear_infinite] z-10"></div>
         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-black/20 pointer-events-none z-10"></div>
         <div className="absolute bottom-3 left-3 right-3 flex justify-between items-end z-20">
-           <div><p className="text-[#00FF9D] text-[10px] font-black font-mono bg-black/80 px-2 py-0.5 inline-block border-l-2 border-[#00FF9D]">VIRGINIA GOLD</p><p className="text-white text-[9px] font-mono bg-black/80 px-2 py-0.5 mt-1 inline-block">ЧЕК: 100.000 Т</p></div>
-           <CheckCircle2 className="w-6 h-6 text-[#00FF9D] drop-shadow-[0_0_10px_rgba(0,255,157,0.8)]" />
+           <div><p className="text-[#FF2400] text-[10px] font-black font-mono bg-black/80 px-2 py-0.5 inline-block border-l-2 border-[#FF2400]">VIRGINIA GOLD</p><p className="text-white text-[9px] font-mono bg-black/80 px-2 py-0.5 mt-1 inline-block">ЧЕК: 100.000 Т</p></div>
+           <CheckCircle2 className="w-6 h-6 text-[#FF2400] drop-shadow-[0_0_10px_rgba(255,36,0,0.8)]" />
         </div>
       </div>
       {isExpanded && (
         <div className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 animate-in fade-in duration-300" onClick={(e) => { e.stopPropagation(); setIsExpanded(false); }}>
           <div className="relative w-full max-w-2xl">
-             <SmartImage src="https://i.ibb.co.com/FdhqGvD/2025-11-09-113228-fotor-20251109143545.jpg" className="w-full h-auto rounded-lg border border-[#00FF9D]/50 shadow-[0_0_50px_rgba(0,255,157,0.2)]" alt="Proof Full" />
+             <SmartImage src="https://i.ibb.co.com/FdhqGvD/2025-11-09-113228-fotor-20251109143545.jpg" className="w-full h-auto rounded-lg border border-[#FF2400]/50 shadow-[0_0_50px_rgba(255,36,0,0.2)]" alt="Proof Full" />
              <p className="text-center text-zinc-500 font-mono text-[10px] mt-4 uppercase animate-pulse">Нажмите в любом месте, чтобы закрыть</p>
           </div>
         </div>
@@ -552,20 +576,20 @@ const ClientDemandProof = React.memo(() => {
   const [isExpanded, setIsExpanded] = useState(false);
   return (
     <React.Fragment>
-      <div className="relative rounded-xl overflow-hidden border border-[#00FF9D]/40 mb-6 group animate-in zoom-in duration-500 shadow-[0_0_20px_rgba(0,255,157,0.1)] cursor-zoom-in" onClick={(e) => { e.stopPropagation(); setIsExpanded(true); }}>
-        <SmartImage src="https://i.ibb.co.com/h1mN3kL0/5427147012425059102.jpg" className="w-full object-cover opacity-90 filter grayscale-[0.5] contrast-[1.1] brightness-[0.9]" alt="Client Demand" />
-        <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-md rounded-full p-1.5 opacity-60 group-hover:opacity-100 transition-opacity border border-[#00FF9D]/30 z-10"><Search className="w-3 h-3 text-[#00FF9D]" /></div>
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none z-10"></div>
-        <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-[#00FF9D]/10 to-transparent animate-[scanLine_2.5s_linear_infinite] z-10"></div>
+      <div className="relative rounded-xl overflow-hidden border border-[#FF2400]/40 mb-6 group animate-in zoom-in duration-500 shadow-[0_0_20px_rgba(255,36,0,0.1)] cursor-zoom-in" onClick={(e) => { e.stopPropagation(); setIsExpanded(true); }}>
+        <SmartImage src="https://i.ibb.co.com/h1mN3kL0/5427147012425059102.jpg" className="w-full object-cover opacity-90 filter grayscale contrast-[1.2] brightness-[0.8]" alt="Client Demand" />
+        <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-md rounded-full p-1.5 opacity-60 group-hover:opacity-100 transition-opacity border border-[#FF2400]/30 z-10"><Search className="w-3 h-3 text-[#FF2400]" /></div>
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,36,0,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,36,0,0.03)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none z-10"></div>
+        <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-[#FF2400]/10 to-transparent animate-[scanLine_2.5s_linear_infinite] z-10"></div>
         <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent pointer-events-none z-10"></div>
-        <div className="absolute bottom-3 left-3 bg-black/80 border border-[#00FF9D]/30 px-2 py-1 rounded z-20">
-          <div className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 bg-[#00FF9D] rounded-full animate-pulse"></div><span className="text-[9px] font-mono text-[#00FF9D]">DEMAND_HIGH</span></div>
+        <div className="absolute bottom-3 left-3 bg-black/80 border border-[#FF2400]/30 px-2 py-1 rounded z-20">
+          <div className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 bg-[#FF2400] rounded-full animate-pulse"></div><span className="text-[9px] font-mono text-[#FF2400]">DEMAND_HIGH</span></div>
         </div>
       </div>
        {isExpanded && (
         <div className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 animate-in fade-in duration-300" onClick={(e) => { e.stopPropagation(); setIsExpanded(false); }}>
           <div className="relative w-full max-w-2xl">
-             <SmartImage src="https://i.ibb.co.com/h1mN3kL0/5427147012425059102.jpg" className="w-full h-auto rounded-lg border border-[#00FF9D]/50 shadow-[0_0_50px_rgba(0,255,157,0.2)]" alt="Demand Full" />
+             <SmartImage src="https://i.ibb.co.com/h1mN3kL0/5427147012425059102.jpg" className="w-full h-auto rounded-lg border border-[#FF2400]/50 shadow-[0_0_50px_rgba(255,36,0,0.2)]" alt="Demand Full" />
              <p className="text-center text-zinc-500 font-mono text-[10px] mt-4 uppercase animate-pulse">Нажмите в любом месте, чтобы закрыть</p>
           </div>
         </div>
@@ -576,20 +600,20 @@ const ClientDemandProof = React.memo(() => {
 
 // --- SkillScanner ---
 const SkillScanner = () => (
-  <div className="w-full bg-[#0A0A0A] rounded-xl border border-[#00FF9D]/20 p-4 mb-6 relative overflow-hidden animate-in slide-in-from-bottom duration-500 group">
-    <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none"></div>
-    <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-[#00FF9D]/05 to-transparent animate-[scanLine_4s_linear_infinite]"></div>
+  <div className="w-full bg-[#0A0A0A] rounded-xl border border-[#FF2400]/20 p-4 mb-6 relative overflow-hidden animate-in slide-in-from-bottom duration-500 group">
+    <div className="absolute inset-0 bg-[linear-gradient(rgba(255,36,0,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,36,0,0.03)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none"></div>
+    <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-[#FF2400]/05 to-transparent animate-[scanLine_4s_linear_infinite]"></div>
     <div className="relative z-10">
         <div className="flex items-center justify-between mb-4 border-b border-zinc-800 pb-2">
-           <div className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-[#00FF9D] animate-pulse"></div><span className="text-[10px] font-mono text-[#00FF9D] tracking-widest">СИСТЕМНЫЙ_АНАЛИЗ</span></div>
+           <div className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-[#FF2400] animate-pulse"></div><span className="text-[10px] font-mono text-[#FF2400] tracking-widest">СИСТЕМНЫЙ_АНАЛИЗ</span></div>
            <span className="text-[9px] text-zinc-600 font-mono">v.2.0.4</span>
         </div>
         <div className="space-y-4">
           <div><div className="flex justify-between text-[10px] font-mono mb-1"><span className="text-zinc-400">НАВЫКИ (КОДИНГ)</span><span className="text-zinc-600">НЕ ТРЕБУЕТСЯ</span></div><div className="w-full h-1 bg-zinc-900 rounded-full"><div className="w-[0%] h-full bg-red-500 rounded-full"></div></div></div>
-          <div><div className="flex justify-between text-[10px] font-mono mb-1"><span className="text-zinc-400">ВРЕМЯ НАСТРОЙКИ</span><span className="text-[#00FF9D]">~45 МИН</span></div><div className="w-full h-1 bg-zinc-900 rounded-full"><div className="w-[15%] h-full bg-[#00FF9D] rounded-full shadow-[0_0_8px_#00FF9D] animate-[widthGrow_1s_ease-out]"></div></div></div>
-          <div><div className="flex justify-between text-[10px] font-mono mb-1"><span className="text-zinc-400">АВТОМАТИЗАЦИЯ</span><span className="text-[#00FF9D]">90%</span></div><div className="w-full h-1 bg-zinc-900 rounded-full"><div className="w-[90%] h-full bg-[#00FF9D] rounded-full shadow-[0_0_8px_#00FF9D] animate-[widthGrow_1.5s_ease-out]"></div></div></div>
+          <div><div className="flex justify-between text-[10px] font-mono mb-1"><span className="text-zinc-400">ВРЕМЯ НАСТРОЙКИ</span><span className="text-[#FF2400]">~45 МИН</span></div><div className="w-full h-1 bg-zinc-900 rounded-full"><div className="w-[15%] h-full bg-[#FF2400] rounded-full shadow-[0_0_8px_#FF2400] animate-[widthGrow_1s_ease-out]"></div></div></div>
+          <div><div className="flex justify-between text-[10px] font-mono mb-1"><span className="text-zinc-400">АВТОМАТИЗАЦИЯ</span><span className="text-[#FF2400]">90%</span></div><div className="w-full h-1 bg-zinc-900 rounded-full"><div className="w-[90%] h-full bg-[#FF2400] rounded-full shadow-[0_0_8px_#FF2400] animate-[widthGrow_1.5s_ease-out]"></div></div></div>
         </div>
-        <div className="mt-4 p-2 bg-[#00FF9D]/5 rounded border border-[#00FF9D]/10 text-center relative overflow-hidden"><div className="absolute inset-0 bg-[#00FF9D]/5 animate-pulse"></div><p className="text-[9px] text-[#00FF9D] font-black tracking-widest uppercase relative z-10">ВЕРДИКТ: ИДЕАЛЬНО ДЛЯ НОВИЧКОВ</p></div>
+        <div className="mt-4 p-2 bg-[#FF2400]/5 rounded border border-[#FF2400]/10 text-center relative overflow-hidden"><div className="absolute inset-0 bg-[#FF2400]/5 animate-pulse"></div><p className="text-[9px] text-[#FF2400] font-black tracking-widest uppercase relative z-10">ВЕРДИКТ: ИДЕАЛЬНО ДЛЯ НОВИЧКОВ</p></div>
     </div>
   </div>
 );
@@ -604,18 +628,18 @@ const SetupTimeline = () => {
   ];
   return (
     <div className="w-full pl-2 mb-4 animate-in slide-in-from-bottom duration-500">
-      <div className="flex items-center justify-between mb-6"><span className="text-[10px] text-[#00FF9D] font-mono tracking-widest border border-[#00FF9D]/30 px-2 py-1 rounded">ПРОТОКОЛ ЗАПУСКА</span><span className="text-[10px] text-zinc-500 font-mono">TOTAL: ~10 МИН</span></div>
-      <div className="relative border-l border-[#00FF9D]/20 ml-2 space-y-6">
+      <div className="flex items-center justify-between mb-6"><span className="text-[10px] text-[#FF2400] font-mono tracking-widest border border-[#FF2400]/30 px-2 py-1 rounded">ПРОТОКОЛ ЗАПУСКА</span><span className="text-[10px] text-zinc-500 font-mono">TOTAL: ~10 МИН</span></div>
+      <div className="relative border-l border-[#FF2400]/20 ml-2 space-y-6">
         {steps.map((step, i) => (
           <div key={i} className="relative pl-6 group">
-             <div className="absolute -left-[5px] top-1 w-2.5 h-2.5 bg-[#050505] border border-[#00FF9D] rounded-full group-hover:bg-[#00FF9D] group-hover:shadow-[0_0_10px_#00FF9D] transition-all"></div>
+             <div className="absolute -left-[5px] top-1 w-2.5 h-2.5 bg-[#050505] border border-[#FF2400] rounded-full group-hover:bg-[#FF2400] group-hover:shadow-[0_0_10px_#FF2400] transition-all"></div>
              <div className="flex justify-between items-start">
-               <div><h4 className="text-sm font-bold text-white font-['Chakra_Petch'] leading-none mb-1 group-hover:text-[#00FF9D] transition-colors">{step.title}</h4><p className="text-[11px] text-zinc-400 leading-snug max-w-[220px]">{step.desc}</p></div>
-               <span className="text-[9px] font-mono text-[#00FF9D]/70 bg-[#00FF9D]/5 px-1.5 py-0.5 rounded ml-2 whitespace-nowrap">{step.time}</span>
+               <div><h4 className="text-sm font-bold text-white font-mono leading-none mb-1 group-hover:text-[#FF2400] transition-colors">{step.title}</h4><p className="text-[11px] text-zinc-400 leading-snug max-w-[220px]">{step.desc}</p></div>
+               <span className="text-[9px] font-mono text-[#FF2400]/70 bg-[#FF2400]/5 px-1.5 py-0.5 rounded ml-2 whitespace-nowrap">{step.time}</span>
              </div>
           </div>
         ))}
-        <div className="relative pl-6 mt-8"><div className="absolute -left-[7px] top-1 w-3.5 h-3.5 bg-[#00FF9D] rounded-full animate-pulse shadow-[0_0_15px_#00FF9D]"></div><div className="bg-[#00FF9D]/10 border border-[#00FF9D]/30 p-3 rounded-lg"><h4 className="text-sm font-black text-[#00FF9D] uppercase tracking-wider mb-1">МАГАЗИН ГОТОВ</h4><p className="text-[10px] text-zinc-300 leading-snug">Можно запускать трафик и получать прибыль. Система работает автономно.</p></div></div>
+        <div className="relative pl-6 mt-8"><div className="absolute -left-[7px] top-1 w-3.5 h-3.5 bg-[#FF2400] rounded-full animate-pulse shadow-[0_0_15px_#FF2400]"></div><div className="bg-[#FF2400]/10 border border-[#FF2400]/30 p-3 rounded-lg"><h4 className="text-sm font-black text-[#FF2400] uppercase tracking-wider mb-1">МАГАЗИН ГОТОВ</h4><p className="text-[10px] text-zinc-300 leading-snug">Можно запускать трафик и получать прибыль. Система работает автономно.</p></div></div>
       </div>
     </div>
   );
@@ -633,8 +657,8 @@ const WordstatGraph = React.memo(() => {
         </div>
         <div className="relative w-full h-auto">
           <SmartImage src="https://i.ibb.co.com/Y7WjS1Tc/2026-01-16-014054.png" alt="Real Wordstat Data" className="w-full h-auto object-cover opacity-90 group-hover:opacity-100 transition-opacity duration-300" />
-          <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none z-10"></div>
-          <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-[#00FF9D]/10 to-transparent animate-[scanLine_2.5s_linear_infinite] z-10"></div>
+          <div className="absolute inset-0 bg-[linear-gradient(rgba(255,36,0,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,36,0,0.03)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none z-10"></div>
+          <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-[#FF2400]/10 to-transparent animate-[scanLine_2.5s_linear_infinite] z-10"></div>
           <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors pointer-events-none z-10"></div>
           <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-md rounded-full p-1.5 opacity-60 group-hover:opacity-100 transition-opacity border border-white/20 z-20"><Search className="w-3 h-3 text-white" /></div>
         </div>
@@ -667,7 +691,7 @@ const BrandLogos = {
         {/* Adjusted viewBox to prevent clipping of the top part of the logo */}
         <svg viewBox="-2 -2 28 28" fill="#F7931A" className={`w-16 h-16 mb-4 transition-all duration-1000 ${isMissed ? 'opacity-30 grayscale' : 'opacity-80 drop-shadow-[0_0_15px_rgba(247,147,26,0.5)]'}`}><path d="M23.638 14.904c-1.602 6.43-8.113 10.34-14.542 8.736C2.67 22.05-1.244 15.556.358 9.126 1.96 2.695 8.47-1.216 14.9-.388c6.426 1.602 10.34 8.09 8.738 15.292zM18.106 10.12c.264-1.765-1.08-2.71-2.914-3.344l.596-2.39-1.454-.362-.58 2.33c-.382-.096-.776-.186-1.166-.273l.586-2.355-1.454-.362-.596 2.39c-.316-.072-.625-.144-.925-.218l.002-.008-2.007-.502-.388 1.55s1.08.247 1.057.263c.59.147.696.537.678.847l-.68 2.73c.04.01.094.026.152.05-.054-.014-.112-.03-.17-.044l-1.103 4.426c-.072.178-.254.445-.664.343.014.02-1.057-.263-1.057-.263l-.723 1.67 1.894.474c.35.088.694.18 1.034.266l-.604 2.43 1.452.362.598-2.396c.396.108.783.21 1.16.307l-.592 2.38 1.454.363.604-2.43c2.482.47 4.35.28 5.136-1.965.634-1.808-.032-2.852-1.336-3.535 1.03-.238 1.81-.916 2.02-2.31zM14.47 14.524c-.45 1.81-3.5 0.83-4.484.588l.8-3.212c.983.244 4.14.726 3.684 2.624zm.45-4.44c-.41 1.644-2.96.81-3.774.606l.724-2.912c.814.204 3.468.583 3.05 2.306z"/></svg>
         <div className="relative">
-          <p className={`font-['Chakra_Petch'] font-black text-xl tracking-tighter transition-all duration-700 ${isMissed ? 'text-zinc-600 line-through decoration-red-600/80 decoration-[3px]' : 'text-[#F7931A]'}`}>2009: BITCOIN</p>
+          <p className={`font-mono font-black text-xl tracking-tighter transition-all duration-700 ${isMissed ? 'text-zinc-600 line-through decoration-red-600/80 decoration-[3px]' : 'text-[#F7931A]'}`}>2009: BITCOIN</p>
           <div className={`absolute -top-3 -right-8 rotate-[15deg] border-2 border-red-600/60 text-red-600 text-[8px] font-black uppercase px-2 py-0.5 rounded-sm bg-red-900/10 backdrop-blur-sm transition-all duration-500 transform ${isMissed ? 'opacity-100 scale-100 animate-pulse' : 'opacity-0 scale-150'}`}>УПУЩЕНО</div>
         </div>
         <div className="mt-2 text-center px-6">
@@ -693,7 +717,7 @@ const BrandLogos = {
       <div className={`flex flex-col items-center animate-in fade-in zoom-in duration-1000 relative ${isMissed ? 'animate-[glitch_0.6s_linear]' : ''}`}>
         <svg viewBox="0 0 24 24" fill="none" stroke="#E1306C" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={`w-16 h-16 mb-4 transition-all duration-1000 ${isMissed ? 'opacity-30 grayscale' : 'opacity-80 drop-shadow-[0_0_15px_rgba(225,48,108,0.5)]'}`}><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
         <div className="relative">
-          <p className={`font-['Chakra_Petch'] font-black text-xl tracking-tighter transition-all duration-700 ${isMissed ? 'text-zinc-600 line-through decoration-red-600/80 decoration-[3px]' : 'text-[#E1306C]'}`}>2012: INSTAGRAM</p>
+          <p className={`font-mono font-black text-xl tracking-tighter transition-all duration-700 ${isMissed ? 'text-zinc-600 line-through decoration-red-600/80 decoration-[3px]' : 'text-[#E1306C]'}`}>2012: INSTAGRAM</p>
           <div className={`absolute -top-3 -right-8 rotate-[15deg] border-2 border-red-600/60 text-red-600 text-[8px] font-black uppercase px-2 py-0.5 rounded-sm bg-red-900/10 backdrop-blur-sm transition-all duration-500 transform ${isMissed ? 'opacity-100 scale-100 animate-pulse' : 'opacity-0 scale-150'}`}>УПУЩЕНО</div>
         </div>
         <div className="mt-2 text-center px-6">
@@ -719,7 +743,7 @@ const BrandLogos = {
       <div className={`flex flex-col items-center animate-in fade-in zoom-in duration-1000 relative ${isMissed ? 'animate-[glitch_0.6s_linear]' : ''}`}>
         <div className={`flex gap-3 mb-4 items-center transition-all duration-1000 ${isMissed ? 'opacity-30 grayscale' : 'opacity-80'}`}><span className="text-4xl font-black italic text-purple-500">WB</span><span className="text-3xl font-bold text-red-600">Kaspi</span></div>
         <div className="relative">
-          <p className={`font-['Chakra_Petch'] font-black text-xl tracking-tighter transition-all duration-700 ${isMissed ? 'text-zinc-600 line-through decoration-red-600/80 decoration-[3px]' : 'text-white'}`}>2019: МАРКЕТПЛЕЙСЫ</p>
+          <p className={`font-mono font-black text-xl tracking-tighter transition-all duration-700 ${isMissed ? 'text-zinc-600 line-through decoration-red-600/80 decoration-[3px]' : 'text-white'}`}>2019: МАРКЕТПЛЕЙСЫ</p>
           <div className={`absolute -top-3 -right-8 rotate-[15deg] border-2 border-red-600/60 text-red-600 text-[8px] font-black uppercase px-2 py-0.5 rounded-sm bg-red-900/10 backdrop-blur-sm transition-all duration-500 transform ${isMissed ? 'opacity-100 scale-100 animate-pulse' : 'opacity-0 scale-150'}`}>УПУЩЕНО</div>
         </div>
         <div className="mt-2 text-center px-6">
@@ -732,8 +756,8 @@ const BrandLogos = {
   Telegram: ({ isActive }) => (
     <div className="flex flex-col items-center animate-in fade-in zoom-in duration-1000">
       <svg viewBox="0 0 24 24" fill="#0088cc" className="w-20 h-20 mb-4 drop-shadow-[0_0_25px_rgba(0,136,204,0.5)]"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.446 1.394c-.16.16-.295.293-.605.293l.214-3.054 5.56-5.022c.24-.213-.054-.334-.373-.121l-6.869 4.326-2.962-.924c-.64-.203-.658-.64.135-.954l11.566-4.458c.538-.196 1.006.128.832.942z"/></svg>
-      <p className="text-white font-black text-2xl tracking-[0.1em] font-['Chakra_Petch']">2026: TELEGRAM STORE</p>
-      <p className="text-[#00FF9D] text-[12px] uppercase tracking-[0.3em] mt-3 font-bold bg-[#00FF9D]/10 border border-[#00FF9D]/30 px-6 py-2 rounded-full shadow-[0_0_15px_rgba(0,255,157,0.2)] text-center">Обучись новому тренду с нами</p>
+      <p className="text-white font-black text-2xl tracking-[0.1em] font-serif">2026: TELEGRAM STORE</p>
+      <p className="text-[#FF2400] text-[12px] uppercase tracking-[0.3em] mt-3 font-bold bg-[#FF2400]/10 border border-[#FF2400]/30 px-6 py-2 rounded-full shadow-[0_0_15px_rgba(255,36,0,0.2)] text-center">Обучись новому тренду с нами</p>
     </div>
   )
 };
@@ -779,11 +803,11 @@ const ShopIntroSequence = ({ onComplete }) => {
   }, [onComplete]);
   return (
     <div className="flex flex-col items-center justify-center h-full w-full min-h-[60vh] px-4 cursor-pointer" onClick={onComplete}>
-       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80%] h-[200px] bg-white/5 blur-[80px] rounded-full -z-10 pointer-events-none animate-[pulse_4s_infinite]"></div>
+       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80%] h-[200px] bg-red-500/10 blur-[80px] rounded-full -z-10 pointer-events-none animate-[pulse_4s_infinite]"></div>
        <div className="w-full text-center max-w-3xl animate-in fade-in duration-1000">
-         <h2 className="text-lg sm:text-2xl font-light uppercase tracking-[0.2em] font-['Outfit'] text-zinc-300 drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">{message.part1}</h2>
+         <h2 className="text-lg sm:text-2xl font-light uppercase tracking-[0.2em] font-mono text-zinc-300 drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">{message.part1}</h2>
          <div className="relative inline-block mt-6">
-             <h2 className="text-3xl sm:text-5xl font-black uppercase font-['Chakra_Petch'] text-transparent bg-clip-text bg-gradient-to-r from-[#444] via-[#00FF9D] to-[#444] bg-[length:200%_auto] animate-[snakeFlow_3s_linear_infinite] drop-shadow-[0_0_30px_rgba(0,255,157,0.3)] tracking-widest">{message.part2}</h2>
+             <h2 className="text-3xl sm:text-5xl font-black uppercase font-serif text-transparent bg-clip-text bg-gradient-to-r from-[#444] via-[#FF2400] to-[#444] bg-[length:200%_auto] animate-[snakeFlow_3s_linear_infinite] drop-shadow-[0_0_30px_rgba(255,36,0,0.3)] tracking-widest">{message.part2}</h2>
          </div>
        </div>
        <div className="absolute bottom-20 text-[10px] text-zinc-600 uppercase tracking-[0.3em] animate-pulse">Пропуск через 3 сек</div>
@@ -812,45 +836,43 @@ const PartnersCredits = () => {
   const isMoiSklad = currentLogo.includes("3mKHz61B") || currentLogo.includes("PvND9HRh"); 
   const isNewPartner = currentLogo.includes("MDKssj1s"); // Updated ID for the new MoiSklad logo
   
-  // Base filters
+  // Base filters - Reset to original colors (removed colored drop-shadows and hue-rotates)
   let specificStyle = { 
-    filter: 'drop-shadow(0 0 20px rgba(0,255,157,0.15)) brightness(1.1) contrast(1.1) saturate(1.2)',
-    transition: 'transform 0.5s ease' // Smooth scaling
+    filter: 'brightness(1.05)', // Slight brightness for dark bg, but keeping original colors
+    transition: 'transform 0.5s ease' 
   };
 
   // Specific styles
-  if (isYandex) specificStyle = { ...specificStyle, filter: 'invert(1) hue-rotate(180deg) saturate(3) brightness(1.2)' };
-  else if (isRomantic) specificStyle = { ...specificStyle, filter: 'brightness(1.5) contrast(1.2)' };
-  else if (isFood) specificStyle = { ...specificStyle, filter: 'brightness(1.1) contrast(1.1)' };
-  else if (isPicsartLogo) specificStyle = { ...specificStyle, filter: 'brightness(0) invert(1) drop-shadow(0 0 10px rgba(255, 255, 255, 0.6))' };
+  if (isYandex) specificStyle = { ...specificStyle, filter: 'none' }; // Original
+  else if (isRomantic) specificStyle = { ...specificStyle, filter: 'brightness(1.2)' }; // Original but brighter
+  else if (isFood) specificStyle = { ...specificStyle, filter: 'none' }; // Original
+  else if (isPicsartLogo) specificStyle = { ...specificStyle, filter: 'brightness(0) invert(1)' }; // White for dark bg
   else if (isNewPartner) {
-      // Adjusted scale down from 1.5 to 0.75 as requested (approx 2x smaller)
       specificStyle = { 
           ...specificStyle, 
-          filter: 'brightness(1.1) contrast(1.1) drop-shadow(0 0 15px rgba(255,255,255,0.2))',
+          filter: 'none',
           transform: 'scale(0.75)' 
       };
   } 
 
-  // Uniform scaling for others (scale-125 matches Romantic), removing generic scaling for isNewPartner from classes to use inline style instead
   const logoClasses = `h-24 w-auto object-contain max-w-[90%] transform ${!isNewPartner ? 'scale-125' : ''} ${isFood ? 'translate-y-10' : ''}`;
   
   return (
     <div className="w-full mt-12 mb-8 relative px-4 flex flex-col items-center justify-center">
       <div className="flex items-center justify-center gap-4 mb-6 opacity-100">
-        <div className="h-[1px] w-8 bg-gradient-to-r from-transparent to-[#00FF9D]"></div>
-        <p className="text-center text-[10px] text-[#00FF9D] uppercase tracking-[0.4em] mr-[-0.4em] font-bold shadow-green-glow animate-pulse">Наши партнёры</p>
-        <div className="h-[1px] w-8 bg-gradient-to-l from-transparent to-[#00FF9D]"></div>
+        <div className="h-[1px] w-8 bg-gradient-to-r from-transparent to-[#FF2400]"></div>
+        <p className="text-center text-[10px] text-[#FF2400] uppercase tracking-[0.4em] mr-[-0.4em] font-bold shadow-red-glow animate-pulse">Наши партнёры</p>
+        <div className="h-[1px] w-8 bg-gradient-to-l from-transparent to-[#FF2400]"></div>
       </div>
-      <div className="relative w-full h-32 flex items-center justify-center overflow-hidden bg-white/5 rounded-xl border border-[#00FF9D]/10 shadow-[0_0_30px_rgba(0,0,0,0.5)]">
-         <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:20px_20px]"></div>
+      <div className="relative w-full h-32 flex items-center justify-center overflow-hidden bg-white/5 rounded-xl border border-[#FF2400]/10 shadow-[0_0_30px_rgba(255,36,0,0.3)]">
+         <div className="absolute inset-0 bg-[linear-gradient(rgba(255,36,0,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,36,0,0.03)_1px,transparent_1px)] bg-[size:20px_20px]"></div>
          <div key={currentIndex} className="relative z-10 animate-[cyberReveal_0.5s_cubic-bezier(0.215,0.61,0.355,1)_both] w-full flex justify-center">
             <SmartImage src={currentLogo} alt="Partner Logo" style={specificStyle} className={logoClasses} wrapperClass="relative z-10 flex justify-center w-full" />
          </div>
-         <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-[#00FF9D]/10 to-transparent animate-[scanLine_2.5s_linear_infinite]"></div>
+         <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-[#FF2400]/10 to-transparent animate-[scanLine_2.5s_linear_infinite]"></div>
       </div>
       <div className="flex gap-1.5 mt-4">
-        {logos.map((_, idx) => ( <div key={idx} className={`h-1 rounded-full transition-all duration-300 ${idx === currentIndex ? 'w-8 bg-[#00FF9D] shadow-[0_0_10px_#00FF9D]' : 'w-1.5 bg-zinc-800'}`} /> ))}
+        {logos.map((_, idx) => ( <div key={idx} className={`h-1 rounded-full transition-all duration-300 ${idx === currentIndex ? 'w-8 bg-[#FF2400] shadow-[0_0_10px_#FF2400]' : 'w-1.5 bg-zinc-800'}`} /> ))}
       </div>
     </div>
   );
@@ -871,18 +893,18 @@ const RoiView = ({ profit, onBack, onAction }) => {
   const animatedPercentage = useOdometer(returnPercentage);
   return (
     <div className="animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col h-full items-center w-full">
-        <button onClick={onBack} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-4 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
+        <button onClick={onBack} className="self-start flex items-center text-[10px] text-[#FF2400] uppercase tracking-widest font-bold mb-4 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
         <div className="flex-grow flex flex-col items-center w-full space-y-6">
-            <div className="text-center px-4 w-full"><h2 className="text-2xl sm:text-3xl font-black tracking-tighter uppercase mb-1 font-['Chakra_Petch'] leading-none whitespace-nowrap">РАСЧЁТ <span className="text-[#00FF9D]">ОКУПАЕМОСТИ</span></h2><p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] mr-[-0.3em] font-bold">Эффективность инвестиций</p></div>
-            <div className="w-full glass-card p-4 rounded-2xl flex justify-between items-center border border-zinc-800"><span className="text-xs text-zinc-400 font-bold uppercase tracking-wider">Стоимость разработки</span><span className="text-sm font-black text-white font-['Chakra_Petch']">100 000 ₸</span></div>
-             <div className="w-full glass-card p-4 rounded-2xl flex justify-between items-center border border-[#00FF9D]/20 bg-[#00FF9D]/5"><span className="text-xs text-zinc-400 font-bold uppercase tracking-wider">Потенциальный возврат</span><span className="text-sm font-black text-[#00FF9D] font-['Chakra_Petch']">{animatedProfit.toLocaleString()} ₸/мес</span></div>
+            <div className="text-center px-4 w-full"><h2 className="text-2xl sm:text-3xl font-black tracking-tighter uppercase mb-1 font-mono leading-none whitespace-nowrap">РАСЧЁТ <span className="text-[#FF2400]">ОКУПАЕМОСТИ</span></h2><p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] mr-[-0.3em] font-bold">Эффективность инвестиций</p></div>
+            <div className="w-full glass-card p-4 rounded-2xl flex justify-between items-center border border-zinc-800"><span className="text-xs text-zinc-400 font-bold uppercase tracking-wider">Стоимость разработки</span><span className="text-sm font-black text-white font-mono">100 000 ₸</span></div>
+             <div className="w-full glass-card p-4 rounded-2xl flex justify-between items-center border border-[#FF2400]/20 bg-[#FF2400]/5"><span className="text-xs text-zinc-400 font-bold uppercase tracking-wider">Потенциальный возврат</span><span className="text-sm font-black text-[#FF2400] font-mono">{animatedProfit.toLocaleString()} ₸/мес</span></div>
             <div className="relative w-full overflow-hidden bg-gradient-to-br from-zinc-900 to-black border border-zinc-800 p-6 rounded-3xl text-center group">
                 <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none"></div>
                 <p className="text-[10px] text-zinc-400 uppercase tracking-widest mb-3 relative z-10 leading-relaxed">При указанных вами показателях,<br/>в первый месяц вы вернёте</p>
-                <div className={`text-5xl font-black font-['Chakra_Petch'] mb-3 relative z-10 ${isProfitable ? 'text-[#00FF9D]' : 'text-zinc-500'}`}>{animatedPercentage}% <span className="text-sm font-bold text-zinc-500 uppercase tracking-wide">вложений</span></div>
-                {isProfitable ? (<div className="inline-block bg-[#00FF9D]/10 border border-[#00FF9D]/30 px-3 py-1 rounded-full relative z-10"><p className="text-[10px] text-[#00FF9D] font-bold uppercase tracking-wider">Полная окупаемость: ~{daysToRecoup} {daysToRecoup === 1 ? 'день' : (daysToRecoup > 1 && daysToRecoup < 5) ? 'дня' : 'дней'}</p></div>) : (<p className="text-[10px] text-zinc-600 relative z-10">Заполните калькулятор для расчета</p>)}
+                <div className={`text-5xl font-black font-mono mb-3 relative z-10 ${isProfitable ? 'text-[#FF2400]' : 'text-zinc-500'}`}>{animatedPercentage}% <span className="text-sm font-bold text-zinc-500 uppercase tracking-wide">вложений</span></div>
+                {isProfitable ? (<div className="inline-block bg-[#FF2400]/10 border border-[#FF2400]/30 px-3 py-1 rounded-full relative z-10"><p className="text-[10px] text-[#FF2400] font-bold uppercase tracking-wider">Полная окупаемость: ~{daysToRecoup} {daysToRecoup === 1 ? 'день' : (daysToRecoup > 1 && daysToRecoup < 5) ? 'дня' : 'дней'}</p></div>) : (<p className="text-[10px] text-zinc-600 relative z-10">Заполните калькулятор для расчета</p>)}
             </div>
-            <div className="w-full pt-4"><button onClick={handleConsultation} className="w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-4 rounded-xl shadow-[0_0_20px_rgba(0,255,157,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs flex items-center justify-center gap-2 animate-pulse">ПОЛУЧИТЬ КОНСУЛЬТАЦИЮ</button></div>
+            <div className="w-full pt-4"><button onClick={handleConsultation} className="w-full bg-[#FF2400] text-black font-black uppercase tracking-widest py-4 rounded-xl shadow-[0_0_20px_rgba(255,36,0,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs flex items-center justify-center gap-2 animate-pulse">ПОЛУЧИТЬ КОНСУЛЬТАЦИЮ</button></div>
         </div>
     </div>
   );
@@ -919,7 +941,7 @@ const AnalyticsChart = ({ leads }) => {
                  </div>
                  <div className="glass-card p-4 rounded-xl border border-zinc-800">
                      <p className="text-[9px] text-zinc-500 uppercase tracking-wider mb-1">TOP ВЫБОР</p>
-                     <p className="text-xl font-bold text-[#00FF9D] truncate">{stats[0]?.label || '---'}</p>
+                     <p className="text-xl font-bold text-[#FF2400] truncate">{stats[0]?.label || '---'}</p>
                  </div>
              </div>
 
@@ -927,7 +949,7 @@ const AnalyticsChart = ({ leads }) => {
              <div className="glass-card p-5 rounded-xl border border-zinc-800">
                  <div className="flex items-center justify-between mb-4">
                      <h3 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                         <BarChart2 className="w-4 h-4 text-[#00FF9D]" />
+                         <BarChart2 className="w-4 h-4 text-[#FF2400]" />
                          Популярность услуг
                      </h3>
                  </div>
@@ -937,11 +959,11 @@ const AnalyticsChart = ({ leads }) => {
                          <div key={idx} className="relative">
                              <div className="flex justify-between items-end mb-1">
                                  <span className="text-[10px] font-bold text-zinc-300">{item.label}</span>
-                                 <span className="text-[10px] font-mono text-[#00FF9D]">{item.count} ({item.percentage}%)</span>
+                                 <span className="text-[10px] font-mono text-[#FF2400]">{item.count} ({item.percentage}%)</span>
                              </div>
                              <div className="w-full h-2 bg-zinc-900 rounded-full overflow-hidden">
                                  <div 
-                                    className="h-full bg-gradient-to-r from-[#00FF9D]/50 to-[#00FF9D] rounded-full transition-all duration-1000 ease-out relative"
+                                    className="h-full bg-gradient-to-r from-[#FF2400]/50 to-[#FF2400] rounded-full transition-all duration-1000 ease-out relative"
                                     style={{ width: `${(item.count / maxCount) * 100}%` }}
                                  >
                                      <div className="absolute right-0 top-0 bottom-0 w-2 bg-white/50 blur-[2px]"></div>
@@ -957,7 +979,7 @@ const AnalyticsChart = ({ leads }) => {
              <div className="glass-card p-5 rounded-xl border border-zinc-800 flex items-center justify-between">
                  <div>
                     <h3 className="text-xs font-bold text-white uppercase tracking-wider mb-1 flex items-center gap-2">
-                        <PieChart className="w-4 h-4 text-[#00FF9D]" />
+                        <PieChart className="w-4 h-4 text-[#FF2400]" />
                         Доли трафика
                     </h3>
                     <p className="text-[9px] text-zinc-500 leading-relaxed max-w-[150px]">
@@ -975,7 +997,7 @@ const AnalyticsChart = ({ leads }) => {
                                     key={i}
                                     d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831" 
                                     fill="none" 
-                                    stroke="#00FF9D" 
+                                    stroke="#FF2400" 
                                     strokeWidth="4" 
                                     strokeDasharray={`${item.percentage}, 100`}
                                     className="animate-[widthGrow_1s_ease-out]"
@@ -1120,24 +1142,24 @@ const AdminPanel = ({ leads, visitors, onBack, onClearLeads, onUpdateLead, onUpd
 
     return (
         <div className="animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col h-full items-center w-full relative">
-            <button onClick={onBack} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-4 hover:opacity-70 transition-all w-fit">
+            <button onClick={onBack} className="self-start flex items-center text-[10px] text-[#FF2400] uppercase tracking-widest font-bold mb-4 hover:opacity-70 transition-all w-fit">
                 <ChevronLeft className="w-4 h-4 mr-1" /> ВЫХОД ИЗ СИСТЕМЫ
             </button>
             
             <div className="w-full flex flex-col items-center mb-6">
-                <div className="w-16 h-16 bg-zinc-900 border border-[#00FF9D]/30 rounded-full flex items-center justify-center mb-4 relative">
-                    <div className="absolute inset-0 rounded-full animate-ping bg-[#00FF9D]/10"></div>
-                    <Shield className="w-8 h-8 text-[#00FF9D]" />
+                <div className="w-16 h-16 bg-zinc-900 border border-[#FF2400]/30 rounded-full flex items-center justify-center mb-4 relative">
+                    <div className="absolute inset-0 rounded-full animate-ping bg-[#FF2400]/10"></div>
+                    <Shield className="w-8 h-8 text-[#FF2400]" />
                 </div>
-                <h2 className="text-2xl font-black font-['Chakra_Petch'] uppercase tracking-widest">ПАНЕЛЬ УПРАВЛЕНИЯ</h2>
+                <h2 className="text-2xl font-black font-mono uppercase tracking-widest">ПАНЕЛЬ УПРАВЛЕНИЯ</h2>
                 <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] font-bold">Admin Mode: ACCESS GRANTED</p>
             </div>
 
             <div className="flex w-full mb-4 bg-zinc-900/50 p-1 rounded-lg border border-zinc-800 gap-1 overflow-x-auto no-scrollbar">
-                <button onClick={() => setActiveTab('stats')} className={`flex-1 py-2 px-2 whitespace-nowrap text-[9px] font-bold uppercase tracking-widest rounded-md transition-all ${activeTab === 'stats' ? 'bg-[#00FF9D] text-black shadow-lg shadow-[#00FF9D]/20' : 'text-zinc-500 hover:text-white'}`}>📊 Статистика</button>
-                <button onClick={() => setActiveTab('leads')} className={`flex-1 py-2 px-2 whitespace-nowrap text-[9px] font-bold uppercase tracking-widest rounded-md transition-all ${activeTab === 'leads' ? 'bg-[#00FF9D] text-black shadow-lg shadow-[#00FF9D]/20' : 'text-zinc-500 hover:text-white'}`}>Заявки ({leads.length})</button>
-                <button onClick={() => setActiveTab('visitors')} className={`flex-1 py-2 px-2 whitespace-nowrap text-[9px] font-bold uppercase tracking-widest rounded-md transition-all ${activeTab === 'visitors' ? 'bg-[#00FF9D] text-black shadow-lg shadow-[#00FF9D]/20' : 'text-zinc-500 hover:text-white'}`}>Посетители</button>
-                <button onClick={() => setActiveTab('broadcast')} className={`flex-1 py-2 px-2 whitespace-nowrap text-[9px] font-bold uppercase tracking-widest rounded-md transition-all flex items-center justify-center gap-1 ${activeTab === 'broadcast' ? 'bg-[#00FF9D] text-black shadow-lg shadow-[#00FF9D]/20' : 'text-zinc-500 hover:text-white'}`}><Megaphone className="w-3 h-3" /> Рассылка</button>
+                <button onClick={() => setActiveTab('stats')} className={`flex-1 py-2 px-2 whitespace-nowrap text-[9px] font-bold uppercase tracking-widest rounded-md transition-all ${activeTab === 'stats' ? 'bg-[#FF2400] text-black shadow-lg shadow-[#FF2400]/20' : 'text-zinc-500 hover:text-white'}`}>📊 Статистика</button>
+                <button onClick={() => setActiveTab('leads')} className={`flex-1 py-2 px-2 whitespace-nowrap text-[9px] font-bold uppercase tracking-widest rounded-md transition-all ${activeTab === 'leads' ? 'bg-[#FF2400] text-black shadow-lg shadow-[#FF2400]/20' : 'text-zinc-500 hover:text-white'}`}>Заявки ({leads.length})</button>
+                <button onClick={() => setActiveTab('visitors')} className={`flex-1 py-2 px-2 whitespace-nowrap text-[9px] font-bold uppercase tracking-widest rounded-md transition-all ${activeTab === 'visitors' ? 'bg-[#FF2400] text-black shadow-lg shadow-[#FF2400]/20' : 'text-zinc-500 hover:text-white'}`}>Посетители</button>
+                <button onClick={() => setActiveTab('broadcast')} className={`flex-1 py-2 px-2 whitespace-nowrap text-[9px] font-bold uppercase tracking-widest rounded-md transition-all flex items-center justify-center gap-1 ${activeTab === 'broadcast' ? 'bg-[#FF2400] text-black shadow-lg shadow-[#FF2400]/20' : 'text-zinc-500 hover:text-white'}`}><Megaphone className="w-3 h-3" /> Рассылка</button>
             </div>
 
             <div className="w-full flex-grow overflow-hidden flex flex-col">
@@ -1166,10 +1188,10 @@ const AdminPanel = ({ leads, visitors, onBack, onClearLeads, onUpdateLead, onUpd
                             </div>
                         ) : (
                             leads.map((lead) => (
-                                <div key={lead.id} className="glass-card p-3 rounded-lg border border-zinc-800 flex items-center justify-between group hover:border-[#00FF9D]/30 transition-all">
+                                <div key={lead.id} className="glass-card p-3 rounded-lg border border-zinc-800 flex items-center justify-between group hover:border-[#FF2400]/30 transition-all">
                                     <div className="flex-grow">
                                         <div className="flex items-center gap-2 mb-1">
-                                            <div className="w-1.5 h-1.5 bg-[#00FF9D] rounded-full animate-pulse"></div>
+                                            <div className="w-1.5 h-1.5 bg-[#FF2400] rounded-full animate-pulse"></div>
                                             <p className="text-xs font-bold text-white font-mono">{lead.name}</p>
                                         </div>
                                         <p className="text-[10px] text-zinc-400 font-mono">{lead.contact}</p>
@@ -1178,7 +1200,7 @@ const AdminPanel = ({ leads, visitors, onBack, onClearLeads, onUpdateLead, onUpd
                                     <div className="flex items-center gap-3">
                                         <div className="text-right">
                                             <p className="text-[9px] text-zinc-500 font-mono">{lead.time}</p>
-                                            <a href={`https://t.me/${lead.contact.replace('@', '')}`} target="_blank" rel="noreferrer" className="mt-2 inline-block bg-[#00FF9D]/10 text-[#00FF9D] text-[8px] font-bold px-2 py-1 rounded border border-[#00FF9D]/20 hover:bg-[#00FF9D]/20">
+                                            <a href={`https://t.me/${lead.contact.replace('@', '')}`} target="_blank" rel="noreferrer" className="mt-2 inline-block bg-[#FF2400]/10 text-[#FF2400] text-[8px] font-bold px-2 py-1 rounded border border-[#FF2400]/20 hover:bg-[#FF2400]/20">
                                                 НАПИСАТЬ
                                             </a>
                                         </div>
@@ -1200,22 +1222,22 @@ const AdminPanel = ({ leads, visitors, onBack, onClearLeads, onUpdateLead, onUpd
                             </div>
                         ) : (
                             visitors.map((user) => (
-                                <div key={user.id} className="glass-card p-3 rounded-lg border border-zinc-800 flex items-center justify-between group hover:bg-[#00FF9D]/5 transition-all">
+                                <div key={user.id} className="glass-card p-3 rounded-lg border border-zinc-800 flex items-center justify-between group hover:bg-[#FF2400]/5 transition-all">
                                     <div className="flex items-center gap-3">
-                                        <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center text-[10px] font-bold text-[#00FF9D] border border-zinc-700">
+                                        <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center text-[10px] font-bold text-[#FF2400] border border-zinc-700">
                                             {user.userName?.charAt(0)}
                                         </div>
                                         <div>
                                             <p className="text-xs font-bold text-white font-mono">{user.userName}</p>
                                             <p className="text-[9px] text-zinc-500 font-mono">ID: {user.chatId}</p>
-                                            {user.notes && <p className="text-[8px] text-[#00FF9D] mt-1 bg-[#00FF9D]/10 px-1 rounded inline-block">{user.notes}</p>}
+                                            {user.notes && <p className="text-[8px] text-[#FF2400] mt-1 bg-[#FF2400]/10 px-1 rounded inline-block">{user.notes}</p>}
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-3">
                                         <div className="text-right">
                                             <div className="flex items-center justify-end gap-1.5 mb-1">
-                                                <div className="w-1.5 h-1.5 bg-[#00FF9D] rounded-full animate-pulse shadow-[0_0_5px_#00FF9D]"></div>
-                                                <span className="text-[9px] text-[#00FF9D] font-bold uppercase">ONLINE</span>
+                                                <div className="w-1.5 h-1.5 bg-[#FF2400] rounded-full animate-pulse shadow-[0_0_5px_#FF2400]"></div>
+                                                <span className="text-[9px] text-[#FF2400] font-bold uppercase">ONLINE</span>
                                             </div>
                                             <p className="text-[8px] text-zinc-600 font-mono">
                                                 {user.lastActive?.toDate ? user.lastActive.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Сейчас'}
@@ -1243,7 +1265,7 @@ const AdminPanel = ({ leads, visitors, onBack, onClearLeads, onUpdateLead, onUpd
                                             onClick={() => setBroadcastTarget(filter.id)}
                                             className={`py-2 px-1 text-[8px] font-bold uppercase tracking-wider rounded-md transition-all border ${
                                                 broadcastTarget === filter.id 
-                                                ? 'bg-[#00FF9D]/20 text-[#00FF9D] border-[#00FF9D]/50 shadow-[0_0_10px_rgba(0,255,157,0.1)]' 
+                                                ? 'bg-[#FF2400]/20 text-[#FF2400] border-[#FF2400]/50 shadow-[0_0_10px_rgba(255,36,0,0.1)]' 
                                                 : 'bg-zinc-900 border-zinc-800 text-zinc-500 hover:border-zinc-700 hover:text-zinc-300'
                                             }`}
                                         >
@@ -1254,8 +1276,8 @@ const AdminPanel = ({ leads, visitors, onBack, onClearLeads, onUpdateLead, onUpd
 
                                 <div className="flex justify-between items-center mb-4 border-t border-zinc-800 pt-3">
                                      <p className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">СООБЩЕНИЕ</p>
-                                     <div className="bg-[#00FF9D]/10 px-2 py-1 rounded border border-[#00FF9D]/20">
-                                        <p className="text-[10px] font-bold text-[#00FF9D] font-mono">
+                                     <div className="bg-[#FF2400]/10 px-2 py-1 rounded border border-[#FF2400]/20">
+                                        <p className="text-[10px] font-bold text-[#FF2400] font-mono">
                                             TARGET: {getTargetsCount()}
                                         </p>
                                      </div>
@@ -1265,16 +1287,16 @@ const AdminPanel = ({ leads, visitors, onBack, onClearLeads, onUpdateLead, onUpd
                                         value={broadcastMessage}
                                         onChange={(e) => setBroadcastMessage(e.target.value)}
                                         placeholder="Введите сообщение для рассылки..." 
-                                        className="w-full bg-black border border-zinc-700 rounded-lg p-3 text-xs text-white focus:border-[#00FF9D] outline-none h-32 resize-none placeholder-zinc-700 font-mono"
+                                        className="w-full bg-black border border-zinc-700 rounded-lg p-3 text-xs text-white focus:border-[#FF2400] outline-none h-32 resize-none placeholder-zinc-700 font-mono"
                                         disabled={isSending}
                                     />
                                     {isSending ? (
                                         <div className="w-full bg-zinc-800 rounded-xl h-10 flex items-center justify-center relative overflow-hidden">
-                                             <div className="absolute left-0 top-0 bottom-0 bg-[#00FF9D]/20 transition-all duration-300" style={{ width: `${(sendProgress.current / sendProgress.total) * 100}%` }}></div>
+                                             <div className="absolute left-0 top-0 bottom-0 bg-[#FF2400]/20 transition-all duration-300" style={{ width: `${(sendProgress.current / sendProgress.total) * 100}%` }}></div>
                                              <span className="relative z-10 text-[10px] font-bold text-white font-mono animate-pulse">ОТПРАВКА... {sendProgress.current} / {sendProgress.total}</span>
                                         </div>
                                     ) : (
-                                        <button type="submit" className="w-full bg-[#00FF9D] hover:bg-[#00FF9D]/90 text-black font-bold uppercase text-xs py-3 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-[0.98]">
+                                        <button type="submit" className="w-full bg-[#FF2400] hover:bg-[#FF2400]/90 text-black font-bold uppercase text-xs py-3 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-[0.98]">
                                             <Send className="w-4 h-4" /> ОТПРАВИТЬ
                                         </button>
                                     )}
@@ -1296,7 +1318,7 @@ const AdminPanel = ({ leads, visitors, onBack, onClearLeads, onUpdateLead, onUpd
             {/* EDIT MODAL */}
             {editingItem && (
                 <div className="absolute inset-0 z-50 bg-black/95 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in zoom-in duration-200">
-                    <div className="w-full max-w-sm bg-[#0F0F0F] border border-[#00FF9D]/30 p-6 rounded-2xl shadow-2xl relative">
+                    <div className="w-full max-w-sm bg-[#0F0F0F] border border-[#FF2400]/30 p-6 rounded-2xl shadow-2xl relative">
                         <button 
                             onClick={() => setEditingItem(null)} 
                             className="absolute top-4 right-4 text-zinc-500 hover:text-white"
@@ -1304,7 +1326,7 @@ const AdminPanel = ({ leads, visitors, onBack, onClearLeads, onUpdateLead, onUpd
                             <X className="w-5 h-5" />
                         </button>
                         <h3 className="text-lg font-bold text-white mb-4 uppercase tracking-wider font-mono flex items-center gap-2">
-                            <Edit2 className="w-4 h-4 text-[#00FF9D]" /> 
+                            <Edit2 className="w-4 h-4 text-[#FF2400]" /> 
                             Редактирование
                         </h3>
                         
@@ -1313,15 +1335,15 @@ const AdminPanel = ({ leads, visitors, onBack, onClearLeads, onUpdateLead, onUpd
                                 <>
                                     <div>
                                         <label className="text-[9px] text-zinc-500 uppercase font-bold block mb-1">Имя</label>
-                                        <input name="name" defaultValue={editingItem.name} className="w-full bg-zinc-900 border border-zinc-700 rounded p-2 text-xs text-white focus:border-[#00FF9D] outline-none" />
+                                        <input name="name" defaultValue={editingItem.name} className="w-full bg-zinc-900 border border-zinc-700 rounded p-2 text-xs text-white focus:border-[#FF2400] outline-none" />
                                     </div>
                                     <div>
                                         <label className="text-[9px] text-zinc-500 uppercase font-bold block mb-1">Контакт</label>
-                                        <input name="contact" defaultValue={editingItem.contact} className="w-full bg-zinc-900 border border-zinc-700 rounded p-2 text-xs text-white focus:border-[#00FF9D] outline-none" />
+                                        <input name="contact" defaultValue={editingItem.contact} className="w-full bg-zinc-900 border border-zinc-700 rounded p-2 text-xs text-white focus:border-[#FF2400] outline-none" />
                                     </div>
                                     <div>
                                         <label className="text-[9px] text-zinc-500 uppercase font-bold block mb-1">Услуга</label>
-                                        <input name="type" defaultValue={editingItem.type} className="w-full bg-zinc-900 border border-zinc-700 rounded p-2 text-xs text-white focus:border-[#00FF9D] outline-none" />
+                                        <input name="type" defaultValue={editingItem.type} className="w-full bg-zinc-900 border border-zinc-700 rounded p-2 text-xs text-white focus:border-[#FF2400] outline-none" />
                                     </div>
                                 </>
                             ) : (
@@ -1332,12 +1354,12 @@ const AdminPanel = ({ leads, visitors, onBack, onClearLeads, onUpdateLead, onUpd
                                     </div>
                                     <div>
                                         <label className="text-[9px] text-zinc-500 uppercase font-bold block mb-1">Заметки о клиенте</label>
-                                        <textarea name="notes" defaultValue={editingItem.notes || ''} placeholder="Например: интересовался обучением..." className="w-full bg-zinc-900 border border-zinc-700 rounded p-2 text-xs text-white focus:border-[#00FF9D] outline-none h-20 resize-none" />
+                                        <textarea name="notes" defaultValue={editingItem.notes || ''} placeholder="Например: интересовался обучением..." className="w-full bg-zinc-900 border border-zinc-700 rounded p-2 text-xs text-white focus:border-[#FF2400] outline-none h-20 resize-none" />
                                     </div>
                                 </>
                             )}
                             
-                            <button type="submit" className="w-full bg-[#00FF9D] hover:bg-[#00FF9D]/90 text-black font-bold uppercase text-xs py-3 rounded-xl mt-4 flex items-center justify-center gap-2">
+                            <button type="submit" className="w-full bg-[#FF2400] hover:bg-[#FF2400]/90 text-black font-bold uppercase text-xs py-3 rounded-xl mt-4 flex items-center justify-center gap-2">
                                 <Save className="w-4 h-4" /> Сохранить
                             </button>
                         </form>
@@ -1598,24 +1620,23 @@ const App = () => {
   };
 
   const faqItems = [
-    { id: 'stats', question: "Это вообще покупают?", icon: <TrendingUp className="w-5 h-5 text-[#00FF9D]" />, component: (<div className="w-full"><WordstatGraph /><h3 className="text-white font-bold mb-3 uppercase tracking-wide text-sm font-['Chakra_Petch'] leading-tight">6 650 человек ищут тебя. Как долго ты будешь их игнорировать?</h3><p className="text-sm text-zinc-300 leading-relaxed border-l-2 border-[#00FF9D]/50 pl-4 mb-4">Это официальная статистика Яндекса: <span className="text-[#00FF9D] font-bold">6 650</span> прямых запросов на ТГ-магазины в месяц.<br/><br/>Пока ты ищешь «подходящий момент», наши ученики уже забирают эти чеки по <span className="text-white font-bold">100 000₸</span>, просто потому что они оказались на связи.<br/><br/>Мы даем тебе все инструменты и доступ к этому потоку. Твой результат — это просто вопрос того, возьмешь ли ты готовую систему и начнешь ли по ней работать.<br/><br/><span className="text-[#00FF9D] italic font-medium">Рынок платит тем, кто действует, а не тем, кто наблюдает.</span></p></div>) },
-    { id: 'proof', question: "А это реально работает?", icon: <Lock className="w-5 h-5 text-[#00FF9D]" />, component: (<div className="w-full"><HackerProof /><p className="text-sm text-zinc-300 leading-relaxed border-l-2 border-[#00FF9D]/50 pl-4 mb-2">Пока ты сомневаешься, <span className="text-[#00FF9D] font-bold">Карашаш</span> прошла наше обучение и уже забирает свои <span className="text-white font-bold">100 000₸</span>.<br/><br/>На скриншоте — результат её работы. Она просто взяла знания, которые мы даём, и закрыла одного из <span className="text-[#00FF9D] font-bold">6 650</span> горячих клиентов в Яндексе. Ей не нужен был «подходящий момент», ей нужна была рабочая система.<br/><br/><span className="text-white italic">Рынок пустой. Деньги на столе. Ты следующий или так и будешь смотреть на чужие чеки?</span></p></div>) },
-    { id: 'difficulty', question: "А сложно это делать?", icon: <Zap className="w-5 h-5 text-[#00FF9D]" />, component: (<div className="w-full"><SkillScanner /> <SetupTimeline /><p className="text-sm text-zinc-300 leading-relaxed border-l-2 border-[#00FF9D]/50 pl-4 mb-4"><span className="text-white font-bold">Программистом быть не нужно.</span><br/><br/>Собрать такой магазин проще, чем выложить пост в Инстаграм. Мы даем всё готовое: ты просто расставляешь блоки по местам за один вечер.<br/><br/><span className="text-[#00FF9D] font-bold">Работай с телефона:</span> Не нужен компьютер, всё настраивается прямо в смартфоне.<br/><br/><span className="text-[#00FF9D] font-bold">Для декрета или совмещения:</span> Занимайся этим, пока ребенок спит или после основной работы.<br/><br/><span className="text-[#00FF9D] font-bold">Просто и понятно:</span> Если умеешь переписываться в Telegram — ты справишься.<br/><br/><span className="text-white font-bold italic">Хватит смотреть на чужие чеки. Заходи и делай свои.</span></p></div>) },
-    { id: 'calc', question: "Найду ли я клиентов?", icon: <Wallet className="w-5 h-5 text-[#00FF9D]" />, isCalc: true, component: (<div className="w-full"><ClientDemandProof /><div className="text-sm text-zinc-300 leading-relaxed border-l-2 border-[#00FF9D]/50 pl-4 mb-4"><p><span className="text-white font-bold">Ты не просто их найдешь — они тоже будут тебя искать.</span></p><br/><p>Статистика Яндекса не врет: каждый месяц <span className="text-[#00FF9D] font-bold">6 650</span> предпринимателей ищут, кто сделает им магазин в Telegram. Спрос огромный, а тех, кто умеет делать это качественно — единицы.</p><br/><p>На обучении мы даем не только технические навыки, но и <span className="text-white font-bold">полную систему продаж</span>:</p><br/><ul className="list-disc pl-4 space-y-2"><li><span className="text-[#00FF9D] font-bold">Где брать клиентов:</span> Покажем, как выйти на те самые тысячи заказов.</li><li><span className="text-[#00FF9D] font-bold">Как продавать:</span> Научим вести переговоры с бизнесменами и закрывать сделки на высокие чеки.</li><li><span className="text-[#00FF9D] font-bold">Готовые шаблоны предложений:</span> Тебе не нужно ничего придумывать — просто бери наше проверенное КП и отправляй клиенту.</li></ul><br/><p>Мы научим тебя делать результат «под ключ», чтобы ты мог уверенно забирать свои <span className="text-white font-bold">100 000₸</span> за проект.</p></div></div>) }
+    { id: 'stats', question: "Это вообще покупают?", icon: <TrendingUp className="w-5 h-5 text-[#FF2400]" />, component: (<div className="w-full"><WordstatGraph /><h3 className="text-white font-bold mb-3 uppercase tracking-wide text-sm font-mono leading-tight">6 650 человек ищут тебя. Как долго ты будешь их игнорировать?</h3><p className="text-sm text-zinc-300 leading-relaxed border-l-2 border-[#FF2400]/50 pl-4 mb-4">Это официальная статистика Яндекса: <span className="text-[#FF2400] font-bold">6 650</span> прямых запросов на ТГ-магазины в месяц.<br/><br/>Пока ты ищешь «подходящий момент», наши ученики уже забирают эти чеки по <span className="text-white font-bold">100 000₸</span>, просто потому что они оказались на связи.<br/><br/>Мы даем тебе все инструменты и доступ к этому потоку. Твой результат — это просто вопрос того, возьмешь ли ты готовую систему и начнешь ли по ней работать.<br/><br/><span className="text-[#FF2400] italic font-medium">Рынок платит тем, кто действует, а не тем, кто наблюдает.</span></p></div>) },
+    { id: 'proof', question: "А это реально работает?", icon: <Lock className="w-5 h-5 text-[#FF2400]" />, component: (<div className="w-full"><HackerProof /><p className="text-sm text-zinc-300 leading-relaxed border-l-2 border-[#FF2400]/50 pl-4 mb-2">Пока ты сомневаешься, <span className="text-[#FF2400] font-bold">Карашаш</span> прошла наше обучение и уже забирает свои <span className="text-white font-bold">100 000₸</span>.<br/><br/>На скриншоте — результат её работы. Она просто взяла знания, которые мы даём, и закрыла одного из <span className="text-[#FF2400] font-bold">6 650</span> горячих клиентов в Яндексе. Ей не нужен был «подходящий момент», ей нужна была рабочая система.<br/><br/><span className="text-white italic">Рынок пустой. Деньги на столе. Ты следующий или так и будешь смотреть на чужие чеки?</span></p></div>) },
+    { id: 'difficulty', question: "А сложно это делать?", icon: <Zap className="w-5 h-5 text-[#FF2400]" />, component: (<div className="w-full"><SkillScanner /> <SetupTimeline /><p className="text-sm text-zinc-300 leading-relaxed border-l-2 border-[#FF2400]/50 pl-4 mb-4"><span className="text-white font-bold">Программистом быть не нужно.</span><br/><br/>Собрать такой магазин проще, чем выложить пост в Инстаграм. Мы даем всё готовое: ты просто расставляешь блоки по местам за один вечер.<br/><br/><span className="text-[#FF2400] font-bold">Работай с телефона:</span> Не нужен компьютер, всё настраивается прямо в смартфоне.<br/><br/><span className="text-[#FF2400] font-bold">Для декрета или совмещения:</span> Занимайся этим, пока ребенок спит или после основной работы.<br/><br/><span className="text-[#FF2400] font-bold">Просто и понятно:</span> Если умеешь переписываться в Telegram — ты справишься.<br/><br/><span className="text-white font-bold italic">Хватит смотреть на чужие чеки. Заходи и делай свои.</span></p></div>) },
+    { id: 'calc', question: "Найду ли я клиентов?", icon: <Wallet className="w-5 h-5 text-[#FF2400]" />, isCalc: true, component: (<div className="w-full"><ClientDemandProof /><div className="text-sm text-zinc-300 leading-relaxed border-l-2 border-[#FF2400]/50 pl-4 mb-4"><p><span className="text-white font-bold">Ты не просто их найдешь — они тоже будут тебя искать.</span></p><br/><p>Статистика Яндекса не врет: каждый месяц <span className="text-[#FF2400] font-bold">6 650</span> предпринимателей ищут, кто сделает им магазин в Telegram. Спрос огромный, а тех, кто умеет делать это качественно — единицы.</p><br/><p>На обучении мы даем не только технические навыки, но и <span className="text-white font-bold">полную систему продаж</span>:</p><br/><ul className="list-disc pl-4 space-y-2"><li><span className="text-[#FF2400] font-bold">Где брать клиентов:</span> Покажем, как выйти на те самые тысячи заказов.</li><li><span className="text-[#FF2400] font-bold">Как продавать:</span> Научим вести переговоры с бизнесменами и закрывать сделки на высокие чеки.</li><li><span className="text-[#FF2400] font-bold">Готовые шаблоны предложений:</span> Тебе не нужно ничего придумывать — просто бери наше проверенное КП и отправляй клиенту.</li></ul><br/><p>Мы научим тебя делать результат «под ключ», чтобы ты мог уверенно забирать свои <span className="text-white font-bold">100 000₸</span> за проект.</p></div></div>) }
   ];
 
   return (
-    <div className="min-h-screen bg-[#050505] text-white font-sans selection:bg-[#00FF9D]/30 relative overflow-hidden flex flex-col">
+    <div className="min-h-screen bg-[#050508] text-[#e0e0e0] font-mono selection:bg-[#FF2400]/30 relative overflow-hidden flex flex-col">
       <GlobalStyles />
       {/* Bane Intro Overlay */}
       {baneIntroActive && <BaneIntro onComplete={handleBaneIntroComplete} />}
 
       <div className="fixed inset-0 z-0 pointer-events-none">
-        <div className="absolute inset-0 bg-[#020202] -z-20" />
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-purple-500/10 rounded-full blur-[120px] animate-pulse"></div>
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-[#00FF9D]/5 rounded-full blur-[120px] animate-pulse"></div>
-        <div className="absolute inset-0 opacity-20 -z-10" style={{ backgroundImage: `linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px)`, backgroundSize: '50px 50px', maskImage: 'radial-gradient(circle at 50% 30%, black 40%, transparent 100%)', WebkitMaskImage: 'radial-gradient(circle at 50% 30%, black 40%, transparent 100%)' }} />
-        <canvas ref={canvasRef} className="absolute inset-0 opacity-30 mix-blend-screen" />
+        <div className="absolute inset-0 bg-[#050508] -z-20" />
+        <div className="absolute top-[-20%] left-[-20%] w-[60%] h-[60%] bg-[#FF2400]/5 rounded-full blur-[150px] animate-pulse"></div>
+        <div className="absolute bottom-[-20%] right-[-20%] w-[60%] h-[60%] bg-[#FF2400]/5 rounded-full blur-[150px] animate-pulse"></div>
+        <MatrixBackground />
       </div>
 
       <div className="relative z-10 flex-grow flex flex-col max-w-lg mx-auto w-full px-4 pt-10 pb-20">
@@ -1623,45 +1644,45 @@ const App = () => {
         {currentView === 'main' && (
           <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 flex flex-col items-center">
             <div className="mb-14 w-full text-center" onClick={handleTitleClick}>
-              <h1 className="font-['Chakra_Petch'] font-[700] uppercase tracking-[0.15em] whitespace-nowrap overflow-visible relative block w-full text-center select-none cursor-pointer active:scale-95 transition-transform" style={{ fontSize: 'clamp(1.5rem, 8.5vw, 3.5rem)', textShadow: '0 0 20px rgba(0,255,157,0.3)', color: '#ffffff' }}>
-                <span className="relative inline-block mr-[-0.15em]">TAIPAN MEDIA<span className="absolute inset-0 -z-10 opacity-40 blur-[12px] animate-pulse text-[#00FF9D]">TAIPAN MEDIA</span></span>
+              <h1 className="stranger-title whitespace-nowrap overflow-visible relative block w-full text-center select-none cursor-pointer active:scale-95 transition-transform" style={{ fontSize: 'clamp(2rem, 10vw, 4rem)' }}>
+                TAIPAN MEDIA
               </h1>
               <div className="flex items-center justify-center gap-4 mt-3 w-full">
-                <div className="h-[1px] flex-1 max-w-[40px] bg-gradient-to-r from-transparent to-zinc-700"></div>
+                <div className="h-[1px] flex-1 max-w-[40px] bg-gradient-to-r from-transparent to-[#FF2400]"></div>
                 {/* --- DYNAMIC GREETING --- */}
-                <p className="text-[10px] uppercase tracking-[0.6em] mr-[-0.6em] text-[#00FF9D] font-bold whitespace-nowrap animate-pulse">
+                <p className="text-[12px] uppercase tracking-[0.4em] mr-[-0.4em] text-white font-bold whitespace-nowrap text-shadow-[0_0_10px_rgba(255,255,255,0.5)]">
                   ПРИВЕТ, {userName}
                 </p>
-                <div className="h-[1px] flex-1 max-w-[40px] bg-gradient-to-l from-transparent to-zinc-700"></div>
+                <div className="h-[1px] flex-1 max-w-[40px] bg-gradient-to-l from-transparent to-[#FF2400]"></div>
               </div>
-              <p className="text-[10px] text-zinc-600 font-mono mt-2 tracking-widest flex items-center justify-center gap-2 opacity-80">
-                 <span className="w-1.5 h-1.5 rounded-full bg-[#00FF9D] animate-pulse shadow-[0_0_5px_#00FF9D]"></span>
-                 СЕЙЧАС ОНЛАЙН: <span className="text-zinc-400 font-bold">{onlineCount}</span>
+              <p className="text-[10px] text-zinc-500 font-mono mt-2 tracking-widest flex items-center justify-center gap-2 opacity-80">
+                 <span className="w-1.5 h-1.5 rounded-full bg-[#FF2400] animate-pulse shadow-[0_0_5px_#FF2400]"></span>
+                 СЕЙЧАС ОНЛАЙН: <span className="text-[#FF2400] font-bold">{onlineCount}</span>
               </p>
             </div>
             
             <div className="grid grid-cols-2 gap-4 mb-4 w-full">
               <div onClick={handleShopClick} className="group relative glass-card grid-bg rounded-3xl px-6 pt-10 pb-2 h-64 flex flex-col items-center text-center cursor-pointer">
-                <div className="mb-6 text-zinc-400 group-hover:text-[#E5C07B] transition-all duration-300"><TelegramLogoMain className="w-12 h-12 animate-[goldPulse_3s_ease-in-out_infinite]" /></div>
-                <h3 className="text-lg font-bold uppercase tracking-wide mb-2 leading-tight">Telegram<br/>Магазин</h3>
-                <p className="text-[9px] text-zinc-500 uppercase tracking-widest mb-4 leading-relaxed px-2">Решение<br/>для роста прибыли в вашем бизнесе</p>
+                <div className="mb-6 text-zinc-400 group-hover:text-[#FF2400] transition-all duration-300"><TelegramLogoMain className="w-12 h-12 animate-[contourPulse_3s_ease-in-out_infinite]" /></div>
+                <h3 className="text-lg font-bold uppercase tracking-wide mb-2 leading-tight font-serif text-white">Telegram<br/>Магазин</h3>
+                <p className="text-[9px] text-zinc-400 uppercase tracking-widest mb-4 leading-relaxed px-2 font-mono">Решение<br/>для роста прибыли</p>
               </div>
               <div onClick={handleEducationClick} className="group relative glass-card grid-bg rounded-3xl px-6 pt-10 pb-2 h-64 flex flex-col items-center text-center cursor-pointer">
-                <div className="mb-6 text-zinc-400 group-hover:text-[#E5C07B] transition-all duration-300"><GraduationCap className="w-12 h-12 animate-[goldPulse_3s_ease-in-out_infinite]" /></div>
-                <h3 className="text-lg font-bold uppercase tracking-widest mb-2 leading-tight">ОБУЧЕНИЕ</h3>
-                <p className="text-[9px] text-zinc-500 uppercase tracking-widest mb-4 leading-relaxed px-2 text-zinc-500">Ваша финансовая независимость<br/>через пользу для бизнеса</p>
+                <div className="mb-6 text-zinc-400 group-hover:text-[#FF2400] transition-all duration-300"><GraduationCap className="w-12 h-12 animate-[contourPulse_3s_ease-in-out_infinite]" /></div>
+                <h3 className="text-lg font-bold uppercase tracking-widest mb-2 leading-tight font-serif text-white">ОБУЧЕНИЕ</h3>
+                <p className="text-[9px] text-zinc-400 uppercase tracking-widest mb-4 leading-relaxed px-2 font-mono">Твоя финансовая<br/>независимость</p>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4 w-full">
                 <div onClick={() => openModal('Mini App')} className="group relative glass-card grid-bg rounded-3xl p-6 flex flex-col items-center justify-center cursor-pointer text-center w-full h-40">
-                    <Code className="w-8 h-8 mb-3 text-zinc-500 group-hover:text-[#E5C07B] animate-[goldPulse_3s_ease-in-out_infinite] transition-colors" />
-                    <h3 className="text-lg font-bold uppercase tracking-widest mb-2 group-hover:text-[#E5C07B] transition-colors">MINI APP</h3>
-                    <p className="text-[10px] text-zinc-500 uppercase tracking-widest group-hover:text-white transition-colors leading-tight">Заказать персональный<br/>mini app</p>
+                    <Code className="w-8 h-8 mb-3 text-zinc-500 group-hover:text-[#FF2400] animate-[contourPulse_3s_ease-in-out_infinite] transition-colors" />
+                    <h3 className="text-lg font-bold uppercase tracking-widest mb-2 group-hover:text-[#FF2400] transition-colors font-serif">MINI APP</h3>
+                    <p className="text-[10px] text-zinc-400 uppercase tracking-widest group-hover:text-white transition-colors leading-tight font-mono">Заказать персональный<br/>mini app</p>
                 </div>
                  <div onClick={handleAboutClick} className="group relative glass-card grid-bg rounded-3xl p-6 flex flex-col items-center justify-center cursor-pointer text-center w-full h-40">
-                    <Users className="w-8 h-8 mb-3 text-zinc-500 group-hover:text-[#E5C07B] animate-[goldPulse_3s_ease-in-out_infinite] transition-colors" />
-                    <h3 className="text-lg font-bold uppercase tracking-widest mb-2 group-hover:text-[#E5C07B] transition-colors">КТО МЫ?</h3>
-                    <p className="text-[10px] text-zinc-500 uppercase tracking-widest group-hover:text-white transition-colors leading-tight">О команде и миссии</p>
+                    <Users className="w-8 h-8 mb-3 text-zinc-500 group-hover:text-[#FF2400] animate-[contourPulse_3s_ease-in-out_infinite] transition-colors" />
+                    <h3 className="text-lg font-bold uppercase tracking-widest mb-2 group-hover:text-[#FF2400] transition-colors font-serif">КТО МЫ?</h3>
+                    <p className="text-[10px] text-zinc-400 uppercase tracking-widest group-hover:text-white transition-colors leading-tight font-mono">О команде и миссии</p>
                 </div>
             </div>
             <PartnersCredits />
@@ -1675,27 +1696,27 @@ const App = () => {
                <ShopIntroSequence onComplete={() => setShopIntroFinished(true)} />
             ) : (
               <React.Fragment>
-                <button onClick={() => handleBackClick('main')} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-6 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
+                <button onClick={() => handleBackClick('main')} className="self-start flex items-center text-[10px] text-[#FF2400] uppercase tracking-widest font-bold mb-6 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
                 <div className="flex-grow flex flex-col items-center w-full space-y-6 animate-in slide-in-from-bottom duration-700">
                   <div className="text-center px-4 w-full mb-4">
-                      <TelegramLogoMain className="w-20 h-20 mx-auto text-[#00FF9D] mb-4 drop-shadow-[0_0_15px_rgba(0,255,157,0.5)] animate-[contourPulse_3s_ease-in-out_infinite]" />
-                      <h2 className="text-3xl font-black tracking-tighter uppercase mb-2 font-['Chakra_Petch'] leading-none">TELEGRAM<br/><span className="text-[#00FF9D]">STORE</span></h2>
-                      <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] mr-[-0.3em] font-bold">Ваш бизнес ещё никогда не был так близок к покупателю</p>
+                      <TelegramLogoMain className="w-20 h-20 mx-auto text-[#FF2400] mb-4 drop-shadow-[0_0_15px_rgba(255,36,0,0.5)] animate-[contourPulse_3s_ease-in-out_infinite]" />
+                      <h2 className="text-3xl font-black tracking-tighter uppercase mb-2 font-serif leading-none text-white">TELEGRAM<br/><span className="text-[#FF2400]">STORE</span></h2>
+                      <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] mr-[-0.3em] font-bold font-mono">Ваш бизнес ещё никогда не был так близок к покупателю</p>
                   </div>
                   <div className="w-full space-y-3">
                       {[{ title: "Каталог и Корзина", desc: "Полноценный интернет-магазин внутри мессенджера. Удобный выбор товаров без лишних переходов." }, { title: "Оплата в 1 клик", desc: "Интеграция с Kaspi, картами и криптовалютой. Мгновенные транзакции." }, { title: "CRM Система", desc: "Управление заказами, статусами и клиентами прямо внутри Telegram." }, { title: "Авто-рассылки", desc: "Push-уведомления клиентам о новинках и акциях с открываемостью 90%." }].map((item, i) => (
                         <div key={i} className="glass-card rounded-2xl p-4 flex items-start gap-4 hover:bg-white/5 transition-all">
-                           <div className="mt-1 bg-[#00FF9D]/10 p-2 rounded-full text-[#00FF9D] border border-[#00FF9D]/20"><CheckCircle2 className="w-4 h-4" /></div>
-                           <div><h4 className="text-sm font-bold text-white uppercase tracking-wider mb-1">{item.title}</h4><p className="text-[10px] text-zinc-400 leading-relaxed">{item.desc}</p></div>
+                           <div className="mt-1 bg-[#FF2400]/10 p-2 rounded-full text-[#FF2400] border border-[#FF2400]/20"><CheckCircle2 className="w-4 h-4" /></div>
+                           <div><h4 className="text-sm font-bold text-white uppercase tracking-wider mb-1 font-serif">{item.title}</h4><p className="text-[10px] text-zinc-400 leading-relaxed font-mono">{item.desc}</p></div>
                         </div>
                       ))}
                   </div>
-                  <div className="mt-4 w-full glass-card p-6 rounded-3xl text-center border border-[#00FF9D]/20 relative overflow-hidden group">
-                      <div className="absolute inset-0 bg-gradient-to-t from-[#00FF9D]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                  <div className="mt-4 w-full glass-card p-6 rounded-3xl text-center border border-[#FF2400]/20 relative overflow-hidden group">
+                      <div className="absolute inset-0 bg-gradient-to-t from-[#FF2400]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                       <button onClick={() => {
                           logToTaipanCRM(3, "АКТИВНОСТЬ", "Считает прибыль в калькуляторе");
                           setCurrentView('calculator');
-                      }} className="w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-4 rounded-xl shadow-[0_0_20px_rgba(0,255,157,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs relative z-10 flex items-center justify-center gap-2 animate-pulse">РАССЧИТАТЬ УПУЩЕННУЮ ПРИБЫЛЬ</button>
+                      }} className="w-full bg-[#FF2400] text-black font-black uppercase tracking-widest py-4 rounded-xl shadow-[0_0_20px_rgba(255,36,0,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs relative z-10 flex items-center justify-center gap-2 animate-pulse font-serif">РАССЧИТАТЬ УПУЩЕННУЮ ПРИБЫЛЬ</button>
                   </div>
                 </div>
               </React.Fragment>
@@ -1705,14 +1726,14 @@ const App = () => {
 
         {currentView === 'calculator' && (
           <div className="animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col h-full items-center w-full">
-            <button onClick={() => handleBackClick('shop')} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-4 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
+            <button onClick={() => handleBackClick('shop')} className="self-start flex items-center text-[10px] text-[#FF2400] uppercase tracking-widest font-bold mb-4 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
             <div className="flex-grow flex flex-col items-center w-full space-y-2 animate-in slide-in-from-bottom duration-700">
                 <div className="text-center px-4 w-full mb-2">
-                    <Wallet className="w-12 h-12 mx-auto text-[#00FF9D] mb-2 drop-shadow-[0_0_15px_rgba(0,255,157,0.5)] animate-[contourPulse_3s_ease-in-out_infinite]" />
-                    <h2 className="text-2xl sm:text-3xl font-black tracking-tighter uppercase mb-1 font-['Chakra_Petch'] leading-none whitespace-nowrap">ВАША <span className="text-[#00FF9D]">ПРИБЫЛЬ</span></h2>
-                    <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] mr-[-0.3em] font-bold">Узнайте сколько вы теряете</p>
+                    <Wallet className="w-12 h-12 mx-auto text-[#FF2400] mb-2 drop-shadow-[0_0_15px_rgba(255,36,0,0.5)] animate-[contourPulse_3s_ease-in-out_infinite]" />
+                    <h2 className="text-2xl sm:text-3xl font-black tracking-tighter uppercase mb-1 font-serif leading-none whitespace-nowrap text-white">ВАША <span className="text-[#FF2400]">ПРИБЫЛЬ</span></h2>
+                    <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] mr-[-0.3em] font-bold font-mono">Узнайте сколько вы теряете</p>
                 </div>
-                <div className="w-full glass-card p-4 rounded-3xl border border-[#00FF9D]/20 relative overflow-hidden">
+                <div className="w-full glass-card p-4 rounded-3xl border border-[#FF2400]/20 relative overflow-hidden">
                     <ProfitCalculator data={calcData} setData={setCalcData} onAction={() => {
                         logToTaipanCRM(3, "РАСЧЕТ", "Пользователь считает прибыль");
                         setCurrentView('strategy');
@@ -1724,23 +1745,23 @@ const App = () => {
 
         {currentView === 'strategy' && (
           <div className="animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col h-full items-center w-full">
-             <button onClick={() => handleBackClick('calculator')} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-4 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
+             <button onClick={() => handleBackClick('calculator')} className="self-start flex items-center text-[10px] text-[#FF2400] uppercase tracking-widest font-bold mb-4 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
              <div className="flex-grow flex flex-col items-center w-full space-y-6 overflow-y-auto pb-20 no-scrollbar">
                 <div className="text-center px-4 w-full">
-                    <h2 className="text-2xl sm:text-3xl font-black tracking-tighter uppercase mb-1 font-['Chakra_Petch'] leading-none whitespace-nowrap">КЕЙСЫ <span className="text-[#00FF9D]">ПАРТНЕРОВ</span></h2>
-                    <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] mr-[-0.3em] font-bold">Реальные магазины на платформе</p>
+                    <h2 className="text-2xl sm:text-3xl font-black tracking-tighter uppercase mb-1 font-serif leading-none whitespace-nowrap text-white">КЕЙСЫ <span className="text-[#FF2400]">ПАРТНЕРОВ</span></h2>
+                    <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] mr-[-0.3em] font-bold font-mono">Реальные магазины на платформе</p>
                 </div>
                 <div className="w-full mb-4 flex flex-col items-center">
-                    <div className="w-2/3 max-w-[200px]"><SmartImage src="https://i.ibb.co.com/gMTG4QXt/5438294939344244553.jpg" className="rounded-[20px] w-full h-auto object-contain" alt="Fashion Store Case" /></div>
-                    <div className="w-full mt-4 px-2 text-center"><h3 className="text-sm font-black text-white uppercase tracking-wider mb-2">КЕЙС «КАСТРЮЛЬКА ЕДЫ»</h3><p className="text-[10px] text-zinc-400 leading-relaxed">Пока другие тратят бюджет на рекламу, мы включили продажи по расписанию. Пуш в 18:00 на пустой желудок принес <span className="text-[#00FF9D] font-bold">+43% к чекам</span>. Мы превратили хаотичные заказы в предсказуемый алгоритм. Taipan Media заставляет технологии работать на ваших инстинктах.</p></div>
+                    <div className="w-2/3 max-w-[200px]"><SmartImage src="https://i.ibb.co.com/gMTG4QXt/5438294939344244553.jpg" className="rounded-[20px] w-full h-auto object-contain grayscale hover:grayscale-0 transition-all" alt="Fashion Store Case" /></div>
+                    <div className="w-full mt-4 px-2 text-center"><h3 className="text-sm font-black text-white uppercase tracking-wider mb-2 font-serif">КЕЙС «КАСТРЮЛЬКА ЕДЫ»</h3><p className="text-[10px] text-zinc-400 leading-relaxed font-mono">Пока другие тратят бюджет на рекламу, мы включили продажи по расписанию. Пуш в 18:00 на пустой желудок принес <span className="text-[#FF2400] font-bold">+43% к чекам</span>. Мы превратили хаотичные заказы в предсказуемый алгоритм. Taipan Media заставляет технологии работать на ваших инстинктах.</p></div>
                 </div>
                 <div className="w-full mb-4 flex flex-col items-center">
-                    <div className="w-2/3 max-w-[200px]"><SmartImage src="https://i.ibb.co.com/ks9Sz9zz/5438294939344244554.jpg" className="rounded-[20px] w-full h-auto object-contain" alt="Romantic Store Case" /></div>
-                    <div className="w-full mt-4 px-2 text-center"><h3 className="text-sm font-black text-white uppercase tracking-wider mb-2">КЕЙС «ROMANTIC»</h3><p className="text-[10px] text-zinc-400 leading-relaxed">Мы внедрили ИИ-алгоритмы, которые анализируют поведение ваших покупателей и допродают товар в момент пикового интереса, показывая, что с этим товаром обычно покупают другие. Результат: <span className="text-[#00FF9D] font-bold">+57% к чеку</span> за счет маржинальных допов. Мы не ждем желания клиента — Taipan Media создает его через алгоритмы.</p></div>
+                    <div className="w-2/3 max-w-[200px]"><SmartImage src="https://i.ibb.co.com/ks9Sz9zz/5438294939344244554.jpg" className="rounded-[20px] w-full h-auto object-contain grayscale hover:grayscale-0 transition-all" alt="Romantic Store Case" /></div>
+                    <div className="w-full mt-4 px-2 text-center"><h3 className="text-sm font-black text-white uppercase tracking-wider mb-2 font-serif">КЕЙС «ROMANTIC»</h3><p className="text-[10px] text-zinc-400 leading-relaxed font-mono">Мы внедрили ИИ-алгоритмы, которые анализируют поведение ваших покупателей и допродают товар в момент пикового интереса, показывая, что с этим товаром обычно покупают другие. Результат: <span className="text-[#FF2400] font-bold">+57% к чеку</span> за счет маржинальных допов. Мы не ждем желания клиента — Taipan Media создает его через алгоритмы.</p></div>
                 </div>
                 <div className="w-full pt-4 pb-8">
-                    <button onClick={() => setCurrentView('roi')} className="w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-4 rounded-xl shadow-[0_0_20px_rgba(0,255,157,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs flex items-center justify-center gap-2 animate-pulse">УЗНАТЬ СТОИМОСТЬ И СРОКИ</button>
-                    <p className="text-center text-[9px] text-zinc-600 mt-3">Оставьте заявку для бесплатной консультации</p>
+                    <button onClick={() => setCurrentView('roi')} className="w-full bg-[#FF2400] text-black font-black uppercase tracking-widest py-4 rounded-xl shadow-[0_0_20px_rgba(255,36,0,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs flex items-center justify-center gap-2 animate-pulse font-serif">УЗНАТЬ СТОИМОСТЬ И СРОКИ</button>
+                    <p className="text-center text-[9px] text-zinc-600 mt-3 font-mono">Оставьте заявку для бесплатной консультации</p>
                 </div>
              </div>
           </div>
@@ -1752,9 +1773,9 @@ const App = () => {
 
         {currentView === 'education' && (
           <div className="animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col h-full items-center">
-            <button onClick={() => handleBackClick('main')} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-6 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
+            <button onClick={() => handleBackClick('main')} className="self-start flex items-center text-[10px] text-[#FF2400] uppercase tracking-widest font-bold mb-6 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
             <div className="flex-grow flex flex-col items-center justify-center space-y-10 w-full">
-              <div className="text-center px-4 w-full mb-10"><h2 className="text-4xl font-black tracking-tighter uppercase mb-2 font-['Chakra_Petch']">Упущенные<br/><span className="text-[#00FF9D]">Возможности</span></h2><p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] mr-[-0.3em] font-bold">История твоих сомнений</p></div>
+              <div className="text-center px-4 w-full mb-10"><h2 className="text-4xl font-black tracking-tighter uppercase mb-2 font-serif text-white">Упущенные<br/><span className="text-[#FF2400]">Возможности</span></h2><p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] mr-[-0.3em] font-bold font-mono">История твоих сомнений</p></div>
               <div className="relative w-full h-[280px] flex items-center justify-center">
                   <div className="relative w-full h-[280px] flex items-center justify-center overflow-hidden">
                     {slides.map((SlideComponent, idx) => (
@@ -1767,78 +1788,78 @@ const App = () => {
                      ))}
                   </div>
               </div>
-              <div className="text-center w-full px-6 flex justify-center mb-8"><p className="text-zinc-500 text-[12px] font-bold uppercase tracking-widest mr-[-0.1em] animate-pulse whitespace-nowrap">Не стань историей упущенных шансов</p></div>
+              <div className="text-center w-full px-6 flex justify-center mb-8"><p className="text-zinc-500 text-[12px] font-bold uppercase tracking-widest mr-[-0.1em] animate-pulse whitespace-nowrap font-mono">Не стань историей упущенных шансов</p></div>
             </div>
-            <button onClick={() => setCurrentView('faq')} className="w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-6 rounded-3xl shadow-[0_5px_30px_rgba(0,255,157,0.3)] hover:scale-[1.02] active:scale-[0.98] transition-all mt-4 text-xs">Стань тем кто успел</button>
+            <button onClick={() => setCurrentView('faq')} className="w-full bg-[#FF2400] text-black font-black uppercase tracking-widest py-6 rounded-3xl shadow-[0_5px_30px_rgba(255,36,0,0.3)] hover:scale-[1.02] active:scale-[0.98] transition-all mt-4 text-xs font-serif">Стань тем кто успел</button>
           </div>
         )}
 
         {currentView === 'faq' && (
           <div className="animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col h-full">
-            <button onClick={() => handleBackClick('education')} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-6 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
+            <button onClick={() => handleBackClick('education')} className="self-start flex items-center text-[10px] text-[#FF2400] uppercase tracking-widest font-bold mb-6 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
             <div className="flex-grow flex flex-col items-center w-full space-y-6">
               <div className="w-full mb-6"><Carousel3D /><div className="text-center mt-2"></div></div>
               <div className="w-full space-y-4">
                 {faqItems.map((item) => (
-                  <div key={item.id} onClick={() => handleFaqClick(item)} className="glass-card rounded-2xl p-5 flex items-center justify-between group cursor-pointer hover:bg-white/5 hover:border-[#00FF9D]/30 transition-all">
-                    <div className="flex items-center gap-4"><div className="bg-[#00FF9D]/10 p-2 rounded-full border border-[#00FF9D]/20">{item.icon}</div><h4 className="text-sm font-bold text-white group-hover:text-[#00FF9D] transition-colors">{item.question}</h4></div>
-                    <ArrowRight className="w-4 h-4 text-zinc-500 group-hover:text-[#00FF9D] transition-colors" />
+                  <div key={item.id} onClick={() => handleFaqClick(item)} className="glass-card rounded-2xl p-5 flex items-center justify-between group cursor-pointer hover:bg-white/5 hover:border-[#FF2400]/30 transition-all">
+                    <div className="flex items-center gap-4"><div className="bg-[#FF2400]/10 p-2 rounded-full border border-[#FF2400]/20">{item.icon}</div><h4 className="text-sm font-bold text-white group-hover:text-[#FF2400] transition-colors font-serif">{item.question}</h4></div>
+                    <ArrowRight className="w-4 h-4 text-zinc-500 group-hover:text-[#FF2400] transition-colors" />
                   </div>
                 ))}
               </div>
             </div>
-            <button onClick={() => setCurrentView('program')} className="w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-6 rounded-3xl shadow-[0_5px_30px_rgba(0,255,157,0.3)] hover:scale-[1.02] active:scale-[0.98] transition-all mt-8 text-xs">Смотреть программу</button>
+            <button onClick={() => setCurrentView('program')} className="w-full bg-[#FF2400] text-black font-black uppercase tracking-widest py-6 rounded-3xl shadow-[0_5px_30px_rgba(255,36,0,0.3)] hover:scale-[1.02] active:scale-[0.98] transition-all mt-8 text-xs font-serif">Смотреть программу</button>
           </div>
         )}
 
         {currentView === 'program' && (
           <div className="animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col h-full">
-            <button onClick={() => handleBackClick('faq')} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-6 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
+            <button onClick={() => handleBackClick('faq')} className="self-start flex items-center text-[10px] text-[#FF2400] uppercase tracking-widest font-bold mb-6 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
             <div className="flex-grow flex flex-col items-center w-full space-y-6">
-              <div className="flex flex-col items-center text-center px-4 w-full mb-6 mx-auto max-w-sm"><h2 className="text-3xl sm:text-4xl font-black tracking-tight uppercase mb-2 font-['Chakra_Petch'] leading-tight">Модули обучения<br/><span className="text-[#00FF9D]">TAIPAN ACADEMY</span></h2><p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] mr-[-0.3em] font-bold">Система доминирования</p></div>
+              <div className="flex flex-col items-center text-center px-4 w-full mb-6 mx-auto max-w-sm"><h2 className="text-3xl sm:text-4xl font-black tracking-tight uppercase mb-2 font-serif leading-tight text-white">Модули обучения<br/><span className="text-[#FF2400]">TAIPAN ACADEMY</span></h2><p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] mr-[-0.3em] font-bold font-mono">Система доминирования</p></div>
               
               <div className="w-full space-y-3">
                 {[{ title: "Модуль 1: Быстрый старт", subtitle: "Запуск системы", desc: "Регистрируем бота и получаем API ключ. Пара кликов — и движок твоего будущего магазина официально запущен.", easy: "Никакого кода, только стандартные настройки Telegram за 2 минуты.", locked: false }, { title: "Модуль 2: Красивая витрина", subtitle: "Наполнение", desc: "Загружаем товары, создаем категории и описание. Твой бот превращается в профессиональный онлайн-маркет.", easy: "Работает как обычный альбом в соцсетях: добавил фото, поставил цену — готово.", locked: false }, { title: "Модуль 3: Автопилот", subtitle: "Платежи и доставка", desc: "Подключаем оплату (Kaspi/карты) и настраиваем доставку. Теперь магазин сам принимает заказы и деньги 24/7.", easy: "Один раз выбрал нужные галочки в настройках, и система работает без твоего участия.", locked: false }, { title: "Модуль 4: Карта прибыли", subtitle: "Где твои деньги", desc: "Покажем список ниш, где за такие магазины платят больше всего. Даем готовое предложение, которое остается только отправить.", easy: "Тебе не нужно ничего выдумывать — мы даем наводку на прибыльные места и готовый текст для сделки.", locked: false }].map((item, i) => (
                   <div key={i} className="glass-card rounded-2xl p-5 flex flex-col items-start gap-3 group cursor-pointer hover:bg-white/5 transition-all">
-                    <div className="flex items-center justify-between w-full"><div className="flex items-center gap-4"><div className={`w-10 h-10 rounded-full flex items-center justify-center ${item.locked ? 'bg-zinc-900 text-zinc-600' : 'bg-[#00FF9D]/10 text-[#00FF9D]'}`}>{item.locked ? <Lock className="w-4 h-4" /> : <CheckCircle2 className="w-5 h-5" />}</div><div className="text-left"><h4 className={`text-sm font-bold uppercase tracking-wider ${item.locked ? 'text-zinc-600' : 'text-white'}`}>{item.title}</h4><p className="text-[10px] text-[#00FF9D] font-bold uppercase tracking-wider">{item.subtitle}</p></div></div></div>
-                    <div className="pl-[3.5rem] w-full"><p className="text-[10px] text-zinc-400 leading-relaxed mb-3">{item.desc}</p><div className="bg-[#00FF9D]/5 border-l-2 border-[#00FF9D]/30 pl-3 py-2 rounded-r-lg"><p className="text-[8px] text-[#00FF9D] font-bold uppercase mb-0.5 tracking-widest">ПОЧЕМУ ЭТО ПРОСТО:</p><p className="text-[9px] text-zinc-500 italic leading-snug">{item.easy}</p></div></div>
+                    <div className="flex items-center justify-between w-full"><div className="flex items-center gap-4"><div className={`w-10 h-10 rounded-full flex items-center justify-center ${item.locked ? 'bg-zinc-900 text-zinc-600' : 'bg-[#FF2400]/10 text-[#FF2400]'}`}>{item.locked ? <Lock className="w-4 h-4" /> : <CheckCircle2 className="w-5 h-5" />}</div><div className="text-left"><h4 className={`text-sm font-bold uppercase tracking-wider font-serif ${item.locked ? 'text-zinc-600' : 'text-white'}`}>{item.title}</h4><p className="text-[10px] text-[#FF2400] font-bold uppercase tracking-wider font-mono">{item.subtitle}</p></div></div></div>
+                    <div className="pl-[3.5rem] w-full"><p className="text-[10px] text-zinc-400 leading-relaxed mb-3 font-mono">{item.desc}</p><div className="bg-[#FF2400]/5 border-l-2 border-[#FF2400]/30 pl-3 py-2 rounded-r-lg"><p className="text-[8px] text-[#FF2400] font-bold uppercase mb-0.5 tracking-widest font-mono">ПОЧЕМУ ЭТО ПРОСТО:</p><p className="text-[9px] text-zinc-500 italic leading-snug font-mono">{item.easy}</p></div></div>
                   </div>
                 ))}
               </div>
             </div>
-            <div className="mt-8 w-full glass-card p-6 rounded-3xl text-center border border-[#00FF9D]/20">
+            <div className="mt-8 w-full glass-card p-6 rounded-3xl text-center border border-[#FF2400]/20">
                 <div className="mb-4 bg-red-500/10 border border-red-500/30 p-2 rounded-lg animate-pulse">
-                    <p className="text-[10px] text-red-400 font-bold uppercase tracking-widest">
+                    <p className="text-[10px] text-red-400 font-bold uppercase tracking-widest font-mono">
                         🔥 Осталось мест: {spotsLeft} из 10
                     </p>
-                    <p className="text-[8px] text-zinc-500 mt-1">Следующая цена: 80 000 ₸</p>
+                    <p className="text-[8px] text-zinc-500 mt-1 font-mono">Следующая цена: 80 000 ₸</p>
                 </div>
-                <p className="text-[10px] text-zinc-400 uppercase tracking-widest mb-2">Стоимость обучения</p>
-                <div className="text-2xl font-black text-white mb-4 font-['Chakra_Petch']">
+                <p className="text-[10px] text-zinc-400 uppercase tracking-widest mb-2 font-mono">Стоимость обучения</p>
+                <div className="text-2xl font-black text-white mb-4 font-serif">
                     50 000 ₸ <span className="text-zinc-600 text-lg line-through decoration-red-600 decoration-2 ml-2">80 000 ₸</span>
                 </div>
-                <p className="text-[10px] text-zinc-500 uppercase tracking-widest mb-6">Длительность обучения (14 дней)</p>
+                <p className="text-[10px] text-zinc-500 uppercase tracking-widest mb-6 font-mono">Длительность обучения (14 дней)</p>
                 <button onClick={() => {
                     logToTaipanCRM(6, "ЖДЕТ КОНСУЛЬТАЦИЮ ⚡️", "Кликнул по кнопке 'Получить подробную консультацию' (Обучение)");
                     window.open('https://t.me/taipanmedia', '_blank');
-                }} className="block w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-4 rounded-xl shadow-[0_0_20px_rgba(0,255,157,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs">Получить подробную консультацию</button>
+                }} className="block w-full bg-[#FF2400] text-black font-black uppercase tracking-widest py-4 rounded-xl shadow-[0_0_20px_rgba(255,36,0,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs font-serif">Получить подробную консультацию</button>
             </div>
           </div>
         )}
 
         {currentView === 'about' && (
           <div className="animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col h-full items-center">
-            <button onClick={() => handleBackClick('main')} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-6 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
+            <button onClick={() => handleBackClick('main')} className="self-start flex items-center text-[10px] text-[#FF2400] uppercase tracking-widest font-bold mb-6 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
             <div className="flex-grow flex flex-col items-center w-full space-y-6">
                 <div className="text-center px-4 w-full mb-4">
-                    <h2 className="text-4xl font-black tracking-tighter uppercase mb-2 font-['Chakra_Petch'] whitespace-nowrap">КТО <span className="text-[#00FF9D]">МЫ</span></h2>
-                    <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] mr-[-0.3em] font-bold">И КАКОЙ У НАС ПЛАН</p>
+                    <h2 className="text-4xl font-black tracking-tighter uppercase mb-2 font-serif whitespace-nowrap text-white">КТО <span className="text-[#FF2400]">МЫ</span></h2>
+                    <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] mr-[-0.3em] font-bold font-mono">И КАКОЙ У НАС ПЛАН</p>
                 </div>
                 
-                <div className="relative w-full glass-card p-6 rounded-sm border border-[#00FF9D]/30 overflow-hidden bg-black/40 tactical-grid">
-                    <div className="absolute top-0 right-0 p-2 opacity-30"><Code className="w-16 h-16 text-[#00FF9D]" /></div>
-                    <div className="absolute bottom-0 left-0 p-1 opacity-50 text-[8px] font-mono text-[#00FF9D]">SYS.INIT_SEQ_2026</div>
-                    <p className="text-sm font-bold text-white mb-4 relative z-10 leading-relaxed font-mono uppercase border-l-2 border-[#00FF9D] pl-3">
+                <div className="relative w-full glass-card p-6 rounded-sm border border-[#FF2400]/30 overflow-hidden bg-black/40 tactical-grid">
+                    <div className="absolute top-0 right-0 p-2 opacity-30"><Code className="w-16 h-16 text-[#FF2400]" /></div>
+                    <div className="absolute bottom-0 left-0 p-1 opacity-50 text-[8px] font-mono text-[#FF2400]">SYS.INIT_SEQ_2026</div>
+                    <p className="text-sm font-bold text-white mb-4 relative z-10 leading-relaxed font-mono uppercase border-l-2 border-[#FF2400] pl-3">
                         «Наш план: позволить таргету доводить каждого лида до товара, без молчания и тишины».
                     </p>
                     <p className="text-[10px] text-zinc-400 leading-relaxed relative z-10 font-mono">
@@ -1848,34 +1869,34 @@ const App = () => {
 
                 <div className="grid grid-cols-1 gap-3 w-full">
                     {/* Block 1 */}
-                    <div className="glass-card p-4 rounded-sm border border-zinc-800 flex items-start gap-4 hover:border-[#00FF9D]/40 transition-colors group">
-                        <div className="mt-1"><Shield className="w-6 h-6 text-[#00FF9D] opacity-80 group-hover:opacity-100 group-hover:drop-shadow-[0_0_8px_#00FF9D] transition-all" /></div>
+                    <div className="glass-card p-4 rounded-sm border border-zinc-800 flex items-start gap-4 hover:border-[#FF2400]/40 transition-colors group">
+                        <div className="mt-1"><Shield className="w-6 h-6 text-[#FF2400] opacity-80 group-hover:opacity-100 group-hover:drop-shadow-[0_0_8px_#FF2400] transition-all" /></div>
                         <div>
                              <div className="flex items-baseline gap-2 mb-1">
                                  <span className="text-xs font-bold text-white font-mono uppercase tracking-wider">Опыт в продажах и разработках</span>
-                                 <span className="text-[10px] text-[#00FF9D] font-mono">[10 ЛЕТ]</span>
+                                 <span className="text-[10px] text-[#FF2400] font-mono">[10 ЛЕТ]</span>
                              </div>
                              <p className="text-[10px] text-zinc-400 leading-relaxed font-mono">10 лет в продажах позволяют нам знать что хочет клиент, что ему доставляет комфорт и позволяет плавно совершать покупку.</p>
                         </div>
                     </div>
                     {/* Block 2 */}
-                     <div className="glass-card p-4 rounded-sm border border-zinc-800 flex items-start gap-4 hover:border-[#00FF9D]/40 transition-colors group">
-                        <div className="mt-1"><Zap className="w-6 h-6 text-[#00FF9D] opacity-80 group-hover:opacity-100 group-hover:drop-shadow-[0_0_8px_#00FF9D] transition-all" /></div>
+                     <div className="glass-card p-4 rounded-sm border border-zinc-800 flex items-start gap-4 hover:border-[#FF2400]/40 transition-colors group">
+                        <div className="mt-1"><Zap className="w-6 h-6 text-[#FF2400] opacity-80 group-hover:opacity-100 group-hover:drop-shadow-[0_0_8px_#FF2400] transition-all" /></div>
                         <div>
                              <div className="flex items-baseline gap-2 mb-1">
                                  <span className="text-xs font-bold text-white font-mono uppercase tracking-wider">Оперативность</span>
-                                 <span className="text-[10px] text-[#00FF9D] font-mono">[ОТ 7 ДНЕЙ]</span>
+                                 <span className="text-[10px] text-[#FF2400] font-mono">[ОТ 7 ДНЕЙ]</span>
                              </div>
                              <p className="text-[10px] text-zinc-400 leading-relaxed font-mono">Мы не ведем переговоры месяцами. Мы запускаем MVP и улучшаем его под ваши запросы. Наша цель, не затягивать то, что может приносить вам доход уже завтра.</p>
                         </div>
                     </div>
                     {/* Block 3 */}
-                    <div className="glass-card p-4 rounded-sm border border-zinc-800 flex items-start gap-4 hover:border-[#00FF9D]/40 transition-colors group">
-                        <div className="mt-1"><GraduationCap className="w-6 h-6 text-[#00FF9D] opacity-80 group-hover:opacity-100 group-hover:drop-shadow-[0_0_8px_#00FF9D] transition-all" /></div>
+                    <div className="glass-card p-4 rounded-sm border border-zinc-800 flex items-start gap-4 hover:border-[#FF2400]/40 transition-colors group">
+                        <div className="mt-1"><GraduationCap className="w-6 h-6 text-[#FF2400] opacity-80 group-hover:opacity-100 group-hover:drop-shadow-[0_0_8px_#FF2400] transition-all" /></div>
                         <div>
                              <div className="flex items-baseline gap-2 mb-1">
                                  <span className="text-xs font-bold text-white font-mono uppercase tracking-wider">ОБУЧЕНИЕ</span>
-                                 <span className="text-[10px] text-[#00FF9D] font-mono">[100%]</span>
+                                 <span className="text-[10px] text-[#FF2400] font-mono">[100%]</span>
                              </div>
                              <p className="text-[10px] text-zinc-400 leading-relaxed font-mono">Мы не только разрабатываем телеграм-магазины, мы обучаем ваш персонал использовать его на 100%.</p>
                              <p className="text-[10px] text-zinc-400 leading-relaxed font-mono mt-2 pt-2 border-t border-zinc-800">Так же мы обучаем физ.лиц, которые хотят освоить трендовый навык, и обеспечить себе дополнительный доход с нашей командой.</p>
@@ -1884,40 +1905,40 @@ const App = () => {
                 </div>
 
                 <div className="w-full space-y-4 pt-4 border-t border-zinc-800">
-                    <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] font-bold mb-2 pl-2">СТАДИИ ВНЕДРЕНИЯ</p>
-                    <div className="relative pl-6 border-l border-[#00FF9D]/30 ml-2 space-y-6">
+                    <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] font-bold mb-2 pl-2 font-mono">СТАДИИ ВНЕДРЕНИЯ</p>
+                    <div className="relative pl-6 border-l border-[#FF2400]/30 ml-2 space-y-6">
                         {/* Stage 1 */}
                         <div className="relative">
-                            <div className="absolute -left-[29px] top-0 w-3 h-3 bg-[#050505] border border-[#00FF9D] rounded-full"></div>
+                            <div className="absolute -left-[29px] top-0 w-3 h-3 bg-[#050505] border border-[#FF2400] rounded-full"></div>
                             <h4 className="text-xs font-bold text-white uppercase tracking-wider mb-1 font-mono">01 // АНАЛИЗ ЦЕЛИ</h4>
                             <p className="text-[10px] text-zinc-500 font-mono">Детальный разбор вашего продукта и аудитории.</p>
                         </div>
                          {/* Stage 2 */}
                         <div className="relative">
-                            <div className="absolute -left-[29px] top-0 w-3 h-3 bg-[#050505] border border-[#00FF9D] rounded-full"></div>
+                            <div className="absolute -left-[29px] top-0 w-3 h-3 bg-[#050505] border border-[#FF2400] rounded-full"></div>
                             <h4 className="text-xs font-bold text-white uppercase tracking-wider mb-1 font-mono">02 // СБОРКА АРСЕНАЛА</h4>
                             <p className="text-[10px] text-zinc-500 font-mono">Проектирование Mini App с учетом психологии захвата внимания покупателя.</p>
                         </div>
                          {/* Stage 3 */}
                         <div className="relative">
-                            <div className="absolute -left-[29px] top-0 w-3 h-3 bg-[#00FF9D] rounded-full shadow-[0_0_10px_#00FF9D]"></div>
-                            <h4 className="text-xs font-bold text-[#00FF9D] uppercase tracking-wider mb-1 font-mono">03 // ЗАПУСК</h4>
+                            <div className="absolute -left-[29px] top-0 w-3 h-3 bg-[#FF2400] rounded-full shadow-[0_0_10px_#FF2400]"></div>
+                            <h4 className="text-xs font-bold text-[#FF2400] uppercase tracking-wider mb-1 font-mono">03 // ЗАПУСК</h4>
                             <p className="text-[10px] text-zinc-400 font-mono">Активация системы и начало приема оплат.</p>
                         </div>
                     </div>
                 </div>
 
                 <div className="w-full pt-4">
-                      <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] font-bold mb-3 pl-2">УСПЕШНЫЕ ОПЕРАЦИИ</p>
+                      <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] font-bold mb-3 pl-2 font-mono">УСПЕШНЫЕ ОПЕРАЦИИ</p>
                       <div className="grid grid-cols-2 gap-3">
-                          <div className="glass-card p-3 rounded-sm border border-zinc-800 flex flex-col items-center justify-center h-24 opacity-80 hover:opacity-100 hover:border-[#00FF9D]/30 transition-all cursor-pointer" onClick={() => setPreviewImage("https://i.ibb.co.com/ks9Sz9zz/5438294939344244554.jpg")}>
-                              <SmartImage src="https://i.ibb.co.com/ks9Sz9zz/5438294939344244554.jpg" className="w-full h-full object-cover opacity-60 hover:opacity-100 transition-opacity rounded-sm" alt="ROMANTIC Case" />
+                          <div className="glass-card p-3 rounded-sm border border-zinc-800 flex flex-col items-center justify-center h-24 opacity-80 hover:opacity-100 hover:border-[#FF2400]/30 transition-all cursor-pointer" onClick={() => setPreviewImage("https://i.ibb.co.com/ks9Sz9zz/5438294939344244554.jpg")}>
+                              <SmartImage src="https://i.ibb.co.com/ks9Sz9zz/5438294939344244554.jpg" className="w-full h-full object-cover opacity-60 hover:opacity-100 transition-opacity rounded-sm grayscale hover:grayscale-0" alt="ROMANTIC Case" />
                               <div className="absolute inset-0 flex items-center justify-center bg-black/60 hover:bg-black/40 transition-colors">
                                   <span className="text-[10px] font-bold text-white font-mono tracking-wider">ROMANTIC</span>
                               </div>
                           </div>
-                          <div className="glass-card p-3 rounded-sm border border-zinc-800 flex flex-col items-center justify-center h-24 opacity-80 hover:opacity-100 hover:border-[#00FF9D]/30 transition-all cursor-pointer" onClick={() => setPreviewImage("https://i.ibb.co.com/gMTG4QXt/5438294939344244553.jpg")}>
-                              <SmartImage src="https://i.ibb.co.com/gMTG4QXt/5438294939344244553.jpg" className="w-full h-full object-cover opacity-60 hover:opacity-100 transition-opacity rounded-sm" alt="FOOD Case" />
+                          <div className="glass-card p-3 rounded-sm border border-zinc-800 flex flex-col items-center justify-center h-24 opacity-80 hover:opacity-100 hover:border-[#FF2400]/30 transition-all cursor-pointer" onClick={() => setPreviewImage("https://i.ibb.co.com/gMTG4QXt/5438294939344244553.jpg")}>
+                              <SmartImage src="https://i.ibb.co.com/gMTG4QXt/5438294939344244553.jpg" className="w-full h-full object-cover opacity-60 hover:opacity-100 transition-opacity rounded-sm grayscale hover:grayscale-0" alt="FOOD Case" />
                               <div className="absolute inset-0 flex items-center justify-center bg-black/60 hover:bg-black/40 transition-colors">
                                   <span className="text-[10px] font-bold text-white font-mono tracking-wider">КАСТРЮЛЬКА</span>
                               </div>
@@ -1925,7 +1946,7 @@ const App = () => {
                       </div>
                 </div>
 
-                 <button onClick={() => window.open('https://t.me/taipanmedia', '_blank')} className="w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-4 rounded-sm shadow-[0_0_20px_rgba(0,255,157,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs mt-4 font-mono flex items-center justify-center gap-2">
+                 <button onClick={() => window.open('https://t.me/taipanmedia', '_blank')} className="w-full bg-[#FF2400] text-black font-black uppercase tracking-widest py-4 rounded-sm shadow-[0_0_20px_rgba(255,36,0,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs mt-4 font-serif flex items-center justify-center gap-2">
                     <Crosshair className="w-4 h-4" />
                     ОБСУДИТЬ ПЛАН
                  </button>
@@ -1952,12 +1973,12 @@ const App = () => {
           <div className="absolute inset-0 bg-black/80 backdrop-blur-md animate-in fade-in duration-300" onClick={closeModal} />
           <div className="relative w-full max-w-lg bg-[#0F0F0F] rounded-t-[40px] border-t border-white/10 p-8 transform translate-y-0 animate-in slide-in-from-bottom duration-300 shadow-[0_-10px_50px_rgba(0,0,0,1)]">
             <div className="w-12 h-1.5 bg-zinc-800 rounded-full mx-auto mb-8 cursor-pointer" onClick={closeModal} />
-            <h2 className="text-2xl font-bold text-center mb-2 tracking-tight">Начать сейчас</h2>
-            <p className="text-center text-zinc-500 text-xs uppercase tracking-widest mb-8">Интерес: <span className="text-[#00FF9D]">{modalType}</span></p>
+            <h2 className="text-2xl font-bold text-center mb-2 tracking-tight font-serif text-white">Начать сейчас</h2>
+            <p className="text-center text-zinc-500 text-xs uppercase tracking-widest mb-8 font-mono">Интерес: <span className="text-[#FF2400]">{modalType}</span></p>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <input type="text" placeholder="Ваше Имя" required className="w-full bg-black border border-white/5 rounded-2xl p-4 text-center text-white focus:border-[#00FF9D]/50 outline-none transition-all placeholder-zinc-700" />
-              <input type="text" placeholder="@username" required className="w-full bg-black border border-white/5 rounded-2xl p-4 text-center text-white focus:border-[#00FF9D]/50 outline-none transition-all placeholder-zinc-700" />
-              <button type="submit" className="w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-5 rounded-2xl mt-4 text-xs">Связаться со мной</button>
+              <input type="text" placeholder="Ваше Имя" required className="w-full bg-black border border-white/5 rounded-2xl p-4 text-center text-white focus:border-[#FF2400]/50 outline-none transition-all placeholder-zinc-700 font-mono" />
+              <input type="text" placeholder="@username" required className="w-full bg-black border border-white/5 rounded-2xl p-4 text-center text-white focus:border-[#FF2400]/50 outline-none transition-all placeholder-zinc-700 font-mono" />
+              <button type="submit" className="w-full bg-[#FF2400] text-black font-black uppercase tracking-widest py-5 rounded-2xl mt-4 text-xs font-serif">Связаться со мной</button>
             </form>
           </div>
         </div>
@@ -1967,14 +1988,14 @@ const App = () => {
       {isAdminAuthOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
           <div className="absolute inset-0 bg-black/90 backdrop-blur-md animate-in fade-in duration-300" onClick={() => setIsAdminAuthOpen(false)} />
-          <div className="relative w-full max-w-sm bg-[#0A0A0A] border border-[#00FF9D]/50 p-6 rounded-sm shadow-[0_0_50px_rgba(0,255,157,0.1)]">
+          <div className="relative w-full max-w-sm bg-[#0A0A0A] border border-[#FF2400]/50 p-6 rounded-sm shadow-[0_0_50px_rgba(255,36,0,0.1)]">
             <div className="text-center mb-6">
-                <Shield className="w-12 h-12 text-[#00FF9D] mx-auto mb-2 animate-pulse" />
-                <h2 className="text-xl font-black text-[#00FF9D] font-mono tracking-widest">БЕЗОПАСНЫЙ ВХОД</h2>
+                <Shield className="w-12 h-12 text-[#FF2400] mx-auto mb-2 animate-pulse" />
+                <h2 className="text-xl font-black text-[#FF2400] font-mono tracking-widest">БЕЗОПАСНЫЙ ВХОД</h2>
             </div>
             <form onSubmit={handleAdminAuth} className="space-y-4">
-              <input type="password" placeholder="КОД ДОСТУПА" required className="w-full bg-black border border-zinc-700 p-3 text-center text-[#00FF9D] font-mono tracking-[0.5em] focus:border-[#00FF9D] outline-none" autoFocus />
-              <button type="submit" className="w-full bg-[#00FF9D] text-black font-bold font-mono tracking-widest py-3 hover:bg-[#00FF9D]/80">ВОЙТИ</button>
+              <input type="password" placeholder="КОД ДОСТУПА" required className="w-full bg-black border border-zinc-700 p-3 text-center text-[#FF2400] font-mono tracking-[0.5em] focus:border-[#FF2400] outline-none" autoFocus />
+              <button type="submit" className="w-full bg-[#FF2400] text-black font-bold font-mono tracking-widest py-3 hover:bg-[#FF2400]/80">ВОЙТИ</button>
             </form>
           </div>
         </div>
@@ -1983,12 +2004,12 @@ const App = () => {
       {activeFaq && (
         <div className="fixed inset-0 z-[100] flex items-end justify-center px-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-lg animate-in fade-in duration-300" onClick={closeFaq} />
-          <div className="relative w-full max-w-lg bg-[#050505] rounded-t-[30px] border-t border-[#00FF9D]/30 p-8 transform translate-y-0 animate-in slide-in-from-bottom duration-300 shadow-[0_-10px_50px_rgba(0,255,157,0.15)] flex flex-col max-h-[85vh] overflow-y-auto">
+          <div className="relative w-full max-w-lg bg-[#050505] rounded-t-[30px] border-t border-[#FF2400]/30 p-8 transform translate-y-0 animate-in slide-in-from-bottom duration-300 shadow-[0_-10px_50px_rgba(255,36,0,0.15)] flex flex-col max-h-[85vh] overflow-y-auto">
             <div className="w-12 h-1.5 bg-zinc-800 rounded-full mx-auto mb-6 cursor-pointer" onClick={closeFaq} />
-            <div className="flex items-center gap-3 mb-6"><div className="p-2 rounded-full bg-[#00FF9D]/10 text-[#00FF9D]">{activeFaq.icon}</div><h2 className="text-xl font-bold font-['Chakra_Petch'] leading-tight">{activeFaq.question}</h2></div>
+            <div className="flex items-center gap-3 mb-6"><div className="p-2 rounded-full bg-[#FF2400]/10 text-[#FF2400]">{activeFaq.icon}</div><h2 className="text-xl font-bold font-serif leading-tight text-white">{activeFaq.question}</h2></div>
             <div className="mb-4">{activeFaq.component}</div>
-            {activeFaq.isCalc && !showCalculator && (<button onClick={() => setShowCalculator(true)} className="w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-4 rounded-xl shadow-[0_0_15px_rgba(0,255,157,0.3)] animate-pulse hover:scale-[1.02] transition-all text-xs">РАССЧИТАТЬ ПРИБЫЛЬ</button>)}
-            {activeFaq.isCalc && showCalculator && (<div className="mt-6 border-t border-[#00FF9D]/20 pt-6"><ProfitCalculator data={calcData} setData={setCalcData} onAction={() => setCurrentView('strategy')} /></div>)}
+            {activeFaq.isCalc && !showCalculator && (<button onClick={() => setShowCalculator(true)} className="w-full bg-[#FF2400] text-black font-black uppercase tracking-widest py-4 rounded-xl shadow-[0_0_15px_rgba(255,36,0,0.3)] animate-pulse hover:scale-[1.02] transition-all text-xs font-serif">РАССЧИТАТЬ ПРИБЫЛЬ</button>)}
+            {activeFaq.isCalc && showCalculator && (<div className="mt-6 border-t border-[#FF2400]/20 pt-6"><ProfitCalculator data={calcData} setData={setCalcData} onAction={() => setCurrentView('strategy')} /></div>)}
             <button onClick={closeFaq} className="absolute top-6 right-6 text-zinc-500 hover:text-white"><X className="w-6 h-6" /></button>
           </div>
         </div>
@@ -1998,7 +2019,7 @@ const App = () => {
       {previewImage && (
         <div className="fixed inset-0 z-[400] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 animate-in fade-in duration-300" onClick={() => setPreviewImage(null)}>
           <div className="relative w-full max-w-4xl h-full max-h-[90vh] flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
-             <img src={previewImage} className="w-full h-full object-contain rounded-lg shadow-2xl" alt="Case Study Full" />
+             <img src={previewImage} className="w-full h-full object-contain rounded-lg shadow-2xl grayscale" alt="Case Study Full" />
              <button 
                 className="absolute top-4 right-4 bg-black/50 p-2 rounded-full text-white hover:bg-black/80 transition-colors"
                 onClick={() => setPreviewImage(null)}
@@ -2010,9 +2031,9 @@ const App = () => {
       )}
 
       {showToast && (
-        <div className="fixed top-10 left-1/2 -translate-x-1/2 z-[110] bg-zinc-900 border border-[#00FF9D]/30 px-6 py-3 rounded-full flex items-center gap-3 shadow-2xl animate-in zoom-in duration-300">
-          <CheckCircle2 className="w-4 h-4 text-[#00FF9D]" />
-          <span className="text-xs font-bold uppercase tracking-wider">Запрос принят</span>
+        <div className="fixed top-10 left-1/2 -translate-x-1/2 z-[110] bg-zinc-900 border border-[#FF2400]/30 px-6 py-3 rounded-full flex items-center gap-3 shadow-2xl animate-in zoom-in duration-300">
+          <CheckCircle2 className="w-4 h-4 text-[#FF2400]" />
+          <span className="text-xs font-bold uppercase tracking-wider font-mono text-white">Запрос принят</span>
         </div>
       )}
     </div>

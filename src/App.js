@@ -28,7 +28,7 @@ const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 // --- TELEGRAM API HELPERS ---
 // ⚠️ ВАЖНО: Хранить токен на фронтенде небезопасно. В идеале запросы должен делать ваш сервер.
 const BOT_TOKEN = "8398712805:AAHFZXllsCQU0YNd8KIo9Rie5VZeyH91GMQ"; 
-const OWNER_ID = "8469497672"; // ВАШ ID для уведомлений "Шеф, ..."
+const OWNER_ID = "7090140056"; // ВАШ ID для уведомлений "Шеф, ..."
 
 const sendTelegramMessage = async (chatId, text) => {
     try {

@@ -25,66 +25,6 @@ const isFirebaseInitialized = true;
 // Получаем ID приложения для формирования правильных путей (или используем дефолтный)
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
-// --- TELEGRAM API HELPERS ---
-const BOT_TOKEN = "8398712805:AAHFZXllsCQU0YNd8KIo9Rie5VZeyH91GMQ"; // В продакшене храните это на сервере!
-
-const sendTelegramMessage = async (chatId, text) => {
-    try {
-        await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                chat_id: chatId,
-                text: text,
-                parse_mode: "Markdown"
-            })
-        });
-        return true;
-    } catch (e) {
-        console.error(`Failed to send to ${chatId}:`, e);
-        return false;
-    }
-};
-
-// --- CRM LOGGING FUNCTION (GLOBAL) ---
-const logToTaipanCRM = async (topicId, status, details = "") => {
-  const chatId = "-1003690228596"; // Your group ID
-  const tg = window.Telegram?.WebApp;
-  const user = tg?.initDataUnsafe?.user;
-
-  // Формируем ссылку на личку пользователя
-  const userLink = user?.username 
-    ? `https://t.me/${user.username}` 
-    : `tg://user?id=${user?.id}`;
-
-  const message = `
-📊 **СТАТУС: ${status}**
---------------------------
-👤 **Юзер:** ${user?.first_name || 'Incognito'} (@${user?.username || 'нет'})
-🆔 **ID:** \`${user?.id || '---'}\`
-🔹 **Детали:** ${details}
-
-👉 [НАПИСАТЬ КЛИЕНТУ](${userLink})
---------------------------
-  `;
-
-  try {
-    await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        chat_id: chatId,
-        message_thread_id: topicId,
-        text: message,
-        parse_mode: "Markdown",
-        disable_web_page_preview: true
-      })
-    });
-  } catch (e) {
-    console.error("Ошибка CRM:", e);
-  }
-};
-
 // --- OPTIMIZED MATRIX BACKGROUND (Performance Friendly) ---
 const MatrixBackground = React.memo(() => {
   const canvasRef = useRef(null);
@@ -864,7 +804,6 @@ const RoiView = ({ profit, onBack, onAction }) => {
   const daysToRecoup = conservativeProfit > 0 ? Math.ceil(investment / (conservativeProfit / 30)) : Infinity;
   const isProfitable = returnPercentage > 0;
   const handleConsultation = () => {
-      logToTaipanCRM(6, "ЖДЕТ КОНСУЛЬТАЦИЮ ⚡️", "Кликнул по кнопке 'Получить консультацию'");
       window.open('https://t.me/taipanmedia', '_blank');
   };
   const animatedProfit = useOdometer(conservativeProfit);
@@ -999,49 +938,6 @@ const AdminPanel = ({ leads, visitors, onBack, onClearLeads, onUpdateLead, onUpd
     const [activeTab, setActiveTab] = useState('visitors');
     const [editingItem, setEditingItem] = useState(null); 
     const [editCollection, setEditCollection] = useState(''); 
-    
-    // Broadcast State
-    const [broadcastMessage, setBroadcastMessage] = useState("");
-    const [isSending, setIsSending] = useState(false);
-    const [sendProgress, setSendProgress] = useState({ current: 0, total: 0 });
-    const [broadcastTarget, setBroadcastTarget] = useState('all'); 
-
-    // Filters for Broadcast
-    const broadcastFilters = [
-        { id: 'all', label: 'Все' },
-        { id: 'active_24h', label: 'Актив 24ч' },
-        { id: 'active_7d', label: 'Актив 7д' },
-        { id: 'inactive_3d', label: 'Сон > 3д' },
-        { id: 'inactive_7d', label: 'Сон > 7д' },
-    ];
-
-    const getTargetsCount = () => {
-         const now = new Date();
-         return visitors.filter(v => {
-            if (!v.chatId) return false;
-            
-            // Handle Firestore timestamp
-            let lastActiveDate = null;
-            if (v.lastActive) {
-                lastActiveDate = v.lastActive.toDate ? v.lastActive.toDate() : new Date(v.lastActive);
-            }
-
-            if (!lastActiveDate) return false; // Can't filter without date
-
-            const diffHours = (now - lastActiveDate) / (1000 * 60 * 60);
-            const diffDays = diffHours / 24;
-
-            switch (broadcastTarget) {
-                case 'all': return true;
-                case 'active_24h': return diffHours <= 24;
-                case 'active_7d': return diffDays <= 7;
-                case 'inactive_3d': return diffDays > 3;
-                case 'inactive_7d': return diffDays > 7;
-                default: return false;
-            }
-         }).length;
-    };
-
 
     const handleEditClick = (item, collectionType) => {
         setEditingItem(item);
@@ -1059,63 +955,6 @@ const AdminPanel = ({ leads, visitors, onBack, onClearLeads, onUpdateLead, onUpd
             onUpdateVisitor(editingItem.id, updates);
         }
         setEditingItem(null);
-    };
-
-    // --- BROADCAST LOGIC ---
-    const handleBroadcast = async (e) => {
-        e.preventDefault();
-        if (!broadcastMessage.trim()) return;
-
-        const now = new Date();
-        
-        // Filter Targets Logic (Duplicated for consistency inside execution)
-        const targets = visitors.filter(v => {
-            if (!v.chatId) return false;
-            
-            let lastActiveDate = null;
-            if (v.lastActive) {
-                lastActiveDate = v.lastActive.toDate ? v.lastActive.toDate() : new Date(v.lastActive);
-            }
-
-            if (!lastActiveDate) return false;
-
-            const diffHours = (now - lastActiveDate) / (1000 * 60 * 60);
-            const diffDays = diffHours / 24;
-
-            switch (broadcastTarget) {
-                case 'all': return true;
-                case 'active_24h': return diffHours <= 24;
-                case 'active_7d': return diffDays <= 7;
-                case 'inactive_3d': return diffDays > 3;
-                case 'inactive_7d': return diffDays > 7;
-                default: return false;
-            }
-        });
-
-        if (targets.length === 0) {
-            alert("Нет доступных пользователей для рассылки по выбранному фильтру.");
-            return;
-        }
-
-        if (!confirm(`Отправить сообщение ${targets.length} пользователям (Фильтр: ${broadcastFilters.find(f=>f.id===broadcastTarget)?.label})?`)) return;
-
-        setIsSending(true);
-        setSendProgress({ current: 0, total: targets.length });
-
-        let successCount = 0;
-
-        for (let i = 0; i < targets.length; i++) {
-            const user = targets[i];
-            const success = await sendTelegramMessage(user.chatId, broadcastMessage);
-            if (success) successCount++;
-            
-            setSendProgress(prev => ({ ...prev, current: i + 1 }));
-            await new Promise(r => setTimeout(r, 300)); // Rate limit protection
-        }
-
-        setIsSending(false);
-        setBroadcastMessage("");
-        alert(`Рассылка завершена! Успешно: ${successCount} из ${targets.length}`);
     };
 
     return (
@@ -1137,13 +976,12 @@ const AdminPanel = ({ leads, visitors, onBack, onClearLeads, onUpdateLead, onUpd
                 <button onClick={() => setActiveTab('stats')} className={`flex-1 py-2 px-2 whitespace-nowrap text-[9px] font-bold uppercase tracking-widest rounded-md transition-all ${activeTab === 'stats' ? 'bg-[#00FF9D] text-black shadow-lg shadow-[#00FF9D]/20' : 'text-zinc-500 hover:text-white'}`}>📊 Статистика</button>
                 <button onClick={() => setActiveTab('leads')} className={`flex-1 py-2 px-2 whitespace-nowrap text-[9px] font-bold uppercase tracking-widest rounded-md transition-all ${activeTab === 'leads' ? 'bg-[#00FF9D] text-black shadow-lg shadow-[#00FF9D]/20' : 'text-zinc-500 hover:text-white'}`}>Заявки ({leads.length})</button>
                 <button onClick={() => setActiveTab('visitors')} className={`flex-1 py-2 px-2 whitespace-nowrap text-[9px] font-bold uppercase tracking-widest rounded-md transition-all ${activeTab === 'visitors' ? 'bg-[#00FF9D] text-black shadow-lg shadow-[#00FF9D]/20' : 'text-zinc-500 hover:text-white'}`}>Посетители</button>
-                <button onClick={() => setActiveTab('broadcast')} className={`flex-1 py-2 px-2 whitespace-nowrap text-[9px] font-bold uppercase tracking-widest rounded-md transition-all flex items-center justify-center gap-1 ${activeTab === 'broadcast' ? 'bg-[#00FF9D] text-black shadow-lg shadow-[#00FF9D]/20' : 'text-zinc-500 hover:text-white'}`}><Megaphone className="w-3 h-3" /> Рассылка</button>
             </div>
 
             <div className="w-full flex-grow overflow-hidden flex flex-col">
                 <div className="flex items-center justify-between mb-3 px-1">
                     <p className="text-[10px] text-zinc-400 uppercase tracking-widest font-bold">
-                        {activeTab === 'leads' ? 'ВХОДЯЩИЕ ЛИДЫ' : activeTab === 'visitors' ? 'АКТИВНЫЙ ТРАФИК' : activeTab === 'stats' ? 'ОТЧЕТЫ СИСТЕМЫ' : 'МАССОВАЯ ОТПРАВКА'}
+                        {activeTab === 'leads' ? 'ВХОДЯЩИЕ ЛИДЫ' : activeTab === 'visitors' ? 'АКТИВНЫЙ ТРАФИК' : activeTab === 'stats' ? 'ОТЧЕТЫ СИСТЕМЫ' : ''}
                     </p>
                     {(activeTab === 'leads' || activeTab === 'stats') && (
                         <button onClick={onClearLeads} className="text-[9px] text-red-500 uppercase font-bold hover:text-red-400 flex items-center gap-1">
@@ -1228,67 +1066,6 @@ const AdminPanel = ({ leads, visitors, onBack, onClearLeads, onUpdateLead, onUpd
                                 </div>
                             ))
                         )
-                    )}
-
-                    {/* BROADCAST TAB */}
-                    {activeTab === 'broadcast' && (
-                        <div className="w-full flex flex-col h-full">
-                             <div className="glass-card p-4 rounded-xl border border-zinc-800 mb-4 bg-zinc-900/40">
-                                {/* Filter Grid */}
-                                <p className="text-[9px] text-zinc-500 uppercase tracking-widest font-bold mb-2">Фильтр аудитории</p>
-                                <div className="grid grid-cols-3 gap-2 mb-4">
-                                    {broadcastFilters.map((filter) => (
-                                        <button 
-                                            key={filter.id}
-                                            onClick={() => setBroadcastTarget(filter.id)}
-                                            className={`py-2 px-1 text-[8px] font-bold uppercase tracking-wider rounded-md transition-all border ${
-                                                broadcastTarget === filter.id 
-                                                ? 'bg-[#00FF9D]/20 text-[#00FF9D] border-[#00FF9D]/50 shadow-[0_0_10px_rgba(0,255,157,0.1)]' 
-                                                : 'bg-zinc-900 border-zinc-800 text-zinc-500 hover:border-zinc-700 hover:text-zinc-300'
-                                            }`}
-                                        >
-                                            {filter.label}
-                                        </button>
-                                    ))}
-                                </div>
-
-                                <div className="flex justify-between items-center mb-4 border-t border-zinc-800 pt-3">
-                                     <p className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">СООБЩЕНИЕ</p>
-                                     <div className="bg-[#00FF9D]/10 px-2 py-1 rounded border border-[#00FF9D]/20">
-                                        <p className="text-[10px] font-bold text-[#00FF9D] font-mono">
-                                            TARGET: {getTargetsCount()}
-                                        </p>
-                                     </div>
-                                </div>
-                                <form onSubmit={handleBroadcast} className="flex flex-col gap-3">
-                                    <textarea 
-                                        value={broadcastMessage}
-                                        onChange={(e) => setBroadcastMessage(e.target.value)}
-                                        placeholder="Введите сообщение для рассылки..." 
-                                        className="w-full bg-black border border-zinc-700 rounded-lg p-3 text-xs text-white focus:border-[#00FF9D] outline-none h-32 resize-none placeholder-zinc-700 font-mono"
-                                        disabled={isSending}
-                                    />
-                                    {isSending ? (
-                                        <div className="w-full bg-zinc-800 rounded-xl h-10 flex items-center justify-center relative overflow-hidden">
-                                             <div className="absolute left-0 top-0 bottom-0 bg-[#00FF9D]/20 transition-all duration-300" style={{ width: `${(sendProgress.current / sendProgress.total) * 100}%` }}></div>
-                                             <span className="relative z-10 text-[10px] font-bold text-white font-mono animate-pulse">ОТПРАВКА... {sendProgress.current} / {sendProgress.total}</span>
-                                        </div>
-                                    ) : (
-                                        <button type="submit" className="w-full bg-[#00FF9D] hover:bg-[#00FF9D]/90 text-black font-bold uppercase text-xs py-3 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-[0.98]">
-                                            <Send className="w-4 h-4" /> ОТПРАВИТЬ
-                                        </button>
-                                    )}
-                                </form>
-                             </div>
-                             <div className="px-2">
-                                <p className="text-[9px] text-zinc-600 uppercase tracking-wide mb-2">ПОДСКАЗКА:</p>
-                                <ul className="list-disc pl-4 space-y-1 text-[9px] text-zinc-500">
-                                    <li><span className="text-zinc-300">Актив 24ч:</span> Горячие клиенты, пиши им срочно.</li>
-                                    <li><span className="text-zinc-300">Сон &gt; 3д:</span> Напомни о себе, предложи скидку.</li>
-                                    <li><span className="text-zinc-300">Сон &gt; 7д:</span> Нужен сильный оффер для возврата.</li>
-                                </ul>
-                             </div>
-                        </div>
                     )}
                 </div>
             </div>
@@ -1386,7 +1163,6 @@ const App = () => {
   // --- FIREBASE TRACKING EFFECT ---
   useEffect(() => {
     const initApp = async () => {
-        logToTaipanCRM(2, "ВХОД", "Открыл Mini App");
         const tg = window.Telegram?.WebApp;
         if (tg) {
             tg.ready();
@@ -1539,8 +1315,6 @@ const App = () => {
     };
     setLeads(prev => [newLead, ...prev]);
 
-    logToTaipanCRM(6, "ГОРЯЧИЙ ЛИД 🔥", `Имя: ${name}\n🔹 Контакт: ${contact}\n🔹 Услуга: ${modalType}`);
-
     closeModal(); 
     setShowToast(true); 
     setTimeout(() => setShowToast(false), 3000); 
@@ -1549,12 +1323,10 @@ const App = () => {
   const handleFaqClick = (item) => { setActiveFaq(item); setShowCalculator(false); };
   const closeFaq = () => { setActiveFaq(null); setShowCalculator(false); };
   const handleShopClick = () => { 
-      logToTaipanCRM(3, "ИНТЕРЕС", "Раздел: Магазин");
       setShopIntroFinished(false); 
       setCurrentView('shop'); 
   };
   const handleEducationClick = () => {
-    logToTaipanCRM(3, "ИНТЕРЕС", "Раздел: Обучение");
     setCurrentView('education');
   }
   const handleStrategyClick = () => {
@@ -1591,7 +1363,6 @@ const App = () => {
       if (code === 'admin') {
           setIsAdminAuthOpen(false);
           setCurrentView('admin');
-          logToTaipanCRM(2, "ADMIN", "Вход в админ панель");
       } else {
           alert("ACCESS DENIED");
       }
@@ -1693,7 +1464,6 @@ const App = () => {
                   <div className="mt-4 w-full glass-card p-6 rounded-3xl text-center border border-[#00FF9D]/20 relative overflow-hidden group">
                       <div className="absolute inset-0 bg-gradient-to-t from-[#00FF9D]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                       <button onClick={() => {
-                          logToTaipanCRM(3, "АКТИВНОСТЬ", "Считает прибыль в калькуляторе");
                           setCurrentView('calculator');
                       }} className="w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-4 rounded-xl shadow-[0_0_20px_rgba(0,255,157,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs relative z-10 flex items-center justify-center gap-2 animate-pulse">РАССЧИТАТЬ УПУЩЕННУЮ ПРИБЫЛЬ</button>
                   </div>
@@ -1714,7 +1484,6 @@ const App = () => {
                 </div>
                 <div className="w-full glass-card p-4 rounded-3xl border border-[#00FF9D]/20 relative overflow-hidden">
                     <ProfitCalculator data={calcData} setData={setCalcData} onAction={() => {
-                        logToTaipanCRM(3, "РАСЧЕТ", "Пользователь считает прибыль");
                         setCurrentView('strategy');
                     }} />
                 </div>
@@ -1819,7 +1588,6 @@ const App = () => {
                 </div>
                 <p className="text-[10px] text-zinc-500 uppercase tracking-widest mb-6">Длительность обучения (14 дней)</p>
                 <button onClick={() => {
-                    logToTaipanCRM(6, "ЖДЕТ КОНСУЛЬТАЦИЮ ⚡️", "Кликнул по кнопке 'Получить подробную консультацию' (Обучение)");
                     window.open('https://t.me/taipanmedia', '_blank');
                 }} className="block w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-4 rounded-xl shadow-[0_0_20px_rgba(0,255,157,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs">Получить подробную консультацию</button>
             </div>

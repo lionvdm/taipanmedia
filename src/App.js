@@ -5,6 +5,15 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 import { getFirestore, doc, setDoc, updateDoc, serverTimestamp, collection, query, onSnapshot, deleteDoc } from 'firebase/firestore';
 
+// --- ICONS ---
+import { 
+  User, Wallet, Award, CheckCircle, Lock, Zap, 
+  TrendingUp, Search, Activity, Edit2, Save, 
+  Trash2, X, ChevronLeft, GraduationCap, Code, 
+  Users, Crosshair, BarChart2, PieChart, Database, 
+  Shield, Menu, Copy, ExternalLink, Play, ShoppingBag, Terminal
+} from 'lucide-react';
+
 // --- CONFIGURATION & INIT ---
 const firebaseConfig = {
   apiKey: "AIzaSyCdcj_56EdygidWa8pQm17fegnF39XB8Xg",
@@ -273,7 +282,8 @@ const useOdometer = (targetValue, duration = 1000) => {
 // --- ICON COMPONENTS (Memoized for perf) ---
 const GraduationCap = React.memo(({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M22 10v6M2 10l10-5 10 5-10 5z" /><path d="M6 12v5c3 3 9 3 12 0v-5" /></svg>));
 const ArrowRight = React.memo(({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>));
-const ChevronLeft = React.memo(({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m15 18-6-6 6-6" /></svg>));
+// Removed redundant ChevronLeft definition since it's imported from lucide-react
+// const ChevronLeft = React.memo(({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m15 18-6-6 6-6" /></svg>));
 const CheckCircle2 = React.memo(({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10" /><path d="m9 12 2 2 4-4" /></svg>));
 const Lock = React.memo(({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect width="18" height="11" x="3" y="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>));
 const TrendingUp = React.memo(({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="23 6 13.5 15.5 8.5 10.5 1 18" /><polyline points="17 6 23 6 23 12" /></svg>));
@@ -548,11 +558,11 @@ const SetupTimeline = () => {
       <div className="relative border-l border-[#00FF9D]/20 ml-2 space-y-6">
         {steps.map((step, i) => (
           <div key={i} className="relative pl-6 group">
-             <div className="absolute -left-[5px] top-1 w-2.5 h-2.5 bg-[#050505] border border-[#00FF9D] rounded-full group-hover:bg-[#00FF9D] group-hover:shadow-[0_0_10px_#00FF9D] transition-all"></div>
-             <div className="flex justify-between items-start">
-               <div><h4 className="text-sm font-bold text-white font-['Chakra_Petch'] leading-none mb-1 group-hover:text-[#00FF9D] transition-colors">{step.title}</h4><p className="text-[11px] text-zinc-400 leading-snug max-w-[220px]">{step.desc}</p></div>
-               <span className="text-[9px] font-mono text-[#00FF9D]/70 bg-[#00FF9D]/5 px-1.5 py-0.5 rounded ml-2 whitespace-nowrap">{step.time}</span>
-             </div>
+              <div className="absolute -left-[5px] top-1 w-2.5 h-2.5 bg-[#050505] border border-[#00FF9D] rounded-full group-hover:bg-[#00FF9D] group-hover:shadow-[0_0_10px_#00FF9D] transition-all"></div>
+              <div className="flex justify-between items-start">
+                <div><h4 className="text-sm font-bold text-white font-['Chakra_Petch'] leading-none mb-1 group-hover:text-[#00FF9D] transition-colors">{step.title}</h4><p className="text-[11px] text-zinc-400 leading-snug max-w-[220px]">{step.desc}</p></div>
+                <span className="text-[9px] font-mono text-[#00FF9D]/70 bg-[#00FF9D]/5 px-1.5 py-0.5 rounded ml-2 whitespace-nowrap">{step.time}</span>
+              </div>
           </div>
         ))}
         <div className="relative pl-6 mt-8"><div className="absolute -left-[7px] top-1 w-3.5 h-3.5 bg-[#00FF9D] rounded-full animate-pulse shadow-[0_0_15px_#00FF9D]"></div><div className="bg-[#00FF9D]/10 border border-[#00FF9D]/30 p-3 rounded-lg"><h4 className="text-sm font-black text-[#00FF9D] uppercase tracking-wider mb-1">МАГАЗИН ГОТОВ</h4><p className="text-[10px] text-zinc-300 leading-snug">Можно запускать трафик и получать прибыль. Система работает автономно.</p></div></div>
@@ -741,7 +751,7 @@ const PartnersCredits = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   useEffect(() => {
     const timer = setInterval(() => { setCurrentIndex((prev) => (prev + 1) % logos.length); }, 2500);
-    return () => clearInterval(timer);
+    return () => clearTimeout(timer);
   }, []);
   const currentLogo = logos[currentIndex];
   const isYandex = currentLogo.includes("Yandex");
@@ -1125,6 +1135,173 @@ const AdminPanel = ({ leads, visitors, onBack, onClearLeads, onUpdateLead, onUpd
     );
 };
 
+// --- PROFILE VIEW COMPONENT ---
+const ProfileView = ({ onBack, userName, userId }) => {
+    const [walletAddress, setWalletAddress] = useState(null);
+    const [isClaiming, setIsClaiming] = useState(false);
+    const [hasSBT, setHasSBT] = useState(false);
+    
+    // Mock course progress
+    const courseProgress = 100;
+    const isCourseFinished = courseProgress === 100;
+
+    // Simulate TON Connect
+    const handleConnectWallet = () => {
+        // In real app: useTonConnectUI().openModal()
+        // Here we simulate connection
+        setTimeout(() => {
+            setWalletAddress("EQD...a8F2");
+        }, 1000);
+    };
+
+    const handleClaimSBT = async () => {
+        if (!walletAddress) return;
+        setIsClaiming(true);
+        
+        // Simulate backend minting process
+        await new Promise(r => setTimeout(r, 3000));
+        
+        setHasSBT(true);
+        setIsClaiming(false);
+    };
+
+    return (
+        <div className="animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col h-full items-center w-full relative pb-20">
+            <button onClick={onBack} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-4 hover:opacity-70 transition-all w-fit">
+                <ChevronLeft className="w-4 h-4 mr-1" /> НАЗАД
+            </button>
+
+            {/* HEADER */}
+            <div className="w-full flex flex-col items-center mb-8">
+                <div className="w-24 h-24 rounded-full border-2 border-[#00FF9D] p-1 mb-4 relative group">
+                    <div className="w-full h-full rounded-full bg-zinc-900 flex items-center justify-center overflow-hidden relative">
+                         <User className="w-10 h-10 text-zinc-500" />
+                         {/* Scan line effect */}
+                         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#00FF9D]/20 to-transparent animate-[scanLine_2s_linear_infinite]"></div>
+                    </div>
+                    <div className="absolute -bottom-2 -right-2 bg-black border border-[#00FF9D] text-[#00FF9D] text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
+                        STUDENT
+                    </div>
+                </div>
+                <h2 className="text-2xl font-black text-white font-['Chakra_Petch'] uppercase tracking-widest mb-1">{userName}</h2>
+                <p className="text-[10px] text-zinc-500 font-mono">ID: {userId || 'UNKNOWN'}</p>
+            </div>
+
+            {/* WALLET CONNECTION */}
+            <div className="w-full glass-card p-4 rounded-xl border border-zinc-800 mb-6">
+                <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                        <Wallet className="w-4 h-4 text-[#00FF9D]" />
+                        TON Wallet
+                    </h3>
+                    {walletAddress ? (
+                        <span className="text-[9px] text-[#00FF9D] bg-[#00FF9D]/10 px-2 py-1 rounded border border-[#00FF9D]/20 font-mono">CONNECTED</span>
+                    ) : (
+                        <span className="text-[9px] text-zinc-500 bg-zinc-900 px-2 py-1 rounded border border-zinc-800 font-mono">NOT CONNECTED</span>
+                    )}
+                </div>
+                
+                {walletAddress ? (
+                    <div className="flex items-center justify-between bg-zinc-900/50 p-3 rounded-lg border border-zinc-800">
+                        <span className="text-[11px] font-mono text-zinc-300">{walletAddress}</span>
+                        <button onClick={() => {navigator.clipboard.writeText(walletAddress)}} className="text-zinc-500 hover:text-white">
+                            <Copy className="w-3 h-3" />
+                        </button>
+                    </div>
+                ) : (
+                    <button 
+                        onClick={handleConnectWallet}
+                        className="w-full bg-[#0098EA] hover:bg-[#0098EA]/80 text-white font-bold uppercase text-[10px] py-3 rounded-xl transition-all shadow-[0_0_15px_rgba(0,152,234,0.3)] flex items-center justify-center gap-2"
+                    >
+                        <Wallet className="w-4 h-4" /> Connect Wallet
+                    </button>
+                )}
+            </div>
+
+            {/* COURSE PROGRESS */}
+            <div className="w-full glass-card p-4 rounded-xl border border-zinc-800 mb-6">
+                <div className="flex justify-between items-end mb-2">
+                    <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Прогресс обучения</span>
+                    <span className="text-xs font-bold text-[#00FF9D] font-mono">{courseProgress}%</span>
+                </div>
+                <div className="w-full h-2 bg-zinc-900 rounded-full overflow-hidden mb-4">
+                    <div className="h-full bg-[#00FF9D] w-full shadow-[0_0_10px_#00FF9D]"></div>
+                </div>
+                <div className="flex items-center gap-2 text-[10px] text-zinc-500">
+                    <CheckCircle2 className={`w-3 h-3 ${isCourseFinished ? 'text-[#00FF9D]' : 'text-zinc-600'}`} />
+                    {isCourseFinished ? 'Все модули пройдены' : 'Продолжите обучение'}
+                </div>
+            </div>
+
+            {/* SBT CERTIFICATE SECTION */}
+            <div className="w-full relative group">
+                <div className="absolute -inset-1 bg-gradient-to-r from-[#00FF9D] via-purple-500 to-[#00FF9D] rounded-2xl opacity-20 blur-md group-hover:opacity-40 transition-opacity animate-holograph bg-[length:200%_auto]"></div>
+                <div className="glass-card p-6 rounded-xl border border-[#00FF9D]/30 relative bg-black/80">
+                    <div className="absolute top-0 right-0 p-3 opacity-20">
+                        <Award className="w-16 h-16 text-[#00FF9D]" />
+                    </div>
+
+                    <h3 className="text-lg font-black text-white font-['Chakra_Petch'] uppercase tracking-widest mb-1">
+                        SBT Certificate
+                    </h3>
+                    <p className="text-[10px] text-zinc-400 uppercase tracking-wider mb-6 max-w-[200px]">
+                        Soulbound Token — Цифровое доказательство вашей квалификации в блокчейне TON.
+                    </p>
+
+                    {hasSBT ? (
+                        <div className="animate-in zoom-in duration-500">
+                             <div className="aspect-video w-full rounded-lg border border-[#00FF9D]/50 bg-[#00FF9D]/5 flex flex-col items-center justify-center relative overflow-hidden mb-4">
+                                <div className="absolute inset-0 grid-bg opacity-30"></div>
+                                <Award className="w-12 h-12 text-[#00FF9D] mb-2 drop-shadow-[0_0_15px_#00FF9D]" />
+                                <span className="text-sm font-black text-white uppercase tracking-widest font-['Chakra_Petch']">TAIPAN ACADEMY</span>
+                                <span className="text-[9px] text-[#00FF9D] font-mono mt-1">GRADUATE 2026</span>
+                                <div className="absolute bottom-2 right-2 flex items-center gap-1">
+                                    <div className="w-1.5 h-1.5 bg-[#00FF9D] rounded-full animate-pulse"></div>
+                                    <span className="text-[7px] text-[#00FF9D] font-mono">VERIFIED ON CHAIN</span>
+                                </div>
+                             </div>
+                             <div className="flex items-center justify-center gap-2 text-[#00FF9D] text-xs font-bold uppercase tracking-wider border border-[#00FF9D]/20 p-2 rounded bg-[#00FF9D]/5">
+                                <CheckCircle2 className="w-4 h-4" /> Токен получен
+                             </div>
+                             <button className="w-full mt-3 text-[9px] text-zinc-500 hover:text-white flex items-center justify-center gap-1 transition-colors">
+                                Посмотреть в Explorer <ExternalLink className="w-3 h-3" />
+                             </button>
+                        </div>
+                    ) : (
+                        <div>
+                             {!walletAddress ? (
+                                 <div className="text-center py-4 bg-zinc-900/50 rounded-lg border border-dashed border-zinc-700">
+                                     <Lock className="w-6 h-6 text-zinc-600 mx-auto mb-2" />
+                                     <p className="text-[10px] text-zinc-500 uppercase">Подключите кошелек для получения</p>
+                                 </div>
+                             ) : !isCourseFinished ? (
+                                 <div className="text-center py-4 bg-zinc-900/50 rounded-lg border border-dashed border-zinc-700">
+                                     <Lock className="w-6 h-6 text-zinc-600 mx-auto mb-2" />
+                                     <p className="text-[10px] text-zinc-500 uppercase">Завершите курс для разблокировки</p>
+                                 </div>
+                             ) : (
+                                 <button 
+                                    onClick={handleClaimSBT}
+                                    disabled={isClaiming}
+                                    className="w-full bg-gradient-to-r from-[#00FF9D] to-[#00CC7A] text-black font-black uppercase tracking-widest py-4 rounded-xl shadow-[0_0_20px_rgba(0,255,157,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs flex items-center justify-center gap-2"
+                                 >
+                                    {isClaiming ? (
+                                        <span className="animate-pulse">MINTING...</span>
+                                    ) : (
+                                        <>
+                                            <Zap className="w-4 h-4 fill-black" /> CLAIM CERTIFICATE
+                                        </>
+                                    )}
+                                 </button>
+                             )}
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+};
+
 const App = () => {
   useEffect(() => { console.log("Taipan Media App Initialized"); }, []);
   const [currentView, setCurrentView] = useState('main'); 
@@ -1242,7 +1419,7 @@ const App = () => {
   useEffect(() => {
     setOnlineCount(Math.floor(Math.random() * 16)); 
     const interval = setInterval(() => { setOnlineCount(Math.floor(Math.random() * 16)); }, 60000); 
-    return () => clearInterval(interval);
+    return () => clearTimeout(interval);
   }, []);
   
   const [calcData, setCalcData] = useState({ traffic: 0, conversion: 0, avgCheck: 0, margin: 0 });
@@ -1342,7 +1519,6 @@ const App = () => {
        setBaneIntroActive(false);
        setCurrentView('about');
   }
-
   // --- Admin Logic ---
   const handleTitleClick = () => {
       setTapCount(prev => {
@@ -1367,6 +1543,8 @@ const App = () => {
           alert("ACCESS DENIED");
       }
   };
+  
+  const handleProfileClick = () => setCurrentView('profile');
 
   const faqItems = [
     { id: 'stats', question: "Это вообще покупают?", icon: <TrendingUp className="w-5 h-5 text-[#00FF9D]" />, component: (<div className="w-full"><WordstatGraph /><h3 className="text-white font-bold mb-3 uppercase tracking-wide text-sm font-['Chakra_Petch'] leading-tight">6 650 человек ищут тебя. Как долго ты будешь их игнорировать?</h3><p className="text-sm text-zinc-300 leading-relaxed border-l-2 border-[#00FF9D]/50 pl-4 mb-4">Это официальная статистика Яндекса: <span className="text-[#00FF9D] font-bold">6 650</span> прямых запросов на ТГ-магазины в месяц.<br/><br/>Пока ты ищешь «подходящий момент», наши ученики уже забирают эти чеки по <span className="text-white font-bold">100 000₸</span>, просто потому что они оказались на связи.<br/><br/>Мы даем тебе все инструменты и доступ к этому потоку. Твой результат — это просто вопрос того, возьмешь ли ты готовую систему и начнешь ли по ней работать.<br/><br/><span className="text-[#00FF9D] italic font-medium">Рынок платит тем, кто действует, а не тем, кто наблюдает.</span></p></div>) },
@@ -1393,7 +1571,7 @@ const App = () => {
         
         {currentView === 'main' && (
           <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 flex flex-col items-center">
-            <div className="mb-14 w-full text-center" onClick={handleTitleClick}>
+            <div className="mb-8 w-full text-center" onClick={handleTitleClick}>
               <h1 className="font-['Chakra_Petch'] font-[700] uppercase tracking-[0.15em] whitespace-nowrap overflow-visible relative block w-full text-center select-none cursor-pointer active:scale-95 transition-transform" style={{ fontSize: 'clamp(1.5rem, 8.5vw, 3.5rem)', textShadow: '0 0 20px rgba(0,255,157,0.3)', color: '#ffffff' }}>
                 <span className="relative inline-block mr-[-0.15em]">TAIPAN MEDIA<span className="absolute inset-0 -z-10 opacity-40 blur-[12px] animate-pulse text-[#00FF9D]">TAIPAN MEDIA</span></span>
               </h1>
@@ -1409,6 +1587,27 @@ const App = () => {
                  <span className="w-1.5 h-1.5 rounded-full bg-[#00FF9D] animate-pulse shadow-[0_0_5px_#00FF9D]"></span>
                  СЕЙЧАС ОНЛАЙН: <span className="text-zinc-400 font-bold">{onlineCount}</span>
               </p>
+            </div>
+            
+            {/* --- NEW PROFILE BUTTON (RESTORED) --- */}
+            <div onClick={handleProfileClick} className="w-full mb-6 cursor-pointer group">
+                <div className="relative glass-card bg-zinc-900/40 border border-[#00FF9D]/20 hover:border-[#00FF9D]/50 rounded-2xl p-4 flex items-center justify-between transition-all shadow-[0_4px_20px_rgba(0,0,0,0.5)] hover:shadow-[0_0_20px_rgba(0,255,157,0.1)]">
+                    <div className="flex items-center gap-4">
+                         <div className="relative">
+                            <div className="w-12 h-12 rounded-full bg-black border border-[#00FF9D] flex items-center justify-center overflow-hidden">
+                                <User className="w-6 h-6 text-[#00FF9D]" />
+                            </div>
+                            <div className="absolute -bottom-1 -right-1 bg-[#00FF9D] text-black text-[8px] font-bold px-1.5 py-0.5 rounded-full border border-black">ID</div>
+                         </div>
+                         <div className="text-left">
+                             <h3 className="text-sm font-black text-white font-['Chakra_Petch'] uppercase tracking-widest leading-none mb-1">Личный кабинет</h3>
+                             <p className="text-[10px] text-zinc-400 uppercase tracking-wider group-hover:text-[#00FF9D] transition-colors">SBT, Прогресс, Настройки</p>
+                         </div>
+                    </div>
+                    <div className="w-8 h-8 rounded-full border border-zinc-700 flex items-center justify-center group-hover:bg-[#00FF9D] group-hover:border-[#00FF9D] group-hover:text-black transition-all">
+                        <ChevronLeft className="w-4 h-4 rotate-180" />
+                    </div>
+                </div>
             </div>
             
             <div className="grid grid-cols-2 gap-4 mb-4 w-full">
@@ -1627,7 +1826,7 @@ const App = () => {
                         </div>
                     </div>
                     {/* Block 2 */}
-                     <div className="glass-card p-4 rounded-sm border border-zinc-800 flex items-start gap-4 hover:border-[#00FF9D]/40 transition-colors group">
+                      <div className="glass-card p-4 rounded-sm border border-zinc-800 flex items-start gap-4 hover:border-[#00FF9D]/40 transition-colors group">
                         <div className="mt-1"><Zap className="w-6 h-6 text-[#00FF9D] opacity-80 group-hover:opacity-100 group-hover:drop-shadow-[0_0_8px_#00FF9D] transition-all" /></div>
                         <div>
                              <div className="flex items-baseline gap-2 mb-1">
@@ -1712,6 +1911,8 @@ const App = () => {
                 onUpdateVisitor={updateVisitor}
             />
         )}
+        
+        {currentView === 'profile' && <ProfileView onBack={() => setCurrentView('main')} userName={userName} userId={currentUserId} />}
       </div>
 
       {/* Modals & Toasts stay EXACTLY the same */}

@@ -22,13 +22,11 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const isFirebaseInitialized = true;
 
-// Получаем ID приложения
+// Получаем ID приложения для формирования правильных путей (или используем дефолтный)
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
 // --- TELEGRAM API HELPERS ---
-// ⚠️ ВАЖНО: Хранить токен на фронтенде небезопасно. В идеале запросы должен делать ваш сервер.
-const BOT_TOKEN = "8398712805:AAHFZXllsCQU0YNd8KIo9Rie5VZeyH91GMQ"; 
-const OWNER_ID = "7090140056"; // ВАШ ID для уведомлений "Шеф, ..."
+const BOT_TOKEN = "8398712805:AAHFZXllsCQU0YNd8KIo9Rie5VZeyH91GMQ"; // В продакшене храните это на сервере!
 
 const sendTelegramMessage = async (chatId, text) => {
     try {
@@ -48,58 +46,46 @@ const sendTelegramMessage = async (chatId, text) => {
     }
 };
 
-// --- "CHIEF" NOTIFICATION SYSTEM ---
-const notifyOwner = async (type, data = {}) => {
-  if (!OWNER_ID || !BOT_TOKEN) return;
+// --- CRM LOGGING FUNCTION (GLOBAL) ---
+const logToTaipanCRM = async (topicId, status, details = "") => {
+  const chatId = "-1003690228596"; // Your group ID
+  const tg = window.Telegram?.WebApp;
+  const user = tg?.initDataUnsafe?.user;
 
-  let message = "";
-  const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+  // Формируем ссылку на личку пользователя
+  const userLink = user?.username 
+    ? `https://t.me/${user.username}` 
+    : `tg://user?id=${user?.id}`;
 
-  switch (type) {
-      case 'NEW_ORDER':
-          message = `
-👨‍💼 **ШЕФ, У НАС НОВЫЙ ЗАКАЗ!**
+  const message = `
+📊 **СТАТУС: ${status}**
+--------------------------
+👤 **Юзер:** ${user?.first_name || 'Incognito'} (@${user?.username || 'нет'})
+🆔 **ID:** \`${user?.id || '---'}\`
+🔹 **Детали:** ${details}
 
-👤 **Кто:** ${data.name}
-📞 **Связь:** \`${data.contact}\`
-📦 **Интерес:** ${data.service}
+👉 [НАПИСАТЬ КЛИЕНТУ](${userLink})
+--------------------------
+  `;
 
-🔥 _Клиент горячий, ждет ответа._
-          `;
-          break;
-      
-      case 'NEW_USER':
-          message = `
-🕵️ **ШЕФ, НОВЫЙ ПОЛЬЗОВАТЕЛЬ НА РАДАРЕ.**
-
-👤 **Имя:** ${data.userName}
-🆔 **ID:** \`${data.userId}\`
-⏰ **Время:** ${time}
-
-_База потенциальных клиентов пополняется._
-          `;
-          break;
-
-      case 'STATS_UPDATE':
-          message = `
-📈 **ШЕФ, СВОДКА ЗА СЕГОДНЯ.**
-
-👥 Посетителей: ${data.visitors}
-📝 Заявок: ${data.leads}
-💰 Конверсия: ${data.conversion}%
-
-_Работаем дальше._
-          `;
-          break;
-          
-      default:
-          message = `🔔 **УВЕДОМЛЕНИЕ:** ${JSON.stringify(data)}`;
+  try {
+    await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: chatId,
+        message_thread_id: topicId,
+        text: message,
+        parse_mode: "Markdown",
+        disable_web_page_preview: true
+      })
+    });
+  } catch (e) {
+    console.error("Ошибка CRM:", e);
   }
-
-  await sendTelegramMessage(OWNER_ID, message);
 };
 
-// --- OPTIMIZED MATRIX BACKGROUND ---
+// --- OPTIMIZED MATRIX BACKGROUND (Performance Friendly) ---
 const MatrixBackground = React.memo(() => {
   const canvasRef = useRef(null);
 
@@ -107,17 +93,19 @@ const MatrixBackground = React.memo(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const ctx = canvas.getContext('2d', { alpha: false });
+    const ctx = canvas.getContext('2d', { alpha: false }); // Отключаем прозрачность подложки для ускорения
     let animationFrameId;
     
+    // Настройка разрешения
     let width = canvas.width = window.innerWidth;
     let height = canvas.height = window.innerHeight;
 
-    const chars = "TAIPAN0123456789XY"; 
+    const chars = "TAIPAN0123456789XY"; // Укоротил строку, так быстрее выборка
     const fontSize = 14;
-    const columns = Math.floor(width / 20); 
+    const columns = Math.floor(width / 20); // Чуть шире шаг, меньше отрисовки
     const drops = Array(columns).fill(1);
 
+    // Ограничиваем FPS до 24 (киношный вид + экономия батареи)
     let lastTime = 0;
     const fps = 24;
     const interval = 1000 / fps;
@@ -130,6 +118,7 @@ const MatrixBackground = React.memo(() => {
 
       lastTime = currentTime - (deltaTime % interval);
 
+      // Полупрозрачный черный слой для следа (Trail effect)
       ctx.fillStyle = 'rgba(5, 5, 5, 0.1)'; 
       ctx.fillRect(0, 0, width, height);
 
@@ -137,6 +126,7 @@ const MatrixBackground = React.memo(() => {
       ctx.font = `${fontSize}px monospace`;
 
       for (let i = 0; i < drops.length; i++) {
+        // Рандомим, чтобы рисовать не каждый кадр каждый символ (оптимизация)
         if (Math.random() > 0.1) {
             const text = chars.charAt(Math.floor(Math.random() * chars.length));
             ctx.fillText(text, i * 20, drops[i] * fontSize);
@@ -149,11 +139,13 @@ const MatrixBackground = React.memo(() => {
       }
     };
 
+    // Запускаем
     draw(0);
 
     const handleResize = () => {
       width = canvas.width = window.innerWidth;
       height = canvas.height = window.innerHeight;
+      // При ресайзе пересчитываем колонки, но не сбрасываем drops полностью чтобы не моргало жестко
     };
 
     window.addEventListener('resize', handleResize);
@@ -164,6 +156,7 @@ const MatrixBackground = React.memo(() => {
     };
   }, []);
 
+  // Добавил will-change для подсказки браузеру
   return <canvas ref={canvasRef} className="absolute inset-0 opacity-20 mix-blend-screen pointer-events-none" style={{ willChange: 'contents' }} />;
 });
 
@@ -171,6 +164,7 @@ const MatrixBackground = React.memo(() => {
 const GlobalStyles = () => (
   <style dangerouslySetInnerHTML={{__html: `
     body { margin: 0; background-color: #050505; color: white; overflow-x: hidden; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+    /* Hide scrollbar */
     ::-webkit-scrollbar { display: none; }
     body { -ms-overflow-style: none; scrollbar-width: none; }
     
@@ -178,24 +172,23 @@ const GlobalStyles = () => (
     input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
     input[type=number] { -moz-appearance: textfield; }
 
-    /* Unified Glass Card Style (Matrix Theme) */
     .glass-card {
         background-color: rgba(15, 15, 15, 0.4);
+        /* Clean glass by default (no grid) */
         backdrop-filter: blur(8px);
         -webkit-backdrop-filter: blur(8px);
-        border: 1px solid rgba(0, 255, 157, 0.15);
+        border: 1px solid rgba(0, 255, 157, 0.2);
         box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
-        border-radius: 0.75rem; /* rounded-xl consistent with partners */
         transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
         position: relative;
         overflow: hidden;
     }
     
-    /* Grid Background Texture */
+    /* Dedicated class for Grid Texture (Main Page Only) */
     .grid-bg {
         background-image: 
-            linear-gradient(rgba(0, 255, 157, 0.05) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(0, 255, 157, 0.05) 1px, transparent 1px);
+            linear-gradient(rgba(0, 255, 157, 0.07) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(0, 255, 157, 0.07) 1px, transparent 1px);
         background-size: 20px 20px;
     }
 
@@ -205,6 +198,7 @@ const GlobalStyles = () => (
         box-shadow: 0 0 20px rgba(0, 255, 157, 0.1);
     }
 
+    /* Brighter grid on hover only if grid-bg is present */
     .grid-bg:hover {
         background-image: 
             linear-gradient(rgba(0, 255, 157, 0.1) 1px, transparent 1px),
@@ -215,6 +209,14 @@ const GlobalStyles = () => (
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
+    /* Tactical Grid Background (Legacy support if used elsewhere) */
+    .tactical-grid {
+        background-image: linear-gradient(rgba(0, 255, 157, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 255, 157, 0.05) 1px, transparent 1px);
+        background-size: 20px 20px;
+    }
+    
+    /* Hardware Acceleration Class for Images */
     .hw-accelerated {
         will-change: transform, opacity;
         transform: translateZ(0);
@@ -271,15 +273,18 @@ const GlobalStyles = () => (
       0%, 100% { height: 10%; }
       50% { height: 100%; }
     }
+    /* OPTIMIZED INTRO ANIMATIONS */
     @keyframes aggressive-glitch-text {
       0% { opacity: 0; transform: scale(1.1); color: #333; }
       20% { opacity: 1; transform: scale(1); color: #fff; text-shadow: 2px 0 #00FF9D; }
       100% { color: #e0e0e0; letter-spacing: 0.15em; }
     }
+
     @keyframes simple-glow {
       0%, 100% { text-shadow: 0 0 10px rgba(0, 255, 157, 0.3); transform: scale(1); color: #fff; }
       50% { text-shadow: 0 0 25px rgba(0, 255, 157, 0.8), 0 0 10px rgba(0, 255, 157, 0.5); transform: scale(1.02); color: #00FF9D; }
     }
+
     @keyframes smoke-fade {
       0% { opacity: 0; transform: translateY(10px); }
       100% { opacity: 1; transform: translateY(0); }
@@ -287,6 +292,7 @@ const GlobalStyles = () => (
   `}} />
 );
 
+// --- HOOK FOR ODOMETER ANIMATION ---
 const useOdometer = (targetValue, duration = 1000) => {
   const [displayValue, setDisplayValue] = useState(0);
   const frameRef = useRef(0);
@@ -324,7 +330,7 @@ const useOdometer = (targetValue, duration = 1000) => {
   return displayValue;
 };
 
-// --- ICON COMPONENTS ---
+// --- ICON COMPONENTS (Memoized for perf) ---
 const GraduationCap = React.memo(({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M22 10v6M2 10l10-5 10 5-10 5z" /><path d="M6 12v5c3 3 9 3 12 0v-5" /></svg>));
 const ArrowRight = React.memo(({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>));
 const ChevronLeft = React.memo(({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m15 18-6-6 6-6" /></svg>));
@@ -356,6 +362,8 @@ const TelegramLogoMain = React.memo(({ className }) => (
   </svg>
 ));
 
+// --- OPTIMIZED COMPONENT: SmartImage ---
+// Wrapped in memo to prevent re-renders on parent state changes
 const SmartImage = React.memo(({ src, alt, className, style, wrapperClass = "", overflowHidden = true }) => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
@@ -377,8 +385,9 @@ const SmartImage = React.memo(({ src, alt, className, style, wrapperClass = "", 
              e.target.style.display = 'none'; 
            }
         }}
+        // Added hw-accelerated class for better scrolling performance
         className={`${className} hw-accelerated transition-opacity duration-700 ease-out ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
-        style={{ ...style, contentVisibility: 'auto' }} 
+        style={{ ...style, contentVisibility: 'auto' }} // CSS Content Visibility optimization
       />
     </div>
   );
@@ -437,10 +446,12 @@ const ProfitCalculator = ({ onAction, data, setData }) => {
   );
 };
 
+// --- Bane Intro Component ---
 const BaneIntro = ({ onComplete }) => {
     const [phase, setPhase] = useState(0);
 
     useEffect(() => {
+        // NOTE: Audio file needs to be present in public folder for this to work
         const audio = new Audio('/VID_20260122_010534_539 (online-audio-converter.com).mp3');
         audio.volume = 1.0;
         
@@ -473,18 +484,21 @@ const BaneIntro = ({ onComplete }) => {
                 </div>
 
                 <div className="space-y-8 relative z-10">
+                    {/* First Phrase */}
                     <div className={`transition-all duration-[1500ms] ease-out ${phase >= 1 ? 'opacity-100' : 'opacity-0'}`}>
                         <h2 className="text-xl sm:text-2xl font-black uppercase font-['Chakra_Petch'] tracking-[0.2em] text-zinc-500 animate-[smoke-fade_2s_ease-out_forwards]">
                             НЕВАЖНО КТО МЫ ТАКИЕ
                         </h2>
                     </div>
                     
+                    {/* Second Phrase */}
                     <div className={`transition-all duration-[100ms] ${phase >= 2 ? 'opacity-100' : 'opacity-0'}`}>
                         <h2 className="text-2xl sm:text-3xl font-black uppercase font-['Chakra_Petch'] tracking-widest text-white animate-[aggressive-glitch-text_0.5s_cubic-bezier(0.25,0.46,0.45,0.94)_both]">
                             ВАЖНО ТО
                         </h2>
                     </div>
 
+                    {/* Third Phrase - Main */}
                     <div className={`transition-all duration-[500ms] ${phase >= 3 ? 'opacity-100' : 'opacity-0'}`}>
                         <div className="relative inline-block">
                             <h2 className="text-3xl sm:text-5xl font-black uppercase font-['Chakra_Petch'] tracking-widest text-[#00FF9D] animate-[simple-glow_3s_infinite_ease-in-out]">
@@ -502,16 +516,20 @@ const BaneIntro = ({ onComplete }) => {
     );
 };
 
+// --- HackerProof (OPTIMIZED) ---
 const HackerProof = React.memo(() => {
   const [isExpanded, setIsExpanded] = useState(false);
   return (
     <React.Fragment>
       <div 
-        className="glass-card grid-bg relative mb-6 group animate-in zoom-in duration-500 cursor-zoom-in"
+        className="relative rounded-xl overflow-hidden border border-[#00FF9D]/40 mb-6 group animate-in zoom-in duration-500 shadow-[0_0_20px_rgba(0,255,157,0.1)] cursor-zoom-in"
         onClick={(e) => { e.stopPropagation(); setIsExpanded(true); }}
       >
-        <SmartImage src="https://i.ibb.co.com/FdhqGvD/2025-11-09-113228-fotor-20251109143545.jpg" className="w-full object-cover rounded-xl" alt="Encrypted Proof" />
+        <SmartImage src="https://i.ibb.co.com/FdhqGvD/2025-11-09-113228-fotor-20251109143545.jpg" className="w-full object-cover" alt="Encrypted Proof" />
         <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-md rounded-full p-1.5 opacity-60 group-hover:opacity-100 transition-opacity border border-[#00FF9D]/30 z-10"><Search className="w-3 h-3 text-[#00FF9D]" /></div>
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none z-10"></div>
+        <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-[#00FF9D]/10 to-transparent animate-[scanLine_2.5s_linear_infinite] z-10"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-black/20 pointer-events-none z-10"></div>
         <div className="absolute bottom-3 left-3 right-3 flex justify-between items-end z-20">
            <div><p className="text-[#00FF9D] text-[10px] font-black font-mono bg-black/80 px-2 py-0.5 inline-block border-l-2 border-[#00FF9D]">VIRGINIA GOLD</p><p className="text-white text-[9px] font-mono bg-black/80 px-2 py-0.5 mt-1 inline-block">ЧЕК: 100.000 Т</p></div>
            <CheckCircle2 className="w-6 h-6 text-[#00FF9D] drop-shadow-[0_0_10px_rgba(0,255,157,0.8)]" />
@@ -529,13 +547,17 @@ const HackerProof = React.memo(() => {
   );
 });
 
+// --- ClientDemandProof (OPTIMIZED) ---
 const ClientDemandProof = React.memo(() => {
   const [isExpanded, setIsExpanded] = useState(false);
   return (
     <React.Fragment>
-      <div className="glass-card grid-bg relative mb-6 group animate-in zoom-in duration-500 cursor-zoom-in" onClick={(e) => { e.stopPropagation(); setIsExpanded(true); }}>
-        <SmartImage src="https://i.ibb.co.com/h1mN3kL0/5427147012425059102.jpg" className="w-full object-cover rounded-xl opacity-90 filter grayscale-[0.5] contrast-[1.1] brightness-[0.9]" alt="Client Demand" />
+      <div className="relative rounded-xl overflow-hidden border border-[#00FF9D]/40 mb-6 group animate-in zoom-in duration-500 shadow-[0_0_20px_rgba(0,255,157,0.1)] cursor-zoom-in" onClick={(e) => { e.stopPropagation(); setIsExpanded(true); }}>
+        <SmartImage src="https://i.ibb.co.com/h1mN3kL0/5427147012425059102.jpg" className="w-full object-cover opacity-90 filter grayscale-[0.5] contrast-[1.1] brightness-[0.9]" alt="Client Demand" />
         <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-md rounded-full p-1.5 opacity-60 group-hover:opacity-100 transition-opacity border border-[#00FF9D]/30 z-10"><Search className="w-3 h-3 text-[#00FF9D]" /></div>
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none z-10"></div>
+        <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-[#00FF9D]/10 to-transparent animate-[scanLine_2.5s_linear_infinite] z-10"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent pointer-events-none z-10"></div>
         <div className="absolute bottom-3 left-3 bg-black/80 border border-[#00FF9D]/30 px-2 py-1 rounded z-20">
           <div className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 bg-[#00FF9D] rounded-full animate-pulse"></div><span className="text-[9px] font-mono text-[#00FF9D]">DEMAND_HIGH</span></div>
         </div>
@@ -552,8 +574,11 @@ const ClientDemandProof = React.memo(() => {
   );
 });
 
+// --- SkillScanner ---
 const SkillScanner = () => (
-  <div className="glass-card grid-bg p-4 mb-6 relative overflow-hidden animate-in slide-in-from-bottom duration-500 group">
+  <div className="w-full bg-[#0A0A0A] rounded-xl border border-[#00FF9D]/20 p-4 mb-6 relative overflow-hidden animate-in slide-in-from-bottom duration-500 group">
+    <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none"></div>
+    <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-[#00FF9D]/05 to-transparent animate-[scanLine_4s_linear_infinite]"></div>
     <div className="relative z-10">
         <div className="flex items-center justify-between mb-4 border-b border-zinc-800 pb-2">
            <div className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-[#00FF9D] animate-pulse"></div><span className="text-[10px] font-mono text-[#00FF9D] tracking-widest">СИСТЕМНЫЙ_АНАЛИЗ</span></div>
@@ -569,6 +594,7 @@ const SkillScanner = () => (
   </div>
 );
 
+// --- SetupTimeline ---
 const SetupTimeline = () => {
   const steps = [
     { title: "ШАГ 1: ТОКЕН", time: "~ 2 МИН", desc: "Создайте бота. Вставьте токен. Магазин запущен." },
@@ -595,11 +621,12 @@ const SetupTimeline = () => {
   );
 };
 
+// --- WordstatGraph (OPTIMIZED) ---
 const WordstatGraph = React.memo(() => {
   const [isExpanded, setIsExpanded] = useState(false);
   return (
     <React.Fragment>
-      <div className="glass-card grid-bg overflow-hidden mb-6 font-sans shadow-xl cursor-zoom-in relative group" onClick={(e) => { e.stopPropagation(); setIsExpanded(true); }}>
+      <div className="w-full bg-[#1c1c1e] rounded-xl border border-zinc-700 overflow-hidden mb-6 font-sans shadow-xl cursor-zoom-in relative group" onClick={(e) => { e.stopPropagation(); setIsExpanded(true); }}>
         <div className="bg-[#242426] px-4 py-3 border-b border-zinc-700 flex justify-between items-center">
           <div><div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span><span className="text-[11px] text-zinc-300 font-bold">История запросов (Яндекс Вордстат)</span></div><p className="text-[13px] text-white mt-0.5 font-medium">«телеграм магазин»</p></div>
           <div className="text-right"><p className="text-[9px] text-zinc-500 uppercase tracking-wider">Всего показов</p><p className="text-[16px] font-bold text-white">6 650</p></div>
@@ -621,6 +648,7 @@ const WordstatGraph = React.memo(() => {
   );
 });
 
+// --- BrandLogos (RESTORED) ---
 const BrandLogos = {
   Bitcoin: ({ isActive }) => {
     const [isMissed, setIsMissed] = useState(false);
@@ -710,6 +738,7 @@ const BrandLogos = {
   )
 };
 
+// --- Carousel3D (RESTORED) ---
 const Carousel3D = () => {
   const images = [
     "https://i.ibb.co.com/Fp52kXy/666.png", "https://i.ibb.co.com/9H5ZxPfy/555.png",
@@ -741,7 +770,28 @@ const Carousel3D = () => {
   );
 };
 
-// --- PartnersCredits (UNIFIED STYLE - MATRIX) ---
+// --- ShopIntroSequence (RESTORED) ---
+const ShopIntroSequence = ({ onComplete }) => {
+  const message = { part1: "МЕНЬШЕ ДИАЛОГОВ — БОЛЬШЕ ДЕНЕГ.", part2: "СПАСАЕМ ОТ 20% УПУЩЕННОЙ ПРИБЫЛИ" };
+  useEffect(() => {
+    const timer = setTimeout(() => { onComplete(); }, 3000);
+    return () => clearTimeout(timer);
+  }, [onComplete]);
+  return (
+    <div className="flex flex-col items-center justify-center h-full w-full min-h-[60vh] px-4 cursor-pointer" onClick={onComplete}>
+       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80%] h-[200px] bg-white/5 blur-[80px] rounded-full -z-10 pointer-events-none animate-[pulse_4s_infinite]"></div>
+       <div className="w-full text-center max-w-3xl animate-in fade-in duration-1000">
+         <h2 className="text-lg sm:text-2xl font-light uppercase tracking-[0.2em] font-['Outfit'] text-zinc-300 drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">{message.part1}</h2>
+         <div className="relative inline-block mt-6">
+             <h2 className="text-3xl sm:text-5xl font-black uppercase font-['Chakra_Petch'] text-transparent bg-clip-text bg-gradient-to-r from-[#444] via-[#00FF9D] to-[#444] bg-[length:200%_auto] animate-[snakeFlow_3s_linear_infinite] drop-shadow-[0_0_30px_rgba(0,255,157,0.3)] tracking-widest">{message.part2}</h2>
+         </div>
+       </div>
+       <div className="absolute bottom-20 text-[10px] text-zinc-600 uppercase tracking-[0.3em] animate-pulse">Пропуск через 3 сек</div>
+    </div>
+  );
+};
+
+// --- PartnersCredits (RESTORED) ---
 const PartnersCredits = () => {
   const logos = [
     "https://i.ibb.co.com/PvND9HRh/Picsart-Background-Remover.png", "https://i.ibb.co.com/YHbCZm2/Yandex-Metrika-hd-Picsart-Background-Remover.png",
@@ -758,28 +808,31 @@ const PartnersCredits = () => {
   const isRomantic = currentLogo.includes("janym");
   const isFood = currentLogo.includes("DfQywRwj");
   const isPicsartLogo = currentLogo.includes("PvND9HRh");
+  // MoiSklad logic
   const isMoiSklad = currentLogo.includes("3mKHz61B") || currentLogo.includes("PvND9HRh"); 
-  const isNewPartner = currentLogo.includes("MDKssj1s");
+  const isNewPartner = currentLogo.includes("MDKssj1s"); // Updated ID for the new MoiSklad logo
   
-  // Base filters - Reverting to previous logic to handle specific logo visibility
-  // Using original colors but slightly brightened for dark mode
+  // Base filters
   let specificStyle = { 
-    filter: 'none',
-    transition: 'transform 0.5s ease' 
+    filter: 'drop-shadow(0 0 20px rgba(0,255,157,0.15)) brightness(1.1) contrast(1.1) saturate(1.2)',
+    transition: 'transform 0.5s ease' // Smooth scaling
   };
 
-  if (isYandex) specificStyle = { ...specificStyle }; 
-  else if (isRomantic) specificStyle = { ...specificStyle, filter: 'brightness(1.2)' }; 
-  else if (isFood) specificStyle = { ...specificStyle }; 
-  else if (isPicsartLogo) specificStyle = { ...specificStyle, filter: 'brightness(0) invert(1)' }; 
+  // Specific styles
+  if (isYandex) specificStyle = { ...specificStyle, filter: 'invert(1) hue-rotate(180deg) saturate(3) brightness(1.2)' };
+  else if (isRomantic) specificStyle = { ...specificStyle, filter: 'brightness(1.5) contrast(1.2)' };
+  else if (isFood) specificStyle = { ...specificStyle, filter: 'brightness(1.1) contrast(1.1)' };
+  else if (isPicsartLogo) specificStyle = { ...specificStyle, filter: 'brightness(0) invert(1) drop-shadow(0 0 10px rgba(255, 255, 255, 0.6))' };
   else if (isNewPartner) {
+      // Adjusted scale down from 1.5 to 0.75 as requested (approx 2x smaller)
       specificStyle = { 
           ...specificStyle, 
-          filter: 'none',
+          filter: 'brightness(1.1) contrast(1.1) drop-shadow(0 0 15px rgba(255,255,255,0.2))',
           transform: 'scale(0.75)' 
       };
   } 
 
+  // Uniform scaling for others (scale-125 matches Romantic), removing generic scaling for isNewPartner from classes to use inline style instead
   const logoClasses = `h-24 w-auto object-contain max-w-[90%] transform ${!isNewPartner ? 'scale-125' : ''} ${isFood ? 'translate-y-10' : ''}`;
   
   return (
@@ -789,8 +842,8 @@ const PartnersCredits = () => {
         <p className="text-center text-[10px] text-[#00FF9D] uppercase tracking-[0.4em] mr-[-0.4em] font-bold shadow-green-glow animate-pulse">Наши партнёры</p>
         <div className="h-[1px] w-8 bg-gradient-to-l from-transparent to-[#00FF9D]"></div>
       </div>
-      {/* UNIFIED CARD STYLE APPLIED HERE WITH MATRIX GRID */}
-      <div className="relative w-full h-32 flex items-center justify-center overflow-hidden glass-card grid-bg">
+      <div className="relative w-full h-32 flex items-center justify-center overflow-hidden bg-white/5 rounded-xl border border-[#00FF9D]/10 shadow-[0_0_30px_rgba(0,0,0,0.5)]">
+         <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:20px_20px]"></div>
          <div key={currentIndex} className="relative z-10 animate-[cyberReveal_0.5s_cubic-bezier(0.215,0.61,0.355,1)_both] w-full flex justify-center">
             <SmartImage src={currentLogo} alt="Partner Logo" style={specificStyle} className={logoClasses} wrapperClass="relative z-10 flex justify-center w-full" />
          </div>
@@ -811,7 +864,7 @@ const RoiView = ({ profit, onBack, onAction }) => {
   const daysToRecoup = conservativeProfit > 0 ? Math.ceil(investment / (conservativeProfit / 30)) : Infinity;
   const isProfitable = returnPercentage > 0;
   const handleConsultation = () => {
-      notifyOwner('NEW_ORDER', { name: "Запрос консультации", contact: "@user", service: "ROI Calc" });
+      logToTaipanCRM(6, "ЖДЕТ КОНСУЛЬТАЦИЮ ⚡️", "Кликнул по кнопке 'Получить консультацию'");
       window.open('https://t.me/taipanmedia', '_blank');
   };
   const animatedProfit = useOdometer(conservativeProfit);
@@ -1333,6 +1386,7 @@ const App = () => {
   // --- FIREBASE TRACKING EFFECT ---
   useEffect(() => {
     const initApp = async () => {
+        logToTaipanCRM(2, "ВХОД", "Открыл Mini App");
         const tg = window.Telegram?.WebApp;
         if (tg) {
             tg.ready();
@@ -1344,10 +1398,6 @@ const App = () => {
                 setCurrentUserId(user.id); // Сохраняем ID пользователя для проверки админки
                 try {
                     await signInAnonymously(auth);
-                    
-                    // --- NEW: NOTIFY OWNER ABOUT NEW VISITOR ---
-                    await notifyOwner('NEW_USER', { userName: user.first_name || 'Агент', userId: user.id });
-
                     // Using "app_visitors" collection to avoid "users" conflicts
                     const userRef = doc(db, 'artifacts', appId, 'public', 'data', 'app_visitors', user.id.toString());
                     await setDoc(userRef, {
@@ -1489,8 +1539,7 @@ const App = () => {
     };
     setLeads(prev => [newLead, ...prev]);
 
-    // --- NEW: NOTIFY OWNER ABOUT NEW LEAD ---
-    notifyOwner('NEW_ORDER', { name: name, contact: contact, service: modalType });
+    logToTaipanCRM(6, "ГОРЯЧИЙ ЛИД 🔥", `Имя: ${name}\n🔹 Контакт: ${contact}\n🔹 Услуга: ${modalType}`);
 
     closeModal(); 
     setShowToast(true); 
@@ -1500,11 +1549,12 @@ const App = () => {
   const handleFaqClick = (item) => { setActiveFaq(item); setShowCalculator(false); };
   const closeFaq = () => { setActiveFaq(null); setShowCalculator(false); };
   const handleShopClick = () => { 
-      // Removed logToTaipanCRM, replaced with internal state change only
+      logToTaipanCRM(3, "ИНТЕРЕС", "Раздел: Магазин");
       setShopIntroFinished(false); 
       setCurrentView('shop'); 
   };
   const handleEducationClick = () => {
+    logToTaipanCRM(3, "ИНТЕРЕС", "Раздел: Обучение");
     setCurrentView('education');
   }
   const handleStrategyClick = () => {
@@ -1541,13 +1591,11 @@ const App = () => {
       if (code === 'admin') {
           setIsAdminAuthOpen(false);
           setCurrentView('admin');
-          // Notify owner about admin login
-          notifyOwner('STATS_UPDATE', { visitors: visitors.length, leads: leads.length, conversion: 0 });
+          logToTaipanCRM(2, "ADMIN", "Вход в админ панель");
       } else {
           alert("ACCESS DENIED");
       }
   };
-  // ... rest of the code ...
 
   const faqItems = [
     { id: 'stats', question: "Это вообще покупают?", icon: <TrendingUp className="w-5 h-5 text-[#00FF9D]" />, component: (<div className="w-full"><WordstatGraph /><h3 className="text-white font-bold mb-3 uppercase tracking-wide text-sm font-['Chakra_Petch'] leading-tight">6 650 человек ищут тебя. Как долго ты будешь их игнорировать?</h3><p className="text-sm text-zinc-300 leading-relaxed border-l-2 border-[#00FF9D]/50 pl-4 mb-4">Это официальная статистика Яндекса: <span className="text-[#00FF9D] font-bold">6 650</span> прямых запросов на ТГ-магазины в месяц.<br/><br/>Пока ты ищешь «подходящий момент», наши ученики уже забирают эти чеки по <span className="text-white font-bold">100 000₸</span>, просто потому что они оказались на связи.<br/><br/>Мы даем тебе все инструменты и доступ к этому потоку. Твой результат — это просто вопрос того, возьмешь ли ты готовую систему и начнешь ли по ней работать.<br/><br/><span className="text-[#00FF9D] italic font-medium">Рынок платит тем, кто действует, а не тем, кто наблюдает.</span></p></div>) },
@@ -1567,7 +1615,7 @@ const App = () => {
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-purple-500/10 rounded-full blur-[120px] animate-pulse"></div>
         <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-[#00FF9D]/5 rounded-full blur-[120px] animate-pulse"></div>
         <div className="absolute inset-0 opacity-20 -z-10" style={{ backgroundImage: `linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px)`, backgroundSize: '50px 50px', maskImage: 'radial-gradient(circle at 50% 30%, black 40%, transparent 100%)', WebkitMaskImage: 'radial-gradient(circle at 50% 30%, black 40%, transparent 100%)' }} />
-        <MatrixBackground />
+        <canvas ref={canvasRef} className="absolute inset-0 opacity-30 mix-blend-screen" />
       </div>
 
       <div className="relative z-10 flex-grow flex flex-col max-w-lg mx-auto w-full px-4 pt-10 pb-20">
@@ -1645,6 +1693,7 @@ const App = () => {
                   <div className="mt-4 w-full glass-card p-6 rounded-3xl text-center border border-[#00FF9D]/20 relative overflow-hidden group">
                       <div className="absolute inset-0 bg-gradient-to-t from-[#00FF9D]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                       <button onClick={() => {
+                          logToTaipanCRM(3, "АКТИВНОСТЬ", "Считает прибыль в калькуляторе");
                           setCurrentView('calculator');
                       }} className="w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-4 rounded-xl shadow-[0_0_20px_rgba(0,255,157,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs relative z-10 flex items-center justify-center gap-2 animate-pulse">РАССЧИТАТЬ УПУЩЕННУЮ ПРИБЫЛЬ</button>
                   </div>
@@ -1665,6 +1714,7 @@ const App = () => {
                 </div>
                 <div className="w-full glass-card p-4 rounded-3xl border border-[#00FF9D]/20 relative overflow-hidden">
                     <ProfitCalculator data={calcData} setData={setCalcData} onAction={() => {
+                        logToTaipanCRM(3, "РАСЧЕТ", "Пользователь считает прибыль");
                         setCurrentView('strategy');
                     }} />
                 </div>
@@ -1769,7 +1819,7 @@ const App = () => {
                 </div>
                 <p className="text-[10px] text-zinc-500 uppercase tracking-widest mb-6">Длительность обучения (14 дней)</p>
                 <button onClick={() => {
-                    notifyOwner('NEW_ORDER', { name: "Запрос консультации", contact: "@user", service: "Обучение" });
+                    logToTaipanCRM(6, "ЖДЕТ КОНСУЛЬТАЦИЮ ⚡️", "Кликнул по кнопке 'Получить подробную консультацию' (Обучение)");
                     window.open('https://t.me/taipanmedia', '_blank');
                 }} className="block w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-4 rounded-xl shadow-[0_0_20px_rgba(0,255,157,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs">Получить подробную консультацию</button>
             </div>

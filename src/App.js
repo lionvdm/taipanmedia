@@ -25,22 +25,6 @@ const isFirebaseInitialized = true;
 // Получаем ID приложения для формирования правильных путей (или используем дефолтный)
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
-// --- TELEGRAM WEB APP UTILS ---
-const tg = window.Telegram?.WebApp;
-
-// Helper for Haptic Feedback
-const haptic = (style = 'light') => {
-  if (tg?.HapticFeedback) {
-    tg.HapticFeedback.impactOccurred(style);
-  }
-};
-
-const notify = (type = 'success') => {
-  if (tg?.HapticFeedback) {
-    tg.HapticFeedback.notificationOccurred(type);
-  }
-};
-
 // --- OPTIMIZED MATRIX BACKGROUND (Performance Friendly) ---
 const MatrixBackground = React.memo(() => {
   const canvasRef = useRef(null);
@@ -373,38 +357,6 @@ const ProfitCalculator = ({ onAction, data, setData }) => {
   const animatedProfit = useOdometer(profit);
   const animatedSales = useOdometer(sales);
 
-  // --- TELEGRAM MAIN BUTTON INTEGRATION ---
-  useEffect(() => {
-    // Only proceed if Telegram WebApp is available
-    if (!tg) return;
-
-    const mainBtn = tg.MainButton;
-    
-    // Configure the button
-    mainBtn.setText("ПОЛУЧИТЬ СТРАТЕГИЮ");
-    mainBtn.setTextColor("#000000"); // Black text
-    mainBtn.setColor("#00FF9D");     // Neon Green background
-    
-    if (!mainBtn.isVisible) {
-      mainBtn.show();
-    }
-
-    const handleClick = () => {
-      // Haptic Feedback on press
-      haptic('heavy');
-      onAction();
-    };
-
-    // Attach listener
-    mainBtn.onClick(handleClick);
-
-    // Cleanup: Remove listener and hide button when component unmounts
-    return () => {
-      mainBtn.offClick(handleClick);
-      mainBtn.hide();
-    };
-  }, [onAction]);
-
   return (
     <div className="w-full animate-in slide-in-from-bottom duration-500">
       <InputField label="Сколько людей в месяц?" value={data.traffic} setValue={(v) => setData({...data, traffic: v})} />
@@ -427,11 +379,7 @@ const ProfitCalculator = ({ onAction, data, setData }) => {
             <p className="text-[8px] text-zinc-500 mt-3 italic">*Мы знаем как увеличить конверсию от 20% и выше</p>
         </div>
       </div>
-      
-      {/* Hide HTML button if Telegram environment is detected (initData present) to avoid duplicates */}
-      {!tg?.initData && (
-        <button onClick={onAction} className="w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-3 rounded-xl shadow-[0_0_20px_rgba(0,255,157,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs flex items-center justify-center gap-2 animate-pulse mt-4">ПОЛУЧИТЬ СТРАТЕГИЮ ОТ TAIPAN GROUP</button>
-      )}
+      <button onClick={onAction} className="w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-3 rounded-xl shadow-[0_0_20px_rgba(0,255,157,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs flex items-center justify-center gap-2 animate-pulse mt-4">ПОЛУЧИТЬ СТРАТЕГИЮ ОТ TAIPAN GROUP</button>
     </div>
   );
 };
@@ -832,7 +780,7 @@ const PartnersCredits = () => {
         <div className="h-[1px] w-8 bg-gradient-to-l from-transparent to-[#00FF9D]"></div>
       </div>
       <div className="relative w-full h-32 flex items-center justify-center overflow-hidden bg-white/5 rounded-xl border border-[#00FF9D]/10 shadow-[0_0_30px_rgba(0,0,0,0.5)]">
-         <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:20px_20px]"></div>
+         <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:20px_20px]"></div>
          <div key={currentIndex} className="relative z-10 animate-[cyberReveal_0.5s_cubic-bezier(0.215,0.61,0.355,1)_both] w-full flex justify-center">
             <SmartImage src={currentLogo} alt="Partner Logo" style={specificStyle} className={logoClasses} wrapperClass="relative z-10 flex justify-center w-full" />
          </div>
@@ -852,18 +800,15 @@ const RoiView = ({ profit, onBack, onAction }) => {
   const returnPercentage = Math.round((conservativeProfit / investment) * 100);
   const daysToRecoup = conservativeProfit > 0 ? Math.ceil(investment / (conservativeProfit / 30)) : Infinity;
   const isProfitable = returnPercentage > 0;
-  // --- UPDATED: Handle Consultation with Logging ---
   const handleConsultation = () => {
-      // Use Haptic
-      haptic('light');
+      // Direct link without logging
       window.open('https://t.me/taipanmedia', '_blank');
   };
-  
   const animatedProfit = useOdometer(conservativeProfit);
   const animatedPercentage = useOdometer(returnPercentage);
   return (
     <div className="animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col h-full items-center w-full">
-        <button onClick={() => { haptic('light'); onBack(); }} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-4 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
+        <button onClick={onBack} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-4 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
         <div className="flex-grow flex flex-col items-center w-full space-y-6">
             <div className="text-center px-4 w-full"><h2 className="text-2xl sm:text-3xl font-black tracking-tighter uppercase mb-1 font-['Chakra_Petch'] leading-none whitespace-nowrap">РАСЧЁТ <span className="text-[#00FF9D]">ОКУПАЕМОСТИ</span></h2><p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] mr-[-0.3em] font-bold">Эффективность инвестиций</p></div>
             <div className="w-full glass-card p-4 rounded-2xl flex justify-between items-center border border-zinc-800"><span className="text-xs text-zinc-400 font-bold uppercase tracking-wider">Стоимость разработки</span><span className="text-sm font-black text-white font-['Chakra_Petch']">100 000 ₸</span></div>
@@ -992,26 +937,13 @@ const AdminPanel = ({ leads, visitors, onBack, onClearLeads, onUpdateLead, onUpd
     const [editingItem, setEditingItem] = useState(null); 
     const [editCollection, setEditCollection] = useState(''); 
 
-    // --- Daily Visitors Calculation ---
-    const dailyVisitorsCount = useMemo(() => {
-        const todayStr = new Date().toDateString();
-        return visitors.filter(v => {
-            if (!v.lastActive) return false;
-            // Handle both Firestore Timestamp and JS Date
-            const d = v.lastActive.toDate ? v.lastActive.toDate() : new Date(v.lastActive);
-            return d.toDateString() === todayStr;
-        }).length;
-    }, [visitors]);
-
     const handleEditClick = (item, collectionType) => {
         setEditingItem(item);
         setEditCollection(collectionType);
-        haptic('light');
     };
 
     const handleSave = (e) => {
         e.preventDefault();
-        haptic('medium');
         const formData = new FormData(e.target);
         const updates = Object.fromEntries(formData.entries());
 
@@ -1023,14 +955,9 @@ const AdminPanel = ({ leads, visitors, onBack, onClearLeads, onUpdateLead, onUpd
         setEditingItem(null);
     };
 
-    const handleTabChange = (tab) => {
-        haptic('light');
-        setActiveTab(tab);
-    }
-
     return (
         <div className="animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col h-full items-center w-full relative">
-            <button onClick={() => { haptic('light'); onBack(); }} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-4 hover:opacity-70 transition-all w-fit">
+            <button onClick={onBack} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-4 hover:opacity-70 transition-all w-fit">
                 <ChevronLeft className="w-4 h-4 mr-1" /> ВЫХОД ИЗ СИСТЕМЫ
             </button>
             
@@ -1044,21 +971,18 @@ const AdminPanel = ({ leads, visitors, onBack, onClearLeads, onUpdateLead, onUpd
             </div>
 
             <div className="flex w-full mb-4 bg-zinc-900/50 p-1 rounded-lg border border-zinc-800 gap-1 overflow-x-auto no-scrollbar">
-                <button onClick={() => handleTabChange('stats')} className={`flex-1 py-2 px-2 whitespace-nowrap text-[9px] font-bold uppercase tracking-widest rounded-md transition-all ${activeTab === 'stats' ? 'bg-[#00FF9D] text-black shadow-lg shadow-[#00FF9D]/20' : 'text-zinc-500 hover:text-white'}`}>📊 Статистика</button>
-                <button onClick={() => handleTabChange('leads')} className={`flex-1 py-2 px-2 whitespace-nowrap text-[9px] font-bold uppercase tracking-widest rounded-md transition-all ${activeTab === 'leads' ? 'bg-[#00FF9D] text-black shadow-lg shadow-[#00FF9D]/20' : 'text-zinc-500 hover:text-white'}`}>Заявки ({leads.length})</button>
-                {/* Updated Visitors Button Label */}
-                <button onClick={() => handleTabChange('visitors')} className={`flex-1 py-2 px-2 whitespace-nowrap text-[9px] font-bold uppercase tracking-widest rounded-md transition-all ${activeTab === 'visitors' ? 'bg-[#00FF9D] text-black shadow-lg shadow-[#00FF9D]/20' : 'text-zinc-500 hover:text-white'}`}>
-                    Посетители <span className="opacity-70 text-[8px] ml-1">({dailyVisitorsCount}/{visitors.length})</span>
-                </button>
+                <button onClick={() => setActiveTab('stats')} className={`flex-1 py-2 px-2 whitespace-nowrap text-[9px] font-bold uppercase tracking-widest rounded-md transition-all ${activeTab === 'stats' ? 'bg-[#00FF9D] text-black shadow-lg shadow-[#00FF9D]/20' : 'text-zinc-500 hover:text-white'}`}>📊 Статистика</button>
+                <button onClick={() => setActiveTab('leads')} className={`flex-1 py-2 px-2 whitespace-nowrap text-[9px] font-bold uppercase tracking-widest rounded-md transition-all ${activeTab === 'leads' ? 'bg-[#00FF9D] text-black shadow-lg shadow-[#00FF9D]/20' : 'text-zinc-500 hover:text-white'}`}>Заявки ({leads.length})</button>
+                <button onClick={() => setActiveTab('visitors')} className={`flex-1 py-2 px-2 whitespace-nowrap text-[9px] font-bold uppercase tracking-widest rounded-md transition-all ${activeTab === 'visitors' ? 'bg-[#00FF9D] text-black shadow-lg shadow-[#00FF9D]/20' : 'text-zinc-500 hover:text-white'}`}>Посетители</button>
             </div>
 
             <div className="w-full flex-grow overflow-hidden flex flex-col">
                 <div className="flex items-center justify-between mb-3 px-1">
                     <p className="text-[10px] text-zinc-400 uppercase tracking-widest font-bold">
-                        {activeTab === 'leads' ? 'ВХОДЯЩИЕ ЛИДЫ' : activeTab === 'visitors' ? `ТРАФИК (СЕГОДНЯ: ${dailyVisitorsCount})` : 'ОТЧЕТЫ СИСТЕМЫ'}
+                        {activeTab === 'leads' ? 'ВХОДЯЩИЕ ЛИДЫ' : activeTab === 'visitors' ? 'АКТИВНЫЙ ТРАФИК' : 'ОТЧЕТЫ СИСТЕМЫ'}
                     </p>
                     {(activeTab === 'leads' || activeTab === 'stats') && (
-                        <button onClick={() => { haptic('warning'); onClearLeads(); }} className="text-[9px] text-red-500 uppercase font-bold hover:text-red-400 flex items-center gap-1">
+                        <button onClick={onClearLeads} className="text-[9px] text-red-500 uppercase font-bold hover:text-red-400 flex items-center gap-1">
                             <Trash2 className="w-3 h-3" /> {activeTab === 'stats' ? 'СБРОСИТЬ ВСЁ' : 'ОЧИСТИТЬ'}
                         </button>
                     )}
@@ -1226,34 +1150,6 @@ const App = () => {
   const [currentUserId, setCurrentUserId] = useState(null); // Добавлено состояние для ID
   const [spotsLeft, setSpotsLeft] = useState(4);
 
-  // --- TELEGRAM MAIN BUTTON INTEGRATION (FOR MODAL) ---
-  useEffect(() => {
-    if (!tg) return;
-    const mainBtn = tg.MainButton;
-
-    if (isModalOpen) {
-      mainBtn.setText("СВЯЗАТЬСЯ СО МНОЙ");
-      mainBtn.setTextColor("#000000");
-      mainBtn.setColor("#00FF9D");
-      mainBtn.show();
-
-      const handleMainBtnClick = () => {
-        // Find form and submit it programmatically
-        const form = document.getElementById('contactForm');
-        if (form) form.requestSubmit();
-        haptic('heavy');
-      };
-
-      mainBtn.onClick(handleMainBtnClick);
-      return () => {
-        mainBtn.offClick(handleMainBtnClick);
-        mainBtn.hide();
-      };
-    } else {
-      mainBtn.hide();
-    }
-  }, [isModalOpen]);
-
   // --- FIREBASE AUTH LISTENER ---
   useEffect(() => {
       const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -1265,10 +1161,10 @@ const App = () => {
   // --- FIREBASE TRACKING EFFECT ---
   useEffect(() => {
     const initApp = async () => {
+        // Removed logToTaipanCRM call
         const tg = window.Telegram?.WebApp;
         if (tg) {
             tg.ready();
-            tg.expand(); // Expand to full height
             const user = tg.initDataUnsafe?.user;
             if (user?.first_name) {
                 setUserName(user.first_name.toUpperCase());
@@ -1400,21 +1296,11 @@ const App = () => {
     return () => { clearInterval(interval); window.removeEventListener('resize', handleResize); };
   }, []);
 
-  const openModal = (type) => { 
-    haptic('light');
-    setModalType(type); 
-    setIsModalOpen(true); 
-  };
-  const closeModal = () => {
-    haptic('light');
-    setIsModalOpen(false);
-  };
+  const openModal = (type) => { setModalType(type); setIsModalOpen(true); };
+  const closeModal = () => setIsModalOpen(false);
   const handleSubmit = (e) => { 
     e.preventDefault(); 
     
-    // Haptic Success Notification
-    notify('success');
-
     const name = e.target[0].value;
     const contact = e.target[1].value;
 
@@ -1428,32 +1314,31 @@ const App = () => {
     };
     setLeads(prev => [newLead, ...prev]);
 
+    // Removed logToTaipanCRM call
+
     closeModal(); 
     setShowToast(true); 
     setTimeout(() => setShowToast(false), 3000); 
     e.target.reset(); 
   };
-  const handleFaqClick = (item) => { haptic('light'); setActiveFaq(item); setShowCalculator(false); };
-  const closeFaq = () => { haptic('light'); setActiveFaq(null); setShowCalculator(false); };
+  const handleFaqClick = (item) => { setActiveFaq(item); setShowCalculator(false); };
+  const closeFaq = () => { setActiveFaq(null); setShowCalculator(false); };
   const handleShopClick = () => { 
-      haptic('medium');
+      // Removed logToTaipanCRM call
       setShopIntroFinished(false); 
       setCurrentView('shop'); 
   };
   const handleEducationClick = () => {
-    haptic('medium');
+    // Removed logToTaipanCRM call
     setCurrentView('education');
   }
   const handleStrategyClick = () => {
-       haptic('light');
        setCurrentView('strategy');
   };
   const handleBackClick = (target) => {
-    haptic('light');
     setCurrentView(target);
   }
   const handleAboutClick = () => {
-       haptic('medium');
        setBaneIntroActive(true);
   }
   const handleBaneIntroComplete = () => {
@@ -1466,11 +1351,11 @@ const App = () => {
       setTapCount(prev => {
           const newCount = prev + 1;
           if (newCount >= 5) {
-              haptic('warning');
+              // --- SECURITY CHECK REMOVED TEMPORARILY ---
+              // Просто открываем окно ввода пароля после 5 кликов
               setIsAdminAuthOpen(true);
               return 0;
           }
-          haptic('light');
           return newCount;
       });
   };
@@ -1479,11 +1364,10 @@ const App = () => {
       e.preventDefault();
       const code = e.target[0].value;
       if (code === 'admin') {
-          haptic('success');
           setIsAdminAuthOpen(false);
           setCurrentView('admin');
+          // Removed logToTaipanCRM call
       } else {
-          haptic('error');
           alert("ACCESS DENIED");
       }
   };
@@ -1544,7 +1428,7 @@ const App = () => {
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4 w-full">
-                <div onClick={() => openModal('Mini App')} className="group relative glass-card grid-bg rounded-3xl p-6 flex flex-col items-center justify-center cursor-pointer text-center w-full h-40">
+                <div onClick={() => window.open('https://t.me/taipanmedia', '_blank')} className="group relative glass-card grid-bg rounded-3xl p-6 flex flex-col items-center justify-center cursor-pointer text-center w-full h-40">
                     <Code className="w-8 h-8 mb-3 text-zinc-500 group-hover:text-[#E5C07B] animate-[goldPulse_3s_ease-in-out_infinite] transition-colors" />
                     <h3 className="text-lg font-bold uppercase tracking-widest mb-2 group-hover:text-[#E5C07B] transition-colors">MINI APP</h3>
                     <p className="text-[10px] text-zinc-500 uppercase tracking-widest group-hover:text-white transition-colors leading-tight">Заказать персональный<br/>mini app</p>
@@ -1584,7 +1468,7 @@ const App = () => {
                   <div className="mt-4 w-full glass-card p-6 rounded-3xl text-center border border-[#00FF9D]/20 relative overflow-hidden group">
                       <div className="absolute inset-0 bg-gradient-to-t from-[#00FF9D]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                       <button onClick={() => {
-                          haptic('light');
+                          // Removed logToTaipanCRM call
                           setCurrentView('calculator');
                       }} className="w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-4 rounded-xl shadow-[0_0_20px_rgba(0,255,157,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs relative z-10 flex items-center justify-center gap-2 animate-pulse">РАССЧИТАТЬ УПУЩЕННУЮ ПРИБЫЛЬ</button>
                   </div>
@@ -1605,7 +1489,7 @@ const App = () => {
                 </div>
                 <div className="w-full glass-card p-4 rounded-3xl border border-[#00FF9D]/20 relative overflow-hidden">
                     <ProfitCalculator data={calcData} setData={setCalcData} onAction={() => {
-                        haptic('light');
+                        // Removed logToTaipanCRM call
                         setCurrentView('strategy');
                     }} />
                 </div>
@@ -1710,7 +1594,7 @@ const App = () => {
                 </div>
                 <p className="text-[10px] text-zinc-500 uppercase tracking-widest mb-6">Длительность обучения (14 дней)</p>
                 <button onClick={() => {
-                    haptic('light');
+                    // Removed logToTaipanCRM call
                     window.open('https://t.me/taipanmedia', '_blank');
                 }} className="block w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-4 rounded-xl shadow-[0_0_20px_rgba(0,255,157,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs">Получить подробную консультацию</button>
             </div>
@@ -1847,7 +1731,7 @@ const App = () => {
             <div className="w-12 h-1.5 bg-zinc-800 rounded-full mx-auto mb-8 cursor-pointer" onClick={closeModal} />
             <h2 className="text-2xl font-bold text-center mb-2 tracking-tight">Начать сейчас</h2>
             <p className="text-center text-zinc-500 text-xs uppercase tracking-widest mb-8">Интерес: <span className="text-[#00FF9D]">{modalType}</span></p>
-            <form id="contactForm" onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4">
               <input type="text" placeholder="Ваше Имя" required className="w-full bg-black border border-white/5 rounded-2xl p-4 text-center text-white focus:border-[#00FF9D]/50 outline-none transition-all placeholder-zinc-700" />
               <input type="text" placeholder="@username" required className="w-full bg-black border border-white/5 rounded-2xl p-4 text-center text-white focus:border-[#00FF9D]/50 outline-none transition-all placeholder-zinc-700" />
               <button type="submit" className="w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-5 rounded-2xl mt-4 text-xs">Связаться со мной</button>

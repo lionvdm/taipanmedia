@@ -5,56 +5,6 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 import { getFirestore, doc, setDoc, updateDoc, serverTimestamp, collection, query, onSnapshot, deleteDoc } from 'firebase/firestore';
 
-// --- TON CONNECT INTEGRATION (REAL) ---
-import { TonConnectUIProvider, TonConnectButton, useTonAddress } from '@tonconnect/ui-react';
-
-// --- ICONS (Manual Definition to Fix Import Errors) ---
-const IconWrapper = ({ children, className }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    {children}
-  </svg>
-);
-
-const User = React.memo(({ className }) => <IconWrapper className={className}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></IconWrapper>);
-const Wallet = React.memo(({ className }) => <IconWrapper className={className}><path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4" /><path d="M4 6v12c0 1.1.9 2 2 2h14v-4" /><path d="M18 12a2 2 0 0 0-2 2c0 1.1.9 2 2 2h4v-4h-4z" /></IconWrapper>);
-const Award = React.memo(({ className }) => <IconWrapper className={className}><circle cx="12" cy="8" r="7" /><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88" /></IconWrapper>);
-const CheckCircle = React.memo(({ className }) => <IconWrapper className={className}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></IconWrapper>);
-// Alias CheckCircle to CheckCircle2
-const CheckCircle2 = CheckCircle;
-
-const Lock = React.memo(({ className }) => <IconWrapper className={className}><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></IconWrapper>);
-const Zap = React.memo(({ className }) => <IconWrapper className={className}><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></IconWrapper>);
-const TrendingUp = React.memo(({ className }) => <IconWrapper className={className}><polyline points="23 6 13.5 15.5 8.5 10.5 1 18" /><polyline points="17 6 23 6 23 12" /></IconWrapper>);
-const Search = React.memo(({ className }) => <IconWrapper className={className}><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></IconWrapper>);
-const Activity = React.memo(({ className }) => <IconWrapper className={className}><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></IconWrapper>);
-const Edit2 = React.memo(({ className }) => <IconWrapper className={className}><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" /></IconWrapper>);
-const Save = React.memo(({ className }) => <IconWrapper className={className}><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" /><polyline points="17 21 17 13 7 13 7 21" /><polyline points="7 3 7 8 15 8" /></IconWrapper>);
-const Trash2 = React.memo(({ className }) => <IconWrapper className={className}><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /><line x1="10" y1="11" x2="10" y2="17" /><line x1="14" y1="11" x2="14" y2="17" /></IconWrapper>);
-const X = React.memo(({ className }) => <IconWrapper className={className}><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></IconWrapper>);
-const ChevronLeft = React.memo(({ className }) => <IconWrapper className={className}><polyline points="15 18 9 12 15 6" /></IconWrapper>);
-const ArrowRight = React.memo(({ className }) => <IconWrapper className={className}><line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" /></IconWrapper>);
-const GraduationCap = React.memo(({ className }) => <IconWrapper className={className}><path d="M22 10v6M2 10l10-5 10 5-10 5z" /><path d="M6 12v5c3 3 9 3 12 0v-5" /></IconWrapper>);
-const Code = React.memo(({ className }) => <IconWrapper className={className}><polyline points="16 18 22 12 16 6" /><polyline points="8 6 2 12 8 18" /></IconWrapper>);
-const Users = React.memo(({ className }) => <IconWrapper className={className}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></IconWrapper>);
-const Crosshair = React.memo(({ className }) => <IconWrapper className={className}><circle cx="12" cy="12" r="10" /><line x1="22" y1="12" x2="18" y2="12" /><line x1="6" y1="12" x2="2" y2="12" /><line x1="12" y1="6" x2="12" y2="2" /><line x1="12" y1="22" x2="12" y2="18" /></IconWrapper>);
-const BarChart2 = React.memo(({ className }) => <IconWrapper className={className}><line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" /></IconWrapper>);
-const PieChart = React.memo(({ className }) => <IconWrapper className={className}><path d="M21.21 15.89A10 10 0 1 1 8 2.83" /><path d="M22 12A10 10 0 0 0 12 2v10z" /></IconWrapper>);
-const Database = React.memo(({ className }) => <IconWrapper className={className}><ellipse cx="12" cy="5" rx="9" ry="3" /><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" /><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" /></IconWrapper>);
-const Shield = React.memo(({ className }) => <IconWrapper className={className}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></IconWrapper>);
-const Menu = React.memo(({ className }) => <IconWrapper className={className}><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="18" x2="21" y2="18" /></IconWrapper>);
-const Copy = React.memo(({ className }) => <IconWrapper className={className}><rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></IconWrapper>);
-const ExternalLink = React.memo(({ className }) => <IconWrapper className={className}><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /><polyline points="15 3 21 3 21 9" /><line x1="10" y1="14" x2="21" y2="3" /></IconWrapper>);
-const Play = React.memo(({ className }) => <IconWrapper className={className}><polygon points="5 3 19 12 5 21 5 3" /></IconWrapper>);
-const ShoppingBag = React.memo(({ className }) => <IconWrapper className={className}><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" /><line x1="3" y1="6" x2="21" y2="6" /><path d="M16 10a4 4 0 0 1-8 0" /></IconWrapper>);
-const Terminal = React.memo(({ className }) => <IconWrapper className={className}><polyline points="4 17 10 11 4 5" /><line x1="12" y1="19" x2="20" y2="19" /></IconWrapper>);
-
-// Custom Icon for Telegram Logo
-const TelegramLogoMain = React.memo(({ className }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" stroke="none" className={className}>
-    <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.446 1.394c-.16.16-.295.293-.605.293l.214-3.054 5.56-5.022c.24-.213-.054-.334-.373-.121l-6.869 4.326-2.962-.924c-.64-.203-.658-.64.135-.954l11.566-4.458c.538-.196 1.006.128.832.942z"/>
-  </svg>
-));
-
 // --- CONFIGURATION & INIT ---
 const firebaseConfig = {
   apiKey: "AIzaSyCdcj_56EdygidWa8pQm17fegnF39XB8Xg",
@@ -75,66 +25,20 @@ const isFirebaseInitialized = true;
 // Получаем ID приложения для формирования правильных путей (или используем дефолтный)
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
-// --- КЛЮЧ PINATA (JWT) ---
-const PINATA_JWT = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySW5mb3JtYXRpb24iOnsiaWQiOiI3NTM5YTc4Ni00ODVhLTQ2ZWUtOTFmMi1iMWZjNDZjMzJhYjEiLCJlbWFpbCI6InRhaXBhbm1lZGlhc2NAZ21haWwuY29tIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsInBpbl9wb2xpY3kiOnsicmVnaW9ucyI6W3siZGVzaXJlZFJlcGxpY2F0aW9uQ291bnQiOjEsImlkIjoiRlJBMSJ9LHsiZGVzaXJlZFJlcGxpY2F0aW9uQ291bnQiOjEsImlkIjoiTllDMSJ9XSwidmVyc2lvbiI6MX0sIm1mYV9lbmFibGVkIjpmYWxzZSwic3RhdHVzIjoiQUNUSVZFIn0sImF1dGhlbnRpY2F0aW9uVHlwZSI6InNjb3BlZEtleSIsInNjb3BlZEtleUtleSI6ImJhNDcyNGMxODQyZjA1NTcyYjlhIiwic2NvcGVkS2V5U2VjcmV0IjoiYWY0ZDA4ZTg1N2Y3NWM2N2VmM2QzMjI0ZjVlNzBiMjc1NmEyZGQzMWQxMWE1MmY4YjFlYTZhZTU1YWMwNmE2ZSIsImV4cCI6MTgwMTAyNjg5M30.kACF0OpAMD5bQDftPrf9h5KkJyaX6_r_HAMkB4j9kt8";
+// --- TELEGRAM WEB APP UTILS ---
+const tg = window.Telegram?.WebApp;
 
-// 1. Генерация картинки на Canvas
-const generateSBTImage = (name, date, sbtId) => {
-    return new Promise((resolve) => {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        canvas.width = 1200;
-        canvas.height = 800;
-
-        // Фон и дизайн
-        ctx.fillStyle = '#050505';
-        ctx.fillRect(0, 0, 1200, 800);
-        ctx.strokeStyle = 'rgba(0, 255, 157, 0.1)';
-        for(let i=0; i<1200; i+=40) { ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, 800); ctx.stroke(); }
-
-        // Текст
-        ctx.fillStyle = '#00FF9D';
-        ctx.font = 'bold 60px monospace';
-        ctx.textAlign = 'center';
-        ctx.fillText('TAIPAN ACADEMY', 600, 150);
-        ctx.fillStyle = '#FFFFFF';
-        ctx.font = 'bold 80px monospace';
-        ctx.fillText(name.toUpperCase(), 600, 450);
-        ctx.font = '20px monospace';
-        ctx.fillStyle = 'gray';
-        ctx.fillText(`ID: ${sbtId} | DATE: ${date}`, 600, 750);
-
-        resolve(canvas.toDataURL('image/png'));
-    });
+// Helper for Haptic Feedback
+const haptic = (style = 'light') => {
+  if (tg?.HapticFeedback) {
+    tg.HapticFeedback.impactOccurred(style);
+  }
 };
 
-// 2. Универсальная функция загрузки в Pinata
-const pinToIPFS = async (data, isJson = false, fileName = "file") => {
-    const url = isJson 
-        ? "https://api.pinata.cloud/pinning/pinJSONToIPFS" 
-        : "https://api.pinata.cloud/pinning/pinFileToIPFS";
-    
-    let body;
-    if (isJson) {
-        body = JSON.stringify(data);
-    } else {
-        const res = await fetch(data);
-        const blob = await res.blob();
-        body = new FormData();
-        body.append('file', new File([blob], fileName));
-    }
-
-    const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${PINATA_JWT}`,
-            ...(isJson && { 'Content-Type': 'application/json' })
-        },
-        body
-    });
-
-    const result = await response.json();
-    return `ipfs://${result.IpfsHash}`;
+const notify = (type = 'success') => {
+  if (tg?.HapticFeedback) {
+    tg.HapticFeedback.notificationOccurred(type);
+  }
 };
 
 // --- OPTIMIZED MATRIX BACKGROUND (Performance Friendly) ---
@@ -382,6 +286,36 @@ const useOdometer = (targetValue, duration = 1000) => {
   return displayValue;
 };
 
+// --- ICON COMPONENTS (Memoized for perf) ---
+const GraduationCap = React.memo(({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M22 10v6M2 10l10-5 10 5-10 5z" /><path d="M6 12v5c3 3 9 3 12 0v-5" /></svg>));
+const ArrowRight = React.memo(({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>));
+const ChevronLeft = React.memo(({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m15 18-6-6 6-6" /></svg>));
+const CheckCircle2 = React.memo(({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10" /><path d="m9 12 2 2 4-4" /></svg>));
+const Lock = React.memo(({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect width="18" height="11" x="3" y="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>));
+const TrendingUp = React.memo(({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="23 6 13.5 15.5 8.5 10.5 1 18" /><polyline points="17 6 23 6 23 12" /></svg>));
+const Wallet = React.memo(({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4" /><path d="M4 6v12c0 1.1.9 2 2 2h14v-4" /><path d="M18 12a2 2 0 0 0-2 2c0 1.1.9 2 2 2h4v-4h-4z" /></svg>));
+const X = React.memo(({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>));
+const Zap = React.memo(({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></svg>));
+const Search = React.memo(({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>));
+const Users = React.memo(({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>));
+const Shield = React.memo(({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>));
+const Crosshair = React.memo(({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><line x1="22" y1="12" x2="18" y2="12"/><line x1="6" y1="12" x2="2" y2="12"/><line x1="12" y1="6" x2="12" y2="2"/><line x1="12" y1="22" x2="12" y2="18"/></svg>));
+const Code = React.memo(({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>));
+const Database = React.memo(({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>));
+const Trash2 = React.memo(({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M3 6h18"/><path d="M19 6v14c0 1.1-.9 2 2 2H7c-1.1 0-2-.9-2-2V6"/><path d="M8 6V4c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2"/></svg>));
+const Activity = React.memo(({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>));
+const Edit2 = React.memo(({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>));
+const Save = React.memo(({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>));
+const Filter = React.memo(({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>));
+const BarChart2 = React.memo(({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>));
+const PieChart = React.memo(({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>));
+
+const TelegramLogoMain = React.memo(({ className }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" stroke="none" className={className}>
+    <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.446 1.394c-.16.16-.295.293-.605.293l.214-3.054 5.56-5.022c.24-.213-.054-.334-.373-.121l-6.869 4.326-2.962-.924c-.64-.203-.658-.64.135-.954l11.566-4.458c.538-.196 1.006.128.832.942z"/>
+  </svg>
+));
+
 // --- OPTIMIZED COMPONENT: SmartImage ---
 // Wrapped in memo to prevent re-renders on parent state changes
 const SmartImage = React.memo(({ src, alt, className, style, wrapperClass = "", overflowHidden = true }) => {
@@ -439,6 +373,38 @@ const ProfitCalculator = ({ onAction, data, setData }) => {
   const animatedProfit = useOdometer(profit);
   const animatedSales = useOdometer(sales);
 
+  // --- TELEGRAM MAIN BUTTON INTEGRATION ---
+  useEffect(() => {
+    // Only proceed if Telegram WebApp is available
+    if (!tg) return;
+
+    const mainBtn = tg.MainButton;
+    
+    // Configure the button
+    mainBtn.setText("ПОЛУЧИТЬ СТРАТЕГИЮ");
+    mainBtn.setTextColor("#000000"); // Black text
+    mainBtn.setColor("#00FF9D");     // Neon Green background
+    
+    if (!mainBtn.isVisible) {
+      mainBtn.show();
+    }
+
+    const handleClick = () => {
+      // Haptic Feedback on press
+      haptic('heavy');
+      onAction();
+    };
+
+    // Attach listener
+    mainBtn.onClick(handleClick);
+
+    // Cleanup: Remove listener and hide button when component unmounts
+    return () => {
+      mainBtn.offClick(handleClick);
+      mainBtn.hide();
+    };
+  }, [onAction]);
+
   return (
     <div className="w-full animate-in slide-in-from-bottom duration-500">
       <InputField label="Сколько людей в месяц?" value={data.traffic} setValue={(v) => setData({...data, traffic: v})} />
@@ -461,7 +427,11 @@ const ProfitCalculator = ({ onAction, data, setData }) => {
             <p className="text-[8px] text-zinc-500 mt-3 italic">*Мы знаем как увеличить конверсию от 20% и выше</p>
         </div>
       </div>
-      <button onClick={onAction} className="w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-3 rounded-xl shadow-[0_0_20px_rgba(0,255,157,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs flex items-center justify-center gap-2 animate-pulse mt-4">ПОЛУЧИТЬ СТРАТЕГИЮ ОТ TAIPAN GROUP</button>
+      
+      {/* Hide HTML button if Telegram environment is detected (initData present) to avoid duplicates */}
+      {!tg?.initData && (
+        <button onClick={onAction} className="w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-3 rounded-xl shadow-[0_0_20px_rgba(0,255,157,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs flex items-center justify-center gap-2 animate-pulse mt-4">ПОЛУЧИТЬ СТРАТЕГИЮ ОТ TAIPAN GROUP</button>
+      )}
     </div>
   );
 };
@@ -575,7 +545,7 @@ const ClientDemandProof = React.memo(() => {
       <div className="relative rounded-xl overflow-hidden border border-[#00FF9D]/40 mb-6 group animate-in zoom-in duration-500 shadow-[0_0_20px_rgba(0,255,157,0.1)] cursor-zoom-in" onClick={(e) => { e.stopPropagation(); setIsExpanded(true); }}>
         <SmartImage src="https://i.ibb.co.com/h1mN3kL0/5427147012425059102.jpg" className="w-full object-cover opacity-90 filter grayscale-[0.5] contrast-[1.1] brightness-[0.9]" alt="Client Demand" />
         <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-md rounded-full p-1.5 opacity-60 group-hover:opacity-100 transition-opacity border border-[#00FF9D]/30 z-10"><Search className="w-3 h-3 text-[#00FF9D]" /></div>
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none z-10"></div>
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none z-10"></div>
         <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-[#00FF9D]/10 to-transparent animate-[scanLine_2.5s_linear_infinite] z-10"></div>
         <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent pointer-events-none z-10"></div>
         <div className="absolute bottom-3 left-3 bg-black/80 border border-[#00FF9D]/30 px-2 py-1 rounded z-20">
@@ -597,7 +567,7 @@ const ClientDemandProof = React.memo(() => {
 // --- SkillScanner ---
 const SkillScanner = () => (
   <div className="w-full bg-[#0A0A0A] rounded-xl border border-[#00FF9D]/20 p-4 mb-6 relative overflow-hidden animate-in slide-in-from-bottom duration-500 group">
-    <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none"></div>
+    <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none"></div>
     <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-[#00FF9D]/05 to-transparent animate-[scanLine_4s_linear_infinite]"></div>
     <div className="relative z-10">
         <div className="flex items-center justify-between mb-4 border-b border-zinc-800 pb-2">
@@ -628,11 +598,11 @@ const SetupTimeline = () => {
       <div className="relative border-l border-[#00FF9D]/20 ml-2 space-y-6">
         {steps.map((step, i) => (
           <div key={i} className="relative pl-6 group">
-              <div className="absolute -left-[5px] top-1 w-2.5 h-2.5 bg-[#050505] border border-[#00FF9D] rounded-full group-hover:bg-[#00FF9D] group-hover:shadow-[0_0_10px_#00FF9D] transition-all"></div>
-              <div className="flex justify-between items-start">
-                <div><h4 className="text-sm font-bold text-white font-['Chakra_Petch'] leading-none mb-1 group-hover:text-[#00FF9D] transition-colors">{step.title}</h4><p className="text-[11px] text-zinc-400 leading-snug max-w-[220px]">{step.desc}</p></div>
-                <span className="text-[9px] font-mono text-[#00FF9D]/70 bg-[#00FF9D]/5 px-1.5 py-0.5 rounded ml-2 whitespace-nowrap">{step.time}</span>
-              </div>
+             <div className="absolute -left-[5px] top-1 w-2.5 h-2.5 bg-[#050505] border border-[#00FF9D] rounded-full group-hover:bg-[#00FF9D] group-hover:shadow-[0_0_10px_#00FF9D] transition-all"></div>
+             <div className="flex justify-between items-start">
+               <div><h4 className="text-sm font-bold text-white font-['Chakra_Petch'] leading-none mb-1 group-hover:text-[#00FF9D] transition-colors">{step.title}</h4><p className="text-[11px] text-zinc-400 leading-snug max-w-[220px]">{step.desc}</p></div>
+               <span className="text-[9px] font-mono text-[#00FF9D]/70 bg-[#00FF9D]/5 px-1.5 py-0.5 rounded ml-2 whitespace-nowrap">{step.time}</span>
+             </div>
           </div>
         ))}
         <div className="relative pl-6 mt-8"><div className="absolute -left-[7px] top-1 w-3.5 h-3.5 bg-[#00FF9D] rounded-full animate-pulse shadow-[0_0_15px_#00FF9D]"></div><div className="bg-[#00FF9D]/10 border border-[#00FF9D]/30 p-3 rounded-lg"><h4 className="text-sm font-black text-[#00FF9D] uppercase tracking-wider mb-1">МАГАЗИН ГОТОВ</h4><p className="text-[10px] text-zinc-300 leading-snug">Можно запускать трафик и получать прибыль. Система работает автономно.</p></div></div>
@@ -821,14 +791,13 @@ const PartnersCredits = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   useEffect(() => {
     const timer = setInterval(() => { setCurrentIndex((prev) => (prev + 1) % logos.length); }, 2500);
-    return () => clearTimeout(timer);
+    return () => clearInterval(timer);
   }, []);
   const currentLogo = logos[currentIndex];
   const isYandex = currentLogo.includes("Yandex");
   const isRomantic = currentLogo.includes("janym");
   const isFood = currentLogo.includes("DfQywRwj");
   const isPicsartLogo = currentLogo.includes("PvND9HRh");
-  // MoiSklad logic
   const isMoiSklad = currentLogo.includes("3mKHz61B") || currentLogo.includes("PvND9HRh"); 
   const isNewPartner = currentLogo.includes("MDKssj1s"); // Updated ID for the new MoiSklad logo
   
@@ -863,7 +832,7 @@ const PartnersCredits = () => {
         <div className="h-[1px] w-8 bg-gradient-to-l from-transparent to-[#00FF9D]"></div>
       </div>
       <div className="relative w-full h-32 flex items-center justify-center overflow-hidden bg-white/5 rounded-xl border border-[#00FF9D]/10 shadow-[0_0_30px_rgba(0,0,0,0.5)]">
-         <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:20px_20px]"></div>
+         <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:20px_20px]"></div>
          <div key={currentIndex} className="relative z-10 animate-[cyberReveal_0.5s_cubic-bezier(0.215,0.61,0.355,1)_both] w-full flex justify-center">
             <SmartImage src={currentLogo} alt="Partner Logo" style={specificStyle} className={logoClasses} wrapperClass="relative z-10 flex justify-center w-full" />
          </div>
@@ -883,20 +852,24 @@ const RoiView = ({ profit, onBack, onAction }) => {
   const returnPercentage = Math.round((conservativeProfit / investment) * 100);
   const daysToRecoup = conservativeProfit > 0 ? Math.ceil(investment / (conservativeProfit / 30)) : Infinity;
   const isProfitable = returnPercentage > 0;
+  // --- UPDATED: Handle Consultation with Logging ---
   const handleConsultation = () => {
+      // Use Haptic
+      haptic('light');
       window.open('https://t.me/taipanmedia', '_blank');
   };
+  
   const animatedProfit = useOdometer(conservativeProfit);
   const animatedPercentage = useOdometer(returnPercentage);
   return (
     <div className="animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col h-full items-center w-full">
-        <button onClick={onBack} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-4 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
+        <button onClick={() => { haptic('light'); onBack(); }} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-4 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
         <div className="flex-grow flex flex-col items-center w-full space-y-6">
             <div className="text-center px-4 w-full"><h2 className="text-2xl sm:text-3xl font-black tracking-tighter uppercase mb-1 font-['Chakra_Petch'] leading-none whitespace-nowrap">РАСЧЁТ <span className="text-[#00FF9D]">ОКУПАЕМОСТИ</span></h2><p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] mr-[-0.3em] font-bold">Эффективность инвестиций</p></div>
             <div className="w-full glass-card p-4 rounded-2xl flex justify-between items-center border border-zinc-800"><span className="text-xs text-zinc-400 font-bold uppercase tracking-wider">Стоимость разработки</span><span className="text-sm font-black text-white font-['Chakra_Petch']">100 000 ₸</span></div>
              <div className="w-full glass-card p-4 rounded-2xl flex justify-between items-center border border-[#00FF9D]/20 bg-[#00FF9D]/5"><span className="text-xs text-zinc-400 font-bold uppercase tracking-wider">Потенциальный возврат</span><span className="text-sm font-black text-[#00FF9D] font-['Chakra_Petch']">{animatedProfit.toLocaleString()} ₸/мес</span></div>
             <div className="relative w-full overflow-hidden bg-gradient-to-br from-zinc-900 to-black border border-zinc-800 p-6 rounded-3xl text-center group">
-                <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none"></div>
+                <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none"></div>
                 <p className="text-[10px] text-zinc-400 uppercase tracking-widest mb-3 relative z-10 leading-relaxed">При указанных вами показателях,<br/>в первый месяц вы вернёте</p>
                 <div className={`text-5xl font-black font-['Chakra_Petch'] mb-3 relative z-10 ${isProfitable ? 'text-[#00FF9D]' : 'text-zinc-500'}`}>{animatedPercentage}% <span className="text-sm font-bold text-zinc-500 uppercase tracking-wide">вложений</span></div>
                 {isProfitable ? (<div className="inline-block bg-[#00FF9D]/10 border border-[#00FF9D]/30 px-3 py-1 rounded-full relative z-10"><p className="text-[10px] text-[#00FF9D] font-bold uppercase tracking-wider">Полная окупаемость: ~{daysToRecoup} {daysToRecoup === 1 ? 'день' : (daysToRecoup > 1 && daysToRecoup < 5) ? 'дня' : 'дней'}</p></div>) : (<p className="text-[10px] text-zinc-600 relative z-10">Заполните калькулятор для расчета</p>)}
@@ -1019,31 +992,45 @@ const AdminPanel = ({ leads, visitors, onBack, onClearLeads, onUpdateLead, onUpd
     const [editingItem, setEditingItem] = useState(null); 
     const [editCollection, setEditCollection] = useState(''); 
 
+    // --- Daily Visitors Calculation ---
+    const dailyVisitorsCount = useMemo(() => {
+        const todayStr = new Date().toDateString();
+        return visitors.filter(v => {
+            if (!v.lastActive) return false;
+            // Handle both Firestore Timestamp and JS Date
+            const d = v.lastActive.toDate ? v.lastActive.toDate() : new Date(v.lastActive);
+            return d.toDateString() === todayStr;
+        }).length;
+    }, [visitors]);
+
     const handleEditClick = (item, collectionType) => {
         setEditingItem(item);
         setEditCollection(collectionType);
+        haptic('light');
     };
 
     const handleSave = (e) => {
         e.preventDefault();
+        haptic('medium');
         const formData = new FormData(e.target);
         const updates = Object.fromEntries(formData.entries());
 
         if (editCollection === 'leads') {
             onUpdateLead(editingItem.id, updates);
         } else if (editCollection === 'visitors') {
-            // Handle checkbox logic manually since formData might omit unchecked boxes or return 'on'
-            if (e.target.elements.sbt_allowed) {
-                updates.sbt_allowed = e.target.elements.sbt_allowed.checked;
-            }
             onUpdateVisitor(editingItem.id, updates);
         }
         setEditingItem(null);
     };
 
+    const handleTabChange = (tab) => {
+        haptic('light');
+        setActiveTab(tab);
+    }
+
     return (
         <div className="animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col h-full items-center w-full relative">
-            <button onClick={onBack} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-4 hover:opacity-70 transition-all w-fit">
+            <button onClick={() => { haptic('light'); onBack(); }} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-4 hover:opacity-70 transition-all w-fit">
                 <ChevronLeft className="w-4 h-4 mr-1" /> ВЫХОД ИЗ СИСТЕМЫ
             </button>
             
@@ -1057,18 +1044,21 @@ const AdminPanel = ({ leads, visitors, onBack, onClearLeads, onUpdateLead, onUpd
             </div>
 
             <div className="flex w-full mb-4 bg-zinc-900/50 p-1 rounded-lg border border-zinc-800 gap-1 overflow-x-auto no-scrollbar">
-                <button onClick={() => setActiveTab('stats')} className={`flex-1 py-2 px-2 whitespace-nowrap text-[9px] font-bold uppercase tracking-widest rounded-md transition-all ${activeTab === 'stats' ? 'bg-[#00FF9D] text-black shadow-lg shadow-[#00FF9D]/20' : 'text-zinc-500 hover:text-white'}`}>📊 Статистика</button>
-                <button onClick={() => setActiveTab('leads')} className={`flex-1 py-2 px-2 whitespace-nowrap text-[9px] font-bold uppercase tracking-widest rounded-md transition-all ${activeTab === 'leads' ? 'bg-[#00FF9D] text-black shadow-lg shadow-[#00FF9D]/20' : 'text-zinc-500 hover:text-white'}`}>Заявки ({leads.length})</button>
-                <button onClick={() => setActiveTab('visitors')} className={`flex-1 py-2 px-2 whitespace-nowrap text-[9px] font-bold uppercase tracking-widest rounded-md transition-all ${activeTab === 'visitors' ? 'bg-[#00FF9D] text-black shadow-lg shadow-[#00FF9D]/20' : 'text-zinc-500 hover:text-white'}`}>Посетители</button>
+                <button onClick={() => handleTabChange('stats')} className={`flex-1 py-2 px-2 whitespace-nowrap text-[9px] font-bold uppercase tracking-widest rounded-md transition-all ${activeTab === 'stats' ? 'bg-[#00FF9D] text-black shadow-lg shadow-[#00FF9D]/20' : 'text-zinc-500 hover:text-white'}`}>📊 Статистика</button>
+                <button onClick={() => handleTabChange('leads')} className={`flex-1 py-2 px-2 whitespace-nowrap text-[9px] font-bold uppercase tracking-widest rounded-md transition-all ${activeTab === 'leads' ? 'bg-[#00FF9D] text-black shadow-lg shadow-[#00FF9D]/20' : 'text-zinc-500 hover:text-white'}`}>Заявки ({leads.length})</button>
+                {/* Updated Visitors Button Label */}
+                <button onClick={() => handleTabChange('visitors')} className={`flex-1 py-2 px-2 whitespace-nowrap text-[9px] font-bold uppercase tracking-widest rounded-md transition-all ${activeTab === 'visitors' ? 'bg-[#00FF9D] text-black shadow-lg shadow-[#00FF9D]/20' : 'text-zinc-500 hover:text-white'}`}>
+                    Посетители <span className="opacity-70 text-[8px] ml-1">({dailyVisitorsCount}/{visitors.length})</span>
+                </button>
             </div>
 
             <div className="w-full flex-grow overflow-hidden flex flex-col">
                 <div className="flex items-center justify-between mb-3 px-1">
                     <p className="text-[10px] text-zinc-400 uppercase tracking-widest font-bold">
-                        {activeTab === 'leads' ? 'ВХОДЯЩИЕ ЛИДЫ' : activeTab === 'visitors' ? 'АКТИВНЫЙ ТРАФИК' : activeTab === 'stats' ? 'ОТЧЕТЫ СИСТЕМЫ' : ''}
+                        {activeTab === 'leads' ? 'ВХОДЯЩИЕ ЛИДЫ' : activeTab === 'visitors' ? `ТРАФИК (СЕГОДНЯ: ${dailyVisitorsCount})` : 'ОТЧЕТЫ СИСТЕМЫ'}
                     </p>
                     {(activeTab === 'leads' || activeTab === 'stats') && (
-                        <button onClick={onClearLeads} className="text-[9px] text-red-500 uppercase font-bold hover:text-red-400 flex items-center gap-1">
+                        <button onClick={() => { haptic('warning'); onClearLeads(); }} className="text-[9px] text-red-500 uppercase font-bold hover:text-red-400 flex items-center gap-1">
                             <Trash2 className="w-3 h-3" /> {activeTab === 'stats' ? 'СБРОСИТЬ ВСЁ' : 'ОЧИСТИТЬ'}
                         </button>
                     )}
@@ -1131,7 +1121,6 @@ const AdminPanel = ({ leads, visitors, onBack, onClearLeads, onUpdateLead, onUpd
                                             <p className="text-xs font-bold text-white font-mono">{user.userName}</p>
                                             <p className="text-[9px] text-zinc-500 font-mono">ID: {user.chatId}</p>
                                             {user.notes && <p className="text-[8px] text-[#00FF9D] mt-1 bg-[#00FF9D]/10 px-1 rounded inline-block">{user.notes}</p>}
-                                            {user.sbt_allowed && <p className="text-[8px] text-black font-bold mt-1 bg-[#00FF9D] px-1 rounded inline-block">SBT APPROVED</p>}
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-3">
@@ -1196,17 +1185,6 @@ const AdminPanel = ({ leads, visitors, onBack, onClearLeads, onUpdateLead, onUpd
                                         <label className="text-[9px] text-zinc-500 uppercase font-bold block mb-1">Заметки о клиенте</label>
                                         <textarea name="notes" defaultValue={editingItem.notes || ''} placeholder="Например: интересовался обучением..." className="w-full bg-zinc-900 border border-zinc-700 rounded p-2 text-xs text-white focus:border-[#00FF9D] outline-none h-20 resize-none" />
                                     </div>
-                                    
-                                    {/* --- Manual SBT Approval Checkbox --- */}
-                                    <div className="flex items-center justify-between p-3 bg-zinc-900 rounded-lg border border-zinc-800 mt-4">
-                                        <span className="text-[10px] font-bold text-white uppercase tracking-wider">Разрешить выдачу SBT</span>
-                                        <input 
-                                            type="checkbox" 
-                                            name="sbt_allowed" 
-                                            defaultChecked={editingItem.sbt_allowed}
-                                            className="w-5 h-5 accent-[#00FF9D] cursor-pointer"
-                                        />
-                                    </div>
                                 </>
                             )}
                             
@@ -1217,220 +1195,6 @@ const AdminPanel = ({ leads, visitors, onBack, onClearLeads, onUpdateLead, onUpd
                     </div>
                 </div>
             )}
-        </div>
-    );
-};
-
-// --- PROFILE VIEW COMPONENT ---
-const ProfileView = ({ onBack, userName, userId }) => {
-    const [walletAddress, setWalletAddress] = useState(null);
-    const [isClaiming, setIsClaiming] = useState(false);
-    const [hasSBT, setHasSBT] = useState(false);
-    
-    // Manual Approval State (from Firestore)
-    const [canClaim, setCanClaim] = useState(false);
-
-    // Mock course progress (Removed from UI)
-    const courseProgress = 100;
-    const isCourseFinished = courseProgress === 100;
-
-    // --- CHECK FIREBASE PERMISSION ---
-    useEffect(() => {
-        if (!userId) return;
-        
-        // Listen to the specific user document for changes in 'sbt_allowed'
-        const userRef = doc(db, 'artifacts', appId, 'public', 'data', 'app_visitors', userId.toString());
-        const unsubscribe = onSnapshot(userRef, (docSnap) => {
-            if (docSnap.exists()) {
-                const data = docSnap.data();
-                // Check if admin has set sbt_allowed to true
-                setCanClaim(data.sbt_allowed === true);
-                
-                // Also check if already claimed (optional, based on logic)
-                if (data.sbt_status === 'archived_in_ipfs') {
-                    setHasSBT(true);
-                }
-            }
-        });
-        
-        return () => unsubscribe();
-    }, [userId]);
-
-    // Simulate TON Connect
-    const handleConnectWallet = () => {
-        // In real app: useTonConnectUI().openModal()
-        // Here we simulate connection
-        setTimeout(() => {
-            setWalletAddress("EQD...a8F2");
-        }, 1000);
-    };
-
-    const handleClaimSBT = async () => {
-        if (!walletAddress) return;
-        
-        // Security check: double check permission before proceeding
-        if (!canClaim) {
-            alert("У вас нет разрешения на выпуск сертификата. Обратитесь к администратору.");
-            return;
-        }
-
-        setIsClaiming(true);
-        
-        try {
-            const sbtId = `TPN-${Date.now()}`;
-            const dateStr = new Date().toLocaleDateString();
-
-            // 1. Создаем картинку
-            const imgData = await generateSBTImage(userName, dateStr, sbtId);
-
-            // 2. Загружаем картинку в IPFS
-            const imageIpfsUrl = await pinToIPFS(imgData, false, `cert_${sbtId}.png`);
-            console.log("✅ Картинка загружена:", imageIpfsUrl);
-
-            // 3. Создаем и загружаем JSON-паспорт (Metadata)
-            const metadata = {
-                name: `TAIPAN Graduate: ${userName}`,
-                description: "Official SBT Certificate by TAIPAN Media Group",
-                image: imageIpfsUrl,
-                attributes: [{ trait_type: "Student", value: userName }]
-            };
-            const metadataIpfsUrl = await pinToIPFS(metadata, true);
-            console.log("🔥 Официальный JSON готов:", metadataIpfsUrl);
-
-            // 4. Сохраняем результат в Firebase
-            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'app_visitors', userId.toString()), {
-                sbt_status: 'archived_in_ipfs',
-                metadata_url: metadataIpfsUrl
-            });
-
-            setHasSBT(true);
-            // Визуальное уведомление внутри интерфейса заменит alert
-
-        } catch (e) {
-            console.error("Ошибка процесса:", e);
-            // В случае ошибки сбрасываем состояние загрузки
-        } finally {
-            setIsClaiming(false);
-        }
-    };
-
-    return (
-        <div className="animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col h-full items-center w-full relative pb-20">
-            <button onClick={onBack} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-4 hover:opacity-70 transition-all w-fit">
-                <ChevronLeft className="w-4 h-4 mr-1" /> НАЗАД
-            </button>
-
-            {/* HEADER */}
-            <div className="w-full flex flex-col items-center mb-8">
-                <div className="w-24 h-24 rounded-full border-2 border-[#00FF9D] p-1 mb-4 relative group">
-                    <div className="w-full h-full rounded-full bg-zinc-900 flex items-center justify-center overflow-hidden relative">
-                         <User className="w-10 h-10 text-zinc-500" />
-                         {/* Scan line effect */}
-                         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#00FF9D]/20 to-transparent animate-[scanLine_2s_linear_infinite]"></div>
-                    </div>
-                    <div className="absolute -bottom-2 -right-2 bg-black border border-[#00FF9D] text-[#00FF9D] text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
-                        STUDENT
-                    </div>
-                </div>
-                <h2 className="text-2xl font-black text-white font-['Chakra_Petch'] uppercase tracking-widest mb-1">{userName}</h2>
-                <p className="text-[10px] text-zinc-500 font-mono">ID: {userId || 'UNKNOWN'}</p>
-            </div>
-
-            {/* WALLET CONNECTION */}
-            <div className="w-full glass-card p-4 rounded-xl border border-zinc-800 mb-6">
-                <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                        <Wallet className="w-4 h-4 text-[#00FF9D]" />
-                        TON Wallet
-                    </h3>
-                    {walletAddress ? (
-                        <span className="text-[9px] text-[#00FF9D] bg-[#00FF9D]/10 px-2 py-1 rounded border border-[#00FF9D]/20 font-mono">CONNECTED</span>
-                    ) : (
-                        <span className="text-[9px] text-zinc-500 bg-zinc-900 px-2 py-1 rounded border border-zinc-800 font-mono">NOT CONNECTED</span>
-                    )}
-                </div>
-                
-                {walletAddress ? (
-                    <div className="flex items-center justify-between bg-zinc-900/50 p-3 rounded-lg border border-zinc-800">
-                        <span className="text-[11px] font-mono text-zinc-300">{walletAddress}</span>
-                        <button onClick={() => {navigator.clipboard.writeText(walletAddress)}} className="text-zinc-500 hover:text-white">
-                            <Copy className="w-3 h-3" />
-                        </button>
-                    </div>
-                ) : (
-                    <button 
-                        onClick={handleConnectWallet}
-                        className="w-full bg-[#0098EA] hover:bg-[#0098EA]/80 text-white font-bold uppercase text-[10px] py-3 rounded-xl transition-all shadow-[0_0_15px_rgba(0,152,234,0.3)] flex items-center justify-center gap-2"
-                    >
-                        <Wallet className="w-4 h-4" /> Connect Wallet
-                    </button>
-                )}
-            </div>
-
-            {/* SBT CERTIFICATE SECTION */}
-            <div className="w-full relative group">
-                <div className="absolute -inset-1 bg-gradient-to-r from-[#00FF9D] via-purple-500 to-[#00FF9D] rounded-2xl opacity-20 blur-md group-hover:opacity-40 transition-opacity animate-holograph bg-[length:200%_auto]"></div>
-                <div className="glass-card p-6 rounded-xl border border-[#00FF9D]/30 relative bg-black/80">
-                    <div className="absolute top-0 right-0 p-3 opacity-20">
-                        <Award className="w-16 h-16 text-[#00FF9D]" />
-                    </div>
-
-                    <h3 className="text-lg font-black text-white font-['Chakra_Petch'] uppercase tracking-widest mb-1">
-                        SBT Certificate
-                    </h3>
-                    <p className="text-[10px] text-zinc-400 uppercase tracking-wider mb-6 max-w-[200px]">
-                        Soulbound Token — Цифровое доказательство вашей квалификации в блокчейне TON.
-                    </p>
-
-                    {hasSBT ? (
-                        <div className="animate-in zoom-in duration-500">
-                             <div className="aspect-video w-full rounded-lg border border-[#00FF9D]/50 bg-[#00FF9D]/5 flex flex-col items-center justify-center relative overflow-hidden mb-4">
-                                <div className="absolute inset-0 grid-bg opacity-30"></div>
-                                <Award className="w-12 h-12 text-[#00FF9D] mb-2 drop-shadow-[0_0_15px_#00FF9D]" />
-                                <span className="text-sm font-black text-white uppercase tracking-widest font-['Chakra_Petch']">TAIPAN ACADEMY</span>
-                                <span className="text-[9px] text-[#00FF9D] font-mono mt-1">GRADUATE 2026</span>
-                                <div className="absolute bottom-2 right-2 flex items-center gap-1">
-                                    <div className="w-1.5 h-1.5 bg-[#00FF9D] rounded-full animate-pulse"></div>
-                                    <span className="text-[7px] text-[#00FF9D] font-mono">VERIFIED ON CHAIN</span>
-                                </div>
-                             </div>
-                             <div className="flex items-center justify-center gap-2 text-[#00FF9D] text-xs font-bold uppercase tracking-wider border border-[#00FF9D]/20 p-2 rounded bg-[#00FF9D]/5">
-                                <CheckCircle2 className="w-4 h-4" /> Токен получен
-                             </div>
-                             <button className="w-full mt-3 text-[9px] text-zinc-500 hover:text-white flex items-center justify-center gap-1 transition-colors">
-                                Посмотреть в Explorer <ExternalLink className="w-3 h-3" />
-                             </button>
-                        </div>
-                    ) : (
-                        <div>
-                             {!walletAddress ? (
-                                 <div className="text-center py-4 bg-zinc-900/50 rounded-lg border border-dashed border-zinc-700">
-                                     <Lock className="w-6 h-6 text-zinc-600 mx-auto mb-2" />
-                                     <p className="text-[10px] text-zinc-500 uppercase">Подключите кошелек для получения</p>
-                                 </div>
-                             ) : (
-                                 <button 
-                                    onClick={handleClaimSBT}
-                                    disabled={isClaiming || !canClaim} // Блокируем, если sbt_allowed !== true
-                                    className={`w-full py-4 rounded-xl font-black uppercase transition-all text-xs flex items-center justify-center gap-2 ${
-                                        !canClaim 
-                                        ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed border border-zinc-700' 
-                                        : 'bg-gradient-to-r from-[#00FF9D] to-[#00CC7A] text-black shadow-[0_0_20px_rgba(0,255,157,0.4)] hover:scale-[1.02]'
-                                    }`}
-                                 >
-                                    {isClaiming ? (
-                                        <span className="animate-pulse">MINTING...</span>
-                                    ) : !canClaim ? (
-                                        <> <Lock className="w-4 h-4" /> Доступ закрыт админом </>
-                                    ) : (
-                                        <> <Zap className="w-4 h-4 fill-black" /> CLAIM CERTIFICATE </>
-                                    )}
-                                 </button>
-                             )}
-                        </div>
-                    )}
-                </div>
-            </div>
         </div>
     );
 };
@@ -1462,6 +1226,34 @@ const App = () => {
   const [currentUserId, setCurrentUserId] = useState(null); // Добавлено состояние для ID
   const [spotsLeft, setSpotsLeft] = useState(4);
 
+  // --- TELEGRAM MAIN BUTTON INTEGRATION (FOR MODAL) ---
+  useEffect(() => {
+    if (!tg) return;
+    const mainBtn = tg.MainButton;
+
+    if (isModalOpen) {
+      mainBtn.setText("СВЯЗАТЬСЯ СО МНОЙ");
+      mainBtn.setTextColor("#000000");
+      mainBtn.setColor("#00FF9D");
+      mainBtn.show();
+
+      const handleMainBtnClick = () => {
+        // Find form and submit it programmatically
+        const form = document.getElementById('contactForm');
+        if (form) form.requestSubmit();
+        haptic('heavy');
+      };
+
+      mainBtn.onClick(handleMainBtnClick);
+      return () => {
+        mainBtn.offClick(handleMainBtnClick);
+        mainBtn.hide();
+      };
+    } else {
+      mainBtn.hide();
+    }
+  }, [isModalOpen]);
+
   // --- FIREBASE AUTH LISTENER ---
   useEffect(() => {
       const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -1476,6 +1268,7 @@ const App = () => {
         const tg = window.Telegram?.WebApp;
         if (tg) {
             tg.ready();
+            tg.expand(); // Expand to full height
             const user = tg.initDataUnsafe?.user;
             if (user?.first_name) {
                 setUserName(user.first_name.toUpperCase());
@@ -1552,7 +1345,7 @@ const App = () => {
   useEffect(() => {
     setOnlineCount(Math.floor(Math.random() * 16)); 
     const interval = setInterval(() => { setOnlineCount(Math.floor(Math.random() * 16)); }, 60000); 
-    return () => clearTimeout(interval);
+    return () => clearInterval(interval);
   }, []);
   
   const [calcData, setCalcData] = useState({ traffic: 0, conversion: 0, avgCheck: 0, margin: 0 });
@@ -1607,11 +1400,21 @@ const App = () => {
     return () => { clearInterval(interval); window.removeEventListener('resize', handleResize); };
   }, []);
 
-  const openModal = (type) => { setModalType(type); setIsModalOpen(true); };
-  const closeModal = () => setIsModalOpen(false);
+  const openModal = (type) => { 
+    haptic('light');
+    setModalType(type); 
+    setIsModalOpen(true); 
+  };
+  const closeModal = () => {
+    haptic('light');
+    setIsModalOpen(false);
+  };
   const handleSubmit = (e) => { 
     e.preventDefault(); 
     
+    // Haptic Success Notification
+    notify('success');
+
     const name = e.target[0].value;
     const contact = e.target[1].value;
 
@@ -1630,38 +1433,44 @@ const App = () => {
     setTimeout(() => setShowToast(false), 3000); 
     e.target.reset(); 
   };
-  const handleFaqClick = (item) => { setActiveFaq(item); setShowCalculator(false); };
-  const closeFaq = () => { setActiveFaq(null); setShowCalculator(false); };
+  const handleFaqClick = (item) => { haptic('light'); setActiveFaq(item); setShowCalculator(false); };
+  const closeFaq = () => { haptic('light'); setActiveFaq(null); setShowCalculator(false); };
   const handleShopClick = () => { 
+      haptic('medium');
       setShopIntroFinished(false); 
       setCurrentView('shop'); 
   };
   const handleEducationClick = () => {
+    haptic('medium');
     setCurrentView('education');
   }
   const handleStrategyClick = () => {
+       haptic('light');
        setCurrentView('strategy');
   };
   const handleBackClick = (target) => {
+    haptic('light');
     setCurrentView(target);
   }
   const handleAboutClick = () => {
+       haptic('medium');
        setBaneIntroActive(true);
   }
   const handleBaneIntroComplete = () => {
        setBaneIntroActive(false);
        setCurrentView('about');
   }
+
   // --- Admin Logic ---
   const handleTitleClick = () => {
       setTapCount(prev => {
           const newCount = prev + 1;
           if (newCount >= 5) {
-              // --- SECURITY CHECK REMOVED TEMPORARILY ---
-              // Просто открываем окно ввода пароля после 5 кликов
+              haptic('warning');
               setIsAdminAuthOpen(true);
               return 0;
           }
+          haptic('light');
           return newCount;
       });
   };
@@ -1670,14 +1479,14 @@ const App = () => {
       e.preventDefault();
       const code = e.target[0].value;
       if (code === 'admin') {
+          haptic('success');
           setIsAdminAuthOpen(false);
           setCurrentView('admin');
       } else {
+          haptic('error');
           alert("ACCESS DENIED");
       }
   };
-  
-  const handleProfileClick = () => setCurrentView('profile');
 
   const faqItems = [
     { id: 'stats', question: "Это вообще покупают?", icon: <TrendingUp className="w-5 h-5 text-[#00FF9D]" />, component: (<div className="w-full"><WordstatGraph /><h3 className="text-white font-bold mb-3 uppercase tracking-wide text-sm font-['Chakra_Petch'] leading-tight">6 650 человек ищут тебя. Как долго ты будешь их игнорировать?</h3><p className="text-sm text-zinc-300 leading-relaxed border-l-2 border-[#00FF9D]/50 pl-4 mb-4">Это официальная статистика Яндекса: <span className="text-[#00FF9D] font-bold">6 650</span> прямых запросов на ТГ-магазины в месяц.<br/><br/>Пока ты ищешь «подходящий момент», наши ученики уже забирают эти чеки по <span className="text-white font-bold">100 000₸</span>, просто потому что они оказались на связи.<br/><br/>Мы даем тебе все инструменты и доступ к этому потоку. Твой результат — это просто вопрос того, возьмешь ли ты готовую систему и начнешь ли по ней работать.<br/><br/><span className="text-[#00FF9D] italic font-medium">Рынок платит тем, кто действует, а не тем, кто наблюдает.</span></p></div>) },
@@ -1704,7 +1513,7 @@ const App = () => {
         
         {currentView === 'main' && (
           <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 flex flex-col items-center">
-            <div className="mb-8 w-full text-center" onClick={handleTitleClick}>
+            <div className="mb-14 w-full text-center" onClick={handleTitleClick}>
               <h1 className="font-['Chakra_Petch'] font-[700] uppercase tracking-[0.15em] whitespace-nowrap overflow-visible relative block w-full text-center select-none cursor-pointer active:scale-95 transition-transform" style={{ fontSize: 'clamp(1.5rem, 8.5vw, 3.5rem)', textShadow: '0 0 20px rgba(0,255,157,0.3)', color: '#ffffff' }}>
                 <span className="relative inline-block mr-[-0.15em]">TAIPAN MEDIA<span className="absolute inset-0 -z-10 opacity-40 blur-[12px] animate-pulse text-[#00FF9D]">TAIPAN MEDIA</span></span>
               </h1>
@@ -1720,27 +1529,6 @@ const App = () => {
                  <span className="w-1.5 h-1.5 rounded-full bg-[#00FF9D] animate-pulse shadow-[0_0_5px_#00FF9D]"></span>
                  СЕЙЧАС ОНЛАЙН: <span className="text-zinc-400 font-bold">{onlineCount}</span>
               </p>
-            </div>
-            
-            {/* --- NEW PROFILE BUTTON (RESTORED) --- */}
-            <div onClick={handleProfileClick} className="w-full mb-6 cursor-pointer group">
-                <div className="relative glass-card bg-zinc-900/40 border border-[#00FF9D]/20 hover:border-[#00FF9D]/50 rounded-2xl p-4 flex items-center justify-between transition-all shadow-[0_4px_20px_rgba(0,0,0,0.5)] hover:shadow-[0_0_20px_rgba(0,255,157,0.1)]">
-                    <div className="flex items-center gap-4">
-                         <div className="relative">
-                            <div className="w-12 h-12 rounded-full bg-black border border-[#00FF9D] flex items-center justify-center overflow-hidden">
-                                <User className="w-6 h-6 text-[#00FF9D]" />
-                            </div>
-                            <div className="absolute -bottom-1 -right-1 bg-[#00FF9D] text-black text-[8px] font-bold px-1.5 py-0.5 rounded-full border border-black">ID</div>
-                         </div>
-                         <div className="text-left">
-                             <h3 className="text-sm font-black text-white font-['Chakra_Petch'] uppercase tracking-widest leading-none mb-1">Личный кабинет</h3>
-                             <p className="text-[10px] text-zinc-400 uppercase tracking-wider group-hover:text-[#00FF9D] transition-colors">SBT, Прогресс, Настройки</p>
-                         </div>
-                    </div>
-                    <div className="w-8 h-8 rounded-full border border-zinc-700 flex items-center justify-center group-hover:bg-[#00FF9D] group-hover:border-[#00FF9D] group-hover:text-black transition-all">
-                        <ChevronLeft className="w-4 h-4 rotate-180" />
-                    </div>
-                </div>
             </div>
             
             <div className="grid grid-cols-2 gap-4 mb-4 w-full">
@@ -1796,6 +1584,7 @@ const App = () => {
                   <div className="mt-4 w-full glass-card p-6 rounded-3xl text-center border border-[#00FF9D]/20 relative overflow-hidden group">
                       <div className="absolute inset-0 bg-gradient-to-t from-[#00FF9D]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                       <button onClick={() => {
+                          haptic('light');
                           setCurrentView('calculator');
                       }} className="w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-4 rounded-xl shadow-[0_0_20px_rgba(0,255,157,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs relative z-10 flex items-center justify-center gap-2 animate-pulse">РАССЧИТАТЬ УПУЩЕННУЮ ПРИБЫЛЬ</button>
                   </div>
@@ -1816,6 +1605,7 @@ const App = () => {
                 </div>
                 <div className="w-full glass-card p-4 rounded-3xl border border-[#00FF9D]/20 relative overflow-hidden">
                     <ProfitCalculator data={calcData} setData={setCalcData} onAction={() => {
+                        haptic('light');
                         setCurrentView('strategy');
                     }} />
                 </div>
@@ -1920,6 +1710,7 @@ const App = () => {
                 </div>
                 <p className="text-[10px] text-zinc-500 uppercase tracking-widest mb-6">Длительность обучения (14 дней)</p>
                 <button onClick={() => {
+                    haptic('light');
                     window.open('https://t.me/taipanmedia', '_blank');
                 }} className="block w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-4 rounded-xl shadow-[0_0_20px_rgba(0,255,157,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs">Получить подробную консультацию</button>
             </div>
@@ -1938,9 +1729,11 @@ const App = () => {
                 <div className="relative w-full glass-card p-6 rounded-sm border border-[#00FF9D]/30 overflow-hidden bg-black/40 tactical-grid">
                     <div className="absolute top-0 right-0 p-2 opacity-30"><Code className="w-16 h-16 text-[#00FF9D]" /></div>
                     <div className="absolute bottom-0 left-0 p-1 opacity-50 text-[8px] font-mono text-[#00FF9D]">SYS.INIT_SEQ_2026</div>
+
                     <p className="text-sm font-bold text-white mb-4 relative z-10 leading-relaxed font-mono uppercase border-l-2 border-[#00FF9D] pl-3">
                         «Наш план: позволить таргету доводить каждого лида до товара, без молчания и тишины».
                     </p>
+                    
                     <p className="text-[10px] text-zinc-400 leading-relaxed relative z-10 font-mono">
                         Личности не имеют значения. Значение имеет только результат.
                     </p>
@@ -1959,7 +1752,7 @@ const App = () => {
                         </div>
                     </div>
                     {/* Block 2 */}
-                      <div className="glass-card p-4 rounded-sm border border-zinc-800 flex items-start gap-4 hover:border-[#00FF9D]/40 transition-colors group">
+                     <div className="glass-card p-4 rounded-sm border border-zinc-800 flex items-start gap-4 hover:border-[#00FF9D]/40 transition-colors group">
                         <div className="mt-1"><Zap className="w-6 h-6 text-[#00FF9D] opacity-80 group-hover:opacity-100 group-hover:drop-shadow-[0_0_8px_#00FF9D] transition-all" /></div>
                         <div>
                              <div className="flex items-baseline gap-2 mb-1">
@@ -2044,8 +1837,6 @@ const App = () => {
                 onUpdateVisitor={updateVisitor}
             />
         )}
-        
-        {currentView === 'profile' && <ProfileView onBack={() => setCurrentView('main')} userName={userName} userId={currentUserId} />}
       </div>
 
       {/* Modals & Toasts stay EXACTLY the same */}
@@ -2056,7 +1847,7 @@ const App = () => {
             <div className="w-12 h-1.5 bg-zinc-800 rounded-full mx-auto mb-8 cursor-pointer" onClick={closeModal} />
             <h2 className="text-2xl font-bold text-center mb-2 tracking-tight">Начать сейчас</h2>
             <p className="text-center text-zinc-500 text-xs uppercase tracking-widest mb-8">Интерес: <span className="text-[#00FF9D]">{modalType}</span></p>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form id="contactForm" onSubmit={handleSubmit} className="space-y-4">
               <input type="text" placeholder="Ваше Имя" required className="w-full bg-black border border-white/5 rounded-2xl p-4 text-center text-white focus:border-[#00FF9D]/50 outline-none transition-all placeholder-zinc-700" />
               <input type="text" placeholder="@username" required className="w-full bg-black border border-white/5 rounded-2xl p-4 text-center text-white focus:border-[#00FF9D]/50 outline-none transition-all placeholder-zinc-700" />
               <button type="submit" className="w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-5 rounded-2xl mt-4 text-xs">Связаться со мной</button>

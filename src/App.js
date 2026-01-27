@@ -450,7 +450,7 @@ const ProfitCalculator = ({ onAction, data, setData }) => {
     const mainBtn = tg.MainButton;
     mainBtn.setText("ПОЛУЧИТЬ СТРАТЕГИЮ");
     mainBtn.setTextColor("#000000"); 
-    mainBtn.setColor("#00FF9D");     
+    mainBtn.setColor("#00FF9D");      
     
     if (!mainBtn.isVisible) {
       mainBtn.show();
@@ -994,7 +994,7 @@ const AnalyticsChart = ({ leads }) => {
                                     className="h-full bg-gradient-to-r from-[#00FF9D]/50 to-[#00FF9D] rounded-full transition-all duration-1000 ease-out relative"
                                     style={{ width: `${(item.count / maxCount) * 100}%` }}
                                  >
-                                     <div className="absolute right-0 top-0 bottom-0 w-2 bg-white/50 blur-[2px]"></div>
+                                      <div className="absolute right-0 top-0 bottom-0 w-2 bg-white/50 blur-[2px]"></div>
                                  </div>
                              </div>
                          </div>
@@ -1368,9 +1368,9 @@ const App = () => {
               }));
               
               usersData.sort((a, b) => {
-                   const timeA = a.lastActive?.toMillis ? a.lastActive.toMillis() : 0;
-                   const timeB = b.lastActive?.toMillis ? b.lastActive.toMillis() : 0;
-                   return timeB - timeA;
+                    const timeA = a.lastActive?.toMillis ? a.lastActive.toMillis() : 0;
+                    const timeB = b.lastActive?.toMillis ? b.lastActive.toMillis() : 0;
+                    return timeB - timeA;
               });
 
               setVisitors(usersData.slice(0, 50)); 
@@ -1573,35 +1573,35 @@ const App = () => {
                   </h1>
                   
                   <div className="flex items-center justify-center gap-4 mt-4">
-                     <div className="h-[1px] w-8 bg-gradient-to-r from-transparent to-[#00FF9D]"></div>
-                     <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] font-bold">Выберите цель</p>
-                     <div className="h-[1px] w-8 bg-gradient-to-l from-transparent to-[#00FF9D]"></div>
+                      <div className="h-[1px] w-8 bg-gradient-to-r from-transparent to-[#00FF9D]"></div>
+                      <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] font-bold">Выберите цель</p>
+                      <div className="h-[1px] w-8 bg-gradient-to-l from-transparent to-[#00FF9D]"></div>
                   </div>
               </div>
               
-              <div className="w-full space-y-4 mb-8">
+              <div className="w-full space-y-4 mb-8 flex flex-col items-center">
                   {/* BUSINESS CARD */}
-                  <div onClick={() => { setUserRole('business'); setCurrentView('main'); haptic('medium'); }} className="group relative w-full bg-zinc-900/60 backdrop-blur-xl border border-[#00FF9D]/20 p-1 rounded-3xl overflow-hidden transition-all duration-300 hover:border-[#00FF9D] hover:shadow-[0_0_30px_rgba(0,255,157,0.15)] active:scale-[0.98] cursor-pointer">
+                  <div onClick={() => { setUserRole('business'); setCurrentView('main'); haptic('medium'); }} className="group relative w-10/12 max-w-[280px] bg-zinc-900/60 backdrop-blur-xl border border-[#00FF9D]/20 p-1 rounded-3xl overflow-hidden transition-all duration-300 hover:border-[#00FF9D] hover:shadow-[0_0_30px_rgba(0,255,157,0.15)] active:scale-[0.98] cursor-pointer">
                       <div className="absolute inset-0 bg-gradient-to-r from-[#00FF9D]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                      <div className="relative flex flex-col items-center justify-center bg-[#050505]/50 rounded-[20px] p-6 h-full text-center">
-                          <div className="w-16 h-16 mb-4 rounded-full bg-gradient-to-br from-[#00FF9D]/20 to-black border border-[#00FF9D]/30 flex items-center justify-center shadow-[0_0_15px_rgba(0,255,157,0.1)] group-hover:scale-110 transition-transform duration-300">
-                               <TelegramLogoMain className="w-8 h-8 text-[#00FF9D] drop-shadow-[0_0_5px_rgba(0,255,157,0.8)]" />
+                      <div className="relative flex flex-col items-center justify-center bg-[#050505]/50 rounded-[20px] p-5 h-full text-center">
+                          <div className="w-14 h-14 mb-3 rounded-full bg-gradient-to-br from-[#00FF9D]/20 to-black border border-[#00FF9D]/30 flex items-center justify-center shadow-[0_0_15px_rgba(0,255,157,0.1)] group-hover:scale-110 transition-transform duration-300">
+                               <TelegramLogoMain className="w-7 h-7 text-[#00FF9D] drop-shadow-[0_0_5px_rgba(0,255,157,0.8)]" />
                           </div>
                           
-                          <h3 className="text-xl font-black font-['Chakra_Petch'] uppercase tracking-wider text-white group-hover:text-[#00FF9D] transition-colors mb-1">ДЛЯ БИЗНЕСА</h3>
-                          <p className="text-[10px] text-zinc-400 font-mono tracking-wide group-hover:text-zinc-300">Заказать разработку</p>
+                          <h3 className="text-lg font-black font-['Chakra_Petch'] uppercase tracking-wider text-white group-hover:text-[#00FF9D] transition-colors mb-1">ДЛЯ БИЗНЕСА</h3>
+                          <p className="text-[9px] text-zinc-400 font-mono tracking-wide group-hover:text-zinc-300">Заказать разработку</p>
                       </div>
                   </div>
 
                   {/* ACADEMY CARD */}
-                  <div onClick={() => { setUserRole('academy'); setCurrentView('main'); haptic('medium'); }} className="group relative w-full bg-zinc-900/60 backdrop-blur-xl border border-blue-500/20 p-1 rounded-3xl overflow-hidden transition-all duration-300 hover:border-blue-500 hover:shadow-[0_0_30px_rgba(59,130,246,0.15)] active:scale-[0.98] cursor-pointer">
+                  <div onClick={() => { setUserRole('academy'); setCurrentView('main'); haptic('medium'); }} className="group relative w-10/12 max-w-[280px] bg-zinc-900/60 backdrop-blur-xl border border-blue-500/20 p-1 rounded-3xl overflow-hidden transition-all duration-300 hover:border-blue-500 hover:shadow-[0_0_30px_rgba(59,130,246,0.15)] active:scale-[0.98] cursor-pointer">
                       <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                      <div className="relative flex flex-col items-center justify-center bg-[#050505]/50 rounded-[20px] p-6 h-full text-center">
-                          <div className="w-16 h-16 mb-4 rounded-full bg-gradient-to-br from-blue-500/20 to-black border border-blue-500/30 flex items-center justify-center shadow-[0_0_15px_rgba(59,130,246,0.1)] group-hover:scale-110 transition-transform duration-300">
-                               <GraduationCap className="w-8 h-8 text-blue-400 drop-shadow-[0_0_5px_rgba(96,165,250,0.8)]" />
+                      <div className="relative flex flex-col items-center justify-center bg-[#050505]/50 rounded-[20px] p-5 h-full text-center">
+                          <div className="w-14 h-14 mb-3 rounded-full bg-gradient-to-br from-blue-500/20 to-black border border-blue-500/30 flex items-center justify-center shadow-[0_0_15px_rgba(59,130,246,0.1)] group-hover:scale-110 transition-transform duration-300">
+                               <GraduationCap className="w-7 h-7 text-blue-400 drop-shadow-[0_0_5px_rgba(96,165,250,0.8)]" />
                           </div>
                           
-                          <h3 className="text-xl font-black font-['Chakra_Petch'] uppercase tracking-wider text-white group-hover:text-blue-400 transition-colors mb-1 leading-tight">НАЧАТЬ<br/>ЗАРАБАТЫВАТЬ</h3>
+                          <h3 className="text-lg font-black font-['Chakra_Petch'] uppercase tracking-wider text-white group-hover:text-blue-400 transition-colors mb-1 leading-tight">НАЧАТЬ<br/>ЗАРАБАТЫВАТЬ</h3>
                       </div>
                   </div>
               </div>
@@ -1909,7 +1909,7 @@ const App = () => {
                         </div>
                     </div>
                     {/* Block 2 */}
-                     <div className="glass-card p-4 rounded-sm border border-zinc-800 flex items-start gap-4 hover:border-[#00FF9D]/40 transition-colors group">
+                      <div className="glass-card p-4 rounded-sm border border-zinc-800 flex items-start gap-4 hover:border-[#00FF9D]/40 transition-colors group">
                         <div className="mt-1"><Zap className="w-6 h-6 text-[#00FF9D] opacity-80 group-hover:opacity-100 group-hover:drop-shadow-[0_0_8px_#00FF9D] transition-all" /></div>
                         <div>
                              <div className="flex items-baseline gap-2 mb-1">

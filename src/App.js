@@ -883,20 +883,20 @@ const PartnersCredits = () => {
   const logoClasses = `h-24 w-auto object-contain max-w-[90%] transform ${!isNewPartner ? 'scale-125' : ''} ${isFood ? 'translate-y-10' : ''}`;
   
   return (
-    <div className="w-full mt-12 mb-8 relative px-4 flex flex-col items-center justify-center">
-      <div className="flex items-center justify-center gap-4 mb-6 opacity-100">
-        <div className="h-[1px] w-8 bg-gradient-to-r from-transparent to-[#00FF9D]"></div>
-        <p className="text-center text-[10px] text-[#00FF9D] uppercase tracking-[0.4em] mr-[-0.4em] font-bold shadow-green-glow animate-pulse">Наши партнёры</p>
-        <div className="h-[1px] w-8 bg-gradient-to-l from-transparent to-[#00FF9D]"></div>
+    <div className="w-full mt-2 mb-4 relative px-4 flex flex-col items-center justify-center">
+      <div className="flex items-center justify-center gap-4 mb-3 opacity-100">
+        <div className="h-[1px] w-6 bg-gradient-to-r from-transparent to-[#00FF9D]"></div>
+        <p className="text-center text-[9px] text-[#00FF9D] uppercase tracking-[0.4em] mr-[-0.4em] font-bold shadow-green-glow animate-pulse">Наши партнёры</p>
+        <div className="h-[1px] w-6 bg-gradient-to-l from-transparent to-[#00FF9D]"></div>
       </div>
-      <div className="relative w-full h-32 flex items-center justify-center overflow-hidden bg-white/5 rounded-xl border border-[#00FF9D]/10 shadow-[0_0_30px_rgba(0,0,0,0.5)]">
+      <div className="relative w-full h-20 flex items-center justify-center overflow-hidden bg-white/5 rounded-xl border border-[#00FF9D]/10 shadow-[0_0_30px_rgba(0,0,0,0.5)]">
          <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:20px_20px]"></div>
          <div key={currentIndex} className="relative z-10 animate-[cyberReveal_0.5s_cubic-bezier(0.215,0.61,0.355,1)_both] w-full flex justify-center">
             <SmartImage src={currentLogo} alt="Partner Logo" style={specificStyle} className={logoClasses} wrapperClass="relative z-10 flex justify-center w-full" />
          </div>
          <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-[#00FF9D]/10 to-transparent animate-[scanLine_2.5s_linear_infinite]"></div>
       </div>
-      <div className="flex gap-1.5 mt-4">
+      <div className="flex gap-1.5 mt-3">
         {logos.map((_, idx) => ( <div key={idx} className={`h-1 rounded-full transition-all duration-300 ${idx === currentIndex ? 'w-8 bg-[#00FF9D] shadow-[0_0_10px_#00FF9D]' : 'w-1.5 bg-zinc-800'}`} /> ))}
       </div>
     </div>
@@ -910,6 +910,7 @@ const RoiView = ({ profit, onBack, onAction }) => {
   const returnPercentage = Math.round((conservativeProfit / investment) * 100);
   const daysToRecoup = conservativeProfit > 0 ? Math.ceil(investment / (conservativeProfit / 30)) : Infinity;
   const isProfitable = returnPercentage > 0;
+  // --- UPDATED: Handle Consultation with Logging ---
   const handleConsultation = () => {
       // Use Haptic
       haptic('light');

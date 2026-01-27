@@ -5,6 +5,9 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 import { getFirestore, doc, setDoc, updateDoc, serverTimestamp, collection, query, onSnapshot, deleteDoc } from 'firebase/firestore';
 
+// --- TON CONNECT INTEGRATION (REAL) ---
+import { TonConnectUIProvider, TonConnectButton, useTonAddress } from '@tonconnect/ui-react';
+
 // --- ICONS (Manual Definition to Fix Import Errors) ---
 const IconWrapper = ({ children, className }) => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>

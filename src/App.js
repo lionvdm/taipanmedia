@@ -20,101 +20,38 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
-const isFirebaseInitialized = true;
 
-// Получаем ID приложения для формирования правильных путей (или используем дефолтный)
+// Получаем ID приложения
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
-// --- OPTIMIZED MATRIX BACKGROUND (Performance Friendly) ---
-const MatrixBackground = React.memo(() => {
-  const canvasRef = useRef(null);
+// --- TELEGRAM WEB APP UTILS ---
+const tg = window.Telegram?.WebApp;
 
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+// Helper for Haptic Feedback
+const haptic = (style = 'light') => {
+  if (tg?.HapticFeedback) {
+    tg.HapticFeedback.impactOccurred(style);
+  }
+};
 
-    const ctx = canvas.getContext('2d', { alpha: false }); // Отключаем прозрачность подложки для ускорения
-    let animationFrameId;
-    
-    // Настройка разрешения
-    let width = canvas.width = window.innerWidth;
-    let height = canvas.height = window.innerHeight;
-
-    const chars = "TAIPAN0123456789XY"; // Укоротил строку, так быстрее выборка
-    const fontSize = 14;
-    const columns = Math.floor(width / 20); // Чуть шире шаг, меньше отрисовки
-    const drops = Array(columns).fill(1);
-
-    // Ограничиваем FPS до 24 (киношный вид + экономия батареи)
-    let lastTime = 0;
-    const fps = 24;
-    const interval = 1000 / fps;
-
-    const draw = (currentTime) => {
-      animationFrameId = requestAnimationFrame(draw);
-
-      const deltaTime = currentTime - lastTime;
-      if (deltaTime < interval) return;
-
-      lastTime = currentTime - (deltaTime % interval);
-
-      // Полупрозрачный черный слой для следа (Trail effect)
-      ctx.fillStyle = 'rgba(5, 5, 5, 0.1)'; 
-      ctx.fillRect(0, 0, width, height);
-
-      ctx.fillStyle = '#00FF9D';
-      ctx.font = `${fontSize}px monospace`;
-
-      for (let i = 0; i < drops.length; i++) {
-        // Рандомим, чтобы рисовать не каждый кадр каждый символ (оптимизация)
-        if (Math.random() > 0.1) {
-            const text = chars.charAt(Math.floor(Math.random() * chars.length));
-            ctx.fillText(text, i * 20, drops[i] * fontSize);
-        }
-
-        if (drops[i] * fontSize > height && Math.random() > 0.975) {
-          drops[i] = 0;
-        }
-        drops[i]++;
-      }
-    };
-
-    // Запускаем
-    draw(0);
-
-    const handleResize = () => {
-      width = canvas.width = window.innerWidth;
-      height = canvas.height = window.innerHeight;
-      // При ресайзе пересчитываем колонки, но не сбрасываем drops полностью чтобы не моргало жестко
-    };
-
-    window.addEventListener('resize', handleResize);
-
-    return () => {
-      cancelAnimationFrame(animationFrameId);
-      window.removeEventListener('resize', handleResize);
-    };
-  }, []);
-
-  // Добавил will-change для подсказки браузеру
-  return <canvas ref={canvasRef} className="absolute inset-0 opacity-20 mix-blend-screen pointer-events-none" style={{ willChange: 'contents' }} />;
-});
+const notify = (type = 'success') => {
+  if (tg?.HapticFeedback) {
+    tg.HapticFeedback.notificationOccurred(type);
+  }
+};
 
 // --- STYLES ---
 const GlobalStyles = () => (
   <style dangerouslySetInnerHTML={{__html: `
     body { margin: 0; background-color: #050505; color: white; overflow-x: hidden; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
-    /* Hide scrollbar */
     ::-webkit-scrollbar { display: none; }
     body { -ms-overflow-style: none; scrollbar-width: none; }
-    
     input[type=number]::-webkit-inner-spin-button, 
     input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
     input[type=number] { -moz-appearance: textfield; }
 
     .glass-card {
         background-color: rgba(15, 15, 15, 0.4);
-        /* Clean glass by default (no grid) */
         backdrop-filter: blur(8px);
         -webkit-backdrop-filter: blur(8px);
         border: 1px solid rgba(0, 255, 157, 0.2);
@@ -124,7 +61,6 @@ const GlobalStyles = () => (
         overflow: hidden;
     }
     
-    /* Dedicated class for Grid Texture (Main Page Only) */
     .grid-bg {
         background-image: 
             linear-gradient(rgba(0, 255, 157, 0.07) 1px, transparent 1px),
@@ -137,48 +73,22 @@ const GlobalStyles = () => (
         border-color: rgba(0, 255, 157, 0.4);
         box-shadow: 0 0 20px rgba(0, 255, 157, 0.1);
     }
-
-    /* Brighter grid on hover only if grid-bg is present */
-    .grid-bg:hover {
-        background-image: 
-            linear-gradient(rgba(0, 255, 157, 0.1) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(0, 255, 157, 0.1) 1px, transparent 1px);
-    }
-
     .glass-card:active { transform: scale(0.98); }
-    .no-scrollbar::-webkit-scrollbar { display: none; }
-    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-
-    /* Tactical Grid Background (Legacy support if used elsewhere) */
-    .tactical-grid {
-        background-image: linear-gradient(rgba(0, 255, 157, 0.05) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(0, 255, 157, 0.05) 1px, transparent 1px);
-        background-size: 20px 20px;
-    }
-    
-    /* Hardware Acceleration Class for Images */
     .hw-accelerated {
         will-change: transform, opacity;
         transform: translateZ(0);
         backface-visibility: hidden;
     }
 
-    /* Animations */
     @keyframes contourPulse {
       0% { filter: drop-shadow(0 0 1px rgba(0, 255, 157, 0.3)); opacity: 0.8; }
       50% { filter: drop-shadow(0 0 6px rgba(0, 255, 157, 0.6)); opacity: 1; }
       100% { filter: drop-shadow(0 0 1px rgba(0, 255, 157, 0.3)); opacity: 0.8; }
     }
-
     @keyframes goldPulse {
       0% { filter: drop-shadow(0 0 1px rgba(229, 192, 123, 0.2)); opacity: 0.9; }
       50% { filter: drop-shadow(0 0 8px rgba(229, 192, 123, 0.5)); opacity: 1; }
       100% { filter: drop-shadow(0 0 1px rgba(229, 192, 123, 0.2)); opacity: 0.9; }
-    }
-
-    @keyframes snakeFlow {
-      0% { background-position: 200% center; }
-      100% { background-position: -200% center; }
     }
     @keyframes scanLine {
       0% { transform: translateY(-100%); opacity: 0; }
@@ -213,18 +123,15 @@ const GlobalStyles = () => (
       0%, 100% { height: 10%; }
       50% { height: 100%; }
     }
-    /* OPTIMIZED INTRO ANIMATIONS */
     @keyframes aggressive-glitch-text {
       0% { opacity: 0; transform: scale(1.1); color: #333; }
       20% { opacity: 1; transform: scale(1); color: #fff; text-shadow: 2px 0 #00FF9D; }
       100% { color: #e0e0e0; letter-spacing: 0.15em; }
     }
-
     @keyframes simple-glow {
       0%, 100% { text-shadow: 0 0 10px rgba(0, 255, 157, 0.3); transform: scale(1); color: #fff; }
       50% { text-shadow: 0 0 25px rgba(0, 255, 157, 0.8), 0 0 10px rgba(0, 255, 157, 0.5); transform: scale(1.02); color: #00FF9D; }
     }
-
     @keyframes smoke-fade {
       0% { opacity: 0; transform: translateY(10px); }
       100% { opacity: 1; transform: translateY(0); }
@@ -232,7 +139,75 @@ const GlobalStyles = () => (
   `}} />
 );
 
-// --- HOOK FOR ODOMETER ANIMATION ---
+// --- COMPONENT DEFINITIONS ---
+
+// 1. Matrix Background (FIXED: z-index and position)
+const MatrixBackground = React.memo(() => {
+  const canvasRef = useRef(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d', { alpha: false });
+    let animationFrameId;
+    
+    let width = canvas.width = window.innerWidth;
+    let height = canvas.height = window.innerHeight;
+
+    const chars = "TAIPAN0123456789XY";
+    const fontSize = 14;
+    const columns = Math.floor(width / 20);
+    const drops = Array(columns).fill(1);
+
+    let lastTime = 0;
+    const fps = 24;
+    const interval = 1000 / fps;
+
+    const draw = (currentTime) => {
+      animationFrameId = requestAnimationFrame(draw);
+
+      const deltaTime = currentTime - lastTime;
+      if (deltaTime < interval) return;
+
+      lastTime = currentTime - (deltaTime % interval);
+
+      // Dark semi-transparent background for trail effect
+      ctx.fillStyle = 'rgba(5, 5, 5, 0.1)'; 
+      ctx.fillRect(0, 0, width, height);
+
+      ctx.fillStyle = '#00FF9D';
+      ctx.font = `${fontSize}px monospace`;
+
+      for (let i = 0; i < drops.length; i++) {
+        if (Math.random() > 0.05) { 
+            const text = chars.charAt(Math.floor(Math.random() * chars.length));
+            ctx.fillText(text, i * 20, drops[i] * fontSize);
+        }
+        if (drops[i] * fontSize > height && Math.random() > 0.975) {
+          drops[i] = 0;
+        }
+        drops[i]++;
+      }
+    };
+
+    draw(0);
+
+    const handleResize = () => {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    };
+    window.addEventListener('resize', handleResize);
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
+
+  return <canvas ref={canvasRef} className="fixed inset-0 z-[1] opacity-30 mix-blend-screen pointer-events-none" style={{ willChange: 'contents' }} />;
+});
+
+// 2. Odometer Hook
 const useOdometer = (targetValue, duration = 1000) => {
   const [displayValue, setDisplayValue] = useState(0);
   const frameRef = useRef(0);
@@ -270,10 +245,11 @@ const useOdometer = (targetValue, duration = 1000) => {
   return displayValue;
 };
 
-// --- ICON COMPONENTS (Memoized for perf) ---
+// 3. Icons
 const GraduationCap = React.memo(({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M22 10v6M2 10l10-5 10 5-10 5z" /><path d="M6 12v5c3 3 9 3 12 0v-5" /></svg>));
 const ArrowRight = React.memo(({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>));
 const ChevronLeft = React.memo(({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m15 18-6-6 6-6" /></svg>));
+const ChevronRight = React.memo(({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m9 18 6-6-6-6" /></svg>));
 const CheckCircle2 = React.memo(({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10" /><path d="m9 12 2 2 4-4" /></svg>));
 const Lock = React.memo(({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect width="18" height="11" x="3" y="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>));
 const TrendingUp = React.memo(({ className }) => (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="23 6 13.5 15.5 8.5 10.5 1 18" /><polyline points="17 6 23 6 23 12" /></svg>));
@@ -300,8 +276,7 @@ const TelegramLogoMain = React.memo(({ className }) => (
   </svg>
 ));
 
-// --- OPTIMIZED COMPONENT: SmartImage ---
-// Wrapped in memo to prevent re-renders on parent state changes
+// 4. SmartImage
 const SmartImage = React.memo(({ src, alt, className, style, wrapperClass = "", overflowHidden = true }) => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
@@ -323,15 +298,14 @@ const SmartImage = React.memo(({ src, alt, className, style, wrapperClass = "", 
              e.target.style.display = 'none'; 
            }
         }}
-        // Added hw-accelerated class for better scrolling performance
         className={`${className} hw-accelerated transition-opacity duration-700 ease-out ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
-        style={{ ...style, contentVisibility: 'auto' }} // CSS Content Visibility optimization
+        style={{ ...style, contentVisibility: 'auto' }} 
       />
     </div>
   );
 });
 
-// --- INPUT FIELD COMPONENT ---
+// 5. InputField
 const InputField = ({ label, value, setValue, suffix = "" }) => (
   <div className="mb-2">
     <label className="block text-[9px] text-zinc-500 mb-1 uppercase tracking-wider font-bold">{label}</label>
@@ -348,7 +322,7 @@ const InputField = ({ label, value, setValue, suffix = "" }) => (
   </div>
 );
 
-// --- PROFIT CALCULATOR COMPONENT ---
+// 6. ProfitCalculator
 const ProfitCalculator = ({ onAction, data, setData }) => {
   const sales = Math.floor(data.traffic * (data.conversion / 100));
   const revenue = sales * data.avgCheck;
@@ -356,6 +330,30 @@ const ProfitCalculator = ({ onAction, data, setData }) => {
   
   const animatedProfit = useOdometer(profit);
   const animatedSales = useOdometer(sales);
+
+  useEffect(() => {
+    if (!tg) return;
+
+    const mainBtn = tg.MainButton;
+    mainBtn.setText("ПОЛУЧИТЬ СТРАТЕГИЮ");
+    mainBtn.setTextColor("#000000"); 
+    mainBtn.setColor("#00FF9D");     
+    
+    if (!mainBtn.isVisible) {
+      mainBtn.show();
+    }
+
+    const handleClick = () => {
+      haptic('heavy');
+      onAction();
+    };
+
+    mainBtn.onClick(handleClick);
+    return () => {
+      mainBtn.offClick(handleClick);
+      mainBtn.hide();
+    };
+  }, [onAction]);
 
   return (
     <div className="w-full animate-in slide-in-from-bottom duration-500">
@@ -379,17 +377,19 @@ const ProfitCalculator = ({ onAction, data, setData }) => {
             <p className="text-[8px] text-zinc-500 mt-3 italic">*Мы знаем как увеличить конверсию от 20% и выше</p>
         </div>
       </div>
-      <button onClick={onAction} className="w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-3 rounded-xl shadow-[0_0_20px_rgba(0,255,157,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs flex items-center justify-center gap-2 animate-pulse mt-4">ПОЛУЧИТЬ СТРАТЕГИЮ ОТ TAIPAN GROUP</button>
+      
+      {!tg?.initData && (
+        <button onClick={onAction} className="w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-3 rounded-xl shadow-[0_0_20px_rgba(0,255,157,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs flex items-center justify-center gap-2 animate-pulse mt-4">ПОЛУЧИТЬ СТРАТЕГИЮ ОТ TAIPAN GROUP</button>
+      )}
     </div>
   );
 };
 
-// --- Bane Intro Component ---
+// 7. BaneIntro
 const BaneIntro = ({ onComplete }) => {
     const [phase, setPhase] = useState(0);
 
     useEffect(() => {
-        // NOTE: Audio file needs to be present in public folder for this to work
         const audio = new Audio('/VID_20260122_010534_539 (online-audio-converter.com).mp3');
         audio.volume = 1.0;
         
@@ -422,21 +422,18 @@ const BaneIntro = ({ onComplete }) => {
                 </div>
 
                 <div className="space-y-8 relative z-10">
-                    {/* First Phrase */}
                     <div className={`transition-all duration-[1500ms] ease-out ${phase >= 1 ? 'opacity-100' : 'opacity-0'}`}>
                         <h2 className="text-xl sm:text-2xl font-black uppercase font-['Chakra_Petch'] tracking-[0.2em] text-zinc-500 animate-[smoke-fade_2s_ease-out_forwards]">
                             НЕВАЖНО КТО МЫ ТАКИЕ
                         </h2>
                     </div>
                     
-                    {/* Second Phrase */}
                     <div className={`transition-all duration-[100ms] ${phase >= 2 ? 'opacity-100' : 'opacity-0'}`}>
                         <h2 className="text-2xl sm:text-3xl font-black uppercase font-['Chakra_Petch'] tracking-widest text-white animate-[aggressive-glitch-text_0.5s_cubic-bezier(0.25,0.46,0.45,0.94)_both]">
                             ВАЖНО ТО
                         </h2>
                     </div>
 
-                    {/* Third Phrase - Main */}
                     <div className={`transition-all duration-[500ms] ${phase >= 3 ? 'opacity-100' : 'opacity-0'}`}>
                         <div className="relative inline-block">
                             <h2 className="text-3xl sm:text-5xl font-black uppercase font-['Chakra_Petch'] tracking-widest text-[#00FF9D] animate-[simple-glow_3s_infinite_ease-in-out]">
@@ -454,7 +451,7 @@ const BaneIntro = ({ onComplete }) => {
     );
 };
 
-// --- HackerProof (OPTIMIZED) ---
+// 8. HackerProof
 const HackerProof = React.memo(() => {
   const [isExpanded, setIsExpanded] = useState(false);
   return (
@@ -485,7 +482,7 @@ const HackerProof = React.memo(() => {
   );
 });
 
-// --- ClientDemandProof (OPTIMIZED) ---
+// 9. ClientDemandProof
 const ClientDemandProof = React.memo(() => {
   const [isExpanded, setIsExpanded] = useState(false);
   return (
@@ -512,7 +509,7 @@ const ClientDemandProof = React.memo(() => {
   );
 });
 
-// --- SkillScanner ---
+// 10. SkillScanner
 const SkillScanner = () => (
   <div className="w-full bg-[#0A0A0A] rounded-xl border border-[#00FF9D]/20 p-4 mb-6 relative overflow-hidden animate-in slide-in-from-bottom duration-500 group">
     <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none"></div>
@@ -532,7 +529,7 @@ const SkillScanner = () => (
   </div>
 );
 
-// --- SetupTimeline ---
+// 11. SetupTimeline
 const SetupTimeline = () => {
   const steps = [
     { title: "ШАГ 1: ТОКЕН", time: "~ 2 МИН", desc: "Создайте бота. Вставьте токен. Магазин запущен." },
@@ -559,7 +556,7 @@ const SetupTimeline = () => {
   );
 };
 
-// --- WordstatGraph (OPTIMIZED) ---
+// 12. WordstatGraph
 const WordstatGraph = React.memo(() => {
   const [isExpanded, setIsExpanded] = useState(false);
   return (
@@ -586,7 +583,7 @@ const WordstatGraph = React.memo(() => {
   );
 });
 
-// --- BrandLogos (RESTORED) ---
+// 13. BrandLogos
 const BrandLogos = {
   Bitcoin: ({ isActive }) => {
     const [isMissed, setIsMissed] = useState(false);
@@ -780,7 +777,7 @@ const PartnersCredits = () => {
         <div className="h-[1px] w-8 bg-gradient-to-l from-transparent to-[#00FF9D]"></div>
       </div>
       <div className="relative w-full h-32 flex items-center justify-center overflow-hidden bg-white/5 rounded-xl border border-[#00FF9D]/10 shadow-[0_0_30px_rgba(0,0,0,0.5)]">
-         <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:20px_20px]"></div>
+         <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:20px_20px]"></div>
          <div key={currentIndex} className="relative z-10 animate-[cyberReveal_0.5s_cubic-bezier(0.215,0.61,0.355,1)_both] w-full flex justify-center">
             <SmartImage src={currentLogo} alt="Partner Logo" style={specificStyle} className={logoClasses} wrapperClass="relative z-10 flex justify-center w-full" />
          </div>
@@ -800,15 +797,18 @@ const RoiView = ({ profit, onBack, onAction }) => {
   const returnPercentage = Math.round((conservativeProfit / investment) * 100);
   const daysToRecoup = conservativeProfit > 0 ? Math.ceil(investment / (conservativeProfit / 30)) : Infinity;
   const isProfitable = returnPercentage > 0;
+  // --- UPDATED: Handle Consultation with Logging ---
   const handleConsultation = () => {
-      // Direct link without logging
+      // Use Haptic
+      haptic('light');
       window.open('https://t.me/taipanmedia', '_blank');
   };
+  
   const animatedProfit = useOdometer(conservativeProfit);
   const animatedPercentage = useOdometer(returnPercentage);
   return (
     <div className="animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col h-full items-center w-full">
-        <button onClick={onBack} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-4 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
+        <button onClick={() => { haptic('light'); onBack(); }} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-4 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
         <div className="flex-grow flex flex-col items-center w-full space-y-6">
             <div className="text-center px-4 w-full"><h2 className="text-2xl sm:text-3xl font-black tracking-tighter uppercase mb-1 font-['Chakra_Petch'] leading-none whitespace-nowrap">РАСЧЁТ <span className="text-[#00FF9D]">ОКУПАЕМОСТИ</span></h2><p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] mr-[-0.3em] font-bold">Эффективность инвестиций</p></div>
             <div className="w-full glass-card p-4 rounded-2xl flex justify-between items-center border border-zinc-800"><span className="text-xs text-zinc-400 font-bold uppercase tracking-wider">Стоимость разработки</span><span className="text-sm font-black text-white font-['Chakra_Petch']">100 000 ₸</span></div>
@@ -937,13 +937,26 @@ const AdminPanel = ({ leads, visitors, onBack, onClearLeads, onUpdateLead, onUpd
     const [editingItem, setEditingItem] = useState(null); 
     const [editCollection, setEditCollection] = useState(''); 
 
+    // --- Daily Visitors Calculation ---
+    const dailyVisitorsCount = useMemo(() => {
+        const todayStr = new Date().toDateString();
+        return visitors.filter(v => {
+            if (!v.lastActive) return false;
+            // Handle both Firestore Timestamp and JS Date
+            const d = v.lastActive.toDate ? v.lastActive.toDate() : new Date(v.lastActive);
+            return d.toDateString() === todayStr;
+        }).length;
+    }, [visitors]);
+
     const handleEditClick = (item, collectionType) => {
         setEditingItem(item);
         setEditCollection(collectionType);
+        haptic('light');
     };
 
     const handleSave = (e) => {
         e.preventDefault();
+        haptic('medium');
         const formData = new FormData(e.target);
         const updates = Object.fromEntries(formData.entries());
 
@@ -955,9 +968,14 @@ const AdminPanel = ({ leads, visitors, onBack, onClearLeads, onUpdateLead, onUpd
         setEditingItem(null);
     };
 
+    const handleTabChange = (tab) => {
+        haptic('light');
+        setActiveTab(tab);
+    }
+
     return (
         <div className="animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col h-full items-center w-full relative">
-            <button onClick={onBack} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-4 hover:opacity-70 transition-all w-fit">
+            <button onClick={() => { haptic('light'); onBack(); }} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-4 hover:opacity-70 transition-all w-fit">
                 <ChevronLeft className="w-4 h-4 mr-1" /> ВЫХОД ИЗ СИСТЕМЫ
             </button>
             
@@ -971,18 +989,21 @@ const AdminPanel = ({ leads, visitors, onBack, onClearLeads, onUpdateLead, onUpd
             </div>
 
             <div className="flex w-full mb-4 bg-zinc-900/50 p-1 rounded-lg border border-zinc-800 gap-1 overflow-x-auto no-scrollbar">
-                <button onClick={() => setActiveTab('stats')} className={`flex-1 py-2 px-2 whitespace-nowrap text-[9px] font-bold uppercase tracking-widest rounded-md transition-all ${activeTab === 'stats' ? 'bg-[#00FF9D] text-black shadow-lg shadow-[#00FF9D]/20' : 'text-zinc-500 hover:text-white'}`}>📊 Статистика</button>
-                <button onClick={() => setActiveTab('leads')} className={`flex-1 py-2 px-2 whitespace-nowrap text-[9px] font-bold uppercase tracking-widest rounded-md transition-all ${activeTab === 'leads' ? 'bg-[#00FF9D] text-black shadow-lg shadow-[#00FF9D]/20' : 'text-zinc-500 hover:text-white'}`}>Заявки ({leads.length})</button>
-                <button onClick={() => setActiveTab('visitors')} className={`flex-1 py-2 px-2 whitespace-nowrap text-[9px] font-bold uppercase tracking-widest rounded-md transition-all ${activeTab === 'visitors' ? 'bg-[#00FF9D] text-black shadow-lg shadow-[#00FF9D]/20' : 'text-zinc-500 hover:text-white'}`}>Посетители</button>
+                <button onClick={() => handleTabChange('stats')} className={`flex-1 py-2 px-2 whitespace-nowrap text-[9px] font-bold uppercase tracking-widest rounded-md transition-all ${activeTab === 'stats' ? 'bg-[#00FF9D] text-black shadow-lg shadow-[#00FF9D]/20' : 'text-zinc-500 hover:text-white'}`}>📊 Статистика</button>
+                <button onClick={() => handleTabChange('leads')} className={`flex-1 py-2 px-2 whitespace-nowrap text-[9px] font-bold uppercase tracking-widest rounded-md transition-all ${activeTab === 'leads' ? 'bg-[#00FF9D] text-black shadow-lg shadow-[#00FF9D]/20' : 'text-zinc-500 hover:text-white'}`}>Заявки ({leads.length})</button>
+                {/* Updated Visitors Button Label */}
+                <button onClick={() => handleTabChange('visitors')} className={`flex-1 py-2 px-2 whitespace-nowrap text-[9px] font-bold uppercase tracking-widest rounded-md transition-all ${activeTab === 'visitors' ? 'bg-[#00FF9D] text-black shadow-lg shadow-[#00FF9D]/20' : 'text-zinc-500 hover:text-white'}`}>
+                    Посетители <span className="opacity-70 text-[8px] ml-1">({dailyVisitorsCount}/{visitors.length})</span>
+                </button>
             </div>
 
             <div className="w-full flex-grow overflow-hidden flex flex-col">
                 <div className="flex items-center justify-between mb-3 px-1">
                     <p className="text-[10px] text-zinc-400 uppercase tracking-widest font-bold">
-                        {activeTab === 'leads' ? 'ВХОДЯЩИЕ ЛИДЫ' : activeTab === 'visitors' ? 'АКТИВНЫЙ ТРАФИК' : 'ОТЧЕТЫ СИСТЕМЫ'}
+                        {activeTab === 'leads' ? 'ВХОДЯЩИЕ ЛИДЫ' : activeTab === 'visitors' ? `ТРАФИК (СЕГОДНЯ: ${dailyVisitorsCount})` : 'ОТЧЕТЫ СИСТЕМЫ'}
                     </p>
                     {(activeTab === 'leads' || activeTab === 'stats') && (
-                        <button onClick={onClearLeads} className="text-[9px] text-red-500 uppercase font-bold hover:text-red-400 flex items-center gap-1">
+                        <button onClick={() => { haptic('warning'); onClearLeads(); }} className="text-[9px] text-red-500 uppercase font-bold hover:text-red-400 flex items-center gap-1">
                             <Trash2 className="w-3 h-3" /> {activeTab === 'stats' ? 'СБРОСИТЬ ВСЁ' : 'ОЧИСТИТЬ'}
                         </button>
                     )}
@@ -1125,7 +1146,7 @@ const AdminPanel = ({ leads, visitors, onBack, onClearLeads, onUpdateLead, onUpd
 
 const App = () => {
   useEffect(() => { console.log("Taipan Media App Initialized"); }, []);
-  const [currentView, setCurrentView] = useState('main'); 
+  const [currentView, setCurrentView] = useState('role_selection'); 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalType, setModalType] = useState('');
   const [showToast, setShowToast] = useState(false);
@@ -1135,7 +1156,7 @@ const App = () => {
   // Admin & Leads State
   const [isAdminAuthOpen, setIsAdminAuthOpen] = useState(false);
   const [tapCount, setTapCount] = useState(0);
-  const [leads, setLeads] = useState([]); // Removed dummy data, default is empty
+  const [leads, setLeads] = useState([]); 
 
   // --- REAL VISITORS STATE ---
   const [visitors, setVisitors] = useState([]);
@@ -1147,8 +1168,37 @@ const App = () => {
   const [previewImage, setPreviewImage] = useState(null);
   // --- User State ---
   const [userName, setUserName] = useState('AGENT');
-  const [currentUserId, setCurrentUserId] = useState(null); // Добавлено состояние для ID
+  const [userRole, setUserRole] = useState('business'); 
+  const [currentUserId, setCurrentUserId] = useState(null); 
   const [spotsLeft, setSpotsLeft] = useState(4);
+
+  // --- TELEGRAM MAIN BUTTON INTEGRATION (FOR MODAL) ---
+  useEffect(() => {
+    if (!tg) return;
+    const mainBtn = tg.MainButton;
+
+    if (isModalOpen) {
+      mainBtn.setText("СВЯЗАТЬСЯ СО МНОЙ");
+      mainBtn.setTextColor("#000000");
+      mainBtn.setColor("#00FF9D");
+      mainBtn.show();
+
+      const handleMainBtnClick = () => {
+        // Find form and submit it programmatically
+        const form = document.getElementById('contactForm');
+        if (form) form.requestSubmit();
+        haptic('heavy');
+      };
+
+      mainBtn.onClick(handleMainBtnClick);
+      return () => {
+        mainBtn.offClick(handleMainBtnClick);
+        mainBtn.hide();
+      };
+    } else {
+      mainBtn.hide();
+    }
+  }, [isModalOpen]);
 
   // --- FIREBASE AUTH LISTENER ---
   useEffect(() => {
@@ -1161,19 +1211,18 @@ const App = () => {
   // --- FIREBASE TRACKING EFFECT ---
   useEffect(() => {
     const initApp = async () => {
-        // Removed logToTaipanCRM call
         const tg = window.Telegram?.WebApp;
         if (tg) {
             tg.ready();
+            tg.expand(); 
             const user = tg.initDataUnsafe?.user;
             if (user?.first_name) {
                 setUserName(user.first_name.toUpperCase());
             }
             if (user?.id) {
-                setCurrentUserId(user.id); // Сохраняем ID пользователя для проверки админки
+                setCurrentUserId(user.id); 
                 try {
                     await signInAnonymously(auth);
-                    // Using "app_visitors" collection to avoid "users" conflicts
                     const userRef = doc(db, 'artifacts', appId, 'public', 'data', 'app_visitors', user.id.toString());
                     await setDoc(userRef, {
                         chatId: user.id,
@@ -1197,25 +1246,21 @@ const App = () => {
 
   // --- FETCH REAL VISITORS FOR ADMIN ---
   useEffect(() => {
-      // Only fetch if admin panel is active AND user is authenticated
       if (currentView === 'admin' && firebaseUser) {
-          // Use the strict path for fetching users
           const usersCollection = collection(db, 'artifacts', appId, 'public', 'data', 'app_visitors');
-          // Fetch all users and sort in memory (to avoid index requirement)
           const unsubscribe = onSnapshot(usersCollection, (snapshot) => {
               const usersData = snapshot.docs.map(doc => ({
                   id: doc.id,
                   ...doc.data()
               }));
               
-              // Sort by lastActive descending in JS
               usersData.sort((a, b) => {
                    const timeA = a.lastActive?.toMillis ? a.lastActive.toMillis() : 0;
                    const timeB = b.lastActive?.toMillis ? b.lastActive.toMillis() : 0;
                    return timeB - timeA;
               });
 
-              setVisitors(usersData.slice(0, 50)); // Limit to top 50
+              setVisitors(usersData.slice(0, 50)); 
           }, (error) => {
               console.error("Admin fetch error:", error);
           });
@@ -1247,7 +1292,7 @@ const App = () => {
   const [calcData, setCalcData] = useState({ traffic: 0, conversion: 0, avgCheck: 0, margin: 0 });
   const calculateProfit = () => {
       const sales = Math.floor(calcData.traffic * (calcData.conversion / 100));
-      const revenue = sales * calcData.avgCheck;
+      const revenue = sales * data.avgCheck;
       return Math.floor(revenue * (calcData.margin / 100));
   };
   const [shopIntroFinished, setShopIntroFinished] = useState(false);
@@ -1296,17 +1341,24 @@ const App = () => {
     return () => { clearInterval(interval); window.removeEventListener('resize', handleResize); };
   }, []);
 
-  const openModal = (type) => { setModalType(type); setIsModalOpen(true); };
-  const closeModal = () => setIsModalOpen(false);
+  const openModal = (type) => { 
+    haptic('light');
+    setModalType(type); 
+    setIsModalOpen(true); 
+  };
+  const closeModal = () => {
+    haptic('light');
+    setIsModalOpen(false);
+  };
   const handleSubmit = (e) => { 
     e.preventDefault(); 
-    
+    notify('success');
+
     const name = e.target[0].value;
     const contact = e.target[1].value;
 
-    // Add to local leads state
     const newLead = {
-        id: Date.now(), // Generate ID
+        id: Date.now(), 
         name: name,
         contact: contact,
         type: modalType,
@@ -1314,31 +1366,32 @@ const App = () => {
     };
     setLeads(prev => [newLead, ...prev]);
 
-    // Removed logToTaipanCRM call
-
     closeModal(); 
     setShowToast(true); 
     setTimeout(() => setShowToast(false), 3000); 
     e.target.reset(); 
   };
-  const handleFaqClick = (item) => { setActiveFaq(item); setShowCalculator(false); };
-  const closeFaq = () => { setActiveFaq(null); setShowCalculator(false); };
+  const handleFaqClick = (item) => { haptic('light'); setActiveFaq(item); setShowCalculator(false); };
+  const closeFaq = () => { haptic('light'); setActiveFaq(null); setShowCalculator(false); };
   const handleShopClick = () => { 
-      // Removed logToTaipanCRM call
+      haptic('medium');
       setShopIntroFinished(false); 
       setCurrentView('shop'); 
   };
   const handleEducationClick = () => {
-    // Removed logToTaipanCRM call
+    haptic('medium');
     setCurrentView('education');
   }
   const handleStrategyClick = () => {
+       haptic('light');
        setCurrentView('strategy');
   };
   const handleBackClick = (target) => {
+    haptic('light');
     setCurrentView(target);
   }
   const handleAboutClick = () => {
+       haptic('medium');
        setBaneIntroActive(true);
   }
   const handleBaneIntroComplete = () => {
@@ -1351,11 +1404,11 @@ const App = () => {
       setTapCount(prev => {
           const newCount = prev + 1;
           if (newCount >= 5) {
-              // --- SECURITY CHECK REMOVED TEMPORARILY ---
-              // Просто открываем окно ввода пароля после 5 кликов
+              haptic('warning');
               setIsAdminAuthOpen(true);
               return 0;
           }
+          haptic('light');
           return newCount;
       });
   };
@@ -1364,10 +1417,11 @@ const App = () => {
       e.preventDefault();
       const code = e.target[0].value;
       if (code === 'admin') {
+          haptic('success');
           setIsAdminAuthOpen(false);
           setCurrentView('admin');
-          // Removed logToTaipanCRM call
       } else {
+          haptic('error');
           alert("ACCESS DENIED");
       }
   };
@@ -1384,66 +1438,175 @@ const App = () => {
       <GlobalStyles />
       {/* Bane Intro Overlay */}
       {baneIntroActive && <BaneIntro onComplete={handleBaneIntroComplete} />}
+      
+      {/* MATRIX BACKGROUND COMPONENT (FIXED z-index and position) */}
+      <MatrixBackground />
 
       <div className="fixed inset-0 z-0 pointer-events-none">
         <div className="absolute inset-0 bg-[#020202] -z-20" />
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-purple-500/10 rounded-full blur-[120px] animate-pulse"></div>
         <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-[#00FF9D]/5 rounded-full blur-[120px] animate-pulse"></div>
         <div className="absolute inset-0 opacity-20 -z-10" style={{ backgroundImage: `linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px)`, backgroundSize: '50px 50px', maskImage: 'radial-gradient(circle at 50% 30%, black 40%, transparent 100%)', WebkitMaskImage: 'radial-gradient(circle at 50% 30%, black 40%, transparent 100%)' }} />
-        <canvas ref={canvasRef} className="absolute inset-0 opacity-30 mix-blend-screen" />
       </div>
 
       <div className="relative z-10 flex-grow flex flex-col max-w-lg mx-auto w-full px-4 pt-10 pb-20">
         
+        {currentView === 'role_selection' && (
+          <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 flex flex-col items-center justify-center h-full w-full px-4 pt-10 pb-20">
+              <div className="text-center mb-12">
+                  {/* GLOWING TITLE */}
+                  <h1 className="font-['Chakra_Petch'] font-[700] uppercase tracking-[0.15em] whitespace-nowrap overflow-visible relative block w-full text-center" style={{ fontSize: 'clamp(1.5rem, 8.5vw, 3.5rem)', textShadow: '0 0 20px #00FF9D', color: '#ffffff' }}>
+                    <span className="relative inline-block mr-[-0.15em]">TAIPAN MEDIA<span className="absolute inset-0 -z-10 opacity-40 blur-[12px] animate-pulse text-[#00FF9D]">TAIPAN MEDIA</span></span>
+                  </h1>
+                  
+                  <div className="flex items-center justify-center gap-4 mt-4">
+                     <div className="h-[1px] w-8 bg-gradient-to-r from-transparent to-[#00FF9D]"></div>
+                     <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] font-bold">Выберите цель</p>
+                     <div className="h-[1px] w-8 bg-gradient-to-l from-transparent to-[#00FF9D]"></div>
+                  </div>
+              </div>
+              
+              <div className="w-full space-y-4 mb-8">
+                  {/* BUSINESS CARD */}
+                  <div onClick={() => { setUserRole('business'); setCurrentView('main'); haptic('medium'); }} className="group relative w-full bg-zinc-900/60 backdrop-blur-xl border border-[#00FF9D]/20 p-1 rounded-3xl overflow-hidden transition-all duration-300 hover:border-[#00FF9D] hover:shadow-[0_0_30px_rgba(0,255,157,0.15)] active:scale-[0.98] cursor-pointer">
+                      <div className="absolute inset-0 bg-gradient-to-r from-[#00FF9D]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                      <div className="relative flex flex-col items-center justify-center bg-[#050505]/50 rounded-[20px] p-6 h-full text-center">
+                          <div className="w-16 h-16 mb-4 rounded-full bg-gradient-to-br from-[#00FF9D]/20 to-black border border-[#00FF9D]/30 flex items-center justify-center shadow-[0_0_15px_rgba(0,255,157,0.1)] group-hover:scale-110 transition-transform duration-300">
+                               <TelegramLogoMain className="w-8 h-8 text-[#00FF9D] drop-shadow-[0_0_5px_rgba(0,255,157,0.8)]" />
+                          </div>
+                          
+                          <h3 className="text-xl font-black font-['Chakra_Petch'] uppercase tracking-wider text-white group-hover:text-[#00FF9D] transition-colors mb-1">ДЛЯ БИЗНЕСА</h3>
+                          <p className="text-[10px] text-zinc-400 font-mono tracking-wide group-hover:text-zinc-300">Заказать разработку</p>
+                      </div>
+                  </div>
+
+                  {/* ACADEMY CARD */}
+                  <div onClick={() => { setUserRole('academy'); setCurrentView('main'); haptic('medium'); }} className="group relative w-full bg-zinc-900/60 backdrop-blur-xl border border-blue-500/20 p-1 rounded-3xl overflow-hidden transition-all duration-300 hover:border-blue-500 hover:shadow-[0_0_30px_rgba(59,130,246,0.15)] active:scale-[0.98] cursor-pointer">
+                      <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                      <div className="relative flex flex-col items-center justify-center bg-[#050505]/50 rounded-[20px] p-6 h-full text-center">
+                          <div className="w-16 h-16 mb-4 rounded-full bg-gradient-to-br from-blue-500/20 to-black border border-blue-500/30 flex items-center justify-center shadow-[0_0_15px_rgba(59,130,246,0.1)] group-hover:scale-110 transition-transform duration-300">
+                               <GraduationCap className="w-8 h-8 text-blue-400 drop-shadow-[0_0_5px_rgba(96,165,250,0.8)]" />
+                          </div>
+                          
+                          <h3 className="text-xl font-black font-['Chakra_Petch'] uppercase tracking-wider text-white group-hover:text-blue-400 transition-colors mb-1 leading-tight">НАЧАТЬ<br/>ЗАРАБАТЫВАТЬ</h3>
+                      </div>
+                  </div>
+              </div>
+              
+              {/* PARTNERS */}
+              <PartnersCredits />
+              
+              <div className="mt-auto pt-4 opacity-50 text-[8px] text-zinc-600 uppercase tracking-widest text-center">
+                  Taipan Media © 2026
+              </div>
+          </div>
+        )}
+        
+        {/* ... (Rest of the component remains exactly the same: main, shop, calculator, etc.) ... */}
         {currentView === 'main' && (
-          <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 flex flex-col items-center">
+          <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 flex flex-col items-center w-full">
             <div className="mb-14 w-full text-center" onClick={handleTitleClick}>
               <h1 className="font-['Chakra_Petch'] font-[700] uppercase tracking-[0.15em] whitespace-nowrap overflow-visible relative block w-full text-center select-none cursor-pointer active:scale-95 transition-transform" style={{ fontSize: 'clamp(1.5rem, 8.5vw, 3.5rem)', textShadow: '0 0 20px rgba(0,255,157,0.3)', color: '#ffffff' }}>
                 <span className="relative inline-block mr-[-0.15em]">TAIPAN MEDIA<span className="absolute inset-0 -z-10 opacity-40 blur-[12px] animate-pulse text-[#00FF9D]">TAIPAN MEDIA</span></span>
               </h1>
-              <div className="flex items-center justify-center gap-4 mt-3 w-full">
+              
+              <div className="flex items-center justify-center gap-2 mt-3 w-full">
+                <div className={`h-1.5 w-1.5 rounded-full ${userRole === 'business' ? 'bg-[#00FF9D] shadow-[0_0_5px_#00FF9D]' : 'bg-blue-500 shadow-[0_0_5px_#3B82F6]'} animate-pulse`}></div>
+                <p className="text-[10px] text-zinc-400 uppercase tracking-[0.4em] mr-[-0.4em] font-bold">РЕЖИМ: <span className={userRole === 'business' ? 'text-[#00FF9D]' : 'text-blue-500'}>{userRole === 'business' ? 'БИЗНЕС' : 'АКАДЕМИЯ'}</span></p>
+              </div>
+
+              <div className="flex items-center justify-center gap-4 mt-2 w-full">
                 <div className="h-[1px] flex-1 max-w-[40px] bg-gradient-to-r from-transparent to-zinc-700"></div>
                 {/* --- DYNAMIC GREETING --- */}
-                <p className="text-[10px] uppercase tracking-[0.6em] mr-[-0.6em] text-[#00FF9D] font-bold whitespace-nowrap animate-pulse">
+                <p className="text-[10px] uppercase tracking-[0.6em] mr-[-0.6em] text-white font-bold whitespace-nowrap opacity-60">
                   ПРИВЕТ, {userName}
                 </p>
                 <div className="h-[1px] flex-1 max-w-[40px] bg-gradient-to-l from-transparent to-zinc-700"></div>
               </div>
-              <p className="text-[10px] text-zinc-600 font-mono mt-2 tracking-widest flex items-center justify-center gap-2 opacity-80">
-                 <span className="w-1.5 h-1.5 rounded-full bg-[#00FF9D] animate-pulse shadow-[0_0_5px_#00FF9D]"></span>
-                 СЕЙЧАС ОНЛАЙН: <span className="text-zinc-400 font-bold">{onlineCount}</span>
-              </p>
             </div>
             
-            <div className="grid grid-cols-2 gap-4 mb-4 w-full">
-              <div onClick={handleShopClick} className="group relative glass-card grid-bg rounded-3xl px-6 pt-10 pb-2 h-64 flex flex-col items-center text-center cursor-pointer">
-                <div className="mb-6 text-zinc-400 group-hover:text-[#E5C07B] transition-all duration-300"><TelegramLogoMain className="w-12 h-12 animate-[goldPulse_3s_ease-in-out_infinite]" /></div>
-                <h3 className="text-lg font-bold uppercase tracking-wide mb-2 leading-tight">Telegram<br/>Магазин</h3>
-                <p className="text-[9px] text-zinc-500 uppercase tracking-widest mb-4 leading-relaxed px-2">Решение<br/>для роста прибыли в вашем бизнесе</p>
-              </div>
-              <div onClick={handleEducationClick} className="group relative glass-card grid-bg rounded-3xl px-6 pt-10 pb-2 h-64 flex flex-col items-center text-center cursor-pointer">
-                <div className="mb-6 text-zinc-400 group-hover:text-[#E5C07B] transition-all duration-300"><GraduationCap className="w-12 h-12 animate-[goldPulse_3s_ease-in-out_infinite]" /></div>
-                <h3 className="text-lg font-bold uppercase tracking-widest mb-2 leading-tight">ОБУЧЕНИЕ</h3>
-                <p className="text-[9px] text-zinc-500 uppercase tracking-widest mb-4 leading-relaxed px-2 text-zinc-500">Ваша финансовая независимость<br/>через пользу для бизнеса</p>
-              </div>
+            {/* SEGMENTED CONTENT */}
+            <div className="w-full space-y-4">
+                {userRole === 'business' ? (
+                    <>
+                        <div onClick={handleShopClick} className="glass-card grid-bg rounded-3xl p-6 flex items-center justify-between cursor-pointer border-[#00FF9D]/20 group hover:bg-[#00FF9D]/5 transition-all">
+                            <div>
+                                <h3 className="text-xl font-black uppercase tracking-wider group-hover:text-[#00FF9D] transition-colors">МАГАЗИН</h3>
+                                <p className="text-[10px] text-zinc-500 uppercase tracking-widest mt-1">Заказать разработку</p>
+                            </div>
+                            <div className="bg-[#00FF9D]/10 p-3 rounded-full border border-[#00FF9D]/20 group-hover:scale-110 transition-transform">
+                                <TelegramLogoMain className="w-8 h-8 text-[#00FF9D]" />
+                            </div>
+                        </div>
+                        <div onClick={() => setCurrentView('calculator')} className="glass-card rounded-3xl p-6 flex items-center justify-between cursor-pointer border-white/5 hover:border-white/20 group transition-all">
+                            <div>
+                                <h3 className="text-xl font-black uppercase tracking-wider group-hover:text-white transition-colors">ROI КАЛЬКУЛЯТОР</h3>
+                                <p className="text-[10px] text-zinc-500 uppercase tracking-widest mt-1">Считаем прибыль</p>
+                            </div>
+                            <div className="bg-white/5 p-3 rounded-full border border-white/10 group-hover:scale-110 transition-transform">
+                                <Wallet className="w-8 h-8 text-zinc-400 group-hover:text-white transition-colors" />
+                            </div>
+                        </div>
+                        <div onClick={() => openModal('Mini App')} className="glass-card rounded-3xl p-6 flex items-center justify-between cursor-pointer border-white/5 hover:border-white/20 group transition-all">
+                            <div>
+                                <h3 className="text-xl font-black uppercase tracking-wider group-hover:text-white transition-colors">MINI APP</h3>
+                                <p className="text-[10px] text-zinc-500 uppercase tracking-widest mt-1">Персональное решение</p>
+                            </div>
+                            <div className="bg-white/5 p-3 rounded-full border border-white/10 group-hover:scale-110 transition-transform">
+                                <Code className="w-8 h-8 text-zinc-400 group-hover:text-white transition-colors" />
+                            </div>
+                        </div>
+                    </>
+                ) : (
+                    <>
+                        <div onClick={() => setCurrentView('education')} className="glass-card grid-bg rounded-3xl p-6 flex items-center justify-between cursor-pointer border-blue-500/20 group hover:bg-blue-500/5 transition-all">
+                            <div>
+                                <h3 className="text-xl font-black uppercase tracking-wider group-hover:text-blue-400 transition-colors">ОБУЧЕНИЕ</h3>
+                                <p className="text-[10px] text-zinc-500 uppercase tracking-widest mt-1">Стать разработчиком</p>
+                            </div>
+                            <div className="bg-blue-500/10 p-3 rounded-full border border-blue-500/20 group-hover:scale-110 transition-transform">
+                                <GraduationCap className="w-8 h-8 text-blue-400" />
+                            </div>
+                        </div>
+                        <div onClick={() => setCurrentView('program')} className="glass-card rounded-3xl p-6 flex items-center justify-between cursor-pointer border-white/5 hover:border-white/20 group transition-all">
+                            <div>
+                                <h3 className="text-xl font-black uppercase tracking-wider group-hover:text-white transition-colors">ПРОГРАММА</h3>
+                                <p className="text-[10px] text-zinc-500 uppercase tracking-widest mt-1">Модули курса</p>
+                            </div>
+                            <div className="bg-white/5 p-3 rounded-full border border-white/10 group-hover:scale-110 transition-transform">
+                                <Code className="w-8 h-8 text-zinc-400 group-hover:text-white transition-colors" />
+                            </div>
+                        </div>
+                        <div onClick={() => setCurrentView('faq')} className="glass-card rounded-3xl p-6 flex items-center justify-between cursor-pointer border-white/5 hover:border-white/20 group transition-all">
+                            <div>
+                                <h3 className="text-xl font-black uppercase tracking-wider group-hover:text-white transition-colors">FAQ</h3>
+                                <p className="text-[10px] text-zinc-500 uppercase tracking-widest mt-1">Вопросы и ответы</p>
+                            </div>
+                            <div className="bg-white/5 p-3 rounded-full border border-white/10 group-hover:scale-110 transition-transform">
+                                <Lock className="w-8 h-8 text-zinc-400 group-hover:text-white transition-colors" />
+                            </div>
+                        </div>
+                    </>
+                )}
             </div>
-            <div className="grid grid-cols-2 gap-4 w-full">
-                <div onClick={() => window.open('https://t.me/taipanmedia', '_blank')} className="group relative glass-card grid-bg rounded-3xl p-6 flex flex-col items-center justify-center cursor-pointer text-center w-full h-40">
-                    <Code className="w-8 h-8 mb-3 text-zinc-500 group-hover:text-[#E5C07B] animate-[goldPulse_3s_ease-in-out_infinite] transition-colors" />
-                    <h3 className="text-lg font-bold uppercase tracking-widest mb-2 group-hover:text-[#E5C07B] transition-colors">MINI APP</h3>
-                    <p className="text-[10px] text-zinc-500 uppercase tracking-widest group-hover:text-white transition-colors leading-tight">Заказать персональный<br/>mini app</p>
-                </div>
-                 <div onClick={handleAboutClick} className="group relative glass-card grid-bg rounded-3xl p-6 flex flex-col items-center justify-center cursor-pointer text-center w-full h-40">
-                    <Users className="w-8 h-8 mb-3 text-zinc-500 group-hover:text-[#E5C07B] animate-[goldPulse_3s_ease-in-out_infinite] transition-colors" />
-                    <h3 className="text-lg font-bold uppercase tracking-widest mb-2 group-hover:text-[#E5C07B] transition-colors">КТО МЫ?</h3>
-                    <p className="text-[10px] text-zinc-500 uppercase tracking-widest group-hover:text-white transition-colors leading-tight">О команде и миссии</p>
+
+            {/* --- SWITCHER FOOTER --- */}
+            <div className="w-full mt-12 pt-6 border-t border-zinc-900 flex flex-col items-center gap-6">
+                <button 
+                    onClick={() => { haptic('light'); setCurrentView('role_selection'); }}
+                    className="text-[9px] text-zinc-500 uppercase tracking-[0.2em] hover:text-[#00FF9D] transition-colors border border-zinc-800 px-6 py-3 rounded-full hover:border-[#00FF9D]/30 active:scale-95"
+                >
+                    Сменить направление
+                </button>
+                
+                <div className="flex gap-8 opacity-40">
+                    <div onClick={handleAboutClick} className="uppercase text-[9px] tracking-widest cursor-pointer hover:text-white transition-colors">О нас</div>
+                    <div onClick={() => window.open('https://t.me/taipanmedia', '_blank')} className="uppercase text-[9px] tracking-widest cursor-pointer hover:text-[#00FF9D] transition-colors">Контакт</div>
                 </div>
             </div>
-            <PartnersCredits />
           </div>
         )}
 
-        {/* ... Rest of currentView renders (shop, calculator, strategy, roi, education, faq, program, about) stay EXACTLY the same ... */}
         {currentView === 'shop' && (
           <div className="animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col h-full items-center w-full">
             {!shopIntroFinished ? (
@@ -1468,7 +1631,6 @@ const App = () => {
                   <div className="mt-4 w-full glass-card p-6 rounded-3xl text-center border border-[#00FF9D]/20 relative overflow-hidden group">
                       <div className="absolute inset-0 bg-gradient-to-t from-[#00FF9D]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                       <button onClick={() => {
-                          // Removed logToTaipanCRM call
                           setCurrentView('calculator');
                       }} className="w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-4 rounded-xl shadow-[0_0_20px_rgba(0,255,157,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs relative z-10 flex items-center justify-center gap-2 animate-pulse">РАССЧИТАТЬ УПУЩЕННУЮ ПРИБЫЛЬ</button>
                   </div>
@@ -1489,7 +1651,6 @@ const App = () => {
                 </div>
                 <div className="w-full glass-card p-4 rounded-3xl border border-[#00FF9D]/20 relative overflow-hidden">
                     <ProfitCalculator data={calcData} setData={setCalcData} onAction={() => {
-                        // Removed logToTaipanCRM call
                         setCurrentView('strategy');
                     }} />
                 </div>
@@ -1594,7 +1755,6 @@ const App = () => {
                 </div>
                 <p className="text-[10px] text-zinc-500 uppercase tracking-widest mb-6">Длительность обучения (14 дней)</p>
                 <button onClick={() => {
-                    // Removed logToTaipanCRM call
                     window.open('https://t.me/taipanmedia', '_blank');
                 }} className="block w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-4 rounded-xl shadow-[0_0_20px_rgba(0,255,157,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs">Получить подробную консультацию</button>
             </div>

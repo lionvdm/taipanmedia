@@ -883,7 +883,7 @@ const PartnersCredits = () => {
   const logoClasses = `h-24 w-auto object-contain max-w-[90%] transform ${!isNewPartner ? 'scale-125' : ''} ${isFood ? 'translate-y-10' : ''}`;
   
   return (
-    <div className="w-full mt-4 mb-8 relative px-4 flex flex-col items-center justify-center">
+    <div className="w-full mt-12 mb-8 relative px-4 flex flex-col items-center justify-center">
       <div className="flex items-center justify-center gap-4 mb-6 opacity-100">
         <div className="h-[1px] w-8 bg-gradient-to-r from-transparent to-[#00FF9D]"></div>
         <p className="text-center text-[10px] text-[#00FF9D] uppercase tracking-[0.4em] mr-[-0.4em] font-bold shadow-green-glow animate-pulse">Наши партнёры</p>
@@ -910,7 +910,6 @@ const RoiView = ({ profit, onBack, onAction }) => {
   const returnPercentage = Math.round((conservativeProfit / investment) * 100);
   const daysToRecoup = conservativeProfit > 0 ? Math.ceil(investment / (conservativeProfit / 30)) : Infinity;
   const isProfitable = returnPercentage > 0;
-  // --- UPDATED: Handle Consultation with Logging ---
   const handleConsultation = () => {
       // Use Haptic
       haptic('light');

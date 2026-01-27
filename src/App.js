@@ -34,6 +34,68 @@ const isFirebaseInitialized = true;
 // Получаем ID приложения для формирования правильных путей (или используем дефолтный)
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
+// --- КЛЮЧ PINATA (JWT) ---
+const PINATA_JWT = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySW5mb3JtYXRpb24iOnsiaWQiOiI3NTM5YTc4Ni00ODVhLTQ2ZWUtOTFmMi1iMWZjNDZjMzJhYjEiLCJlbWFpbCI6InRhaXBhbm1lZGlhc2NAZ21haWwuY29tIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsInBpbl9wb2xpY3kiOnsicmVnaW9ucyI6W3siZGVzaXJlZFJlcGxpY2F0aW9uQ291bnQiOjEsImlkIjoiRlJBMSJ9LHsiZGVzaXJlZFJlcGxpY2F0aW9uQ291bnQiOjEsImlkIjoiTllDMSJ9XSwidmVyc2lvbiI6MX0sIm1mYV9lbmFibGVkIjpmYWxzZSwic3RhdHVzIjoiQUNUSVZFIn0sImF1dGhlbnRpY2F0aW9uVHlwZSI6InNjb3BlZEtleSIsInNjb3BlZEtleUtleSI6ImJhNDcyNGMxODQyZjA1NTcyYjlhIiwic2NvcGVkS2V5U2VjcmV0IjoiYWY0ZDA4ZTg1N2Y3NWM2N2VmM2QzMjI0ZjVlNzBiMjc1NmEyZGQzMWQxMWE1MmY4YjFlYTZhZTU1YWMwNmE2ZSIsImV4cCI6MTgwMTAyNjg5M30.kACF0OpAMD5bQDftPrf9h5KkJyaX6_r_HAMkB4j9kt8";
+
+// 1. Генерация картинки на Canvas
+const generateSBTImage = (name, date, sbtId) => {
+    return new Promise((resolve) => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = 1200;
+        canvas.height = 800;
+
+        // Фон и дизайн
+        ctx.fillStyle = '#050505';
+        ctx.fillRect(0, 0, 1200, 800);
+        ctx.strokeStyle = 'rgba(0, 255, 157, 0.1)';
+        for(let i=0; i<1200; i+=40) { ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, 800); ctx.stroke(); }
+
+        // Текст
+        ctx.fillStyle = '#00FF9D';
+        ctx.font = 'bold 60px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('TAIPAN ACADEMY', 600, 150);
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = 'bold 80px monospace';
+        ctx.fillText(name.toUpperCase(), 600, 450);
+        ctx.font = '20px monospace';
+        ctx.fillStyle = 'gray';
+        ctx.fillText(`ID: ${sbtId} | DATE: ${date}`, 600, 750);
+
+        resolve(canvas.toDataURL('image/png'));
+    });
+};
+
+// 2. Универсальная функция загрузки в Pinata
+const pinToIPFS = async (data, isJson = false, fileName = "file") => {
+    const url = isJson 
+        ? "https://api.pinata.cloud/pinning/pinJSONToIPFS" 
+        : "https://api.pinata.cloud/pinning/pinFileToIPFS";
+    
+    let body;
+    if (isJson) {
+        body = JSON.stringify(data);
+    } else {
+        const res = await fetch(data);
+        const blob = await res.blob();
+        body = new FormData();
+        body.append('file', new File([blob], fileName));
+    }
+
+    const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${PINATA_JWT}`,
+            ...(isJson && { 'Content-Type': 'application/json' })
+        },
+        body
+    });
+
+    const result = await response.json();
+    return `ipfs://${result.IpfsHash}`;
+};
+
 // --- OPTIMIZED MATRIX BACKGROUND (Performance Friendly) ---
 const MatrixBackground = React.memo(() => {
   const canvasRef = useRef(null);
@@ -1138,11 +1200,42 @@ const ProfileView = ({ onBack, userName, userId }) => {
         if (!walletAddress) return;
         setIsClaiming(true);
         
-        // Simulate backend minting process
-        await new Promise(r => setTimeout(r, 3000));
-        
-        setHasSBT(true);
-        setIsClaiming(false);
+        try {
+            const sbtId = `TPN-${Date.now()}`;
+            const dateStr = new Date().toLocaleDateString();
+
+            // 1. Создаем картинку
+            const imgData = await generateSBTImage(userName, dateStr, sbtId);
+
+            // 2. Загружаем картинку в IPFS
+            const imageIpfsUrl = await pinToIPFS(imgData, false, `cert_${sbtId}.png`);
+            console.log("✅ Картинка загружена:", imageIpfsUrl);
+
+            // 3. Создаем и загружаем JSON-паспорт (Metadata)
+            const metadata = {
+                name: `TAIPAN Graduate: ${userName}`,
+                description: "Official SBT Certificate by TAIPAN Media Group",
+                image: imageIpfsUrl,
+                attributes: [{ trait_type: "Student", value: userName }]
+            };
+            const metadataIpfsUrl = await pinToIPFS(metadata, true);
+            console.log("🔥 Официальный JSON готов:", metadataIpfsUrl);
+
+            // 4. Сохраняем результат в Firebase
+            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'app_visitors', userId.toString()), {
+                sbt_status: 'archived_in_ipfs',
+                metadata_url: metadataIpfsUrl
+            });
+
+            setHasSBT(true);
+            // Визуальное уведомление внутри интерфейса заменит alert
+
+        } catch (e) {
+            console.error("Ошибка процесса:", e);
+            // В случае ошибки сбрасываем состояние загрузки
+        } finally {
+            setIsClaiming(false);
+        }
     };
 
     return (

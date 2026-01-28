@@ -80,15 +80,20 @@ const GlobalStyles = () => (
         backface-visibility: hidden;
     }
 
+    /* Strategy Card Style (Minimalist Dark) */
+    .strategy-card {
+        background-color: #0A0A0A;
+        border: 1px solid #1f1f1f;
+        border-radius: 16px;
+        padding: 20px;
+        position: relative;
+        overflow: hidden;
+    }
+
     @keyframes contourPulse {
       0% { filter: drop-shadow(0 0 1px rgba(0, 255, 157, 0.3)); opacity: 0.8; }
       50% { filter: drop-shadow(0 0 6px rgba(0, 255, 157, 0.6)); opacity: 1; }
       100% { filter: drop-shadow(0 0 1px rgba(0, 255, 157, 0.3)); opacity: 0.8; }
-    }
-    @keyframes goldPulse {
-      0% { filter: drop-shadow(0 0 1px rgba(229, 192, 123, 0.2)); opacity: 0.9; }
-      50% { filter: drop-shadow(0 0 8px rgba(229, 192, 123, 0.5)); opacity: 1; }
-      100% { filter: drop-shadow(0 0 1px rgba(229, 192, 123, 0.2)); opacity: 0.9; }
     }
     @keyframes scanLine {
       0% { transform: translateY(-100%); opacity: 0; }
@@ -110,16 +115,12 @@ const GlobalStyles = () => (
       0% { opacity: 0; transform: translateY(10px); }
       100% { opacity: 1; transform: translateY(0); }
     }
-    @keyframes shine {
-      0% { background-position: 200% 0; }
-      100% { background-position: -200% 0; }
-    }
   `}} />
 );
 
 // --- COMPONENT DEFINITIONS ---
 
-// 1. Matrix Background (FIXED: z-index and position)
+// 1. Matrix Background
 const MatrixBackground = React.memo(() => {
   const canvasRef = useRef(null);
 
@@ -127,7 +128,6 @@ const MatrixBackground = React.memo(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    // Use default alpha (true) to avoid issues with some browsers/devices handling alpha:false + CSS opacity
     const ctx = canvas.getContext('2d');
     let animationFrameId;
     
@@ -140,7 +140,7 @@ const MatrixBackground = React.memo(() => {
     const drops = Array(columns).fill(1);
 
     let lastTime = 0;
-    const fps = 30; // Increased FPS slightly for smoother flow
+    const fps = 30; 
     const interval = 1000 / fps;
 
     const draw = (currentTime) => {
@@ -151,7 +151,6 @@ const MatrixBackground = React.memo(() => {
 
       lastTime = currentTime - (deltaTime % interval);
 
-      // Fade out effect
       ctx.fillStyle = 'rgba(5, 5, 5, 0.1)'; 
       ctx.fillRect(0, 0, width, height);
 
@@ -182,8 +181,7 @@ const MatrixBackground = React.memo(() => {
     };
   }, []);
 
-  // Increased opacity to 0.4 and ensure z-index is correct
-  return <canvas ref={canvasRef} className="fixed inset-0 z-[1] opacity-40 mix-blend-screen pointer-events-none" style={{ willChange: 'contents' }} />;
+  return <canvas ref={canvasRef} className="fixed inset-0 z-[1] opacity-20 mix-blend-screen pointer-events-none" style={{ willChange: 'contents' }} />;
 });
 
 // 2. Odometer Hook
@@ -225,169 +223,29 @@ const useOdometer = (targetValue, duration = 1000) => {
 };
 
 // 3. Icons
-const GraduationCap = React.memo(({ className }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
-    <path d="M6 12v5c3 3 9 3 12 0v-5" />
-  </svg>
-));
-
-const ArrowRight = React.memo(({ className }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <path d="M5 12h14" />
-    <path d="m12 5 7 7-7 7" />
-  </svg>
-));
-
-const ChevronLeft = React.memo(({ className }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <path d="m15 18-6-6 6-6" />
-  </svg>
-));
-
-const ChevronRight = React.memo(({ className }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <path d="m9 18 6-6-6-6" />
-  </svg>
-));
-
-const CheckCircle2 = React.memo(({ className }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <circle cx="12" cy="12" r="10" />
-    <path d="m9 12 2 2 4-4" />
-  </svg>
-));
-
-const Lock = React.memo(({ className }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
-    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-  </svg>
-));
-
-const TrendingUp = React.memo(({ className }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
-    <polyline points="17 6 23 6 23 12" />
-  </svg>
-));
-
-const Wallet = React.memo(({ className }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4" />
-    <path d="M4 6v12c0 1.1.9 2 2 2h14v-4" />
-    <path d="M18 12a2 2 0 0 0-2 2c0 1.1.9 2 2 2h4v-4h-4z" />
-  </svg>
-));
-
-const X = React.memo(({ className }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <path d="M18 6 6 18" />
-    <path d="m6 6 12 12" />
-  </svg>
-));
-
-const Zap = React.memo(({ className }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-  </svg>
-));
-
-const Search = React.memo(({ className }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <circle cx="11" cy="11" r="8" />
-    <path d="m21 21-4.3-4.3" />
-  </svg>
-));
-
-const Users = React.memo(({ className }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-    <circle cx="9" cy="7" r="4" />
-    <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-  </svg>
-));
-
-const Shield = React.memo(({ className }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-  </svg>
-));
-
-const Crosshair = React.memo(({ className }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <circle cx="12" cy="12" r="10" />
-    <line x1="22" y1="12" x2="18" y2="12" />
-    <line x1="6" y1="12" x2="2" y2="12" />
-    <line x1="12" y1="6" x2="12" y2="2" />
-    <line x1="12" y1="22" x2="12" y2="18" />
-  </svg>
-));
-
-const Code = React.memo(({ className }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <polyline points="16 18 22 12 16 6" />
-    <polyline points="8 6 2 12 8 18" />
-  </svg>
-));
-
-const Database = React.memo(({ className }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <ellipse cx="12" cy="5" rx="9" ry="3" />
-    <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" />
-    <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
-  </svg>
-));
-
-const Trash2 = React.memo(({ className }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <path d="M3 6h18" />
-    <path d="M19 6v14c0 1.1-.9 2 2 2H7c-1.1 0-2-.9-2-2V6" />
-    <path d="M8 6V4c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2" />
-  </svg>
-));
-
-const Activity = React.memo(({ className }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-  </svg>
-));
-
-const Edit2 = React.memo(({ className }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
-  </svg>
-));
-
-const Save = React.memo(({ className }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
-    <polyline points="17 21 17 13 7 13 7 21" />
-    <polyline points="7 3 7 8 15 8" />
-  </svg>
-));
-
-const Filter = React.memo(({ className }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
-  </svg>
-));
-
-const BarChart2 = React.memo(({ className }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <line x1="18" y1="20" x2="18" y2="10" />
-    <line x1="12" y1="20" x2="12" y2="4" />
-    <line x1="6" y1="20" x2="6" y2="14" />
-  </svg>
-));
-
-const PieChart = React.memo(({ className }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <path d="M21.21 15.89A10 10 0 1 1 8 2.83" />
-    <path d="M22 12A10 10 0 0 0 12 2v10z" />
-  </svg>
-));
+const GraduationCap = (p) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><path d="M22 10v6M2 10l10-5 10 5-10 5z" /><path d="M6 12v5c3 3 9 3 12 0v-5" /></svg>;
+const ArrowRight = (p) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>;
+const ChevronLeft = (p) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><path d="m15 18-6-6 6-6" /></svg>;
+const CheckCircle2 = (p) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><circle cx="12" cy="12" r="10" /><path d="m9 12 2 2 4-4" /></svg>;
+const Lock = (p) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><rect width="18" height="11" x="3" y="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>;
+const TrendingUp = (p) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><polyline points="23 6 13.5 15.5 8.5 10.5 1 18" /><polyline points="17 6 23 6 23 12" /></svg>;
+const Wallet = (p) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" {...p}><path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4" /><path d="M4 6v12c0 1.1.9 2 2 2h14v-4" /><path d="M18 12a2 2 0 0 0-2 2c0 1.1.9 2 2 2h4v-4h-4z" /></svg>;
+const X = (p) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>;
+const Zap = (p) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></svg>;
+const Search = (p) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>;
+const Users = (p) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>;
+const Shield = (p) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>;
+const Crosshair = (p) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><circle cx="12" cy="12" r="10" /><line x1="22" y1="12" x2="18" y2="12" /><line x1="6" y1="12" x2="2" y2="12" /><line x1="12" y1="6" x2="12" y2="2" /><line x1="12" y1="22" x2="12" y2="18" /></svg>;
+const Code = (p) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><polyline points="16 18 22 12 16 6" /><polyline points="8 6 2 12 8 18" /></svg>;
+const Database = (p) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><ellipse cx="12" cy="5" rx="9" ry="3" /><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" /><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" /></svg>;
+const Trash2 = (p) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><path d="M3 6h18" /><path d="M19 6v14c0 1.1-.9 2 2 2H7c-1.1 0-2-.9-2-2V6" /><path d="M8 6V4c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2" /></svg>;
+const Activity = (p) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></svg>;
+const Edit2 = (p) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" /></svg>;
+const Save = (p) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" /><polyline points="17 21 17 13 7 13 7 21" /><polyline points="7 3 7 8 15 8" /></svg>;
+const Filter = (p) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" /></svg>;
+const BarChart2 = (p) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" /></svg>;
+const PieChart = (p) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><path d="M21.21 15.89A10 10 0 1 1 8 2.83" /><path d="M22 12A10 10 0 0 0 12 2v10z" /></svg>;
+const Copy = (p) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><rect width="14" height="14" x="8" y="8" rx="2" ry="2" /><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" /></svg>;
 
 const TelegramLogoMain = React.memo(({ className }) => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" stroke="none" className={className}>
@@ -506,9 +364,6 @@ const ProfitCalculator = ({ onAction, data, setData }) => {
 
 // 6.1 AcademyCalculator
 const AcademyCalculator = ({ data, setData, onAction }) => {
-  // Use data from props instead of local state
-  // data contains: { salary, days, hours }
-  
   const { salary, days, hours } = data;
   
   const updateData = (key, val) => {
@@ -518,19 +373,11 @@ const AcademyCalculator = ({ data, setData, onAction }) => {
   const totalHours = Math.max(1, days * hours);
   const currentRate = Math.floor(salary / totalHours);
   const targetRate = 100000;
-  
-  // Calculate efficiency factor
   const efficiency = Math.max(1, targetRate / Math.max(1, currentRate));
-  
-  // Calculate hours needed to earn target rate at current rate
   const hoursToPlow = Math.ceil(targetRate / Math.max(1, currentRate));
-  
-  // Weeks calculation
   const hoursPerMonth = days * hours;
-  const hoursPerWeek = hoursPerMonth / 4.3; // average weeks in month
+  const hoursPerWeek = hoursPerMonth / 4.3; 
   const weeksToPlow = (hoursToPlow / Math.max(1, hoursPerWeek)).toFixed(1);
-
-  // Animation for numbers
   const animatedRate = useOdometer(currentRate);
 
   return (
@@ -554,13 +401,12 @@ const AcademyCalculator = ({ data, setData, onAction }) => {
       </div>
 
       <div className="relative overflow-hidden bg-[#00FF9D]/5 border border-[#00FF9D]/30 p-5 rounded-2xl text-center group mt-4 shadow-[0_0_30px_rgba(0,255,157,0.1)]">
-         {/* Background effects same as ProfitCalculator */}
          <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,157,0.05)_1px,transparent_1px)] bg-[size:15px_15px] pointer-events-none"></div>
          <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-[#00FF9D]/5 to-transparent animate-[scanLine_3s_linear_infinite]"></div>
          
          <div className="relative z-10 space-y-4 text-left">
             <div>
-                <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest mb-2 text-center">ВАШ РЕЗУЛЬТАТ:</p>
+                <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest mb-2 text-center">ТВОЙ РЕЗУЛЬТАТ:</p>
                 
                 <div className="flex justify-between items-center mb-1">
                     <span className="text-[11px] text-zinc-400">Сейчас ваш час стоит:</span>
@@ -573,14 +419,14 @@ const AcademyCalculator = ({ data, setData, onAction }) => {
             </div>
 
             <div className="bg-red-500/10 border border-red-500/30 p-4 rounded-xl text-center">
-                <p className="text-[10px] text-red-400 uppercase tracking-wider font-bold mb-1">СЕЙЧАС ВАШ РАБОЧИЙ ЧАС И ЧАС ВАШЕЙ ЖИЗНИ СТОИТ</p>
-                <p className="text-4xl font-black text-red-500 font-['Chakra_Petch'] drop-shadow-[0_0_10px_rgba(239,68,68,0.5)]">{animatedRate.toLocaleString()} ₸</p>
+                <p className="text-[10px] text-red-400 uppercase tracking-wider font-bold mb-1">ТВОЯ ЭФФЕКТИВНОСТЬ НИЖЕ В</p>
+                <p className="text-5xl font-black text-red-500 font-['Chakra_Petch'] drop-shadow-[0_0_10px_rgba(239,68,68,0.5)]">{Math.floor(efficiency)} РАЗ!</p>
             </div>
 
             <div>
                 <p className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold mb-2">ЧТО ЭТО ЗНАЧИТ?</p>
                 <p className="text-[11px] text-zinc-300 leading-relaxed mb-2">
-                    Чтобы заработать те же <span className="text-white font-bold">100 000 тенге</span>, которые наш выпускник получает за <span className="text-white font-bold">1 час</span>, вам нужно пахать <span className="text-red-500 font-bold">{hoursToPlow} часов</span>.
+                    Чтобы заработать те же <span className="text-white font-bold">100 000 тенге</span>, которые наш выпускник получает за <span className="text-white font-bold">1 час</span>, тебе нужно пахать <span className="text-red-500 font-bold">{hoursToPlow} часов</span>.
                 </p>
                 <p className="text-[10px] text-zinc-500 italic">
                     (это {weeksToPlow > 0.8 && weeksToPlow < 1.2 ? 'одна' : weeksToPlow} рабочие недели!)
@@ -589,7 +435,7 @@ const AcademyCalculator = ({ data, setData, onAction }) => {
             
             <div className="border-l-2 border-[#00FF9D] pl-3 py-1">
                 <p className="text-[11px] text-white font-bold leading-tight">
-                    Вы точно хотите продолжать тратить недели жизни на то, что можно сделать за час?
+                    Ты точно хочешь продолжать тратить недели жизни на то, что можно сделать за час?
                 </p>
             </div>
          </div>
@@ -1408,26 +1254,17 @@ const App = () => {
 
   // New State for Academy Calculator (Lifted Up)
   const [academyCalcData, setAcademyCalcData] = useState({ salary: 300000, days: 22, hours: 8 });
+  const [isStudent, setIsStudent] = useState(false); // New State for student status
 
   // Calculate current hourly rate (derived state)
   const totalHours = Math.max(1, academyCalcData.days * academyCalcData.hours);
   const currentHourlyRate = Math.floor(academyCalcData.salary / totalHours);
 
   // --- STATE FOR ACADEMY DASHBOARD ---
-  // Часы, которые пользователь готов тратить на создание магазинов (для мини-калькулятора)
-  const [workHours, setWorkHours] = useState(1);
-  // Animated earnings using custom hook (useOdometer must be at top level of component)
+  const [workHours, setWorkHours] = useState(3); // Количество магазинов
   const potentialEarnings = workHours * 100000;
   const animatedPotentialEarnings = useOdometer(potentialEarnings);
-
-  // Состояние вкладки рефералов
-  const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' or 'referrals'
-  // Фейковые данные рефералов (потом заменишь на реальные из БД)
-  const [referrals, setReferrals] = useState([
-      { id: 1, name: 'Алишер К.', date: '27.01.26', profit: 5000 },
-      { id: 2, name: 'Елена М.', date: '28.01.26', profit: 5000 }
-  ]);
-
+  
   // --- TELEGRAM MAIN BUTTON INTEGRATION (FOR MODAL) ---
   useEffect(() => {
     if (!tg) return;
@@ -1566,8 +1403,7 @@ const App = () => {
   const [calcData, setCalcData] = useState({ traffic: 0, conversion: 0, avgCheck: 0, margin: 0 });
   const calculateProfit = () => {
       const sales = Math.floor(calcData.traffic * (calcData.conversion / 100));
-      // Исправлено: используем calcData вместо data
-      const revenue = sales * calcData.avgCheck;
+      const revenue = sales * calcData.avgCheck; // Correctly referencing calcData
       return Math.floor(revenue * (calcData.margin / 100));
   };
   const [shopIntroFinished, setShopIntroFinished] = useState(false);
@@ -1604,8 +1440,8 @@ const App = () => {
       ctx.font = '14px monospace'; 
       for (let i = 0; i < drops.length; i++) {
         const text = chars.charAt(Math.floor(Math.random() * chars.length));
-        ctx.fillText(text, i * 25, drops[i] * 25);
-        if (drops[i] * 25 > height && Math.random() > 0.975) drops[i] = 0;
+        ctx.fillText(text, i * 20, drops[i] * fontSize);
+        if (drops[i] * fontSize > height && Math.random() > 0.975) drops[i] = 0;
         drops[i]++;
       }
     };
@@ -1970,183 +1806,101 @@ const App = () => {
 
         {currentView === 'strategy' && (
           <div className="animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col h-full items-center w-full">
-            <button onClick={() => handleBackClick(userRole === 'academy' ? 'main' : 'calculator')} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-4 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
-            
-            {/* TABS SWITCHER (DASHBOARD / REFERRALS) */}
-            {userRole === 'academy' && (
-                <div className="flex bg-zinc-900/50 p-1 rounded-xl border border-zinc-800 mb-6 w-full max-w-sm">
-                    <button 
-                        onClick={() => { haptic('light'); setActiveTab('dashboard'); }}
-                        className={`flex-1 py-2 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-all ${activeTab === 'dashboard' ? 'bg-[#00FF9D] text-black shadow-lg' : 'text-zinc-500'}`}
-                    >
-                        Кабинет
-                    </button>
-                    <button 
-                        onClick={() => { haptic('light'); setActiveTab('referrals'); }}
-                        className={`flex-1 py-2 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-all ${activeTab === 'referrals' ? 'bg-[#00FF9D] text-black shadow-lg' : 'text-zinc-500'}`}
-                    >
-                        Партнерка (10%)
-                    </button>
-                </div>
-            )}
-
-            <div className="flex-grow flex flex-col items-center w-full space-y-6 overflow-y-auto pb-20 no-scrollbar">
+             <button onClick={() => handleBackClick(userRole === 'academy' ? 'main' : 'calculator')} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-4 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
+             <div className="flex-grow flex flex-col items-center w-full space-y-6 overflow-y-auto pb-20 no-scrollbar">
                 
-                {/* === DASHBOARD TAB === */}
-                {activeTab === 'dashboard' && userRole === 'academy' && (
-                    <>
-                        {/* 1. INFO CARD (Name, Rate, Status) */}
-                        <div className="w-full glass-card p-5 rounded-2xl border border-zinc-800 relative overflow-hidden">
-                            {/* Background decoration */}
-                            <div className="absolute top-0 right-0 w-24 h-24 bg-[#00FF9D]/5 rounded-full blur-2xl -mr-10 -mt-10"></div>
-                            
-                            <div className="flex justify-between items-start mb-4 relative z-10">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-12 h-12 bg-zinc-900 rounded-full border border-[#00FF9D]/30 flex items-center justify-center text-[#00FF9D] font-black text-lg shadow-[0_0_15px_rgba(0,255,157,0.1)]">
-                                        {userName.charAt(0)}
-                                    </div>
-                                    <div>
-                                        <p className="text-[9px] text-zinc-500 uppercase font-bold tracking-wider mb-0.5">Агент</p>
-                                        <h3 className="text-lg font-black text-white tracking-wide">{userName}</h3>
-                                    </div>
+                {/* NEW PERSONAL CABINET HEADER FOR ACADEMY */}
+                {userRole === 'academy' && (
+                    <div className="w-full space-y-3 animate-in slide-in-from-bottom duration-500">
+                        {/* 1. Profile Card (As per screenshot) */}
+                        <div className="strategy-card flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-[#1c1c1e] flex items-center justify-center text-zinc-400 font-black text-sm border border-zinc-700">
+                                    {userName.charAt(0)}
                                 </div>
-                                <div className="text-right">
-                                    <p className="text-[9px] text-zinc-500 uppercase font-bold tracking-wider mb-1">Статус</p>
-                                    {/* Logic: If bought -> Active, else -> Guest */}
-                                    <div className="inline-flex items-center gap-1.5 bg-red-500/10 border border-red-500/20 px-2 py-1 rounded text-[9px] font-bold text-red-500">
-                                        <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></span>
-                                        НЕ ПРОХОДИТ ОБУЧЕНИЕ
+                                <div>
+                                    <h3 className="text-base font-black text-white uppercase tracking-wider leading-none">{userName}</h3>
+                                    <div className="flex items-center gap-1.5 mt-1">
+                                        <div className={`w-1.5 h-1.5 rounded-full ${isStudent ? 'bg-[#00FF9D]' : 'bg-zinc-600'}`}></div>
+                                        <span className={`text-[10px] uppercase font-bold tracking-wider ${isStudent ? 'text-[#00FF9D]' : 'text-zinc-500'}`}>
+                                            {isStudent ? 'АКТИВНЫЙ СТУДЕНТ' : 'ГОСТЬ'}
+                                        </span>
                                     </div>
                                 </div>
                             </div>
+                            {!isStudent && (
+                                <button 
+                                    onClick={() => window.open('https://t.me/taipanmedia', '_blank')}
+                                    className="text-[10px] font-bold border border-zinc-700 px-4 py-2 rounded-lg text-white hover:bg-white/5 transition-all uppercase tracking-widest"
+                                >
+                                    НАЧАТЬ
+                                </button>
+                            )}
+                        </div>
 
-                            <div className="bg-zinc-900/80 rounded-xl p-3 border border-zinc-800 flex justify-between items-center">
-                                <div>
-                                    <p className="text-[8px] text-zinc-500 uppercase font-bold mb-1">Ваш текущий час стоит</p>
-                                    <p className="text-xl font-mono text-zinc-400 font-bold">{currentHourlyRate.toLocaleString()} ₸</p>
+                        {/* 2. Finance Card (As per screenshot) */}
+                        <div className="strategy-card relative">
+                            <p className="text-[9px] text-zinc-500 uppercase font-bold tracking-[0.2em] mb-4">ТЕКУЩАЯ СТОИМОСТЬ ЧАСА</p>
+                            <div className="flex items-baseline gap-2 mb-6">
+                                <div className="text-5xl font-black text-white font-['Chakra_Petch'] tracking-tighter">
+                                    {currentHourlyRate.toLocaleString().replace(/\s/g, ' ')}
                                 </div>
-                                <Activity className="w-5 h-5 text-zinc-600" />
+                                <span className="text-zinc-500 text-xs font-bold uppercase tracking-wider">₸ / час</span>
+                            </div>
+                            
+                            <div className="flex items-center gap-3">
+                                <button 
+                                    onClick={() => setCurrentView('calculator')}
+                                    className="flex items-center gap-2 bg-[#1c1c1e] hover:bg-[#252525] px-3 py-2 rounded-lg text-[10px] text-zinc-400 border border-zinc-800 transition-all"
+                                >
+                                    <Edit2 className="w-3 h-3" /> 
+                                    <span className="font-bold">Пересчитать</span>
+                                </button>
+                                <span className="text-[9px] text-zinc-600 font-mono">Обновлено: только что</span>
+                            </div>
+                            
+                            <div className="absolute right-5 top-1/2 -translate-y-1/2 opacity-10 pointer-events-none">
+                                <Wallet className="w-24 h-24 text-white stroke-1" />
                             </div>
                         </div>
 
-                        {/* 2. MINI CALCULATOR (Time -> Money) */}
-                        <div className="w-full glass-card p-5 rounded-2xl border border-[#00FF9D]/20 relative group">
-                            <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:20px_20px]"></div>
+                        {/* 3. Partner Program (As per screenshot) */}
+                        <div className="strategy-card relative overflow-hidden" style={{ borderColor: 'rgba(168, 85, 247, 0.3)' }}>
+                            <div className="absolute inset-0 bg-gradient-to-b from-purple-900/10 to-transparent pointer-events-none"></div>
                             
-                            <div className="relative z-10">
-                                <h3 className="text-sm font-bold text-white uppercase tracking-wider mb-4 flex items-center gap-2">
-                                    <Wallet className="w-4 h-4 text-[#00FF9D]" />
-                                    Потенциал заработка
-                                </h3>
-
-                                <div className="mb-6">
-                                    <div className="flex justify-between text-[10px] mb-2 font-mono">
-                                        <span className="text-zinc-400">ВРЕМЯ НА РАБОТУ:</span>
-                                        <span className="text-[#00FF9D] font-bold">{workHours} ЧАС(ОВ)</span>
-                                    </div>
-                                    <input 
-                                        type="range" 
-                                        min="1" 
-                                        max="10" 
-                                        step="1"
-                                        value={workHours} 
-                                        onChange={(e) => { haptic('selection'); setWorkHours(Number(e.target.value)); }}
-                                        className="w-full h-2 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-[#00FF9D]"
-                                    />
-                                    <p className="text-[9px] text-zinc-500 mt-2 text-right">Количество созданных магазинов: {workHours}</p>
-                                </div>
-
-                                <div className="bg-[#00FF9D]/10 border border-[#00FF9D] rounded-xl p-4 text-center relative overflow-hidden">
-                                    <div className="absolute inset-0 bg-[#00FF9D]/10 animate-pulse"></div>
-                                    <p className="text-[9px] text-[#00FF9D] uppercase font-bold tracking-widest relative z-10 mb-1">Возможный доход</p>
-                                    <p className="text-4xl font-black text-white font-['Chakra_Petch'] relative z-10 drop-shadow-[0_0_10px_rgba(0,255,157,0.5)]">
-                                        {animatedPotentialEarnings.toLocaleString()} ₸
+                            <div className="flex justify-between items-start mb-5 relative z-10">
+                                <div>
+                                    <h3 className="text-sm font-black text-white uppercase tracking-wider mb-1">ПАРТНЕРСКАЯ ПРОГРАММА</h3>
+                                    <p className="text-[10px] text-zinc-400 leading-snug max-w-[200px]">
+                                        Ваш бонус: <span className="text-[#a855f7] font-bold">10% (5 000 ₸)</span> с каждой оплаты привлеченного ученика.
                                     </p>
                                 </div>
-                                
-                                <p className="text-[9px] text-zinc-500 mt-3 text-center italic">
-                                    *При условии прохождения обучения и работы по нашей системе
-                                </p>
+                                <div className="bg-[#1a1625] border border-purple-500/20 rounded-lg p-2 text-center min-w-[70px]">
+                                    <div className="text-lg font-black text-white font-mono leading-none mb-1">0</div>
+                                    <div className="text-[7px] text-[#a855f7] font-bold uppercase tracking-wider">ПАРТНЕРОВ</div>
+                                </div>
                             </div>
-                        </div>
 
-                        {/* CTA Button */}
-                        <button onClick={() => window.open('https://t.me/taipanmedia', '_blank')} className="w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-4 rounded-xl shadow-[0_0_20px_rgba(0,255,157,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs flex items-center justify-center gap-2 animate-pulse">
-                            НАЧАТЬ ОБУЧЕНИЕ
-                        </button>
-                    </>
-                )}
-
-                {/* === REFERRALS TAB === */}
-                {activeTab === 'referrals' && userRole === 'academy' && (
-                    <div className="w-full animate-in slide-in-from-right duration-300">
-                        {/* Hero Block */}
-                        <div className="w-full bg-gradient-to-br from-purple-900/20 to-black p-5 rounded-2xl border border-purple-500/30 mb-4 text-center relative overflow-hidden">
-                            <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_50%,rgba(168,85,247,0.15),transparent_70%)]"></div>
-                            <h3 className="text-lg font-black text-white uppercase tracking-wider relative z-10 mb-1">Зарабатывай с TAIPAN</h3>
-                            <p className="text-[10px] text-purple-300 relative z-10 mb-4 px-4">
-                                Приглашай людей в Mini App. Если они купят обучение, ты получишь <span className="font-bold text-white bg-purple-500/20 px-1 rounded">10% (5 000 ₸)</span> с каждой продажи.
-                            </p>
-                            <div className="text-3xl font-black text-white font-mono relative z-10">
-                                {referrals.reduce((acc, curr) => acc + curr.profit, 0).toLocaleString()} ₸
-                            </div>
-                            <p className="text-[8px] text-zinc-500 uppercase font-bold relative z-10">Всего заработано</p>
-                        </div>
-
-                        {/* Link Block */}
-                        <div className="glass-card p-4 rounded-xl mb-6">
-                            <p className="text-[9px] text-zinc-500 uppercase font-bold mb-2">Твоя персональная ссылка</p>
-                            <div className="flex gap-2">
-                                <div className="bg-black border border-zinc-800 rounded-lg p-3 flex-grow text-xs font-mono text-zinc-300 truncate">
-                                    https://t.me/taipan_bot?start={currentUserId || 'ref'}
+                            {/* Input Field */}
+                            <div className="flex items-center gap-2 bg-[#121212] border border-zinc-800 p-2 rounded-xl mb-3 relative z-10">
+                                <div className="flex-grow text-[10px] text-zinc-500 font-mono px-2 truncate select-all">
+                                    t.me/taipan_bot?start={currentUserId || 'id'}
                                 </div>
                                 <button 
                                     onClick={() => {
                                         navigator.clipboard.writeText(`https://t.me/taipan_bot?start=${currentUserId}`);
                                         notify('success');
                                     }}
-                                    className="bg-purple-600 hover:bg-purple-500 text-white p-3 rounded-lg transition-colors"
+                                    className="bg-[#1c1c1e] hover:bg-[#252525] p-2 rounded-lg text-zinc-400 transition-colors border border-zinc-700"
                                 >
-                                    <div className="text-[10px] font-bold">COPY</div>
+                                    <Copy className="w-4 h-4" />
                                 </button>
                             </div>
-                        </div>
-
-                        {/* List Header */}
-                        <div className="flex justify-between items-end px-2 mb-2">
-                            <span className="text-[10px] text-zinc-500 uppercase font-bold">Мои рефералы</span>
-                            <span className="text-[10px] text-white font-mono">{referrals.length} чел.</span>
-                        </div>
-
-                        {/* Referrals List */}
-                        <div className="space-y-2">
-                            {referrals.map((ref) => (
-                                <div key={ref.id} className="glass-card p-3 rounded-xl flex justify-between items-center border border-zinc-800">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-8 h-8 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-400 font-bold text-xs">
-                                            {ref.name.charAt(0)}
-                                        </div>
-                                        <div>
-                                            <p className="text-xs font-bold text-white">{ref.name}</p>
-                                            <p className="text-[9px] text-zinc-500">{ref.date}</p>
-                                        </div>
-                                    </div>
-                                    <div className="text-right">
-                                        <p className="text-xs font-bold text-[#00FF9D] font-mono">+{ref.profit.toLocaleString()} ₸</p>
-                                        <p className="text-[8px] text-zinc-500 uppercase">Оплачено</p>
-                                    </div>
-                                </div>
-                            ))}
-                            {/* Empty State visual if needed */}
-                            {referrals.length === 0 && (
-                                <div className="text-center py-8 opacity-50">
-                                    <p className="text-[10px] text-zinc-500">У вас пока нет рефералов</p>
-                                </div>
-                            )}
+                            <p className="text-center text-[9px] text-zinc-600 font-mono">Используйте эту ссылку для приглашения</p>
                         </div>
                     </div>
                 )}
-                
+
                 {/* EXISTING CASES CONTENT (ONLY FOR BUSINESS ROLE) */}
                 {userRole !== 'academy' && (
                     <>
@@ -2168,8 +1922,7 @@ const App = () => {
                         </div>
                     </>
                 )}
-
-            </div>
+             </div>
           </div>
         )}
 

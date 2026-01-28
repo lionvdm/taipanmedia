@@ -129,7 +129,6 @@ const MatrixBackground = React.memo(() => {
     if (!canvas) return;
 
     const ctx = canvas.getContext('2d');
-    let animationFrameId;
     
     let width = canvas.width = window.innerWidth;
     let height = canvas.height = window.innerHeight;
@@ -142,6 +141,8 @@ const MatrixBackground = React.memo(() => {
     let lastTime = 0;
     const fps = 30; 
     const interval = 1000 / fps;
+
+    let animationFrameId;
 
     const draw = (currentTime) => {
       animationFrameId = requestAnimationFrame(draw);
@@ -1259,12 +1260,8 @@ const App = () => {
   // Calculate current hourly rate (derived state)
   const totalHours = Math.max(1, academyCalcData.days * academyCalcData.hours);
   const currentHourlyRate = Math.floor(academyCalcData.salary / totalHours);
+  const animatedHourlyRate = useOdometer(currentHourlyRate);
 
-  // --- STATE FOR ACADEMY DASHBOARD ---
-  const [workHours, setWorkHours] = useState(3); // Количество магазинов
-  const potentialEarnings = workHours * 100000;
-  const animatedPotentialEarnings = useOdometer(potentialEarnings);
-  
   // --- TELEGRAM MAIN BUTTON INTEGRATION (FOR MODAL) ---
   useEffect(() => {
     if (!tg) return;
@@ -1642,80 +1639,69 @@ const App = () => {
             </div>
             
             {/* SEGMENTED CONTENT */}
-            <div className="w-full space-y-4">
+            <div className="w-full space-y-3">
                 {userRole === 'business' ? (
                     <>
-                        <div onClick={handleShopClick} className="glass-card grid-bg rounded-3xl p-6 flex items-center justify-between cursor-pointer border-[#00FF9D]/20 group hover:bg-[#00FF9D]/5 transition-all">
-                            <div>
-                                <h3 className="text-xl font-black uppercase tracking-wider group-hover:text-[#00FF9D] transition-colors">МАГАЗИН</h3>
-                                <p className="text-[10px] text-zinc-500 uppercase tracking-widest mt-1">Заказать разработку</p>
+                        <div onClick={handleShopClick} className="glass-card p-4 rounded-2xl flex flex-col items-center justify-center cursor-pointer border-[#00FF9D]/40 hover:bg-[#00FF9D]/10 transition-all text-center relative overflow-hidden group mb-2">
+                            <div className="absolute inset-0 bg-gradient-to-br from-[#00FF9D]/10 to-transparent opacity-50"></div>
+                            <TelegramLogoMain className="w-8 h-8 text-[#00FF9D] mb-1.5 relative z-10" />
+                            <span className="text-base font-bold text-white relative z-10 font-['Chakra_Petch'] tracking-wider">ТЕЛЕГРАМ МАГАЗИН</span>
+                            <p className="text-[9px] text-zinc-400 relative z-10 uppercase tracking-widest mt-0.5">Заказать разработку под ключ</p>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2">
+                            <div onClick={() => setCurrentView('calculator')} className="glass-card p-3 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-[#00FF9D]/30 transition-all h-28 group">
+                                <Wallet className="w-8 h-8 text-zinc-500 group-hover:text-[#00FF9D] mb-3 transition-colors" />
+                                <span className="text-[10px] font-bold text-zinc-300 text-center leading-tight uppercase tracking-wider">ROI</span>
                             </div>
-                            <div className="bg-[#00FF9D]/10 p-3 rounded-full border border-[#00FF9D]/20 group-hover:scale-110 transition-transform">
-                                <TelegramLogoMain className="w-8 h-8 text-[#00FF9D]" />
+                            <div onClick={() => openModal('Mini App')} className="glass-card p-3 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-[#00FF9D]/30 transition-all h-28 group">
+                                <Code className="w-8 h-8 text-zinc-500 group-hover:text-[#00FF9D] mb-3 transition-colors" />
+                                <span className="text-[10px] font-bold text-zinc-300 text-center leading-tight uppercase tracking-wider">Mini App</span>
+                            </div>
+                            <div onClick={() => setCurrentView('strategy')} className="glass-card p-3 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-[#00FF9D]/30 transition-all h-28 group">
+                                <TrendingUp className="w-8 h-8 text-zinc-500 group-hover:text-[#00FF9D] mb-3 transition-colors" />
+                                <span className="text-[10px] font-bold text-zinc-300 text-center leading-tight uppercase tracking-wider">Кейсы</span>
                             </div>
                         </div>
-                        <div onClick={() => setCurrentView('calculator')} className="glass-card rounded-3xl p-6 flex items-center justify-between cursor-pointer border-white/5 hover:border-white/20 group transition-all">
-                            <div>
-                                <h3 className="text-xl font-black uppercase tracking-wider group-hover:text-white transition-colors">ROI КАЛЬКУЛЯТОР</h3>
-                                <p className="text-[10px] text-zinc-500 uppercase tracking-widest mt-1">Считаем прибыль</p>
-                            </div>
-                            <div className="bg-white/5 p-3 rounded-full border border-white/10 group-hover:scale-110 transition-transform">
-                                <Wallet className="w-8 h-8 text-zinc-400 group-hover:text-white transition-colors" />
-                            </div>
-                        </div>
-                        <div onClick={() => openModal('Mini App')} className="glass-card rounded-3xl p-6 flex items-center justify-between cursor-pointer border-white/5 hover:border-white/20 group transition-all">
-                            <div>
-                                <h3 className="text-xl font-black uppercase tracking-wider group-hover:text-white transition-colors">MINI APP</h3>
-                                <p className="text-[10px] text-zinc-500 uppercase tracking-widest mt-1">Персональное решение</p>
-                            </div>
-                            <div className="bg-white/5 p-3 rounded-full border border-white/10 group-hover:scale-110 transition-transform">
-                                <Code className="w-8 h-8 text-zinc-400 group-hover:text-white transition-colors" />
-                            </div>
+
+                        {/* NEW: Personal Cabinet Button for Business */}
+                        <div onClick={() => setCurrentView('strategy')} className="glass-card p-4 rounded-2xl flex items-center justify-between cursor-pointer border-white/5 hover:border-[#00FF9D]/30 hover:bg-[#00FF9D]/5 transition-all group mt-2">
+                             <div className="flex items-center gap-4">
+                                <div className="p-2 rounded-full bg-zinc-800/50 border border-white/10 group-hover:border-[#00FF9D]/30 transition-colors">
+                                    <Users className="w-5 h-5 text-zinc-400 group-hover:text-[#00FF9D] transition-colors" />
+                                </div>
+                                <div>
+                                    <h4 className="text-sm font-bold text-white group-hover:text-[#00FF9D] transition-colors font-['Chakra_Petch'] tracking-wider">ЛИЧНЫЙ КАБИНЕТ</h4>
+                                    <p className="text-[9px] text-zinc-500 font-mono">Статус заказов и профиль</p>
+                                </div>
+                             </div>
+                             <ArrowRight className="w-4 h-4 text-zinc-600 group-hover:text-white transition-colors" />
                         </div>
                     </>
                 ) : (
-                    <div className="grid grid-cols-1 gap-4">
-                        {/* 1. ОБУЧЕНИЕ (Program View) */}
-                        <div onClick={() => { setPreviousView('main'); setCurrentView('program'); }} className="glass-card grid-bg rounded-3xl p-6 flex items-center justify-between cursor-pointer border-blue-500/20 group hover:bg-blue-500/5 transition-all">
-                            <div>
-                                <h3 className="text-xl font-black uppercase tracking-wider group-hover:text-blue-400 transition-colors">ОБУЧЕНИЕ</h3>
-                                <p className="text-[10px] text-zinc-500 uppercase tracking-widest mt-1">Программа курса</p>
-                            </div>
-                            <div className="bg-blue-500/10 p-3 rounded-full border border-blue-500/20 group-hover:scale-110 transition-transform">
-                                <GraduationCap className="w-8 h-8 text-blue-400" />
-                            </div>
+                    // === ACADEMY ROLE ===
+                    // Hero Button (Education)
+                    <div className="w-full space-y-3">
+                         {/* Hero Button - Compact Version */}
+                        <div onClick={() => setCurrentView('program')} className="glass-card p-4 rounded-2xl flex flex-col items-center justify-center cursor-pointer border-[#00FF9D]/40 hover:bg-[#00FF9D]/10 transition-all text-center relative overflow-hidden group mb-2">
+                            <div className="absolute inset-0 bg-gradient-to-br from-[#00FF9D]/10 to-transparent opacity-50"></div>
+                            <GraduationCap className="w-8 h-8 text-[#00FF9D] mb-1.5 relative z-10" />
+                            <span className="text-base font-bold text-white relative z-10 font-['Chakra_Petch'] tracking-wider">НАЧАТЬ ОБУЧЕНИЕ</span>
+                            <p className="text-[9px] text-zinc-400 relative z-10 uppercase tracking-widest mt-0.5">Пошаговая программа выхода на доход</p>
                         </div>
 
-                        {/* 2. РАСЧЁТ ПРИБЫЛИ (Calculator View) */}
-                        <div onClick={() => { setPreviousView('main'); setCurrentView('calculator'); }} className="glass-card rounded-3xl p-6 flex items-center justify-between cursor-pointer border-white/5 hover:border-white/20 group transition-all">
-                            <div>
-                                <h3 className="text-xl font-black uppercase tracking-wider group-hover:text-white transition-colors">РАСЧЁТ ПРИБЫЛИ</h3>
-                                <p className="text-[10px] text-zinc-500 uppercase tracking-widest mt-1">Калькулятор</p>
+                        {/* Secondary Buttons Grid - Larger Version */}
+                        <div className="grid grid-cols-3 gap-2">
+                             <div onClick={() => setCurrentView('strategy')} className="glass-card p-3 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-[#00FF9D]/30 transition-all h-28 group">
+                                <Users className="w-8 h-8 text-zinc-500 group-hover:text-[#00FF9D] mb-3 transition-colors" />
+                                <span className="text-[10px] font-bold text-zinc-300 text-center leading-tight uppercase tracking-wider">Кабинет</span>
                             </div>
-                            <div className="bg-white/5 p-3 rounded-full border border-white/10 group-hover:scale-110 transition-transform">
-                                <Wallet className="w-8 h-8 text-zinc-400 group-hover:text-white transition-colors" />
+                            <div onClick={() => setCurrentView('calculator')} className="glass-card p-3 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-[#00FF9D]/30 transition-all h-28 group">
+                                <Wallet className="w-8 h-8 text-zinc-500 group-hover:text-[#00FF9D] mb-3 transition-colors" />
+                                <span className="text-[10px] font-bold text-zinc-300 text-center leading-tight uppercase tracking-wider">Доход</span>
                             </div>
-                        </div>
-
-                        {/* 3. САМЫЕ ЧАСТЫЕ ВОПРОСЫ (FAQ View) */}
-                        <div onClick={() => { setPreviousView('main'); setCurrentView('faq'); }} className="glass-card rounded-3xl p-6 flex items-center justify-between cursor-pointer border-white/5 hover:border-white/20 group transition-all">
-                            <div>
-                                <h3 className="text-xl font-black uppercase tracking-wider group-hover:text-white transition-colors">САМЫЕ ЧАСТЫЕ ВОПРОСЫ</h3>
-                                <p className="text-[10px] text-zinc-500 uppercase tracking-widest mt-1">База знаний</p>
-                            </div>
-                            <div className="bg-white/5 p-3 rounded-full border border-white/10 group-hover:scale-110 transition-transform">
-                                <Lock className="w-8 h-8 text-zinc-400 group-hover:text-white transition-colors" />
-                            </div>
-                        </div>
-
-                        {/* 4. ЛИЧНЫЙ КАБИНЕТ (Strategy View) */}
-                        <div onClick={() => { setPreviousView('main'); setCurrentView('strategy'); }} className="glass-card rounded-3xl p-6 flex items-center justify-between cursor-pointer border-white/5 hover:border-white/20 group transition-all">
-                            <div>
-                                <h3 className="text-xl font-black uppercase tracking-wider group-hover:text-white transition-colors">ЛИЧНЫЙ КАБИНЕТ</h3>
-                                <p className="text-[10px] text-zinc-500 uppercase tracking-widest mt-1">Профиль ученика</p>
-                            </div>
-                            <div className="bg-white/5 p-3 rounded-full border border-white/10 group-hover:scale-110 transition-transform">
-                                <Users className="w-8 h-8 text-zinc-400 group-hover:text-white transition-colors" />
+                            <div onClick={() => setCurrentView('faq')} className="glass-card p-3 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-[#00FF9D]/30 transition-all h-28 group">
+                                <Lock className="w-8 h-8 text-zinc-500 group-hover:text-[#00FF9D] mb-3 transition-colors" />
+                                <span className="text-[10px] font-bold text-zinc-300 text-center leading-tight uppercase tracking-wider">FAQ</span>
                             </div>
                         </div>
                     </div>
@@ -1815,8 +1801,8 @@ const App = () => {
                         {/* 1. Profile Card (As per screenshot) */}
                         <div className="strategy-card flex items-center justify-between">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-full bg-[#1c1c1e] flex items-center justify-center text-zinc-400 font-black text-sm border border-zinc-700">
-                                    {userName.charAt(0)}
+                                <div className="w-10 h-10 rounded-full bg-[#1c1c1e] flex items-center justify-center text-zinc-400 font-black text-sm border border-zinc-700 cursor-pointer" onClick={() => setIsAdminAuthOpen(true)}>
+                                    <Shield className="w-4 h-4" />
                                 </div>
                                 <div>
                                     <h3 className="text-base font-black text-white uppercase tracking-wider leading-none">{userName}</h3>
@@ -1926,10 +1912,12 @@ const App = () => {
           </div>
         )}
 
+        {/* VIEW: ROI VIEW (Kept as is) */}
         {currentView === 'roi' && (
            <RoiView profit={calculateProfit()} onBack={() => handleBackClick('strategy')} onAction={() => openModal('Start Project')} />
         )}
 
+        {/* VIEW: EDUCATION (Kept as is) */}
         {currentView === 'education' && (
           <div className="animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col h-full items-center">
             {/* Используем previousView для кнопки Назад */}
@@ -1955,6 +1943,7 @@ const App = () => {
           </div>
         )}
 
+        {/* VIEW: FAQ (Kept as is) */}
         {currentView === 'faq' && (
           <div className="animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col h-full">
             <button onClick={() => handleBackClick(userRole === 'academy' ? 'main' : 'education')} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-6 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
@@ -1973,6 +1962,7 @@ const App = () => {
           </div>
         )}
 
+        {/* VIEW: PROGRAM (Kept as is) */}
         {currentView === 'program' && (
           <div className="animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col h-full">
             <button onClick={() => handleBackClick(userRole === 'academy' ? 'main' : 'faq')} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-6 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
@@ -2007,6 +1997,7 @@ const App = () => {
           </div>
         )}
 
+        {/* VIEW: ABOUT (Kept as is) */}
         {currentView === 'about' && (
           <div className="animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col h-full items-center">
             <button onClick={() => handleBackClick('main')} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-6 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>

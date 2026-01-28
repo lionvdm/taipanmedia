@@ -1566,7 +1566,8 @@ const App = () => {
   const [calcData, setCalcData] = useState({ traffic: 0, conversion: 0, avgCheck: 0, margin: 0 });
   const calculateProfit = () => {
       const sales = Math.floor(calcData.traffic * (calcData.conversion / 100));
-      const revenue = sales * data.avgCheck;
+      // Исправлено: используем calcData вместо data
+      const revenue = sales * calcData.avgCheck;
       return Math.floor(revenue * (calcData.margin / 100));
   };
   const [shopIntroFinished, setShopIntroFinished] = useState(false);

@@ -1262,6 +1262,29 @@ const App = () => {
   const currentHourlyRate = Math.floor(academyCalcData.salary / totalHours);
   const animatedHourlyRate = useOdometer(currentHourlyRate);
 
+  // --- BUSINESS LOGIC: Profit Calculation ---
+  const [calcData, setCalcData] = useState({ traffic: 0, conversion: 0, avgCheck: 0, margin: 0 });
+  const calculateProfit = () => {
+      // Logic for Business Profit (from ROI calculator)
+      const sales = Math.floor(calcData.traffic * (calcData.conversion / 100));
+      const revenue = sales * calcData.avgCheck; 
+      return Math.floor(revenue * (calcData.margin / 100));
+  };
+  const businessProfit = calculateProfit();
+
+  // --- STATE FOR ACADEMY DASHBOARD ---
+  const [workHours, setWorkHours] = useState(3); // Количество магазинов
+  const potentialEarnings = workHours * 100000;
+  const animatedPotentialEarnings = useOdometer(potentialEarnings);
+
+  // Состояние вкладки рефералов
+  const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' or 'referrals'
+  // Фейковые данные рефералов (потом заменишь на реальные из БД)
+  const [referrals, setReferrals] = useState([
+      { id: 1, name: 'Алишер К.', date: '27.01.26', profit: 5000 },
+      { id: 2, name: 'Елена М.', date: '28.01.26', profit: 5000 }
+  ]);
+
   // --- TELEGRAM MAIN BUTTON INTEGRATION (FOR MODAL) ---
   useEffect(() => {
     if (!tg) return;
@@ -1397,12 +1420,6 @@ const App = () => {
     return () => clearInterval(interval);
   }, []);
   
-  const [calcData, setCalcData] = useState({ traffic: 0, conversion: 0, avgCheck: 0, margin: 0 });
-  const calculateProfit = () => {
-      const sales = Math.floor(calcData.traffic * (calcData.conversion / 100));
-      const revenue = sales * calcData.avgCheck; // Correctly referencing calcData
-      return Math.floor(revenue * (calcData.margin / 100));
-  };
   const [shopIntroFinished, setShopIntroFinished] = useState(false);
   const [activeFaq, setActiveFaq] = useState(null);
   const [showCalculator, setShowCalculator] = useState(false);
@@ -1663,18 +1680,299 @@ const App = () => {
                             </div>
                         </div>
 
-                        {/* NEW: Personal Cabinet Button for Business */}
-                        <div onClick={() => setCurrentView('strategy')} className="glass-card p-4 rounded-2xl flex items-center justify-between cursor-pointer border-white/5 hover:border-[#00FF9D]/30 hover:bg-[#00FF9D]/5 transition-all group mt-2">
-                             <div className="flex items-center gap-4">
-                                <div className="p-2 rounded-full bg-zinc-800/50 border border-white/10 group-hover:border-[#00FF9D]/30 transition-colors">
-                                    <Users className="w-5 h-5 text-zinc-400 group-hover:text-[#00FF9D] transition-colors" />
+                        {/* NEW: Personal Cabinet Button for Business (Centered, No Arrow) */}
+                        <div onClick={() => setCurrentView('strategy')} className="glass-card p-4 rounded-2xl flex items-center justify-center cursor-pointer border-white/5 hover:border-[#00FF9D]/30 hover:bg-[#00FF9D]/5 transition-all group mt-2 relative">
+                             <div className="absolute left-4 p-2 rounded-full bg-zinc-800/50 border border-white/10 group-hover:border-[#00FF9D]/30 transition-colors">
+                                <Users className="w-5 h-5 text-zinc-400 group-hover:text-[#00FF9D] transition-colors" />
+                             </div>
+                             <div className="text-center">
+                                <h4 className="text-sm font-bold text-white group-hover:text-[#00FF9D] transition-colors font-['Chakra_Petch'] tracking-wider uppercase">ЛИЧНЫЙ КАБИНЕТ</h4>
+                                <p className="text-[9px] text-zinc-500 font-mono">Статус заказов и профиль</p>
+                             </div>
+                        </div>
+                    </>
+                ) : (
+                    // === ACADEMY ROLE ===
+                    // Hero Button (Education)
+                    <div className="w-full space-y-3">
+                         {/* Hero Button - Compact Version */}
+                        <div onClick={() => setCurrentView('program')} className="glass-card p-4 rounded-2xl flex flex-col items-center justify-center cursor-pointer border-[#00FF9D]/40 hover:bg-[#00FF9D]/10 transition-all text-center relative overflow-hidden group mb-2">
+                            <div className="absolute inset-0 bg-gradient-to-br from-[#00FF9D]/10 to-transparent opacity-50"></div>
+                            <GraduationCap className="w-8 h-8 text-[#00FF9D] mb-1.5 relative z-10" />
+                            <span className="text-base font-bold text-white relative z-10 font-['Chakra_Petch'] tracking-wider">НАЧАТЬ ОБУЧЕНИЕ</span>
+                            <p className="text-[9px] text-zinc-400 relative z-10 uppercase tracking-widest mt-0.5">Пошаговая программа выхода на доход</p>
+                        </div>
+
+                        {/* Secondary Buttons Grid - Larger Version */}
+                        <div className="grid grid-cols-3 gap-2">
+                             <div onClick={() => setCurrentView('strategy')} className="glass-card p-3 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-[#00FF9D]/30 transition-all h-28 group">
+                                <Users className="w-8 h-8 text-zinc-500 group-hover:text-[#00FF9D] mb-3 transition-colors" />
+                                <span className="text-[10px] font-bold text-zinc-300 text-center leading-tight uppercase tracking-wider">Кабинет</span>
+                            </div>
+                            <div onClick={() => setCurrentView('calculator')} className="glass-card p-3 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-[#00FF9D]/30 transition-all h-28 group">
+                                <Wallet className="w-8 h-8 text-zinc-500 group-hover:text-[#00FF9D] mb-3 transition-colors" />
+                                <span className="text-[10px] font-bold text-zinc-300 text-center leading-tight uppercase tracking-wider">Доход</span>
+                            </div>
+                            <div onClick={() => setCurrentView('faq')} className="glass-card p-3 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-[#00FF9D]/30 transition-all h-28 group">
+                                <Lock className="w-8 h-8 text-zinc-500 group-hover:text-[#00FF9D] mb-3 transition-colors" />
+                                <span className="text-[10px] font-bold text-zinc-300 text-center leading-tight uppercase tracking-wider">FAQ</span>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            {/* --- SWITCHER FOOTER --- */}
+            <div className="w-full mt-12 pt-6 border-t border-zinc-900 flex flex-col items-center gap-6">
+                <button 
+                    onClick={() => { haptic('light'); setCurrentView('role_selection'); }}
+                    className="text-[9px] text-zinc-500 uppercase tracking-[0.2em] hover:text-[#00FF9D] transition-colors border border-zinc-800 px-6 py-3 rounded-full hover:border-[#00FF9D]/30 active:scale-95"
+                >
+                    Сменить направление
+                </button>
+                
+                <div className="flex gap-8 opacity-40">
+                    <div onClick={handleAboutClick} className="uppercase text-[9px] tracking-widest cursor-pointer hover:text-white transition-colors">О нас</div>
+                    <div onClick={() => window.open('https://t.me/taipanmedia', '_blank')} className="uppercase text-[9px] tracking-widest cursor-pointer hover:text-[#00FF9D] transition-colors">Контакт</div>
+                </div>
+            </div>
+          </div>
+        )}
+
+        {currentView === 'shop' && (
+          <div className="animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col h-full items-center w-full">
+            {!shopIntroFinished ? (
+               <ShopIntroSequence onComplete={() => setShopIntroFinished(true)} />
+            ) : (
+              <React.Fragment>
+                <button onClick={() => handleBackClick('main')} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-6 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
+                <div className="flex-grow flex flex-col items-center w-full space-y-6 animate-in slide-in-from-bottom duration-700">
+                  <div className="text-center px-4 w-full mb-4">
+                      <TelegramLogoMain className="w-20 h-20 mx-auto text-[#00FF9D] mb-4 drop-shadow-[0_0_15px_rgba(0,255,157,0.5)] animate-[contourPulse_3s_ease-in-out_infinite]" />
+                      <h2 className="text-3xl font-black tracking-tighter uppercase mb-2 font-['Chakra_Petch'] leading-none">TELEGRAM<br/><span className="text-[#00FF9D]">STORE</span></h2>
+                      <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] mr-[-0.3em] font-bold">Ваш бизнес ещё никогда не был так близок к покупателю</p>
+                  </div>
+                  <div className="w-full space-y-3">
+                      {[{ title: "Каталог и Корзина", desc: "Полноценный интернет-магазин внутри мессенджера. Удобный выбор товаров без лишних переходов." }, { title: "Оплата в 1 клик", desc: "Интеграция с Kaspi, картами и криптовалютой. Мгновенные транзакции." }, { title: "CRM Система", desc: "Управление заказами, статусами и клиентами прямо внутри Telegram." }, { title: "Авто-рассылки", desc: "Push-уведомления клиентам о новинках и акциях с открываемостью 90%." }].map((item, i) => (
+                        <div key={i} className="glass-card rounded-2xl p-4 flex items-start gap-4 hover:bg-white/5 transition-all">
+                           <div className="mt-1 bg-[#00FF9D]/10 p-2 rounded-full text-[#00FF9D] border border-[#00FF9D]/20"><CheckCircle2 className="w-4 h-4" /></div>
+                           <div><h4 className="text-sm font-bold text-white uppercase tracking-wider mb-1">{item.title}</h4><p className="text-[10px] text-zinc-400 leading-relaxed">{item.desc}</p></div>
+                        </div>
+                      ))}
+                  </div>
+                  <div className="mt-4 w-full glass-card p-6 rounded-3xl text-center border border-[#00FF9D]/20 relative overflow-hidden group">
+                      <div className="absolute inset-0 bg-gradient-to-t from-[#00FF9D]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                      <button onClick={() => {
+                          setCurrentView('calculator');
+                      }} className="w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-4 rounded-xl shadow-[0_0_20px_rgba(0,255,157,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs relative z-10 flex items-center justify-center gap-2 animate-pulse">РАССЧИТАТЬ УПУЩЕННУЮ ПРИБЫЛЬ</button>
+                  </div>
+                </div>
+              </React.Fragment>
+            )}
+          </div>
+        )}
+
+        {currentView === 'calculator' && (
+          <div className="animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col h-full items-center w-full">
+            {/* Logic for Back Button: Return to Main if Academy, else go back to Shop or Main based on context */}
+            <button onClick={() => handleBackClick(userRole === 'academy' ? 'main' : 'shop')} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-4 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
+            <div className="flex-grow flex flex-col items-center w-full space-y-2 animate-in slide-in-from-bottom duration-700">
+                {userRole === 'business' ? (
+                    <div className="text-center px-4 w-full mb-2">
+                        <Wallet className="w-12 h-12 mx-auto text-[#00FF9D] mb-2 drop-shadow-[0_0_15px_rgba(0,255,157,0.5)] animate-[contourPulse_3s_ease-in-out_infinite]" />
+                        <h2 className="text-2xl sm:text-3xl font-black tracking-tighter uppercase mb-1 font-['Chakra_Petch'] leading-none whitespace-nowrap">ВАША <span className="text-[#00FF9D]">ПРИБЫЛЬ</span></h2>
+                        <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] mr-[-0.3em] font-bold">Узнайте сколько вы теряете</p>
+                    </div>
+                ) : (
+                    <div className="text-center px-4 w-full mb-2">
+                        <Wallet className="w-12 h-12 mx-auto text-[#00FF9D] mb-2 drop-shadow-[0_0_15px_rgba(0,255,157,0.5)] animate-[contourPulse_3s_ease-in-out_infinite]" />
+                        <h2 className="text-2xl sm:text-3xl font-black tracking-tighter uppercase mb-1 font-['Chakra_Petch'] leading-none whitespace-nowrap">ЧАС НА <span className="text-[#00FF9D]">МИЛЛИОН</span></h2>
+                        <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] mr-[-0.3em] font-bold">Узнай реальную цену своего времени</p>
+                    </div>
+                )}
+                
+                <div className="w-full glass-card p-4 rounded-3xl border border-[#00FF9D]/20 relative overflow-hidden">
+                    {userRole === 'business' ? (
+                        <ProfitCalculator data={calcData} setData={setCalcData} onAction={() => {
+                            setCurrentView('strategy');
+                        }} />
+                    ) : (
+                        <AcademyCalculator data={academyCalcData} setData={setAcademyCalcData} onAction={() => setCurrentView('strategy')} />
+                    )}
+                </div>
+            </div>
+          </div>
+        )}
+
+        {currentView === 'strategy' && (
+          <div className="animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col h-full items-center w-full">
+             <button onClick={() => handleBackClick(userRole === 'academy' ? 'main' : 'calculator')} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-4 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
+             <div className="flex-grow flex flex-col items-center w-full space-y-6 overflow-y-auto pb-20 no-scrollbar">
+                
+                {/* NEW PERSONAL CABINET HEADER (Unified for both Academy and Business) */}
+                {(userRole === 'academy' || userRole === 'business') && (
+                    <div className="w-full space-y-3 animate-in slide-in-from-bottom duration-500">
+                        {/* 1. Profile Card */}
+                        <div className="strategy-card flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-[#1c1c1e] flex items-center justify-center text-zinc-400 font-black text-sm border border-zinc-700 cursor-pointer" onClick={() => setIsAdminAuthOpen(true)}>
+                                    <Shield className="w-4 h-4" />
                                 </div>
                                 <div>
-                                    <h4 className="text-sm font-bold text-white group-hover:text-[#00FF9D] transition-colors font-['Chakra_Petch'] tracking-wider">ЛИЧНЫЙ КАБИНЕТ</h4>
-                                    <p className="text-[9px] text-zinc-500 font-mono">Статус заказов и профиль</p>
+                                    <h3 className="text-base font-black text-white uppercase tracking-wider leading-none">{userName}</h3>
+                                    <div className="flex items-center gap-1.5 mt-1">
+                                        <div className={`w-1.5 h-1.5 rounded-full ${isStudent ? 'bg-[#00FF9D]' : 'bg-zinc-600'}`}></div>
+                                        <span className={`text-[10px] uppercase font-bold tracking-wider ${isStudent ? 'text-[#00FF9D]' : 'text-zinc-500'}`}>
+                                            {isStudent ? 'АКТИВНЫЙ СТУДЕНТ' : 'ГОСТЬ'}
+                                        </span>
+                                    </div>
                                 </div>
+                            </div>
+                            {!isStudent && (
+                                <button 
+                                    onClick={() => window.open('https://t.me/taipanmedia', '_blank')}
+                                    className="text-[10px] font-bold border border-zinc-700 px-4 py-2 rounded-lg text-white hover:bg-white/5 transition-all uppercase tracking-widest"
+                                >
+                                    НАЧАТЬ
+                                </button>
+                            )}
+                        </div>
+
+                        {/* 2. Finance Card */}
+                        <div className="strategy-card relative">
+                            {/* Dynamically show either Hourly Rate (Academy) or Potential Profit (Business) */}
+                            <p className="text-[9px] text-zinc-500 uppercase font-bold tracking-[0.2em] mb-4">
+                                {userRole === 'academy' ? 'ТЕКУЩАЯ СТОИМОСТЬ ЧАСА' : 'ПОТЕНЦИАЛЬНАЯ ПРИБЫЛЬ'}
+                            </p>
+                            <div className="flex items-baseline gap-2 mb-6">
+                                <div className="text-5xl font-black text-white font-['Chakra_Petch'] tracking-tighter">
+                                    {/* For Business: Use calculated profit. For Academy: Use calculated hourly rate. */}
+                                    {userRole === 'academy' 
+                                        ? currentHourlyRate.toLocaleString().replace(/\s/g, ' ') 
+                                        : businessProfit.toLocaleString().replace(/\s/g, ' ')
+                                    }
+                                </div>
+                                <span className="text-zinc-500 text-xs font-bold uppercase tracking-wider">
+                                    {userRole === 'academy' ? '₸ / час' : '₸ / мес'}
+                                </span>
+                            </div>
+                            
+                            <div className="flex items-center gap-3">
+                                <button 
+                                    onClick={() => setCurrentView('calculator')}
+                                    className="flex items-center gap-2 bg-[#1c1c1e] hover:bg-[#252525] px-3 py-2 rounded-lg text-[10px] text-zinc-400 border border-zinc-800 transition-all"
+                                >
+                                    <Edit2 className="w-3 h-3" /> 
+                                    <span className="font-bold">Пересчитать</span>
+                                </button>
+                                <span className="text-[9px] text-zinc-600 font-mono">Обновлено: только что</span>
+                            </div>
+                            
+                            <div className="absolute right-5 top-1/2 -translate-y-1/2 opacity-10 pointer-events-none">
+                                <Wallet className="w-24 h-24 text-white stroke-1" />
+                            </div>
+                        </div>
+
+                        {/* 3. Partner Program */}
+                        <div className="strategy-card relative overflow-hidden" style={{ borderColor: 'rgba(168, 85, 247, 0.3)' }}>
+                            <div className="absolute inset-0 bg-gradient-to-b from-purple-900/10 to-transparent pointer-events-none"></div>
+                            
+                            <div className="flex justify-between items-start mb-5 relative z-10">
+                                <div>
+                                    <h3 className="text-sm font-black text-white uppercase tracking-wider mb-1">ПАРТНЕРСКАЯ ПРОГРАММА</h3>
+                                    <p className="text-[10px] text-zinc-400 leading-snug max-w-[200px]">
+                                        Ваш бонус: <span className="text-[#a855f7] font-bold">10% (5 000 ₸)</span> с каждой оплаты привлеченного ученика.
+                                    </p>
+                                </div>
+                                <div className="bg-[#1a1625] border border-purple-500/20 rounded-lg p-2 text-center min-w-[70px]">
+                                    <div className="text-lg font-black text-white font-mono leading-none mb-1">0</div>
+                                    <div className="text-[7px] text-[#a855f7] font-bold uppercase tracking-wider">ПАРТНЕРОВ</div>
+                                </div>
+                            </div>
+
+                            {/* Input Field */}
+                            <div className="flex items-center gap-2 bg-[#121212] border border-zinc-800 p-2 rounded-xl mb-3 relative z-10">
+                                <div className="flex-grow text-[10px] text-zinc-500 font-mono px-2 truncate select-all">
+                                    t.me/taipan_bot?start={currentUserId || 'id'}
+                                </div>
+                                <button 
+                                    onClick={() => {
+                                        navigator.clipboard.writeText(`https://t.me/taipan_bot?start=${currentUserId}`);
+                                        notify('success');
+                                    }}
+                                    className="bg-[#1c1c1e] hover:bg-[#252525] p-2 rounded-lg text-zinc-400 transition-colors border border-zinc-700"
+                                >
+                                    <Copy className="w-4 h-4" />
+                                </button>
+                            </div>
+                            <p className="text-center text-[9px] text-zinc-600 font-mono">Используйте эту ссылку для приглашения</p>
+                        </div>
+                    </div>
+                )}
+
+                {/* Show cases only if user wants to see them (or keep them below for Business role only if desired) */}
+                {/* Currently hidden to strictly follow the "Make it the same" instruction for the main dashboard view */}
+             </div>
+          </div>
+        )}
+        
+        {/* ... (Rest of the component remains exactly the same: main, shop, calculator, etc.) ... */}
+        {currentView === 'main' && (
+          <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 flex flex-col items-center w-full">
+            <div className="mb-14 w-full text-center" onClick={handleTitleClick}>
+              <h1 className="font-['Chakra_Petch'] font-[700] uppercase tracking-[0.15em] whitespace-nowrap overflow-visible relative block w-full text-center select-none cursor-pointer active:scale-95 transition-transform" style={{ fontSize: 'clamp(1.5rem, 8.5vw, 3.5rem)', textShadow: '0 0 20px rgba(0,255,157,0.3)', color: '#ffffff' }}>
+                <span className="relative inline-block mr-[-0.15em]">TAIPAN MEDIA<span className="absolute inset-0 -z-10 opacity-40 blur-[12px] animate-pulse text-[#00FF9D]">TAIPAN MEDIA</span></span>
+              </h1>
+              
+              <div className="flex items-center justify-center gap-2 mt-3 w-full">
+                <div className={`h-1.5 w-1.5 rounded-full ${userRole === 'business' ? 'bg-[#00FF9D] shadow-[0_0_5px_#00FF9D]' : 'bg-blue-500 shadow-[0_0_5px_#3B82F6]'} animate-pulse`}></div>
+                <p className="text-[10px] text-zinc-400 uppercase tracking-[0.4em] mr-[-0.4em] font-bold">РЕЖИМ: <span className={userRole === 'business' ? 'text-[#00FF9D]' : 'text-blue-500'}>{userRole === 'business' ? 'БИЗНЕС' : 'АКАДЕМИЯ'}</span></p>
+              </div>
+
+              <div className="flex items-center justify-center gap-4 mt-2 w-full">
+                <div className="h-[1px] flex-1 max-w-[40px] bg-gradient-to-r from-transparent to-zinc-700"></div>
+                {/* --- DYNAMIC GREETING --- */}
+                <p className="text-[10px] uppercase tracking-[0.6em] mr-[-0.6em] text-white font-bold whitespace-nowrap opacity-60">
+                  ПРИВЕТ, {userName}
+                </p>
+                <div className="h-[1px] flex-1 max-w-[40px] bg-gradient-to-l from-transparent to-zinc-700"></div>
+              </div>
+            </div>
+            
+            {/* SEGMENTED CONTENT */}
+            <div className="w-full space-y-3">
+                {userRole === 'business' ? (
+                    <>
+                        <div onClick={handleShopClick} className="glass-card p-4 rounded-2xl flex flex-col items-center justify-center cursor-pointer border-[#00FF9D]/40 hover:bg-[#00FF9D]/10 transition-all text-center relative overflow-hidden group mb-2">
+                            <div className="absolute inset-0 bg-gradient-to-br from-[#00FF9D]/10 to-transparent opacity-50"></div>
+                            <TelegramLogoMain className="w-8 h-8 text-[#00FF9D] mb-1.5 relative z-10" />
+                            <span className="text-base font-bold text-white relative z-10 font-['Chakra_Petch'] tracking-wider">ТЕЛЕГРАМ МАГАЗИН</span>
+                            <p className="text-[9px] text-zinc-400 relative z-10 uppercase tracking-widest mt-0.5">Заказать разработку под ключ</p>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2">
+                            <div onClick={() => setCurrentView('calculator')} className="glass-card p-3 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-[#00FF9D]/30 transition-all h-28 group">
+                                <Wallet className="w-8 h-8 text-zinc-500 group-hover:text-[#00FF9D] mb-3 transition-colors" />
+                                <span className="text-[10px] font-bold text-zinc-300 text-center leading-tight uppercase tracking-wider">ROI</span>
+                            </div>
+                            <div onClick={() => openModal('Mini App')} className="glass-card p-3 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-[#00FF9D]/30 transition-all h-28 group">
+                                <Code className="w-8 h-8 text-zinc-500 group-hover:text-[#00FF9D] mb-3 transition-colors" />
+                                <span className="text-[10px] font-bold text-zinc-300 text-center leading-tight uppercase tracking-wider">Mini App</span>
+                            </div>
+                            <div onClick={() => setCurrentView('strategy')} className="glass-card p-3 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-[#00FF9D]/30 transition-all h-28 group">
+                                <TrendingUp className="w-8 h-8 text-zinc-500 group-hover:text-[#00FF9D] mb-3 transition-colors" />
+                                <span className="text-[10px] font-bold text-zinc-300 text-center leading-tight uppercase tracking-wider">Кейсы</span>
+                            </div>
+                        </div>
+
+                        {/* NEW: Personal Cabinet Button for Business (Centered, No Arrow) */}
+                        <div onClick={() => setCurrentView('strategy')} className="glass-card p-4 rounded-2xl flex items-center justify-center cursor-pointer border-white/5 hover:border-[#00FF9D]/30 hover:bg-[#00FF9D]/5 transition-all group mt-2 relative">
+                             <div className="absolute left-4 p-2 rounded-full bg-zinc-800/50 border border-white/10 group-hover:border-[#00FF9D]/30 transition-colors">
+                                <Users className="w-5 h-5 text-zinc-400 group-hover:text-[#00FF9D] transition-colors" />
                              </div>
-                             <ArrowRight className="w-4 h-4 text-zinc-600 group-hover:text-white transition-colors" />
+                             <div className="text-center">
+                                <h4 className="text-sm font-bold text-white group-hover:text-[#00FF9D] transition-colors font-['Chakra_Petch'] tracking-wider uppercase">ЛИЧНЫЙ КАБИНЕТ</h4>
+                                <p className="text-[9px] text-zinc-500 font-mono">Статус заказов и профиль</p>
+                             </div>
                         </div>
                     </>
                 ) : (

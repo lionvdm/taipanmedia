@@ -115,6 +115,54 @@ const GlobalStyles = () => (
       0% { opacity: 0; transform: translateY(10px); }
       100% { opacity: 1; transform: translateY(0); }
     }
+    /* GLITCH EFFECT KEYFRAMES */
+    @keyframes glitch {
+      0% { transform: translate(0) skew(0deg); opacity: 1; filter: hue-rotate(0deg); }
+      20% { transform: translate(-4px, 4px) skew(5deg); opacity: 0.8; filter: hue-rotate(90deg); }
+      40% { transform: translate(-4px, -4px) skew(-5deg); opacity: 1; filter: hue-rotate(0deg); }
+      60% { transform: translate(4px, 4px) skew(5deg); opacity: 0.8; filter: hue-rotate(-90deg); }
+      80% { transform: translate(4px, -4px) skew(-5deg); opacity: 1; filter: hue-rotate(0deg); }
+      100% { transform: translate(0) skew(0deg); opacity: 1; filter: hue-rotate(0deg); }
+    }
+    @keyframes aggressive-glitch-text {
+      0% { clip-path: inset(50% 0 30% 0); transform: translate(-5px, 0); }
+      20% { clip-path: inset(10% 0 60% 0); transform: translate(5px, 0); }
+      40% { clip-path: inset(80% 0 5% 0); transform: translate(-5px, 0); }
+      60% { clip-path: inset(20% 0 40% 0); transform: translate(5px, 0); }
+      80% { clip-path: inset(60% 0 10% 0); transform: translate(-5px, 0); }
+      100% { clip-path: inset(0 0 0 0); transform: translate(0); }
+    }
+    @keyframes voiceWave {
+        0%, 100% { height: 10%; }
+        50% { height: 80%; }
+    }
+    /* NEW: SMOKE + GLITCH APPEAR ANIMATION */
+    @keyframes smoke-glitch-appear {
+        0% { 
+            opacity: 0; 
+            filter: blur(12px) brightness(0.5); 
+            transform: translateY(15px) scale(0.85) skew(15deg); 
+            text-shadow: 4px 0 rgba(255,0,0,0.5), -4px 0 rgba(0,0,255,0.5);
+        }
+        40% {
+            opacity: 0.6;
+            filter: blur(6px);
+            transform: translateY(5px) scale(0.95) skew(-10deg);
+            text-shadow: -3px 0 rgba(255,0,0,0.7), 3px 0 rgba(0,0,255,0.7);
+        }
+        70% {
+            opacity: 0.9;
+            filter: blur(2px);
+            transform: scale(1.05) skew(5deg);
+            text-shadow: 2px 0 rgba(0,255,157,0.5), -2px 0 rgba(255,0,255,0.5);
+        }
+        100% { 
+            opacity: 1; 
+            transform: translateY(0) scale(1) skew(0); 
+            filter: none;
+            text-shadow: 0 0 10px rgba(0,255,157,0.6); 
+        }
+    }
   `}} />
 );
 
@@ -364,86 +412,81 @@ const ProfitCalculator = ({ onAction, data, setData }) => {
 };
 
 // 6.1 AcademyCalculator
-const AcademyCalculator = ({ data, setData, onAction }) => {
-  const { salary, days, hours } = data;
+const AcademyCalculator = ({ onAction }) => {
+  const [clients, setClients] = useState(1);
+  const monthlyIncome = clients * 100000; // Твой базовый чек
+  const marketShare = ((clients / 6650) * 100).toFixed(2); // Твоя статистика
   
-  const updateData = (key, val) => {
-    setData(prev => ({ ...prev, [key]: val }));
-  };
+  const animatedMonthly = useOdometer(monthlyIncome);
 
-  const totalHours = Math.max(1, days * hours);
-  const currentRate = Math.floor(salary / totalHours);
-  const targetRate = 100000;
-  const efficiency = Math.max(1, targetRate / Math.max(1, currentRate));
-  const hoursToPlow = Math.ceil(targetRate / Math.max(1, currentRate));
-  const hoursPerMonth = days * hours;
-  const hoursPerWeek = hoursPerMonth / 4.3; 
-  const weeksToPlow = (hoursToPlow / Math.max(1, hoursPerWeek)).toFixed(1);
-  const animatedRate = useOdometer(currentRate);
+  const handleSliderChange = (e) => {
+      setClients(Number(e.target.value));
+      haptic('selection');
+  };
 
   return (
     <div className="w-full animate-in slide-in-from-bottom duration-500">
-      <InputField 
-        label="Ваша примерная зарплата в месяц?" 
-        value={salary} 
-        setValue={(v) => updateData('salary', v)} 
-      />
-      <div className="flex flex-col gap-2">
-        <InputField 
-            label="Сколько дней в месяц вы работаете?" 
-            value={days} 
-            setValue={(v) => updateData('days', v)} 
-        />
-        <InputField 
-            label="Сколько часов в день вы работаете?" 
-            value={hours} 
-            setValue={(v) => updateData('hours', v)} 
-        />
+      <div className="text-center mb-6">
+        <p className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold mb-1">ЕЖЕМЕСЯЧНЫЙ ОБЪЕМ РЫНКА</p>
+        <h2 className="text-3xl sm:text-4xl font-black text-white font-['Chakra_Petch'] drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]">
+            665 000 000 ₸
+        </h2>
+        <p className="text-[9px] text-zinc-400 mt-2 leading-relaxed max-w-[250px] mx-auto">
+            <span className="text-[#00FF9D] font-bold">6 650 предпринимателей</span> прямо сейчас ищут разработчика в Telegram.
+        </p>
       </div>
 
-      <div className="relative overflow-hidden bg-[#00FF9D]/5 border border-[#00FF9D]/30 p-5 rounded-2xl text-center group mt-4 shadow-[0_0_30px_rgba(0,255,157,0.1)]">
+      <div className="glass-card p-5 rounded-2xl border border-[#00FF9D]/20 mb-6">
+          <div className="flex justify-between items-end mb-4">
+             <div>
+                <p className="text-[9px] text-zinc-500 uppercase tracking-wider font-bold mb-1">ТВОЙ ЗАХВАТ</p>
+                <div className="flex items-baseline gap-1">
+                    <span className="text-4xl font-black text-[#00FF9D] font-['Chakra_Petch']">{clients}</span>
+                    <span className="text-xs text-zinc-400 font-bold uppercase">КЛИЕНТОВ</span>
+                </div>
+             </div>
+             <div className="text-right">
+                <p className="text-[9px] text-zinc-500 uppercase tracking-wider font-bold mb-1">ДОЛЯ РЫНКА</p>
+                <p className="text-xl font-bold text-white font-mono">{marketShare}%</p>
+             </div>
+          </div>
+
+          <input 
+            type="range" 
+            min="1" 
+            max="20" 
+            value={clients} 
+            onChange={handleSliderChange}
+            className="w-full h-2 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-[#00FF9D] focus:outline-none focus:ring-2 focus:ring-[#00FF9D]/50" 
+          />
+          <div className="flex justify-between mt-2 text-[8px] text-zinc-600 font-mono uppercase">
+             <span>1 клиент</span>
+             <span>20 клиентов</span>
+          </div>
+      </div>
+
+      <div className="relative overflow-hidden bg-[#00FF9D]/5 border border-[#00FF9D]/30 p-6 rounded-2xl text-center group shadow-[0_0_30px_rgba(0,255,157,0.1)] mb-4">
          <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,157,0.05)_1px,transparent_1px)] bg-[size:15px_15px] pointer-events-none"></div>
          <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-[#00FF9D]/5 to-transparent animate-[scanLine_3s_linear_infinite]"></div>
          
-         <div className="relative z-10 space-y-4 text-left">
-            <div>
-                <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest mb-2 text-center">ТВОЙ РЕЗУЛЬТАТ:</p>
-                
-                <div className="flex justify-between items-center mb-1">
-                    <span className="text-[11px] text-zinc-400">Сейчас ваш час стоит:</span>
-                    <span className="text-sm font-bold text-white font-mono">{animatedRate.toLocaleString()} ₸</span>
-                </div>
-                <div className="flex justify-between items-center mb-2">
-                    <span className="text-[11px] text-[#00FF9D]">Час работы по нашей методике:</span>
-                    <span className="text-sm font-bold text-[#00FF9D] font-mono">100 000 ₸</span>
-                </div>
-            </div>
-
-            <div className="bg-red-500/10 border border-red-500/30 p-4 rounded-xl text-center">
-                <p className="text-[10px] text-red-400 uppercase tracking-wider font-bold mb-1">ТВОЯ ЭФФЕКТИВНОСТЬ НИЖЕ В</p>
-                <p className="text-5xl font-black text-red-500 font-['Chakra_Petch'] drop-shadow-[0_0_10px_rgba(239,68,68,0.5)]">{Math.floor(efficiency)} РАЗ!</p>
-            </div>
-
-            <div>
-                <p className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold mb-2">ЧТО ЭТО ЗНАЧИТ?</p>
-                <p className="text-[11px] text-zinc-300 leading-relaxed mb-2">
-                    Чтобы заработать те же <span className="text-white font-bold">100 000 тенге</span>, которые наш выпускник получает за <span className="text-white font-bold">1 час</span>, тебе нужно пахать <span className="text-red-500 font-bold">{hoursToPlow} часов</span>.
+         <div className="relative z-10">
+            <p className="text-[9px] text-zinc-400 uppercase font-bold tracking-widest mb-2">ТВОЙ ДОХОД В МЕСЯЦ</p>
+            <p className="text-4xl sm:text-5xl font-black text-white font-['Chakra_Petch'] drop-shadow-[0_0_15px_rgba(0,255,157,0.4)] mb-3">
+              {animatedMonthly.toLocaleString()} ₸
+            </p>
+            <div className="border-t border-[#00FF9D]/20 pt-3 mt-2">
+                <p className="text-[10px] text-zinc-300 leading-relaxed">
+                   Забирая всего <span className="text-[#00FF9D] font-bold">{clients} {clients === 1 ? 'клиента' : (clients > 1 && clients < 5) ? 'клиента' : 'клиентов'}</span> в месяц, ты выходишь на такой стабильный доход.
                 </p>
-                <p className="text-[10px] text-zinc-500 italic">
-                    (это {weeksToPlow > 0.8 && weeksToPlow < 1.2 ? 'одна' : weeksToPlow} рабочие недели!)
-                </p>
-            </div>
-            
-            <div className="border-l-2 border-[#00FF9D] pl-3 py-1">
-                <p className="text-[11px] text-white font-bold leading-tight">
-                    Ты точно хочешь продолжать тратить недели жизни на то, что можно сделать за час?
+                <p className="text-[9px] text-zinc-500 mt-2 italic">
+                  И это при том, что { (100 - parseFloat(marketShare)).toFixed(2) }% рынка всё еще свободны.
                 </p>
             </div>
          </div>
       </div>
 
-      <button onClick={onAction} className="w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-3 rounded-xl shadow-[0_0_20px_rgba(0,255,157,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs flex items-center justify-center gap-2 animate-pulse mt-4">
-        ИСПРАВИТЬ СИТУАЦИЮ
+      <button onClick={onAction} className="w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-4 rounded-xl shadow-[0_0_20px_rgba(0,255,157,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs flex items-center justify-center gap-2 animate-pulse">
+        ЗАБРАТЬ СВОЁ
       </button>
     </div>
   );
@@ -656,22 +699,30 @@ const BrandLogos = {
         setIsMissed(false);
         const timer = setTimeout(() => {
           setIsMissed(true);
-          if (navigator.vibrate) navigator.vibrate(50);
+          if (navigator.vibrate) navigator.vibrate([50, 30, 50]); // Aggressive vibration
         }, 1500);
         return () => clearTimeout(timer);
       }
     }, [isActive]);
     return (
-      <div className={`flex flex-col items-center animate-in fade-in zoom-in duration-1000 relative ${isMissed ? 'animate-[glitch_0.6s_linear]' : ''}`}>
-        {/* Adjusted viewBox to prevent clipping of the top part of the logo */}
-        <svg viewBox="-2 -2 28 28" fill="#F7931A" className={`w-16 h-16 mb-4 transition-all duration-1000 ${isMissed ? 'opacity-30 grayscale' : 'opacity-80 drop-shadow-[0_0_15px_rgba(247,147,26,0.5)]'}`}><path d="M23.638 14.904c-1.602 6.43-8.113 10.34-14.542 8.736C2.67 22.05-1.244 15.556.358 9.126 1.96 2.695 8.47-1.216 14.9-.388c6.426 1.602 10.34 8.09 8.738 15.292zM18.106 10.12c.264-1.765-1.08-2.71-2.914-3.344l.596-2.39-1.454-.362-.58 2.33c-.382-.096-.776-.186-1.166-.273l.586-2.355-1.454-.362-.596 2.39c-.316-.072-.625-.144-.925-.218l.002-.008-2.007-.502-.388 1.55s1.08.247 1.057.263c.59.147.696.537.678.847l-.68 2.73c.04.01.094.026.152.05-.054-.014-.112-.03-.17-.044l-1.103 4.426c-.072.178-.254.445-.664.343.014.02-1.057-.263-1.057-.263l-.723 1.67 1.894.474c.35.088.694.18 1.034.266l-.604 2.43 1.452.362.598-2.396c.396.108.783.21 1.16.307l-.592 2.38 1.454.363.604-2.43c2.482.47 4.35.28 5.136-1.965.634-1.808-.032-2.852-1.336-3.535 1.03-.238 1.81-.916 2.02-2.31zM14.47 14.524c-.45 1.81-3.5 0.83-4.484.588l.8-3.212c.983.244 4.14.726 3.684 2.624zm.45-4.44c-.41 1.644-2.96.81-3.774.606l.724-2.912c.814.204 3.468.583 3.05 2.306z"/></svg>
-        <div className="relative">
-          <p className={`font-['Chakra_Petch'] font-black text-xl tracking-tighter transition-all duration-700 ${isMissed ? 'text-zinc-600 line-through decoration-red-600/80 decoration-[3px]' : 'text-[#F7931A]'}`}>2009: BITCOIN</p>
-          <div className={`absolute -top-3 -right-8 rotate-[15deg] border-2 border-red-600/60 text-red-600 text-[8px] font-black uppercase px-2 py-0.5 rounded-sm bg-red-900/10 backdrop-blur-sm transition-all duration-500 transform ${isMissed ? 'opacity-100 scale-100 animate-pulse' : 'opacity-0 scale-150'}`}>УПУЩЕНО</div>
+      <div className={`flex flex-col items-center animate-in fade-in zoom-in duration-1000 relative`}>
+        {/* Logo Container */}
+        <div className={`transition-all duration-1000 ${isMissed ? 'grayscale opacity-40 scale-90 blur-[1px]' : 'grayscale-0 opacity-100 scale-100'}`}>
+            <svg viewBox="-2 -2 28 28" fill="#F7931A" className="w-20 h-20 mb-4 drop-shadow-[0_0_15px_rgba(247,147,26,0.5)]"><path d="M23.638 14.904c-1.602 6.43-8.113 10.34-14.542 8.736C2.67 22.05-1.244 15.556.358 9.126 1.96 2.695 8.47-1.216 14.9-.388c6.426 1.602 10.34 8.09 8.738 15.292zM18.106 10.12c.264-1.765-1.08-2.71-2.914-3.344l.596-2.39-1.454-.362-.58 2.33c-.382-.096-.776-.186-1.166-.273l.586-2.355-1.454-.362-.596 2.39c-.316-.072-.625-.144-.925-.218l.002-.008-2.007-.502-.388 1.55s1.08.247 1.057.263c.59.147.696.537.678.847l-.68 2.73c.04.01.094.026.152.05-.054-.014-.112-.03-.17-.044l-1.103 4.426c-.072.178-.254.445-.664.343.014.02-1.057-.263-1.057-.263l-.723 1.67 1.894.474c.35.088.694.18 1.034.266l-.604 2.43 1.452.362.598-2.396c.396.108.783.21 1.16.307l-.592 2.38 1.454.363.604-2.43c2.482.47 4.35.28 5.136-1.965.634-1.808-.032-2.852-1.336-3.535 1.03-.238 1.81-.916 2.02-2.31zM14.47 14.524c-.45 1.81-3.5 0.83-4.484.588l.8-3.212c.983.244 4.14.726 3.684 2.624zm.45-4.44c-.41 1.644-2.96.81-3.774.606l.724-2.912c.814.204 3.468.583 3.05 2.306z"/></svg>
         </div>
-        <div className="mt-2 text-center px-6">
-          <p className="text-zinc-500 text-[11px] leading-tight font-medium">«Пока ты думал, что это фантики...»</p>
-          <p className={`text-[10px] uppercase font-bold tracking-widest mt-1 transition-colors duration-700 ${isMissed ? 'text-zinc-700' : 'text-white'}`}>Другие стали миллионерами</p>
+        
+        <div className="relative">
+          <p className={`font-['Chakra_Petch'] font-black text-xl tracking-tighter transition-all duration-700 ${isMissed ? 'text-zinc-600 line-through decoration-red-600/80 decoration-[3px] blur-[0.5px]' : 'text-[#F7931A]'}`}>2009: BITCOIN</p>
+          <div className={`absolute -top-3 -right-8 rotate-[15deg] border-2 border-red-600/60 text-red-600 text-[8px] font-black uppercase px-2 py-0.5 rounded-sm bg-red-900/10 backdrop-blur-sm transition-all duration-300 transform ${isMissed ? 'opacity-100 scale-125 animate-pulse' : 'opacity-0 scale-150'}`}>УПУЩЕНО</div>
+        </div>
+        
+        <div className="mt-4 text-center px-2 flex flex-col items-center">
+          <p className="text-zinc-500 text-[11px] leading-tight font-medium mb-2">«Пока ты думал, что это фантики...»</p>
+          <div className={`${isMissed ? 'animate-[smoke-glitch-appear_0.6s_ease-out_forwards]' : 'opacity-0'}`}>
+             <p className={`text-xs uppercase font-black tracking-widest px-3 py-1 rounded text-[#00FF9D] drop-shadow-[0_0_10px_rgba(0,255,157,0.8)]`}>
+                Другие стали миллионерами
+             </p>
+          </div>
         </div>
       </div>
     );
@@ -683,21 +734,30 @@ const BrandLogos = {
         setIsMissed(false);
         const timer = setTimeout(() => {
           setIsMissed(true);
-          if (navigator.vibrate) navigator.vibrate(50);
+          if (navigator.vibrate) navigator.vibrate([50, 30, 50]);
         }, 1500);
         return () => clearTimeout(timer);
       }
     }, [isActive]);
     return (
-      <div className={`flex flex-col items-center animate-in fade-in zoom-in duration-1000 relative ${isMissed ? 'animate-[glitch_0.6s_linear]' : ''}`}>
-        <svg viewBox="0 0 24 24" fill="none" stroke="#E1306C" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={`w-16 h-16 mb-4 transition-all duration-1000 ${isMissed ? 'opacity-30 grayscale' : 'opacity-80 drop-shadow-[0_0_15px_rgba(225,48,108,0.5)]'}`}><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
-        <div className="relative">
-          <p className={`font-['Chakra_Petch'] font-black text-xl tracking-tighter transition-all duration-700 ${isMissed ? 'text-zinc-600 line-through decoration-red-600/80 decoration-[3px]' : 'text-[#E1306C]'}`}>2012: INSTAGRAM</p>
-          <div className={`absolute -top-3 -right-8 rotate-[15deg] border-2 border-red-600/60 text-red-600 text-[8px] font-black uppercase px-2 py-0.5 rounded-sm bg-red-900/10 backdrop-blur-sm transition-all duration-500 transform ${isMissed ? 'opacity-100 scale-100 animate-pulse' : 'opacity-0 scale-150'}`}>УПУЩЕНО</div>
+      <div className={`flex flex-col items-center animate-in fade-in zoom-in duration-1000 relative`}>
+        {/* Logo Container */}
+        <div className={`transition-all duration-1000 ${isMissed ? 'grayscale opacity-40 scale-90 blur-[1px]' : 'grayscale-0 opacity-100 scale-100'}`}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="#E1306C" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-20 h-20 mb-4 drop-shadow-[0_0_15px_rgba(225,48,108,0.5)]"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
         </div>
-        <div className="mt-2 text-center px-6">
-          <p className="text-zinc-500 text-[11px] leading-tight font-medium">«Пока ты просто выкладывал еду...»</p>
-          <p className={`text-[10px] uppercase font-bold tracking-widest mt-1 transition-colors duration-700 ${isMissed ? 'text-zinc-700' : 'text-white'}`}>Другие построили империи</p>
+        
+        <div className="relative">
+          <p className={`font-['Chakra_Petch'] font-black text-xl tracking-tighter transition-all duration-700 ${isMissed ? 'text-zinc-600 line-through decoration-red-600/80 decoration-[3px] blur-[0.5px]' : 'text-[#E1306C]'}`}>2012: INSTAGRAM</p>
+          <div className={`absolute -top-3 -right-8 rotate-[15deg] border-2 border-red-600/60 text-red-600 text-[8px] font-black uppercase px-2 py-0.5 rounded-sm bg-red-900/10 backdrop-blur-sm transition-all duration-300 transform ${isMissed ? 'opacity-100 scale-125 animate-pulse' : 'opacity-0 scale-150'}`}>УПУЩЕНО</div>
+        </div>
+        
+        <div className="mt-4 text-center px-2 flex flex-col items-center">
+          <p className="text-zinc-500 text-[11px] leading-tight font-medium mb-2">«Пока ты просто выкладывал еду...»</p>
+          <div className={`${isMissed ? 'animate-[smoke-glitch-appear_0.6s_ease-out_forwards]' : 'opacity-0'}`}>
+             <p className={`text-xs uppercase font-black tracking-widest px-3 py-1 rounded text-[#00FF9D] drop-shadow-[0_0_10px_rgba(0,255,157,0.8)]`}>
+                Другие построили империи
+             </p>
+          </div>
         </div>
       </div>
     );
@@ -709,21 +769,30 @@ const BrandLogos = {
         setIsMissed(false);
         const timer = setTimeout(() => {
           setIsMissed(true);
-          if (navigator.vibrate) navigator.vibrate(50);
+          if (navigator.vibrate) navigator.vibrate([50, 30, 50]);
         }, 1500);
         return () => clearTimeout(timer);
       }
     }, [isActive]);
     return (
-      <div className={`flex flex-col items-center animate-in fade-in zoom-in duration-1000 relative ${isMissed ? 'animate-[glitch_0.6s_linear]' : ''}`}>
-        <div className={`flex gap-3 mb-4 items-center transition-all duration-1000 ${isMissed ? 'opacity-30 grayscale' : 'opacity-80'}`}><span className="text-4xl font-black italic text-purple-500">WB</span><span className="text-3xl font-bold text-red-600">Kaspi</span></div>
-        <div className="relative">
-          <p className={`font-['Chakra_Petch'] font-black text-xl tracking-tighter transition-all duration-700 ${isMissed ? 'text-zinc-600 line-through decoration-red-600/80 decoration-[3px]' : 'text-white'}`}>2019: МАРКЕТПЛЕЙСЫ</p>
-          <div className={`absolute -top-3 -right-8 rotate-[15deg] border-2 border-red-600/60 text-red-600 text-[8px] font-black uppercase px-2 py-0.5 rounded-sm bg-red-900/10 backdrop-blur-sm transition-all duration-500 transform ${isMissed ? 'opacity-100 scale-100 animate-pulse' : 'opacity-0 scale-150'}`}>УПУЩЕНО</div>
+      <div className={`flex flex-col items-center animate-in fade-in zoom-in duration-1000 relative`}>
+        {/* Logo Container */}
+        <div className={`flex gap-3 mb-4 items-center transition-all duration-1000 ${isMissed ? 'grayscale opacity-40 scale-90 blur-[1px]' : 'grayscale-0 opacity-100 scale-100'}`}>
+            <span className="text-4xl font-black italic text-purple-500">WB</span><span className="text-3xl font-bold text-red-600">Kaspi</span>
         </div>
-        <div className="mt-2 text-center px-6">
-          <p className="text-zinc-500 text-[11px] leading-tight font-medium">«Пока ты боялся логистики...»</p>
-          <p className={`text-[10px] uppercase font-bold tracking-widest mt-1 transition-colors duration-700 ${isMissed ? 'text-zinc-700' : 'text-white'}`}>Другие захватили рынок</p>
+        
+        <div className="relative">
+          <p className={`font-['Chakra_Petch'] font-black text-xl tracking-tighter transition-all duration-700 ${isMissed ? 'text-zinc-600 line-through decoration-red-600/80 decoration-[3px] blur-[0.5px]' : 'text-white'}`}>2019: МАРКЕТПЛЕЙСЫ</p>
+          <div className={`absolute -top-3 -right-8 rotate-[15deg] border-2 border-red-600/60 text-red-600 text-[8px] font-black uppercase px-2 py-0.5 rounded-sm bg-red-900/10 backdrop-blur-sm transition-all duration-300 transform ${isMissed ? 'opacity-100 scale-125 animate-pulse' : 'opacity-0 scale-150'}`}>УПУЩЕНО</div>
+        </div>
+        
+        <div className="mt-4 text-center px-2 flex flex-col items-center">
+          <p className="text-zinc-500 text-[11px] leading-tight font-medium mb-2">«Пока ты боялся логистики...»</p>
+          <div className={`${isMissed ? 'animate-[smoke-glitch-appear_0.6s_ease-out_forwards]' : 'opacity-0'}`}>
+             <p className={`text-xs uppercase font-black tracking-widest px-3 py-1 rounded text-[#00FF9D] drop-shadow-[0_0_10px_rgba(0,255,157,0.8)]`}>
+                Другие захватили рынок
+             </p>
+          </div>
         </div>
       </div>
     );

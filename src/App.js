@@ -424,15 +424,23 @@ const AcademyCalculator = ({ onAction }) => {
       haptic('selection');
   };
 
+  const getDeclension = (number) => {
+    const lastDigit = number % 10;
+    const lastTwo = number % 100;
+    if (lastDigit === 1 && lastTwo !== 11) return 'магазин';
+    if ([2, 3, 4].includes(lastDigit) && ![12, 13, 14].includes(lastTwo)) return 'магазина';
+    return 'магазинов';
+  };
+
   return (
     <div className="w-full animate-in slide-in-from-bottom duration-500">
       <div className="text-center mb-6">
-        <p className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold mb-1">ЕЖЕМЕСЯЧНЫЙ ОБЪЕМ РЫНКА</p>
+        <p className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold mb-1">СРЕДНИЙ ЕЖЕМЕСЯЧНЫЙ ОБЪЁМ РЫНКА</p>
         <h2 className="text-3xl sm:text-4xl font-black text-white font-['Chakra_Petch'] drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]">
-            665 000 000 ₸
+            от 665 000 000 ₸
         </h2>
         <p className="text-[9px] text-zinc-400 mt-2 leading-relaxed max-w-[250px] mx-auto">
-            <span className="text-[#00FF9D] font-bold">6 650 предпринимателей</span> прямо сейчас ищут разработчика в Telegram.
+            По данным Яндекс.Вордстат в среднем <span className="text-[#00FF9D] font-bold">6 650 предпринимателей</span> прямо сейчас ищут разработчика в Telegram.
         </p>
       </div>
 
@@ -442,7 +450,7 @@ const AcademyCalculator = ({ onAction }) => {
                 <p className="text-[9px] text-zinc-500 uppercase tracking-wider font-bold mb-1">ТВОЙ ЗАХВАТ</p>
                 <div className="flex items-baseline gap-1">
                     <span className="text-4xl font-black text-[#00FF9D] font-['Chakra_Petch']">{clients}</span>
-                    <span className="text-xs text-zinc-400 font-bold uppercase">КЛИЕНТОВ</span>
+                    <span className="text-xs text-zinc-400 font-bold uppercase">{getDeclension(clients).toUpperCase()}</span>
                 </div>
              </div>
              <div className="text-right">
@@ -460,8 +468,8 @@ const AcademyCalculator = ({ onAction }) => {
             className="w-full h-2 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-[#00FF9D] focus:outline-none focus:ring-2 focus:ring-[#00FF9D]/50" 
           />
           <div className="flex justify-between mt-2 text-[8px] text-zinc-600 font-mono uppercase">
-             <span>1 клиент</span>
-             <span>20 клиентов</span>
+             <span>1 магазин</span>
+             <span>20 магазинов</span>
           </div>
       </div>
 
@@ -470,13 +478,13 @@ const AcademyCalculator = ({ onAction }) => {
          <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-[#00FF9D]/5 to-transparent animate-[scanLine_3s_linear_infinite]"></div>
          
          <div className="relative z-10">
-            <p className="text-[9px] text-zinc-400 uppercase font-bold tracking-widest mb-2">ТВОЙ ДОХОД В МЕСЯЦ</p>
+            <p className="text-[9px] text-zinc-400 uppercase font-bold tracking-widest mb-2">ВАШ ВОЗМОЖНЫЙ ДОХОД В МЕСЯЦ</p>
             <p className="text-4xl sm:text-5xl font-black text-white font-['Chakra_Petch'] drop-shadow-[0_0_15px_rgba(0,255,157,0.4)] mb-3">
-              {animatedMonthly.toLocaleString()} ₸
+              От {animatedMonthly.toLocaleString()} ₸
             </p>
             <div className="border-t border-[#00FF9D]/20 pt-3 mt-2">
                 <p className="text-[10px] text-zinc-300 leading-relaxed">
-                   Забирая всего <span className="text-[#00FF9D] font-bold">{clients} {clients === 1 ? 'клиента' : (clients > 1 && clients < 5) ? 'клиента' : 'клиентов'}</span> в месяц, ты выходишь на такой стабильный доход.
+                   Создавая всего <span className="text-[#00FF9D] font-bold">{clients} {getDeclension(clients)}</span> в месяц, вы выходите на такой стабильный доход.
                 </p>
                 <p className="text-[9px] text-zinc-500 mt-2 italic">
                   И это при том, что { (100 - parseFloat(marketShare)).toFixed(2) }% рынка всё еще свободны.

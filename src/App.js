@@ -5,6 +5,46 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 import { getFirestore, doc, setDoc, updateDoc, serverTimestamp, collection, query, onSnapshot, deleteDoc } from 'firebase/firestore';
 
+// --- GEMINI API INTEGRATION ---
+const apiKey = ""; // Ключ API будет предоставлен средой выполнения
+
+const generateGeminiResponse = async (userQuery, userRole) => {
+  if (!apiKey) {
+    console.warn("Gemini API Key is missing");
+    return "Система перегружена. Попробуйте позже."; // Fallback message
+  }
+
+  const systemInstruction = userRole === 'business'
+    ? "Ты — элитный бизнес-консультант Taipan Media. Пользователь хочет открыть бизнес в Telegram. Твоя задача: дать 3 жестких, конкретных и коротких совета, как разорвать конкурентов в его нише. Используй эмодзи. Стиль: киберпанк, агрессивный маркетинг, успех. Язык: Русский."
+    : "Ты — ментор миллионеров из Taipan Academy. Пользователь хочет заработать. Дай ему 3 конкретных шага, как быстро выйти на доход в Telegram, используя навыки разработки ботов. Стиль: мотивационный, жесткий, «волк с уолл-стрит». Язык: Русский.";
+
+  try {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: userQuery }] }],
+        systemInstruction: { parts: [{ text: systemInstruction }] }
+      })
+    });
+
+    if (!response.ok) {
+        if (response.status === 429) {
+            throw new Error("Too many requests");
+        }
+        throw new Error(`API Error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.candidates?.[0]?.content?.parts?.[0]?.text || "Данные не получены.";
+  } catch (error) {
+    console.error("Gemini API Error:", error);
+    return "Связь с ИИ-ядром нестабильна. Повторите запрос.";
+  }
+};
+
 // --- CONFIGURATION & INIT ---
 const firebaseConfig = {
   apiKey: "AIzaSyCdcj_56EdygidWa8pQm17fegnF39XB8Xg",
@@ -38,6 +78,17 @@ const notify = (type = 'success') => {
   if (tg?.HapticFeedback) {
     tg.HapticFeedback.notificationOccurred(type);
   }
+};
+
+// --- HELPER FUNCTION: GET PLURAL ---
+const getPlural = (number, one, two, five) => {
+  let n = Math.abs(number);
+  n %= 100;
+  if (n >= 5 && n <= 20) return five;
+  n %= 10;
+  if (n === 1) return one;
+  if (n >= 2 && n <= 4) return two;
+  return five;
 };
 
 // --- STYLES ---
@@ -295,6 +346,7 @@ const Filter = (p) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24
 const BarChart2 = (p) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" /></svg>;
 const PieChart = (p) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><path d="M21.21 15.89A10 10 0 1 1 8 2.83" /><path d="M22 12A10 10 0 0 0 12 2v10z" /></svg>;
 const Copy = (p) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><rect width="14" height="14" x="8" y="8" rx="2" ry="2" /><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" /></svg>;
+const Sparkles = (p) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" /></svg>;
 
 const TelegramLogoMain = React.memo(({ className }) => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" stroke="none" className={className}>
@@ -347,6 +399,88 @@ const InputField = ({ label, value, setValue, suffix = "" }) => (
     </div>
   </div>
 );
+
+// --- AI ADVISOR COMPONENT ---
+const AIAdvisor = ({ userRole }) => {
+    const [prompt, setPrompt] = useState('');
+    const [response, setResponse] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [isExpanded, setIsExpanded] = useState(false);
+
+    const handleGenerate = async () => {
+        if (!prompt) return;
+        setLoading(true);
+        haptic('medium');
+        
+        try {
+            const result = await generateGeminiResponse(prompt, userRole);
+            setResponse(result);
+        } catch (error) {
+            setResponse("Ошибка соединения. Попробуйте снова.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <div className="glass-card p-4 rounded-xl border border-[#00FF9D]/30 w-full mb-4 animate-in slide-in-from-bottom duration-500">
+            <div className="flex items-center justify-between mb-3" onClick={() => setIsExpanded(!isExpanded)}>
+                 <div className="flex items-center gap-2">
+                    <Sparkles className="w-5 h-5 text-[#00FF9D] animate-pulse" />
+                    <h3 className="text-sm font-black text-white font-['Chakra_Petch'] uppercase tracking-wider">
+                         {userRole === 'business' ? 'AI БИЗНЕС-СТРАТЕГ' : 'AI МЕНТОР'}
+                    </h3>
+                 </div>
+                 <div className={`text-[10px] text-zinc-500 uppercase tracking-widest transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`}>
+                    ▼
+                 </div>
+            </div>
+
+            {isExpanded && (
+                <div className="animate-in fade-in duration-300">
+                     <p className="text-[10px] text-zinc-400 mb-3 leading-relaxed">
+                         {userRole === 'business' 
+                            ? "Опишите вашу нишу, и я создам план захвата рынка в Telegram." 
+                            : "Напиши, что тебя останавливает, и я дам пошаговый план действий."}
+                     </p>
+                     
+                     <textarea 
+                        value={prompt}
+                        onChange={(e) => setPrompt(e.target.value)}
+                        placeholder={userRole === 'business' ? "Например: Магазин кроссовок в Алматы..." : "Например: Боюсь, что не найду клиентов..."}
+                        className="w-full bg-[#0A0A0A] border border-zinc-800 rounded-lg p-3 text-xs text-white focus:border-[#00FF9D] outline-none resize-none h-20 mb-3 font-mono"
+                     />
+                     
+                     <button 
+                        onClick={handleGenerate}
+                        disabled={loading || !prompt}
+                        className={`w-full bg-[#00FF9D] text-black font-bold text-xs py-2.5 rounded-lg uppercase tracking-wider flex items-center justify-center gap-2 transition-all ${loading ? 'opacity-70' : 'hover:scale-[1.02] active:scale-[0.98]'}`}
+                     >
+                        {loading ? (
+                            <>
+                                <div className="w-3 h-3 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
+                                АНАЛИЗ ДАННЫХ...
+                            </>
+                        ) : (
+                            <>
+                                ✨ {userRole === 'business' ? 'СГЕНЕРИРОВАТЬ СТРАТЕГИЮ' : 'ПОЛУЧИТЬ ПЛАН'}
+                            </>
+                        )}
+                     </button>
+                     
+                     {response && (
+                         <div className="mt-4 p-3 bg-zinc-900/80 border-l-2 border-[#00FF9D] rounded-r-lg">
+                             <p className="text-[10px] text-zinc-300 whitespace-pre-line font-mono leading-relaxed">
+                                 {response}
+                             </p>
+                         </div>
+                     )}
+                </div>
+            )}
+        </div>
+    );
+};
+
 
 // 6. ProfitCalculator
 const ProfitCalculator = ({ onAction, data, setData }) => {
@@ -435,12 +569,12 @@ const AcademyCalculator = ({ onAction }) => {
   return (
     <div className="w-full animate-in slide-in-from-bottom duration-500">
       <div className="text-center mb-6">
-        <p className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold mb-1">СРЕДНИЙ ЕЖЕМЕСЯЧНЫЙ ОБЪЁМ РЫНКА</p>
+        <p className="text-[10px] text-zinc-500 tracking-widest font-bold mb-1">средний ежемесячный объём рынка</p>
         <h2 className="text-3xl sm:text-4xl font-black text-white font-['Chakra_Petch'] drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]">
-            от 665 000 000 ₸
+            665 000 000 ₸
         </h2>
         <p className="text-[9px] text-zinc-400 mt-2 leading-relaxed max-w-[250px] mx-auto">
-            По данным Яндекс.Вордстат в среднем <span className="text-[#00FF9D] font-bold">6 650 предпринимателей</span> прямо сейчас ищут разработчика в Telegram.
+            по данным Яндекс.Вордстат <span className="text-[#00FF9D] font-bold">6 650 предпринимателей</span> ищут разработчика в Telegram
         </p>
       </div>
 
@@ -478,13 +612,13 @@ const AcademyCalculator = ({ onAction }) => {
          <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-[#00FF9D]/5 to-transparent animate-[scanLine_3s_linear_infinite]"></div>
          
          <div className="relative z-10">
-            <p className="text-[9px] text-zinc-400 uppercase font-bold tracking-widest mb-2">ВАШ ВОЗМОЖНЫЙ ДОХОД В МЕСЯЦ</p>
+            <p className="text-[9px] text-zinc-400 uppercase font-bold tracking-widest mb-2">ВАШ ПОТЕНЦИАЛЬНЫЙ ДОХОД В МЕСЯЦ</p>
             <p className="text-4xl sm:text-5xl font-black text-white font-['Chakra_Petch'] drop-shadow-[0_0_15px_rgba(0,255,157,0.4)] mb-3">
-              От {animatedMonthly.toLocaleString()} ₸
+              от {animatedMonthly.toLocaleString()} ₸
             </p>
             <div className="border-t border-[#00FF9D]/20 pt-3 mt-2">
                 <p className="text-[10px] text-zinc-300 leading-relaxed">
-                   Создавая всего <span className="text-[#00FF9D] font-bold">{clients} {getDeclension(clients)}</span> в месяц, вы выходите на такой стабильный доход.
+                   Забирая всего <span className="text-[#00FF9D] font-bold">{clients} {getDeclension(clients)}</span> в месяц, ты выходишь на такой стабильный доход.
                 </p>
                 <p className="text-[9px] text-zinc-500 mt-2 italic">
                   И это при том, что { (100 - parseFloat(marketShare)).toFixed(2) }% рынка всё еще свободны.
@@ -1434,18 +1568,22 @@ const App = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  // --- PRELOAD KASPI CAROUSEL IMAGES ---
+  // --- PRELOAD IMAGES (CAROUSEL & CASES) ---
   useEffect(() => {
       const images = [
+        // Kaspi Carousel
         "https://i.ibb.co.com/Fp52kXy/666.png", 
         "https://i.ibb.co.com/9H5ZxPfy/555.png",
         "https://i.ibb.co.com/bjV5YtR2/444.png", 
-        "https://i.ibb.co.com/Q3k778bd/333.png",
+        "https://i.ibb.co.com/Q3k778bd/333.png", 
         "https://i.ibb.co.com/M5tCqhDs/222.png", 
-        "https://i.ibb.co.com/BV1gXyf7/111.png"
+        "https://i.ibb.co.com/BV1gXyf7/111.png",
+        // Case Studies (Preload for faster display)
+        "https://i.ibb.co.com/gMTG4QXt/5438294939344244553.jpg",
+        "https://i.ibb.co.com/ks9Sz9zz/5438294939344244554.jpg"
       ];
       // Keep references to prevent GC
-      window.preloadedKaspiImages = images.map(src => {
+      window.preloadedImages = images.map(src => {
           const img = new Image();
           img.src = src;
           return img;
@@ -1751,7 +1889,7 @@ const App = () => {
                                 <Code className="w-8 h-8 text-zinc-500 group-hover:text-[#00FF9D] mb-3 transition-colors" />
                                 <span className="text-[10px] font-bold text-zinc-300 text-center leading-tight uppercase tracking-wider">Mini App</span>
                             </div>
-                            <div onClick={() => setCurrentView('strategy')} className="glass-card p-3 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-[#00FF9D]/30 transition-all h-28 group">
+                            <div onClick={() => setCurrentView('cases')} className="glass-card p-3 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-[#00FF9D]/30 transition-all h-28 group">
                                 <TrendingUp className="w-8 h-8 text-zinc-500 group-hover:text-[#00FF9D] mb-3 transition-colors" />
                                 <span className="text-[10px] font-bold text-zinc-300 text-center leading-tight uppercase tracking-wider">Кейсы</span>
                             </div>
@@ -1918,17 +2056,17 @@ const App = () => {
                         {/* 2. Finance Card */}
                         <div className="strategy-card relative">
                             <p className="text-[9px] text-zinc-500 uppercase font-bold tracking-[0.2em] mb-4">
-                                {userRole === 'academy' ? 'ТЕКУЩАЯ СТОИМОСТЬ ЧАСА' : 'ПОТЕНЦИАЛЬНАЯ ПРИБЫЛЬ'}
+                                {userRole === 'academy' ? 'ВАШ ПОТЕНЦИАЛЬНЫЙ ДОХОД В МЕСЯЦ' : 'ПОТЕНЦИАЛЬНАЯ ПРИБЫЛЬ'}
                             </p>
                             <div className="flex items-baseline gap-2 mb-6">
                                 <div className="text-5xl font-black text-white font-['Chakra_Petch'] tracking-tighter">
                                     {userRole === 'academy' 
-                                        ? currentHourlyRate.toLocaleString().replace(/\s/g, ' ')
+                                        ? animatedPotentialEarnings.toLocaleString().replace(/\s/g, ' ')
                                         : businessProfit.toLocaleString().replace(/\s/g, ' ')
                                     }
                                 </div>
                                 <span className="text-zinc-500 text-xs font-bold uppercase tracking-wider">
-                                    {userRole === 'academy' ? '₸ / час' : '₸ / мес'}
+                                    {userRole === 'academy' ? '₸ / мес' : '₸ / мес'}
                                 </span>
                             </div>
                             
@@ -1947,6 +2085,9 @@ const App = () => {
                                 <Wallet className="w-24 h-24 text-white stroke-1" />
                             </div>
                         </div>
+
+                        {/* --- NEW AI ADVISOR SECTION --- */}
+                        <AIAdvisor userRole={userRole} />
 
                         {/* 3. Partner Program */}
                         <div className="strategy-card relative overflow-hidden" style={{ borderColor: 'rgba(168, 85, 247, 0.3)' }}>
@@ -1984,6 +2125,34 @@ const App = () => {
                         </div>
                     </div>
                 )}
+             </div>
+          </div>
+        )}
+
+        {/* VIEW: CASES (SEPARATE VIEW) */}
+        {currentView === 'cases' && (
+          <div className="animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col h-full items-center w-full">
+             <button onClick={() => handleBackClick('main')} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-4 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
+             <div className="flex-grow flex flex-col items-center w-full space-y-6 overflow-y-auto pb-20 no-scrollbar">
+                <div className="text-center px-4 w-full">
+                    <h2 className="text-2xl sm:text-3xl font-black tracking-tighter uppercase mb-1 font-['Chakra_Petch'] leading-none whitespace-nowrap">КЕЙСЫ <span className="text-[#00FF9D]">ПАРТНЕРОВ</span></h2>
+                    <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] mr-[-0.3em] font-bold">Реальные магазины на платформе</p>
+                </div>
+                
+                <div className="w-full mb-4 flex flex-col items-center">
+                    <div className="w-2/3 max-w-[200px]"><SmartImage src="https://i.ibb.co.com/gMTG4QXt/5438294939344244553.jpg" className="rounded-[20px] w-full h-auto object-contain" alt="Fashion Store Case" /></div>
+                    <div className="w-full mt-4 px-2 text-center"><h3 className="text-sm font-black text-white uppercase tracking-wider mb-2">КЕЙС «КАСТРЮЛЬКА ЕДЫ»</h3><p className="text-[10px] text-zinc-400 leading-relaxed">Пока другие тратят бюджет на рекламу, мы включили продажи по расписанию. Пуш в 18:00 на пустой желудок принес <span className="text-[#00FF9D] font-bold">+43% к чекам</span>. Мы превратили хаотичные заказы в предсказуемый алгоритм. Taipan Media заставляет технологии работать на ваших инстинктах.</p></div>
+                </div>
+
+                <div className="w-full mb-4 flex flex-col items-center">
+                    <div className="w-2/3 max-w-[200px]"><SmartImage src="https://i.ibb.co.com/ks9Sz9zz/5438294939344244554.jpg" className="rounded-[20px] w-full h-auto object-contain" alt="Romantic Store Case" /></div>
+                    <div className="w-full mt-4 px-2 text-center"><h3 className="text-sm font-black text-white uppercase tracking-wider mb-2">КЕЙС «ROMANTIC»</h3><p className="text-[10px] text-zinc-400 leading-relaxed">Мы внедрили ИИ-алгоритмы, которые анализируют поведение ваших покупателей и допродают товар в момент пикового интереса, показывая, что с этим товаром обычно покупают другие. Результат: <span className="text-[#00FF9D] font-bold">+57% к чеку</span> за счет маржинальных допов. Мы не ждем желания клиента — Taipan Media создает его через алгоритмы.</p></div>
+                </div>
+
+                <div className="w-full pt-4 pb-8">
+                    <button onClick={() => setCurrentView('roi')} className="w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-4 rounded-xl shadow-[0_0_20px_rgba(0,255,157,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs flex items-center justify-center gap-2 animate-pulse">УЗНАТЬ СТОИМОСТЬ И СРОКИ</button>
+                    <p className="text-center text-[9px] text-zinc-600 mt-3">Оставьте заявку для бесплатной консультации</p>
+                </div>
              </div>
           </div>
         )}

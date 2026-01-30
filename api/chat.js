@@ -1,22 +1,28 @@
 export default async function handler(req, res) {
+  // 1. Проверяем ключ
   const key = process.env.OPENAI_API_KEY;
+  if (!key) {
+    return res.status(500).json({ error: "API Key is missing on Vercel" });
+  }
 
+  // 2. Обрабатываем только POST запросы
   if (req.method !== 'POST') {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
   try {
+    // Получаем данные именно в том виде, в котором их шлет твой фронтенд
     const { userQuery, userRole, history } = req.body;
 
-    // Определяем системную роль прямо здесь (безопаснее)
+    // Настраиваем системный промпт в зависимости от роли
     const systemInstruction = userRole === 'business'
-      ? "Ты — ведущий аналитик Taipan Media. Помогаешь внедрять Телеграм-магазины. Окупаемость, автоматизация, кейсы Romantic и Кастрюлька. Стиль: Бизнес экспекрт."
-      : "Ты — технический ментор Taipan Academy. Обучаешь созданию магазинов в телеграме. 6650 запросов в месяц, доход 100к с первого заказа. Стиль: мудрый наставник и мотиватор.";
+      ? "Ты — аналитик Taipan Media. Помогаешь внедрять ТГ-магазины. Твой конек: ROI и цифры. Кейсы: Romantic и Кастрюлька."
+      : "Ты — ментор Taipan Academy. Обучаешь созданию ТГ-магазинов без кода. Твой конек: быстрый доход и простота.";
 
-    // Формируем массив для OpenAI
+    // Собираем массив сообщений для OpenAI
     const messages = [
       { role: "system", content: systemInstruction },
-      ...(history || []).map(msg => ({ role: msg.role, content: msg.content })),
+      ...(history || []), // История (уже отфильтрованная фронтендом)
       { role: "user", content: userQuery }
     ];
 
@@ -27,7 +33,7 @@ export default async function handler(req, res) {
         'Authorization': `Bearer ${key}`
       },
       body: JSON.stringify({
-        model: "gpt-4o",
+        model: "gpt-4o", // или "gpt-4o-mini" для экономии
         messages: messages,
         temperature: 0.7,
         max_tokens: 500
@@ -37,13 +43,15 @@ export default async function handler(req, res) {
     const data = await response.json();
 
     if (!response.ok) {
-      console.error("OpenAI API Error:", data);
+      console.error("OpenAI error:", data);
       return res.status(response.status).json(data);
     }
 
+    // Отправляем ответ обратно во фронтенд
     res.status(200).json(data);
+
   } catch (error) {
     console.error("Server Error:", error);
-    res.status(500).json({ error: "Внутренняя ошибка сервера" });
+    res.status(500).json({ error: "Internal Server Error" });
   }
 }

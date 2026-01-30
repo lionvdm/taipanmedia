@@ -11,13 +11,25 @@ const generateOpenAIResponse = async (userQuery, userRole, history = []) => {
     const response = await fetch("/api/chat", {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userQuery, userRole, history: history.map(msg => ({ role: msg.role, content: msg.content })) })
+      body: JSON.stringify({ 
+        userQuery, 
+        userRole, 
+        history: history.map(msg => ({ role: msg.role, content: msg.content })) 
+      })
     });
 
     const data = await response.json();
-    return data.choices[0]?.message?.content || "Данные не получены.";
+
+    // Если OpenAI вернул ошибку (например, кончились деньги или плохой ключ)
+    if (data.error) {
+      return `Ошибка OpenAI: ${data.error.message || "Неизвестная ошибка"}`;
+    }
+
+    return data.choices?.[0]?.message?.content || "ИИ вернул пустой ответ.";
   } catch (error) {
-    return "Связь нестабильна. Попробуйте позже.";
+    // Теперь ты увидишь реальную причину в консоли браузера (F12)
+    console.error("Critical Error:", error);
+    return `Ошибка: ${error.message}. Проверь консоль.`;
   }
 };
 

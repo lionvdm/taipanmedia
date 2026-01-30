@@ -1,28 +1,17 @@
 export default async function handler(req, res) {
-  // 1. Проверяем ключ
   const key = process.env.OPENAI_API_KEY;
-  if (!key) {
-    return res.status(500).json({ error: "API Key is missing on Vercel" });
-  }
-
-  // 2. Обрабатываем только POST запросы
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: "Method not allowed" });
-  }
 
   try {
-    // Получаем данные именно в том виде, в котором их шлет твой фронтенд
+    // 1. Берем именно те поля, которые шлет фронтенд
     const { userQuery, userRole, history } = req.body;
 
-    // Настраиваем системный промпт в зависимости от роли
-    const systemInstruction = userRole === 'business'
-      ? "Ты — аналитик Taipan Media. Помогаешь внедрять ТГ-магазины. Твой конек: ROI и цифры. Кейсы: Romantic и Кастрюлька."
-      : "Ты — ментор Taipan Academy. Обучаешь созданию ТГ-магазинов без кода. Твой конек: быстрый доход и простота.";
-
-    // Собираем массив сообщений для OpenAI
+    // 2. Сами собираем массив сообщений
     const messages = [
-      { role: "system", content: systemInstruction },
-      ...(history || []), // История (уже отфильтрованная фронтендом)
+      { 
+        role: "system", 
+        content: userRole === 'business' ? "Ты аналитик Taipan Media..." : "Ты ментор Taipan Academy..." 
+      },
+      ...(history || []).map(msg => ({ role: msg.role, content: msg.content })),
       { role: "user", content: userQuery }
     ];
 
@@ -33,25 +22,17 @@ export default async function handler(req, res) {
         'Authorization': `Bearer ${key}`
       },
       body: JSON.stringify({
-        model: "gpt-4o", // или "gpt-4o-mini" для экономии
+        model: "gpt-4o-mini", // Поставь mini для теста, он быстрее и дешевле
         messages: messages,
-        temperature: 0.7,
-        max_tokens: 500
+        temperature: 0.7
       })
     });
 
     const data = await response.json();
-
-    if (!response.ok) {
-      console.error("OpenAI error:", data);
-      return res.status(response.status).json(data);
-    }
-
-    // Отправляем ответ обратно во фронтенд
-    res.status(200).json(data);
-
+    
+    // Возвращаем ответ в формате OpenAI
+    res.status(response.status).json(data);
   } catch (error) {
-    console.error("Server Error:", error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: error.message });
   }
 }

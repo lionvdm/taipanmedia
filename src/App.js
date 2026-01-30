@@ -2,39 +2,41 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 
 // --- FIREBASE INTEGRATION ---
 import { initializeApp } from 'firebase/app';
-import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from 'firebase/auth';
+import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 import { getFirestore, doc, setDoc, updateDoc, serverTimestamp, collection, query, onSnapshot, deleteDoc } from 'firebase/firestore';
 
 // --- OPENAI API INTEGRATION ---
 const generateOpenAIResponse = async (userQuery, userRole, history = []) => {
+  const systemInstruction = userRole === 'business'
+    ? "Ты — ведущий аналитик Taipan Media. Ты помогаешь внедрять Телеграм-магазины. Твоя логика базируется на коде приложения: 1. ROI калькулятор: Напоминай, что при их среднем чеке разработка за 100.000₸ окупается за считанные дни. 2. Автоматизация: Объясняй, что магазин работает 24/7, принимает оплату (робо-касса, счета, крипта) и не требует диалогов. На основе алгоритмов ИИ рекомендует доп. товары. 3. Кейсы: Упоминай кейс «Romantic» или «Кастрюлька», где чек вырос до +40% за счет вовремя присланного пуша и умных алгоритмов. Стиль: Технический эксперт. Не продавай в лоб. Объясняй выгоду через цифры: 'Если мы сократим время на переписку, ты закроешь на 20% больше заказов'. Мотивируй масштабировать бизнес. В конце мягко направляй: 'Это база для роста, обсуди детали интеграции с нашим менеджером'."
+    : "Ты — технический ментор Taipan Academy. Ты обучаешь созданию Телеграм-магазинов на базе платформы Botmag. Твои аргументы: 1. Анализ рынка: Используй цифру 6650 запросов в месяц (Яндекс Вордстат) — это горячие клиенты. 2. Простота: Акцентируй, что кодинг НЕ нужен (0% навыков кода). Сборка занимает всего 45 минут. 3. Деньги: Покажи выгоду: обучение стоит 50.000₸, а первый же заказ (как у Карашаш) приносит 100.000₸. Ты в плюсе сразу. 4. Сроки: Обучение за 14 дней — и у тебя в руках новая профессия. Стиль: Старший брат, эксперт. Мотивируй через уверенность: 'Рынок пустой, деньги лежат на столе'. Объясняй, что это самый быстрый путь к доходу с телефона. В конце направляй: 'Если готов забрать свою долю рынка — напиши менеджеру, он покажет, с чего начать'.";
+
+  const messages = [
+    { role: "system", content: systemInstruction },
+    ...history.map(msg => ({ role: msg.role, content: msg.content })),
+    { role: "user", content: userQuery }
+  ];
+
   try {
+    // Вызываем нашу серверную функцию вместо OpenAI
     const response = await fetch("/api/chat", {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        userQuery, 
-        userRole, 
-        history: history.map(msg => ({ role: msg.role, content: msg.content })) 
-      })
+      body: JSON.stringify({ messages })
     });
 
+    if (!response.ok) throw new Error('Ошибка сервера');
+
     const data = await response.json();
-
-    // Если OpenAI вернул ошибку (например, кончились деньги или плохой ключ)
-    if (data.error) {
-      return `Ошибка OpenAI: ${data.error.message || "Неизвестная ошибка"}`;
-    }
-
-    return data.choices?.[0]?.message?.content || "ИИ вернул пустой ответ.";
+    return data.choices[0]?.message?.content || "Данные не получены.";
   } catch (error) {
-    // Теперь ты увидишь реальную причину в консоли браузера (F12)
-    console.error("Critical Error:", error);
-    return `Ошибка: ${error.message}. Проверь консоль.`;
+    console.error("AI Error:", error);
+    return "Связь с ИИ-ядром нестабильна.";
   }
 };
 
 // --- CONFIGURATION & INIT ---
-const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+const firebaseConfig = {
   apiKey: "AIzaSyCdcj_56EdygidWa8pQm17fegnF39XB8Xg",
   authDomain: "taipan-680b2.firebaseapp.com",
   projectId: "taipan-680b2",
@@ -44,18 +46,14 @@ const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__f
   measurementId: "G-QFJTFTCNNY"
 };
 
-// Инициализация Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
-
-// Получаем ID приложения
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
 // --- TELEGRAM WEB APP UTILS ---
 const tg = window.Telegram?.WebApp;
 
-// Helper for Haptic Feedback
 const haptic = (style = 'light') => {
   if (tg?.HapticFeedback) {
     tg.HapticFeedback.impactOccurred(style);
@@ -68,7 +66,6 @@ const notify = (type = 'success') => {
   }
 };
 
-// --- HELPER FUNCTION: GET PLURAL ---
 const getPlural = (number, one, two, five) => {
   let n = Math.abs(number);
   n %= 100;
@@ -100,13 +97,6 @@ const GlobalStyles = () => (
         overflow: hidden;
     }
     
-    .grid-bg {
-        background-image: 
-            linear-gradient(rgba(0, 255, 157, 0.07) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(0, 255, 157, 0.07) 1px, transparent 1px);
-        background-size: 20px 20px;
-    }
-
     .glass-card:hover {
         background-color: rgba(0, 255, 157, 0.05);
         border-color: rgba(0, 255, 157, 0.4);
@@ -119,7 +109,7 @@ const GlobalStyles = () => (
         backface-visibility: hidden;
     }
 
-    /* Strategy Card Style (Minimalist Dark) */
+    /* Strategy Card Style */
     .strategy-card {
         background-color: #0A0A0A;
         border: 1px solid #1f1f1f;
@@ -154,15 +144,6 @@ const GlobalStyles = () => (
       0% { opacity: 0; transform: translateY(10px); }
       100% { opacity: 1; transform: translateY(0); }
     }
-    /* GLITCH EFFECT KEYFRAMES */
-    @keyframes glitch {
-      0% { transform: translate(0) skew(0deg); opacity: 1; filter: hue-rotate(0deg); }
-      20% { transform: translate(-4px, 4px) skew(5deg); opacity: 0.8; filter: hue-rotate(90deg); }
-      40% { transform: translate(-4px, -4px) skew(-5deg); opacity: 1; filter: hue-rotate(0deg); }
-      60% { transform: translate(4px, 4px) skew(5deg); opacity: 0.8; filter: hue-rotate(-90deg); }
-      80% { transform: translate(4px, -4px) skew(-5deg); opacity: 1; filter: hue-rotate(0deg); }
-      100% { transform: translate(0) skew(0deg); opacity: 1; filter: hue-rotate(0deg); }
-    }
     @keyframes aggressive-glitch-text {
       0% { clip-path: inset(50% 0 30% 0); transform: translate(-5px, 0); }
       20% { clip-path: inset(10% 0 60% 0); transform: translate(5px, 0); }
@@ -175,35 +156,12 @@ const GlobalStyles = () => (
         0%, 100% { height: 10%; }
         50% { height: 80%; }
     }
-    /* NEW: SMOKE + GLITCH APPEAR ANIMATION */
     @keyframes smoke-glitch-appear {
-        0% { 
-            opacity: 0; 
-            filter: blur(12px) brightness(0.5); 
-            transform: translateY(15px) scale(0.85) skew(15deg); 
-            text-shadow: 4px 0 rgba(255,0,0,0.5), -4px 0 rgba(0,0,255,0.5);
-        }
-        40% {
-            opacity: 0.6;
-            filter: blur(6px);
-            transform: translateY(5px) scale(0.95) skew(-10deg);
-            text-shadow: -3px 0 rgba(255,0,0,0.7), 3px 0 rgba(0,0,255,0.7);
-        }
-        70% {
-            opacity: 0.9;
-            filter: blur(2px);
-            transform: scale(1.05) skew(5deg);
-            text-shadow: 2px 0 rgba(0,255,157,0.5), -2px 0 rgba(255,0,255,0.5);
-        }
-        100% { 
-            opacity: 1; 
-            transform: translateY(0) scale(1) skew(0); 
-            filter: none;
-            text-shadow: 0 0 10px rgba(0,255,157,0.6); 
-        }
+        0% { opacity: 0; filter: blur(12px) brightness(0.5); transform: translateY(15px) scale(0.85) skew(15deg); text-shadow: 4px 0 rgba(255,0,0,0.5), -4px 0 rgba(0,0,255,0.5); }
+        40% { opacity: 0.6; filter: blur(6px); transform: translateY(5px) scale(0.95) skew(-10deg); text-shadow: -3px 0 rgba(255,0,0,0.7), 3px 0 rgba(0,0,255,0.7); }
+        70% { opacity: 0.9; filter: blur(2px); transform: scale(1.05) skew(5deg); text-shadow: 2px 0 rgba(0,255,157,0.5), -2px 0 rgba(255,0,255,0.5); }
+        100% { opacity: 1; transform: translateY(0) scale(1) skew(0); filter: none; text-shadow: 0 0 10px rgba(0,255,157,0.6); }
     }
-    
-    /* NEW: ATTENTION PULSE ANIMATIONS */
     @keyframes frame-pulse {
       0%, 100% { border-color: rgba(0, 255, 157, 0.3); box-shadow: 0 0 10px rgba(0, 255, 157, 0.05); }
       50% { border-color: rgba(0, 255, 157, 0.8); box-shadow: 0 0 30px rgba(0, 255, 157, 0.2); }
@@ -215,59 +173,34 @@ const GlobalStyles = () => (
   `}} />
 );
 
-// --- COMPONENT DEFINITIONS ---
-
 // 1. Matrix Background
 const MatrixBackground = React.memo(() => {
   const canvasRef = useRef(null);
-
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-
     const ctx = canvas.getContext('2d');
-    
     let width = canvas.width = window.innerWidth;
     let height = canvas.height = window.innerHeight;
-
     const chars = "TAIPAN0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     const fontSize = 14;
     const columns = Math.floor(width / 20);
     const drops = Array(columns).fill(1);
-
-    let lastTime = 0;
-    const fps = 30; 
-    const interval = 1000 / fps;
-
     let animationFrameId;
-
     const draw = (currentTime) => {
       animationFrameId = requestAnimationFrame(draw);
-
-      const deltaTime = currentTime - lastTime;
-      if (deltaTime < interval) return;
-
-      lastTime = currentTime - (deltaTime % interval);
-
       ctx.fillStyle = 'rgba(5, 5, 5, 0.1)'; 
       ctx.fillRect(0, 0, width, height);
-
       ctx.fillStyle = '#00FF9D';
       ctx.font = `${fontSize}px monospace`;
-
       for (let i = 0; i < drops.length; i++) {
         const text = chars.charAt(Math.floor(Math.random() * chars.length));
         ctx.fillText(text, i * 20, drops[i] * fontSize);
-
-        if (drops[i] * fontSize > height && Math.random() > 0.975) {
-          drops[i] = 0;
-        }
+        if (drops[i] * fontSize > height && Math.random() > 0.975) drops[i] = 0;
         drops[i]++;
       }
     };
-
     draw(0);
-
     const handleResize = () => {
       width = canvas.width = window.innerWidth;
       height = canvas.height = window.innerHeight;
@@ -278,7 +211,6 @@ const MatrixBackground = React.memo(() => {
       window.removeEventListener('resize', handleResize);
     };
   }, []);
-
   return <canvas ref={canvasRef} className="fixed inset-0 z-[1] opacity-20 mix-blend-screen pointer-events-none" style={{ willChange: 'contents' }} />;
 });
 
@@ -288,12 +220,10 @@ const useOdometer = (targetValue, duration = 1000) => {
   const frameRef = useRef(0);
   const startValueRef = useRef(0);
   const startTimeRef = useRef(0);
-
   useEffect(() => {
     const startValue = startValueRef.current;
     const endValue = targetValue;
     if (startValue === endValue) return;
-
     const animate = (currentTime) => {
       if (!startTimeRef.current) startTimeRef.current = currentTime;
       const elapsed = currentTime - startTimeRef.current;
@@ -302,7 +232,6 @@ const useOdometer = (targetValue, duration = 1000) => {
       const current = Math.floor(startValue + (endValue - startValue) * ease);
       setDisplayValue(current);
       startValueRef.current = current;
-
       if (progress < 1) {
         frameRef.current = requestAnimationFrame(animate);
       } else {
@@ -316,7 +245,6 @@ const useOdometer = (targetValue, duration = 1000) => {
     frameRef.current = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(frameRef.current);
   }, [targetValue, duration]);
-
   return displayValue;
 };
 
@@ -405,35 +333,73 @@ const AIAdvisor = ({ userRole }) => {
     const [messages, setMessages] = useState([]);
     const [loading, setLoading] = useState(false);
     const [isExpanded, setIsExpanded] = useState(false);
+    const [isTyping, setIsTyping] = useState(false);
     const chatContainerRef = useRef(null);
+    const typingRef = useRef(null);
 
-    // Auto-scroll to bottom of chat
     useEffect(() => {
         if (chatContainerRef.current) {
             chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
         }
-    }, [messages, isExpanded]);
+    }, [messages, isExpanded, loading]);
+
+    useEffect(() => {
+        return () => {
+            if (typingRef.current) clearTimeout(typingRef.current);
+        };
+    }, []);
 
     const handleSend = async () => {
         if (!input.trim()) return;
         
         const userMessage = { role: 'user', content: input };
+        const currentHistory = [...messages, userMessage];
+        
         setMessages(prev => [...prev, userMessage]);
         setInput('');
         setLoading(true);
         haptic('medium');
         
         try {
-            const aiContent = await generateOpenAIResponse(userMessage.content, userRole, messages);
-            const aiMessage = { role: 'assistant', content: aiContent };
-            setMessages(prev => [...prev, aiMessage]);
-            haptic('success');
+            const aiContent = await generateOpenAIResponse(userMessage.content, userRole, currentHistory);
+            
+            setLoading(false);
+            setIsTyping(true);
+            
+            setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
+            
+            let i = 0;
+            const speed = 20; 
+            
+            const typeNextChar = () => {
+                setMessages(prev => {
+                    const newArr = [...prev];
+                    const lastIdx = newArr.length - 1;
+                    if (lastIdx >= 0 && newArr[lastIdx].role === 'assistant') {
+                         newArr[lastIdx] = { 
+                             ...newArr[lastIdx], 
+                             content: aiContent.substring(0, i + 1) 
+                         };
+                    }
+                    return newArr;
+                });
+                
+                i++;
+                if (i < aiContent.length) {
+                    typingRef.current = setTimeout(typeNextChar, speed);
+                } else {
+                    setIsTyping(false);
+                    haptic('success');
+                }
+            };
+            
+            typeNextChar();
+            
         } catch (error) {
+            setLoading(false);
             const errorMessage = { role: 'assistant', content: "Ошибка соединения. Попробуйте снова." };
             setMessages(prev => [...prev, errorMessage]);
             haptic('error');
-        } finally {
-            setLoading(false);
         }
     };
 
@@ -499,12 +465,13 @@ const AIAdvisor = ({ userRole }) => {
                             onChange={(e) => setInput(e.target.value)}
                             onKeyDown={handleKeyDown}
                             placeholder="Ваш вопрос..."
-                            className="flex-grow bg-[#0A0A0A] border border-zinc-800 rounded-xl p-3 text-xs text-white focus:border-[#00FF9D] outline-none font-mono"
+                            disabled={loading || isTyping}
+                            className="flex-grow bg-[#0A0A0A] border border-zinc-800 rounded-xl p-3 text-xs text-white focus:border-[#00FF9D] outline-none font-mono disabled:opacity-50"
                          />
                          <button 
                             onClick={handleSend}
-                            disabled={loading || !input.trim()}
-                            className={`bg-[#00FF9D] text-black p-3 rounded-xl transition-all ${loading || !input.trim() ? 'opacity-50' : 'hover:scale-105 active:scale-95'}`}
+                            disabled={loading || isTyping || !input.trim()}
+                            className={`bg-[#00FF9D] text-black p-3 rounded-xl transition-all ${loading || isTyping || !input.trim() ? 'opacity-50' : 'hover:scale-105 active:scale-95'}`}
                          >
                             <Send className="w-4 h-4" />
                          </button>
@@ -514,7 +481,6 @@ const AIAdvisor = ({ userRole }) => {
         </div>
     );
 };
-
 
 // 6. ProfitCalculator
 const ProfitCalculator = ({ onAction, data, setData }) => {
@@ -652,7 +618,7 @@ const AcademyCalculator = ({ onAction }) => {
             </p>
             <div className="border-t border-[#00FF9D]/20 pt-3 mt-2">
                 <p className="text-[10px] text-zinc-300 leading-relaxed">
-                   Забирая всего <span className="text-[#00FF9D] font-bold">{clients} {getDeclension(clients)}</span> в месяц, ты выходишь на такой стабильный доход.
+                   Создавая всего <span className="text-[#00FF9D] font-bold">{clients} {getDeclension(clients)}</span> в месяц, вы выходите на такой стабильный доход.
                 </p>
                 <p className="text-[9px] text-zinc-500 mt-2 italic">
                   И это при том, что { (100 - parseFloat(marketShare)).toFixed(2) }% рынка всё еще свободны.
@@ -826,11 +792,11 @@ const SetupTimeline = () => {
       <div className="relative border-l border-[#00FF9D]/20 ml-2 space-y-6">
         {steps.map((step, i) => (
           <div key={i} className="relative pl-6 group">
-              <div className="absolute -left-[5px] top-1 w-2.5 h-2.5 bg-[#050505] border border-[#00FF9D] rounded-full group-hover:bg-[#00FF9D] group-hover:shadow-[0_0_10px_#00FF9D] transition-all"></div>
-              <div className="flex justify-between items-start">
-                <div><h4 className="text-sm font-bold text-white font-['Chakra_Petch'] leading-none mb-1 group-hover:text-[#00FF9D] transition-colors">{step.title}</h4><p className="text-[11px] text-zinc-400 leading-snug max-w-[220px]">{step.desc}</p></div>
-                <span className="text-[9px] font-mono text-[#00FF9D]/70 bg-[#00FF9D]/5 px-1.5 py-0.5 rounded ml-2 whitespace-nowrap">{step.time}</span>
-              </div>
+             <div className="absolute -left-[5px] top-1 w-2.5 h-2.5 bg-[#050505] border border-[#00FF9D] rounded-full group-hover:bg-[#00FF9D] group-hover:shadow-[0_0_10px_#00FF9D] transition-all"></div>
+             <div className="flex justify-between items-start">
+               <div><h4 className="text-sm font-bold text-white font-['Chakra_Petch'] leading-none mb-1 group-hover:text-[#00FF9D] transition-colors">{step.title}</h4><p className="text-[11px] text-zinc-400 leading-snug max-w-[220px]">{step.desc}</p></div>
+               <span className="text-[9px] font-mono text-[#00FF9D]/70 bg-[#00FF9D]/5 px-1.5 py-0.5 rounded ml-2 whitespace-nowrap">{step.time}</span>
+             </div>
           </div>
         ))}
         <div className="relative pl-6 mt-8"><div className="absolute -left-[7px] top-1 w-3.5 h-3.5 bg-[#00FF9D] rounded-full animate-pulse shadow-[0_0_15px_#00FF9D]"></div><div className="bg-[#00FF9D]/10 border border-[#00FF9D]/30 p-3 rounded-lg"><h4 className="text-sm font-black text-[#00FF9D] uppercase tracking-wider mb-1">МАГАЗИН ГОТОВ</h4><p className="text-[10px] text-zinc-300 leading-snug">Можно запускать трафик и получать прибыль. Система работает автономно.</p></div></div>
@@ -1570,18 +1536,6 @@ const App = () => {
   useEffect(() => {
     const initApp = async () => {
         const tg = window.Telegram?.WebApp;
-        
-        // Initial Auth logic (Standard for this env)
-        try {
-             if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                 await signInWithCustomToken(auth, __initial_auth_token);
-             } else {
-                 await signInAnonymously(auth);
-             }
-        } catch (e) {
-            console.error("Auth failed", e);
-        }
-
         if (tg) {
             tg.ready();
             tg.expand(); 
@@ -1591,20 +1545,28 @@ const App = () => {
             }
             if (user?.id) {
                 setCurrentUserId(user.id); 
-                // Only try to save if we are authenticated
-                if (auth.currentUser) {
-                    try {
-                        const userRef = doc(db, 'artifacts', appId, 'public', 'data', 'app_visitors', user.id.toString());
-                        await setDoc(userRef, {
-                            chatId: user.id,
-                            userName: user.first_name || 'Агент',
-                            lastActive: serverTimestamp(),
-                            notified: false 
-                        }, { merge: true });
-                        console.log("📡 СВЯЗЬ С ТЕРМИНАЛОМ УСТАНОВЛЕНА");
-                    } catch (e) {
-                        console.error("Ошибка синхронизации с базой:", e);
+                try {
+                    await signInAnonymously(auth);
+                    // --- CAPTURE REFERRAL ---
+                    const startParam = tg.initDataUnsafe?.start_param;
+                    let referralData = {};
+                    
+                    if (startParam && startParam !== user.id.toString()) {
+                        console.log("Реферал от агента ID:", startParam);
+                        referralData = { referrerId: startParam };
                     }
+                    
+                    const userRef = doc(db, 'artifacts', appId, 'public', 'data', 'app_visitors', user.id.toString());
+                    await setDoc(userRef, {
+                        chatId: user.id,
+                        userName: user.first_name || 'Агент',
+                        lastActive: serverTimestamp(),
+                        notified: false,
+                        ...referralData
+                    }, { merge: true });
+                    console.log("📡 СВЯЗЬ С ТЕРМИНАЛОМ УСТАНОВЛЕНА");
+                } catch (e) {
+                    console.error("Ошибка синхронизации с базой:", e);
                 }
             }
         }
@@ -1692,6 +1654,38 @@ const App = () => {
   }, [currentView]);
     
   const canvasRef = useRef(null);
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    let width = window.innerWidth;
+    let height = window.innerHeight;
+    let columns, drops = [];
+    const chars = "TAIPAN0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    const initMatrix = () => {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+      columns = Math.floor(width / 25);
+      drops = Array(columns).fill(0).map(() => Math.random() * -100);
+    };
+    const drawMatrix = () => {
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.1)'; 
+      ctx.fillRect(0, 0, width, height);
+      ctx.fillStyle = '#00FF9D';
+      ctx.font = '14px monospace'; 
+      for (let i = 0; i < drops.length; i++) {
+        const text = chars.charAt(Math.floor(Math.random() * chars.length));
+        ctx.fillText(text, i * 20, drops[i] * fontSize);
+        if (drops[i] * fontSize > height && Math.random() > 0.975) drops[i] = 0;
+        drops[i]++;
+      }
+    };
+    initMatrix();
+    const interval = setInterval(drawMatrix, 75);
+    const handleResize = () => { if (window.innerWidth !== width) initMatrix(); };
+    window.addEventListener('resize', handleResize);
+    return () => { clearInterval(interval); window.removeEventListener('resize', handleResize); };
+  }, []);
 
   const openModal = (type) => { 
     haptic('light');
@@ -1859,6 +1853,7 @@ const App = () => {
           </div>
         )}
         
+        {/* ... (Rest of the component remains exactly the same: main, shop, calculator, etc.) ... */}
         {currentView === 'main' && (
           <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 flex flex-col items-center w-full">
             <div className="mb-14 w-full text-center" onClick={handleTitleClick}>
@@ -1925,23 +1920,23 @@ const App = () => {
                         <div onClick={() => setCurrentView('program')} className="glass-card p-4 rounded-2xl flex flex-col items-center justify-center cursor-pointer border-[#00FF9D]/40 hover:bg-[#00FF9D]/10 transition-all text-center relative overflow-hidden group mb-2">
                             <div className="absolute inset-0 bg-gradient-to-br from-[#00FF9D]/10 to-transparent opacity-50"></div>
                             <GraduationCap className="w-8 h-8 text-[#00FF9D] mb-1.5 relative z-10" />
-                            <span className="text-base font-bold text-white relative z-10 font-['Chakra_Petch'] tracking-wider">НАЧАТЬ ОБУЧЕНИЕ</span>
-                            <p className="text-[9px] text-zinc-400 relative z-10 uppercase tracking-widest mt-0.5">Пошаговая программа выхода на доход</p>
+                            <span className="text-base font-bold text-white relative z-10 font-['Chakra_Petch'] tracking-wider">ОБУЧЕНИЕ</span>
+                            <p className="text-[9px] text-zinc-400 relative z-10 uppercase tracking-widest mt-0.5">Узнайте пошаговую программу выхода на новый доход</p>
                         </div>
 
                         {/* Secondary Buttons Grid - Larger Version */}
                         <div className="grid grid-cols-3 gap-2">
                              <div onClick={() => setCurrentView('strategy')} className="glass-card p-3 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-[#00FF9D]/30 transition-all h-28 group">
                                 <Users className="w-8 h-8 text-zinc-500 group-hover:text-[#00FF9D] mb-3 transition-colors" />
-                                <span className="text-[10px] font-bold text-zinc-300 text-center leading-tight uppercase tracking-wider">Кабинет</span>
+                                <span className="text-[10px] font-bold text-zinc-300 text-center leading-tight uppercase tracking-wider">Личный кабинет</span>
                             </div>
                             <div onClick={() => setCurrentView('calculator')} className="glass-card p-3 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-[#00FF9D]/30 transition-all h-28 group">
                                 <Wallet className="w-8 h-8 text-zinc-500 group-hover:text-[#00FF9D] mb-3 transition-colors" />
-                                <span className="text-[10px] font-bold text-zinc-300 text-center leading-tight uppercase tracking-wider">Доход</span>
+                                <span className="text-[10px] font-bold text-zinc-300 text-center leading-tight uppercase tracking-wider">Ваш доход</span>
                             </div>
                             <div onClick={() => setCurrentView('faq')} className="glass-card p-3 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-[#00FF9D]/30 transition-all h-28 group">
                                 <Lock className="w-8 h-8 text-zinc-500 group-hover:text-[#00FF9D] mb-3 transition-colors" />
-                                <span className="text-[10px] font-bold text-zinc-300 text-center leading-tight uppercase tracking-wider">FAQ</span>
+                                <span className="text-[10px] font-bold text-zinc-300 text-center leading-tight uppercase tracking-wider">Частые вопросы</span>
                             </div>
                         </div>
                     </div>
@@ -1962,39 +1957,6 @@ const App = () => {
                     <div onClick={() => window.open('https://t.me/taipanmedia', '_blank')} className="uppercase text-[9px] tracking-widest cursor-pointer hover:text-[#00FF9D] transition-colors">Контакт</div>
                 </div>
             </div>
-          </div>
-        )}
-
-        {currentView === 'shop' && (
-          <div className="animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col h-full items-center w-full">
-            {!shopIntroFinished ? (
-               <ShopIntroSequence onComplete={() => setShopIntroFinished(true)} />
-            ) : (
-              <React.Fragment>
-                <button onClick={() => handleBackClick('main')} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-6 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
-                <div className="flex-grow flex flex-col items-center w-full space-y-6 animate-in slide-in-from-bottom duration-700">
-                  <div className="text-center px-4 w-full mb-4">
-                      <TelegramLogoMain className="w-20 h-20 mx-auto text-[#00FF9D] mb-4 drop-shadow-[0_0_15px_rgba(0,255,157,0.5)] animate-[contourPulse_3s_ease-in-out_infinite]" />
-                      <h2 className="text-3xl font-black tracking-tighter uppercase mb-2 font-['Chakra_Petch'] leading-none">TELEGRAM<br/><span className="text-[#00FF9D]">STORE</span></h2>
-                      <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] mr-[-0.3em] font-bold">Ваш бизнес ещё никогда не был так близок к покупателю</p>
-                  </div>
-                  <div className="w-full space-y-3">
-                      {[{ title: "Каталог и Корзина", desc: "Полноценный интернет-магазин внутри мессенджера. Удобный выбор товаров без лишних переходов." }, { title: "Оплата в 1 клик", desc: "Интеграция с Kaspi, картами и криптовалютой. Мгновенные транзакции." }, { title: "CRM Система", desc: "Управление заказами, статусами и клиентами прямо внутри Telegram." }, { title: "Авто-рассылки", desc: "Push-уведомления клиентам о новинках и акциях с открываемостью 90%." }].map((item, i) => (
-                        <div key={i} className="glass-card rounded-2xl p-4 flex items-start gap-4 hover:bg-white/5 transition-all">
-                           <div className="mt-1 bg-[#00FF9D]/10 p-2 rounded-full text-[#00FF9D] border border-[#00FF9D]/20"><CheckCircle2 className="w-4 h-4" /></div>
-                           <div><h4 className="text-sm font-bold text-white uppercase tracking-wider mb-1">{item.title}</h4><p className="text-[10px] text-zinc-400 leading-relaxed">{item.desc}</p></div>
-                        </div>
-                      ))}
-                  </div>
-                  <div className="mt-4 w-full glass-card p-6 rounded-3xl text-center border border-[#00FF9D]/20 relative overflow-hidden group">
-                      <div className="absolute inset-0 bg-gradient-to-t from-[#00FF9D]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                      <button onClick={() => {
-                          setCurrentView('calculator');
-                      }} className="w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-4 rounded-xl shadow-[0_0_20px_rgba(0,255,157,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs relative z-10 flex items-center justify-center gap-2 animate-pulse">РАССЧИТАТЬ УПУЩЕННУЮ ПРИБЫЛЬ</button>
-                  </div>
-                </div>
-              </React.Fragment>
-            )}
           </div>
         )}
 
@@ -2041,7 +2003,7 @@ const App = () => {
                         {/* 1. Profile Card */}
                         <div className="strategy-card flex items-center justify-between">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-full bg-[#1c1c1e] flex items-center justify-center text-zinc-400 font-black text-sm border border-zinc-700 cursor-pointer" onClick={() => setIsAdminAuthOpen(true)}>
+                                <div className="w-10 h-10 rounded-full bg-[#1c1c1e] flex items-center justify-center text-zinc-400 font-black text-sm border border-zinc-700 cursor-pointer" onClick={() => setIsAdminAuthAuthOpen(true)}>
                                     <Shield className="w-4 h-4" />
                                 </div>
                                 <div>

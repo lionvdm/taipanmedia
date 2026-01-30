@@ -5,42 +5,52 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 import { getFirestore, doc, setDoc, updateDoc, serverTimestamp, collection, query, onSnapshot, deleteDoc } from 'firebase/firestore';
 
-// --- GEMINI API INTEGRATION ---
-const apiKey = ""; // Ключ API будет предоставлен средой выполнения
+// --- OPENAI API INTEGRATION ---
+// Вставьте сюда ваш ключ API от OpenAI (sk-...)
+const openAiKey = ""; 
 
-const generateGeminiResponse = async (userQuery, userRole) => {
-  if (!apiKey) {
-    console.warn("Gemini API Key is missing");
-    return "Система перегружена. Попробуйте позже."; // Fallback message
+const generateOpenAIResponse = async (userQuery, userRole, history = []) => {
+  // Простая проверка наличия ключа
+  if (!openAiKey) {
+    console.warn("OpenAI API Key is missing. Please set it in the code.");
+    return "Демо-режим: ИИ не подключен (нет ключа API). Вставьте ключ в переменную openAiKey в коде.";
   }
 
   const systemInstruction = userRole === 'business'
-    ? "Ты — элитный бизнес-консультант Taipan Media. Пользователь хочет открыть бизнес в Telegram. Твоя задача: дать 3 жестких, конкретных и коротких совета, как разорвать конкурентов в его нише. Используй эмодзи. Стиль: киберпанк, агрессивный маркетинг, успех. Язык: Русский."
-    : "Ты — ментор миллионеров из Taipan Academy. Пользователь хочет заработать. Дай ему 3 конкретных шага, как быстро выйти на доход в Telegram, используя навыки разработки ботов. Стиль: мотивационный, жесткий, «волк с уолл-стрит». Язык: Русский.";
+    ? "Ты — элитный бизнес-консультант Taipan Media. Ты в Шымкенте. Дай жесткий, конкретный совет по бизнесу в Telegram. Стиль: киберпанк, кратко, по делу. Язык: Русский."
+    : "Ты — ментор Taipan Academy. Дай конкретный шаг для заработка на ботах. Стиль: Волк с Уолл-стрит, мотивация, жестко. Язык: Русский.";
+
+  // Формируем массив сообщений с учетом истории
+  const messages = [
+    { role: "system", content: systemInstruction },
+    ...history.map(msg => ({ role: msg.role, content: msg.content })), // Добавляем историю
+    { role: "user", content: userQuery }
+  ];
 
   try {
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${openAiKey}`
       },
       body: JSON.stringify({
-        contents: [{ parts: [{ text: userQuery }] }],
-        systemInstruction: { parts: [{ text: systemInstruction }] }
+        model: "gpt-4o", 
+        messages: messages,
+        temperature: 0.7,
+        max_tokens: 500
       })
     });
 
     if (!response.ok) {
-        if (response.status === 429) {
-            throw new Error("Too many requests");
-        }
-        throw new Error(`API Error: ${response.status}`);
+        const errorData = await response.json();
+        throw new Error(errorData.error?.message || `API Error: ${response.status}`);
     }
 
     const data = await response.json();
-    return data.candidates?.[0]?.content?.parts?.[0]?.text || "Данные не получены.";
+    return data.choices[0]?.message?.content || "Данные не получены.";
   } catch (error) {
-    console.error("Gemini API Error:", error);
+    console.error("OpenAI API Error:", error);
     return "Связь с ИИ-ядром нестабильна. Повторите запрос.";
   }
 };
@@ -214,6 +224,16 @@ const GlobalStyles = () => (
             text-shadow: 0 0 10px rgba(0,255,157,0.6); 
         }
     }
+    
+    /* NEW: ATTENTION PULSE ANIMATIONS */
+    @keyframes frame-pulse {
+      0%, 100% { border-color: rgba(0, 255, 157, 0.3); box-shadow: 0 0 10px rgba(0, 255, 157, 0.05); }
+      50% { border-color: rgba(0, 255, 157, 0.8); box-shadow: 0 0 30px rgba(0, 255, 157, 0.2); }
+    }
+    @keyframes text-pulse-glow {
+      0%, 100% { opacity: 1; text-shadow: 0 0 10px rgba(0,255,157,0.1); }
+      50% { opacity: 0.9; text-shadow: 0 0 25px rgba(0,255,157,0.6); color: #00FF9D; }
+    }
   `}} />
 );
 
@@ -347,6 +367,7 @@ const BarChart2 = (p) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24
 const PieChart = (p) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><path d="M21.21 15.89A10 10 0 1 1 8 2.83" /><path d="M22 12A10 10 0 0 0 12 2v10z" /></svg>;
 const Copy = (p) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><rect width="14" height="14" x="8" y="8" rx="2" ry="2" /><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" /></svg>;
 const Sparkles = (p) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" /></svg>;
+const Send = (p) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" /></svg>;
 
 const TelegramLogoMain = React.memo(({ className }) => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" stroke="none" className={className}>
@@ -400,31 +421,54 @@ const InputField = ({ label, value, setValue, suffix = "" }) => (
   </div>
 );
 
-// --- AI ADVISOR COMPONENT ---
+// --- AI ADVISOR COMPONENT (CHAT MODE) ---
 const AIAdvisor = ({ userRole }) => {
-    const [prompt, setPrompt] = useState('');
-    const [response, setResponse] = useState('');
+    const [input, setInput] = useState('');
+    const [messages, setMessages] = useState([]);
     const [loading, setLoading] = useState(false);
     const [isExpanded, setIsExpanded] = useState(false);
+    const chatContainerRef = useRef(null);
 
-    const handleGenerate = async () => {
-        if (!prompt) return;
+    // Auto-scroll to bottom of chat
+    useEffect(() => {
+        if (chatContainerRef.current) {
+            chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+        }
+    }, [messages, isExpanded]);
+
+    const handleSend = async () => {
+        if (!input.trim()) return;
+        
+        const userMessage = { role: 'user', content: input };
+        setMessages(prev => [...prev, userMessage]);
+        setInput('');
         setLoading(true);
         haptic('medium');
         
         try {
-            const result = await generateGeminiResponse(prompt, userRole);
-            setResponse(result);
+            const aiContent = await generateOpenAIResponse(userMessage.content, userRole, messages);
+            const aiMessage = { role: 'assistant', content: aiContent };
+            setMessages(prev => [...prev, aiMessage]);
+            haptic('success');
         } catch (error) {
-            setResponse("Ошибка соединения. Попробуйте снова.");
+            const errorMessage = { role: 'assistant', content: "Ошибка соединения. Попробуйте снова." };
+            setMessages(prev => [...prev, errorMessage]);
+            haptic('error');
         } finally {
             setLoading(false);
         }
     };
 
+    const handleKeyDown = (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            handleSend();
+        }
+    };
+
     return (
-        <div className="glass-card p-4 rounded-xl border border-[#00FF9D]/30 w-full mb-4 animate-in slide-in-from-bottom duration-500">
-            <div className="flex items-center justify-between mb-3" onClick={() => setIsExpanded(!isExpanded)}>
+        <div className={`glass-card p-4 rounded-xl border border-[#00FF9D]/30 w-full mb-4 animate-in slide-in-from-bottom duration-500 transition-all ${isExpanded ? 'h-[400px]' : 'h-auto'}`}>
+            <div className="flex items-center justify-between mb-3 cursor-pointer" onClick={() => setIsExpanded(!isExpanded)}>
                  <div className="flex items-center gap-2">
                     <Sparkles className="w-5 h-5 text-[#00FF9D] animate-pulse" />
                     <h3 className="text-sm font-black text-white font-['Chakra_Petch'] uppercase tracking-wider">
@@ -437,44 +481,56 @@ const AIAdvisor = ({ userRole }) => {
             </div>
 
             {isExpanded && (
-                <div className="animate-in fade-in duration-300">
-                     <p className="text-[10px] text-zinc-400 mb-3 leading-relaxed">
-                         {userRole === 'business' 
-                            ? "Опишите вашу нишу, и я создам план захвата рынка в Telegram." 
-                            : "Напиши, что тебя останавливает, и я дам пошаговый план действий."}
-                     </p>
-                     
-                     <textarea 
-                        value={prompt}
-                        onChange={(e) => setPrompt(e.target.value)}
-                        placeholder={userRole === 'business' ? "Например: Магазин кроссовок в Алматы..." : "Например: Боюсь, что не найду клиентов..."}
-                        className="w-full bg-[#0A0A0A] border border-zinc-800 rounded-lg p-3 text-xs text-white focus:border-[#00FF9D] outline-none resize-none h-20 mb-3 font-mono"
-                     />
-                     
-                     <button 
-                        onClick={handleGenerate}
-                        disabled={loading || !prompt}
-                        className={`w-full bg-[#00FF9D] text-black font-bold text-xs py-2.5 rounded-lg uppercase tracking-wider flex items-center justify-center gap-2 transition-all ${loading ? 'opacity-70' : 'hover:scale-[1.02] active:scale-[0.98]'}`}
-                     >
-                        {loading ? (
-                            <>
-                                <div className="w-3 h-3 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
-                                АНАЛИЗ ДАННЫХ...
-                            </>
-                        ) : (
-                            <>
-                                ✨ {userRole === 'business' ? 'СГЕНЕРИРОВАТЬ СТРАТЕГИЮ' : 'ПОЛУЧИТЬ ПЛАН'}
-                            </>
-                        )}
-                     </button>
-                     
-                     {response && (
-                         <div className="mt-4 p-3 bg-zinc-900/80 border-l-2 border-[#00FF9D] rounded-r-lg">
-                             <p className="text-[10px] text-zinc-300 whitespace-pre-line font-mono leading-relaxed">
-                                 {response}
-                             </p>
-                         </div>
+                <div className="flex flex-col h-[calc(100%-40px)] animate-in fade-in duration-300">
+                     {messages.length === 0 ? (
+                        <div className="flex-grow flex items-center justify-center text-center p-4">
+                            <p className="text-[10px] text-zinc-500 mb-3 leading-relaxed">
+                                {userRole === 'business' 
+                                    ? "Опишите вашу нишу, и я создам план захвата рынка в Telegram." 
+                                    : "Напиши, что тебя останавливает, и я дам пошаговый план действий."}
+                            </p>
+                        </div>
+                     ) : (
+                        <div ref={chatContainerRef} className="flex-grow overflow-y-auto mb-3 space-y-3 pr-1 scroll-smooth no-scrollbar">
+                            {messages.map((msg, idx) => (
+                                <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                    <div className={`max-w-[85%] p-3 rounded-xl text-xs font-mono whitespace-pre-wrap leading-relaxed ${
+                                        msg.role === 'user' 
+                                            ? 'bg-[#00FF9D] text-black rounded-tr-none' 
+                                            : 'bg-zinc-800 text-zinc-200 border border-zinc-700 rounded-tl-none'
+                                    }`}>
+                                        {msg.content}
+                                    </div>
+                                </div>
+                            ))}
+                            {loading && (
+                                <div className="flex justify-start">
+                                    <div className="bg-zinc-800 border border-zinc-700 p-3 rounded-xl rounded-tl-none flex items-center gap-1">
+                                        <div className="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-bounce" style={{ animationDelay: '0s' }}></div>
+                                        <div className="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                                        <div className="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
                      )}
+                     
+                     <div className="flex items-center gap-2 mt-auto">
+                         <input 
+                            value={input}
+                            onChange={(e) => setInput(e.target.value)}
+                            onKeyDown={handleKeyDown}
+                            placeholder="Ваш вопрос..."
+                            className="flex-grow bg-[#0A0A0A] border border-zinc-800 rounded-xl p-3 text-xs text-white focus:border-[#00FF9D] outline-none font-mono"
+                         />
+                         <button 
+                            onClick={handleSend}
+                            disabled={loading || !input.trim()}
+                            className={`bg-[#00FF9D] text-black p-3 rounded-xl transition-all ${loading || !input.trim() ? 'opacity-50' : 'hover:scale-105 active:scale-95'}`}
+                         >
+                            <Send className="w-4 h-4" />
+                         </button>
+                     </div>
                 </div>
             )}
         </div>
@@ -607,13 +663,13 @@ const AcademyCalculator = ({ onAction }) => {
           </div>
       </div>
 
-      <div className="relative overflow-hidden bg-[#00FF9D]/5 border border-[#00FF9D]/30 p-6 rounded-2xl text-center group shadow-[0_0_30px_rgba(0,255,157,0.1)] mb-4">
+      <div className="relative overflow-hidden bg-[#00FF9D]/5 border border-[#00FF9D]/30 p-6 rounded-2xl text-center group shadow-[0_0_30px_rgba(0,255,157,0.1)] mb-4 animate-[frame-pulse_3s_ease-in-out_infinite]">
          <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,157,0.05)_1px,transparent_1px)] bg-[size:15px_15px] pointer-events-none"></div>
          <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-[#00FF9D]/5 to-transparent animate-[scanLine_3s_linear_infinite]"></div>
          
          <div className="relative z-10">
             <p className="text-[9px] text-zinc-400 uppercase font-bold tracking-widest mb-2">ВАШ ПОТЕНЦИАЛЬНЫЙ ДОХОД В МЕСЯЦ</p>
-            <p className="text-4xl sm:text-5xl font-black text-white font-['Chakra_Petch'] drop-shadow-[0_0_15px_rgba(0,255,157,0.4)] mb-3">
+            <p className="text-4xl sm:text-5xl font-black text-white font-['Chakra_Petch'] drop-shadow-[0_0_15px_rgba(0,255,157,0.4)] mb-3 animate-[text-pulse-glow_3s_ease-in-out_infinite]">
               от {animatedMonthly.toLocaleString()} ₸
             </p>
             <div className="border-t border-[#00FF9D]/20 pt-3 mt-2">
@@ -1568,22 +1624,18 @@ const App = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  // --- PRELOAD IMAGES (CAROUSEL & CASES) ---
+  // --- PRELOAD KASPI CAROUSEL IMAGES ---
   useEffect(() => {
       const images = [
-        // Kaspi Carousel
         "https://i.ibb.co.com/Fp52kXy/666.png", 
         "https://i.ibb.co.com/9H5ZxPfy/555.png",
         "https://i.ibb.co.com/bjV5YtR2/444.png", 
         "https://i.ibb.co.com/Q3k778bd/333.png", 
         "https://i.ibb.co.com/M5tCqhDs/222.png", 
-        "https://i.ibb.co.com/BV1gXyf7/111.png",
-        // Case Studies (Preload for faster display)
-        "https://i.ibb.co.com/gMTG4QXt/5438294939344244553.jpg",
-        "https://i.ibb.co.com/ks9Sz9zz/5438294939344244554.jpg"
+        "https://i.ibb.co.com/BV1gXyf7/111.png"
       ];
       // Keep references to prevent GC
-      window.preloadedImages = images.map(src => {
+      window.preloadedKaspiImages = images.map(src => {
           const img = new Image();
           img.src = src;
           return img;
@@ -2054,12 +2106,12 @@ const App = () => {
                         </div>
 
                         {/* 2. Finance Card */}
-                        <div className="strategy-card relative">
+                        <div className="strategy-card relative animate-[frame-pulse_3s_ease-in-out_infinite]">
                             <p className="text-[9px] text-zinc-500 uppercase font-bold tracking-[0.2em] mb-4">
                                 {userRole === 'academy' ? 'ВАШ ПОТЕНЦИАЛЬНЫЙ ДОХОД В МЕСЯЦ' : 'ПОТЕНЦИАЛЬНАЯ ПРИБЫЛЬ'}
                             </p>
                             <div className="flex items-baseline gap-2 mb-6">
-                                <div className="text-5xl font-black text-white font-['Chakra_Petch'] tracking-tighter">
+                                <div className="text-5xl font-black text-white font-['Chakra_Petch'] tracking-tighter animate-[text-pulse-glow_3s_ease-in-out_infinite]">
                                     {userRole === 'academy' 
                                         ? animatedPotentialEarnings.toLocaleString().replace(/\s/g, ' ')
                                         : businessProfit.toLocaleString().replace(/\s/g, ' ')
@@ -2089,40 +2141,42 @@ const App = () => {
                         {/* --- NEW AI ADVISOR SECTION --- */}
                         <AIAdvisor userRole={userRole} />
 
-                        {/* 3. Partner Program */}
-                        <div className="strategy-card relative overflow-hidden" style={{ borderColor: 'rgba(168, 85, 247, 0.3)' }}>
-                            <div className="absolute inset-0 bg-gradient-to-b from-purple-900/10 to-transparent pointer-events-none"></div>
-                            
-                            <div className="flex justify-between items-start mb-5 relative z-10">
-                                <div>
-                                    <h3 className="text-sm font-black text-white uppercase tracking-wider mb-1">ПАРТНЕРСКАЯ ПРОГРАММА</h3>
-                                    <p className="text-[10px] text-zinc-400 leading-snug max-w-[200px]">
-                                        Ваш бонус: <span className="text-[#a855f7] font-bold">10% (5 000 ₸)</span> с каждой оплаты привлеченного ученика.
-                                    </p>
+                        {/* 3. Partner Program - ONLY FOR ACADEMY */}
+                        {userRole === 'academy' && (
+                            <div className="strategy-card relative overflow-hidden" style={{ borderColor: 'rgba(168, 85, 247, 0.3)' }}>
+                                <div className="absolute inset-0 bg-gradient-to-b from-purple-900/10 to-transparent pointer-events-none"></div>
+                                
+                                <div className="flex justify-between items-start mb-5 relative z-10">
+                                    <div>
+                                        <h3 className="text-sm font-black text-white uppercase tracking-wider mb-1">ПАРТНЕРСКАЯ ПРОГРАММА</h3>
+                                        <p className="text-[10px] text-zinc-400 leading-snug max-w-[200px]">
+                                            Ваш бонус: <span className="text-[#a855f7] font-bold">10% (5 000 ₸)</span> с каждой оплаты привлеченного ученика.
+                                        </p>
+                                    </div>
+                                    <div className="bg-[#1a1625] border border-purple-500/20 rounded-lg p-2 text-center min-w-[70px]">
+                                        <div className="text-lg font-black text-white font-mono leading-none mb-1">0</div>
+                                        <div className="text-[7px] text-[#a855f7] font-bold uppercase tracking-wider">ПАРТНЕРОВ</div>
+                                    </div>
                                 </div>
-                                <div className="bg-[#1a1625] border border-purple-500/20 rounded-lg p-2 text-center min-w-[70px]">
-                                    <div className="text-lg font-black text-white font-mono leading-none mb-1">0</div>
-                                    <div className="text-[7px] text-[#a855f7] font-bold uppercase tracking-wider">ПАРТНЕРОВ</div>
-                                </div>
-                            </div>
 
-                            {/* Input Field */}
-                            <div className="flex items-center gap-2 bg-[#121212] border border-zinc-800 p-2 rounded-xl mb-3 relative z-10">
-                                <div className="flex-grow text-[10px] text-zinc-500 font-mono px-2 truncate select-all">
-                                    t.me/taipan_bot?start={currentUserId || 'id'}
+                                {/* Input Field */}
+                                <div className="flex items-center gap-2 bg-[#121212] border border-zinc-800 p-2 rounded-xl mb-3 relative z-10">
+                                    <div className="flex-grow text-[10px] text-zinc-500 font-mono px-2 truncate select-all">
+                                        t.me/taipan_bot?start={currentUserId || 'id'}
+                                    </div>
+                                    <button 
+                                        onClick={() => {
+                                            navigator.clipboard.writeText(`https://t.me/taipan_bot?start=${currentUserId}`);
+                                            notify('success');
+                                        }}
+                                        className="bg-[#1c1c1e] hover:bg-[#252525] p-2 rounded-lg text-zinc-400 transition-colors border border-zinc-700"
+                                    >
+                                        <Copy className="w-4 h-4" />
+                                    </button>
                                 </div>
-                                <button 
-                                    onClick={() => {
-                                        navigator.clipboard.writeText(`https://t.me/taipan_bot?start=${currentUserId}`);
-                                        notify('success');
-                                    }}
-                                    className="bg-[#1c1c1e] hover:bg-[#252525] p-2 rounded-lg text-zinc-400 transition-colors border border-zinc-700"
-                                >
-                                    <Copy className="w-4 h-4" />
-                                </button>
+                                <p className="text-center text-[9px] text-zinc-600 font-mono">Используйте эту ссылку для приглашения</p>
                             </div>
-                            <p className="text-center text-[9px] text-zinc-600 font-mono">Используйте эту ссылку для приглашения</p>
-                        </div>
+                        )}
                     </div>
                 )}
              </div>

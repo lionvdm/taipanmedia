@@ -2,61 +2,27 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 
 // --- FIREBASE INTEGRATION ---
 import { initializeApp } from 'firebase/app';
-import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
+import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from 'firebase/auth';
 import { getFirestore, doc, setDoc, updateDoc, serverTimestamp, collection, query, onSnapshot, deleteDoc } from 'firebase/firestore';
 
 // --- OPENAI API INTEGRATION ---
-// Вставьте сюда ваш ключ API от OpenAI (sk-...)
-const openAiKey = ""; 
-
 const generateOpenAIResponse = async (userQuery, userRole, history = []) => {
-  // Простая проверка наличия ключа
-  if (!openAiKey) {
-    console.warn("OpenAI API Key is missing. Please set it in the code.");
-    return "Демо-режим: ИИ не подключен (нет ключа API). Вставьте ключ в переменную openAiKey в коде.";
-  }
-
-  const systemInstruction = userRole === 'business'
-    ? "Ты — элитный бизнес-консультант Taipan Media. Ты в Шымкенте. Дай жесткий, конкретный совет по бизнесу в Telegram. Стиль: киберпанк, кратко, по делу. Язык: Русский."
-    : "Ты — ментор Taipan Academy. Дай конкретный шаг для заработка на ботах. Стиль: Волк с Уолл-стрит, мотивация, жестко. Язык: Русский.";
-
-  // Формируем массив сообщений с учетом истории
-  const messages = [
-    { role: "system", content: systemInstruction },
-    ...history.map(msg => ({ role: msg.role, content: msg.content })), // Добавляем историю
-    { role: "user", content: userQuery }
-  ];
-
   try {
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    const response = await fetch("/api/chat", {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${openAiKey}`
-      },
-      body: JSON.stringify({
-        model: "gpt-4o", 
-        messages: messages,
-        temperature: 0.7,
-        max_tokens: 500
-      })
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userQuery, userRole, history: history.map(msg => ({ role: msg.role, content: msg.content })) })
     });
-
-    if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error?.message || `API Error: ${response.status}`);
-    }
 
     const data = await response.json();
     return data.choices[0]?.message?.content || "Данные не получены.";
   } catch (error) {
-    console.error("OpenAI API Error:", error);
-    return "Связь с ИИ-ядром нестабильна. Повторите запрос.";
+    return "Связь нестабильна. Попробуйте позже.";
   }
 };
 
 // --- CONFIGURATION & INIT ---
-const firebaseConfig = {
+const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
   apiKey: "AIzaSyCdcj_56EdygidWa8pQm17fegnF39XB8Xg",
   authDomain: "taipan-680b2.firebaseapp.com",
   projectId: "taipan-680b2",
@@ -848,11 +814,11 @@ const SetupTimeline = () => {
       <div className="relative border-l border-[#00FF9D]/20 ml-2 space-y-6">
         {steps.map((step, i) => (
           <div key={i} className="relative pl-6 group">
-             <div className="absolute -left-[5px] top-1 w-2.5 h-2.5 bg-[#050505] border border-[#00FF9D] rounded-full group-hover:bg-[#00FF9D] group-hover:shadow-[0_0_10px_#00FF9D] transition-all"></div>
-             <div className="flex justify-between items-start">
-               <div><h4 className="text-sm font-bold text-white font-['Chakra_Petch'] leading-none mb-1 group-hover:text-[#00FF9D] transition-colors">{step.title}</h4><p className="text-[11px] text-zinc-400 leading-snug max-w-[220px]">{step.desc}</p></div>
-               <span className="text-[9px] font-mono text-[#00FF9D]/70 bg-[#00FF9D]/5 px-1.5 py-0.5 rounded ml-2 whitespace-nowrap">{step.time}</span>
-             </div>
+              <div className="absolute -left-[5px] top-1 w-2.5 h-2.5 bg-[#050505] border border-[#00FF9D] rounded-full group-hover:bg-[#00FF9D] group-hover:shadow-[0_0_10px_#00FF9D] transition-all"></div>
+              <div className="flex justify-between items-start">
+                <div><h4 className="text-sm font-bold text-white font-['Chakra_Petch'] leading-none mb-1 group-hover:text-[#00FF9D] transition-colors">{step.title}</h4><p className="text-[11px] text-zinc-400 leading-snug max-w-[220px]">{step.desc}</p></div>
+                <span className="text-[9px] font-mono text-[#00FF9D]/70 bg-[#00FF9D]/5 px-1.5 py-0.5 rounded ml-2 whitespace-nowrap">{step.time}</span>
+              </div>
           </div>
         ))}
         <div className="relative pl-6 mt-8"><div className="absolute -left-[7px] top-1 w-3.5 h-3.5 bg-[#00FF9D] rounded-full animate-pulse shadow-[0_0_15px_#00FF9D]"></div><div className="bg-[#00FF9D]/10 border border-[#00FF9D]/30 p-3 rounded-lg"><h4 className="text-sm font-black text-[#00FF9D] uppercase tracking-wider mb-1">МАГАЗИН ГОТОВ</h4><p className="text-[10px] text-zinc-300 leading-snug">Можно запускать трафик и получать прибыль. Система работает автономно.</p></div></div>
@@ -1592,6 +1558,18 @@ const App = () => {
   useEffect(() => {
     const initApp = async () => {
         const tg = window.Telegram?.WebApp;
+        
+        // Initial Auth logic (Standard for this env)
+        try {
+             if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                 await signInWithCustomToken(auth, __initial_auth_token);
+             } else {
+                 await signInAnonymously(auth);
+             }
+        } catch (e) {
+            console.error("Auth failed", e);
+        }
+
         if (tg) {
             tg.ready();
             tg.expand(); 
@@ -1601,18 +1579,20 @@ const App = () => {
             }
             if (user?.id) {
                 setCurrentUserId(user.id); 
-                try {
-                    await signInAnonymously(auth);
-                    const userRef = doc(db, 'artifacts', appId, 'public', 'data', 'app_visitors', user.id.toString());
-                    await setDoc(userRef, {
-                        chatId: user.id,
-                        userName: user.first_name || 'Агент',
-                        lastActive: serverTimestamp(),
-                        notified: false 
-                    }, { merge: true });
-                    console.log("📡 СВЯЗЬ С ТЕРМИНАЛОМ УСТАНОВЛЕНА");
-                } catch (e) {
-                    console.error("Ошибка синхронизации с базой:", e);
+                // Only try to save if we are authenticated
+                if (auth.currentUser) {
+                    try {
+                        const userRef = doc(db, 'artifacts', appId, 'public', 'data', 'app_visitors', user.id.toString());
+                        await setDoc(userRef, {
+                            chatId: user.id,
+                            userName: user.first_name || 'Агент',
+                            lastActive: serverTimestamp(),
+                            notified: false 
+                        }, { merge: true });
+                        console.log("📡 СВЯЗЬ С ТЕРМИНАЛОМ УСТАНОВЛЕНА");
+                    } catch (e) {
+                        console.error("Ошибка синхронизации с базой:", e);
+                    }
                 }
             }
         }
@@ -1700,38 +1680,6 @@ const App = () => {
   }, [currentView]);
     
   const canvasRef = useRef(null);
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    let width = window.innerWidth;
-    let height = window.innerHeight;
-    let columns, drops = [];
-    const chars = "TAIPAN0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    const initMatrix = () => {
-      width = canvas.width = window.innerWidth;
-      height = canvas.height = window.innerHeight;
-      columns = Math.floor(width / 25);
-      drops = Array(columns).fill(0).map(() => Math.random() * -100);
-    };
-    const drawMatrix = () => {
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.1)'; 
-      ctx.fillRect(0, 0, width, height);
-      ctx.fillStyle = '#00FF9D';
-      ctx.font = '14px monospace'; 
-      for (let i = 0; i < drops.length; i++) {
-        const text = chars.charAt(Math.floor(Math.random() * chars.length));
-        ctx.fillText(text, i * 20, drops[i] * fontSize);
-        if (drops[i] * fontSize > height && Math.random() > 0.975) drops[i] = 0;
-        drops[i]++;
-      }
-    };
-    initMatrix();
-    const interval = setInterval(drawMatrix, 75);
-    const handleResize = () => { if (window.innerWidth !== width) initMatrix(); };
-    window.addEventListener('resize', handleResize);
-    return () => { clearInterval(interval); window.removeEventListener('resize', handleResize); };
-  }, []);
 
   const openModal = (type) => { 
     haptic('light');
@@ -1899,7 +1847,6 @@ const App = () => {
           </div>
         )}
         
-        {/* ... (Rest of the component remains exactly the same: main, shop, calculator, etc.) ... */}
         {currentView === 'main' && (
           <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 flex flex-col items-center w-full">
             <div className="mb-14 w-full text-center" onClick={handleTitleClick}>

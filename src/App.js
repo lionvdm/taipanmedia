@@ -200,8 +200,9 @@ const GlobalStyles = () => (
         overflow: hidden;
     }
 
+    /* UPDATED: Crystal clear locked state - NO BLUR, NO GRAYSCALE */
     .cert-locked {
-        filter: grayscale(1);
+        filter: none;
         opacity: 1;
         pointer-events: none;
     }
@@ -4058,159 +4059,124 @@ const App = () => {
 
 
                         {/* --- 4. БЛОК СЕРТИФИКАТА (EXPANDABLE) --- */}
-
                         {userRole === 'academy' && (
-
                             <div 
-
                                 className={`strategy-card mt-4 transition-all duration-500 ease-in-out ${isCertExpanded ? 'border-[#00FF9D]/50 bg-[#0A0A0A]' : 'hover:border-[#00FF9D]/50 cursor-pointer'}`}
-
                                 onClick={() => { 
-
                                     if (!isCertExpanded) {
-
                                         haptic('medium'); 
-
                                         setIsCertExpanded(true);
-
                                     }
-
                                 }}
-
                             >
-
                                 {/* Header Row */}
-
                                 <div className="flex items-center justify-between" onClick={(e) => {
-
                                     if (isCertExpanded) {
-
                                         e.stopPropagation(); 
-
                                         haptic('light');
-
                                         setIsCertExpanded(false);
-
                                     }
-
                                 }}>
-
                                     <div className="flex items-center gap-3">
-
                                         <div className={`w-10 h-10 rounded-full flex items-center justify-center border transition-colors ${isStudent ? 'bg-[#00FF9D]/10 border-[#00FF9D]/30 text-[#00FF9D]' : 'bg-zinc-900 border-zinc-800 text-zinc-600'}`}>
-
                                             <Shield className="w-5 h-5" />
-
                                         </div>
-
                                         <div>
-
-                                            <h3 className="text-xs font-bold text-white uppercase tracking-wider">СЕРТИФИКАТ</h3>
-
-                                            <p className="text-[9px] text-zinc-500 uppercase tracking-widest">{isStudent ? 'ПОЛУЧЕН' : 'НЕ ПОЛУЧЕН'}</p>
-
+                                            <h3 className="text-xs font-bold text-white uppercase tracking-wider mb-1">СЕРТИФИКАТ ОБ ОБУЧЕНИИ</h3>
+                                            <div className="text-[8px] text-zinc-500 leading-tight max-w-[230px]">
+                                                <p className="mb-0.5">Сертификаты Taipan academy являются официальными в блокчейне Ton.</p>
+                                                <p>Их нельзя продать или подделать</p>
+                                            </div>
                                         </div>
-
                                     </div>
-
                                     <div className={`bg-zinc-900 p-2 rounded-lg border border-zinc-800 transition-all duration-300 ${isCertExpanded ? 'rotate-90 bg-[#00FF9D] text-black' : 'group-hover:bg-[#00FF9D] group-hover:text-black'}`}>
-
                                         <ArrowRight className="w-4 h-4" />
-
                                     </div>
-
                                 </div>
-
-
 
                                 {/* Expanded Content */}
                                 <div className={`overflow-hidden transition-all duration-500 ease-in-out ${isCertExpanded ? 'max-h-[800px] opacity-100 mt-6' : 'max-h-0 opacity-0'}`}>
                                     <div className={`relative overflow-hidden rounded-[20px] transition-all duration-1000 
-                                        ${!isStudent ? 'cert-locked' : 'shadow-[0_0_50px_rgba(0,255,157,0.2)]'}`}
+                                        ${!isStudent ? 'cert-locked' : 'shadow-[0_0_30px_rgba(6,182,212,0.6)]'}`}
                                         style={{
-                                            background: '#050505',
-
-                                            border: '2px solid rgba(0, 255, 157, 0.5)',
-
-                                            boxShadow: '0 0 20px rgba(0, 255, 157, 0.1), inset 0 0 40px rgba(0, 255, 157, 0.05)'
-
+                                            background: '#000000',
+                                            border: '2px solid #06b6d4',
+                                            boxShadow: '0 0 20px rgba(6, 182, 212, 0.4), inset 0 0 20px rgba(6, 182, 212, 0.2)'
                                         }}
-
                                     >
-
-                                        {/* Tech Background Grid */}
-
-                                        <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,157,0.05)_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none"></div>
-
-                                        <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-transparent to-black/80 pointer-events-none"></div>
-
+                                        {/* Tech Background Grid - Crisp Lines */}
+                                        <div className="absolute inset-0 bg-[linear-gradient(rgba(6,182,212,0.15)_1px,transparent_1px),linear-gradient(90deg,rgba(6,182,212,0.15)_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none"></div>
                                         
+                                        {/* Corner Decorations (High Contrast) */}
+                                        <div className="absolute top-0 left-0 w-24 h-24 border-t-[3px] border-l-[3px] border-cyan-400 rounded-tl-3xl opacity-100 drop-shadow-[0_0_10px_rgba(34,211,238,0.8)]"></div>
+                                        <div className="absolute top-0 right-0 w-24 h-24 border-t-[3px] border-r-[3px] border-cyan-400 rounded-tr-3xl opacity-100 drop-shadow-[0_0_10px_rgba(34,211,238,0.8)]"></div>
+                                        <div className="absolute bottom-0 left-0 w-24 h-24 border-b-[3px] border-l-[3px] border-cyan-400 rounded-bl-3xl opacity-100 drop-shadow-[0_0_10px_rgba(34,211,238,0.8)]"></div>
+                                        <div className="absolute bottom-0 right-0 w-24 h-24 border-b-[3px] border-r-[3px] border-cyan-400 rounded-br-3xl opacity-100 drop-shadow-[0_0_10px_rgba(34,211,238,0.8)]"></div>
 
-                                        {/* Corner Decorations */}
-
-                                        <div className="absolute top-0 left-0 w-16 h-16 border-t-4 border-l-4 border-[#00FF9D] rounded-tl-2xl opacity-80"></div>
-
-                                        <div className="absolute top-0 right-0 w-16 h-16 border-t-4 border-r-4 border-[#00FF9D] rounded-tr-2xl opacity-80"></div>
-
-                                        <div className="absolute bottom-0 left-0 w-16 h-16 border-b-4 border-l-4 border-[#00FF9D] rounded-bl-2xl opacity-80"></div>
-
-                                        <div className="absolute bottom-0 right-0 w-16 h-16 border-b-4 border-r-4 border-[#00FF9D] rounded-br-2xl opacity-80"></div>
-
-
+                                        {/* Decorative Center Lines */}
+                                        <div className="absolute top-10 left-10 right-10 h-[1px] bg-cyan-500/30"></div>
+                                        <div className="absolute bottom-10 left-10 right-10 h-[1px] bg-cyan-500/30"></div>
 
                                         <div className="relative z-10 p-8 flex flex-col items-center text-center">
-
                                             
-
-                                            {/* 1. TAIPAN ACADEMY Header */}
-
-                                            <h3 className="text-xl sm:text-2xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-zinc-400 font-['Chakra_Petch'] tracking-[0.2em] uppercase mb-8 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
-
+                                            {/* 1. TAIPAN ACADEMY Header - Metallic Look */}
+                                            <h3 className="text-xl sm:text-2xl font-black text-white font-['Chakra_Petch'] tracking-[0.2em] uppercase mb-8 drop-shadow-[0_0_5px_rgba(255,255,255,0.8)]">
                                                 TAIPAN ACADEMY
-
                                             </h3>
 
-
-
-                                            {/* 2. Certificate Title */}
-
-                                            <h1 className="text-3xl sm:text-4xl font-black text-[#00FF9D] font-['Chakra_Petch'] tracking-wide uppercase mb-2 drop-shadow-[0_0_15px_rgba(0,255,157,0.6)] leading-none">
-
+                                            {/* 2. Certificate Title - Glowing Cyan */}
+                                            <h1 className="text-3xl sm:text-4xl font-black text-cyan-400 font-['Chakra_Petch'] tracking-wide uppercase mb-4 leading-none"
+                                                style={{ textShadow: '0 0 15px rgba(34, 211, 238, 0.8)' }}>
                                                 СЕРТИФИКАТ<br/>СПЕЦИАЛИСТА
-
                                             </h1>
 
+                                            {/* 3. Divider Line - Sharp Beam */}
+                                            <div className="w-full max-w-[200px] h-[2px] bg-cyan-400 my-6 shadow-[0_0_15px_#22d3ee]"></div>
 
-
-                                            {/* 3. Divider Line */}
-
-                                            <div className="w-2/3 h-[2px] bg-gradient-to-r from-transparent via-[#00FF9D] to-transparent my-6 opacity-50"></div>
-
-
-
-                                            {/* 4. USER NAME (Dynamic) */}
-
-                                            <div className="mb-6 relative">
-
-                                                 <p className="text-3xl sm:text-5xl font-black text-white font-serif tracking-widest uppercase drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]">
-
+                                            {/* 4. USER NAME (Dynamic) - Crisp White */}
+                                            <div className="mb-8 relative">
+                                                 <p className="text-2xl sm:text-3xl font-bold text-white font-mono tracking-widest uppercase drop-shadow-[0_0_10px_rgba(255,255,255,0.8)]">
                                                     {userName}
-
                                                  </p>
+                                                 {/* Decorative underbars */}
+                                                 <div className="flex justify-center gap-1 mt-3">
+                                                     <div className="w-2 h-1 bg-cyan-400"></div>
+                                                     <div className="w-20 h-1 bg-cyan-400/50"></div>
+                                                     <div className="w-2 h-1 bg-cyan-400"></div>
+                                                 </div>
+                                            </div>
 
-                                                 {/* Underline for name */}
+                                            {/* 5. Subtitle/Qualification */}
+                                            <div className="bg-black border border-cyan-500 px-6 py-2 rounded-none mb-10 shadow-[0_0_15px_rgba(6,182,212,0.3)]">
+                                                <p className="text-[9px] sm:text-[10px] text-cyan-200 font-bold uppercase tracking-[0.15em] font-mono">
+                                                    РАЗРАБОТЧИК TELEGRAM E-COMMERCE МАГАЗИНОВ
+                                                </p>
+                                            </div>
 
-                                                 <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-full h-[1px] bg-zinc-700"></div>
-
+                                            {/* 6. Verification Badge (Bottom) */}
+                                            <div className="flex items-center gap-4 bg-black border border-blue-500 px-5 py-3 rounded-lg shadow-[0_0_20px_rgba(59,130,246,0.4)]">
+                                                <div className="w-10 h-10 flex items-center justify-center relative">
+                                                     {/* TON Diamond Logo SVG (Updated to 1:1 Reference) */}
+                                                     <svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full drop-shadow-[0_0_10px_#0098EA] relative z-10">
+                                                        <circle cx="28" cy="28" r="28" fill="#0098EA"/>
+                                                        {/* Outline Triangle */}
+                                                        <path d="M15 17H41L28 42L15 17Z" stroke="white" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                                        {/* Center Vertical Line */}
+                                                        <path d="M28 17V42" stroke="white" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                                     </svg>
+                                                </div>
+                                                <div className="text-left">
+                                                    <p className="text-[9px] text-blue-200 font-bold uppercase leading-tight tracking-wider font-mono">Верифицировано<br/><span className="text-white">в блокчейне TON</span></p>
+                                                </div>
                                             </div>
 
                                         </div>
 
                                         {!isStudent && (
-                                            <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/10">
-                                                <div className="border-2 border-red-500/80 px-4 py-1.5 rounded-lg rotate-[-10deg] shadow-[0_0_30px_rgba(239,68,68,0.3)] bg-black/90">
-                                                    <span className="text-red-500 font-black text-lg tracking-tighter uppercase font-mono">
-                                                        LOCKED
+                                            <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40">
+                                                <div className="border-[6px] border-white/10 px-8 py-4 rounded-xl rotate-[-15deg] select-none backdrop-blur-[1px]">
+                                                    <span className="text-white/10 font-black text-2xl sm:text-4xl tracking-[0.2em] uppercase font-['Chakra_Petch'] flex items-center gap-4">
+                                                        <Lock className="w-8 h-8 sm:w-10 sm:h-10" /> ЗАБЛОКИРОВАНО
                                                     </span>
                                                 </div>
                                             </div>
@@ -4218,54 +4184,29 @@ const App = () => {
                                     </div>
                                     
                                     <div className="mt-4">
-
                                         <button 
-
                                             disabled={!isStudent}
-
                                             onClick={(e) => {
-
                                                 e.stopPropagation();
-
                                                 haptic('medium');
-
                                                 // Action to claim/mint NFT
-
                                             }}
-
                                             className={`w-full py-4 rounded-xl font-black text-[10px] uppercase tracking-[0.3em] transition-all duration-500 flex items-center justify-center gap-3
-
                                                 ${isStudent 
-
                                                     ? 'bg-white text-black shadow-[0_20px_40px_rgba(255,255,255,0.15)] hover:scale-[1.02]' 
-
                                                     : 'bg-zinc-900 text-zinc-700 border border-zinc-800'}`}
-
                                         >
-
                                             {isStudent && (
-
                                                 <svg width="14" height="14" viewBox="0 0 56 56" fill="black">
-
                                                     <path d="M28 56C43.464 56 56 43.464 56 28C56 12.536 43.464 0 28 0C12.536 0 0 12.536 0 28C0 43.464 12.536 56 28 56ZM12.136 16.438L27.998 12L43.864 16.438L42.532 32.186C41.362 45.986 27.998 47.998 27.998 47.998C27.998 47.998 14.634 45.986 13.464 32.186L12.136 16.438ZM24.444 33.15L27.998 38L31.556 33.15L38.452 19.346L27.998 17.558L17.548 19.346L24.444 33.15Z"/>
-
                                                 </svg>
-
                                             )}
-
-                                            {isStudent ? "Claim TON SBT NFT" : "Complete Course to Unlock"}
-
+                                            {isStudent ? "Claim TON SBT NFT" : <span className="text-[8px] tracking-[0.15em] whitespace-nowrap">ПРОЙДИТЕ ОБУЧЕНИЕ ЧТО БЫ ЗАМИНТИТЬ СЕРТИФИКАТ</span>}
                                         </button>
-
                                     </div>
-
                                 </div>
-
                             </div>
-
                         )}
-
-
 
                         {/* 3. Partner Program - ONLY FOR ACADEMY */}
 

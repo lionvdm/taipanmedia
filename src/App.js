@@ -2703,55 +2703,35 @@ const App = () => {
 
 
   // --- FETCH REAL VISITORS FOR ADMIN ---
-
   useEffect(() => {
-
       if (currentView === 'admin' && firebaseUser) {
-
           const usersCollection = collection(db, 'artifacts', appId, 'public', 'data', 'app_visitors');
-
           const unsubscribe = onSnapshot(usersCollection, (snapshot) => {
-
               const usersData = snapshot.docs.map(doc => ({
-
                   id: doc.id,
-
                   ...doc.data()
-
               }));
-
               
-
+              // UPDATED: Safer sort function to handle different date formats (Timestamp vs Date)
               usersData.sort((a, b) => {
-
-                    const timeA = a.lastActive?.toMillis ? a.lastActive.toMillis() : 0;
-
-                    const timeB = b.lastActive?.toMillis ? b.lastActive.toMillis() : 0;
-
-                    return timeB - timeA;
-
+                    const getTime = (t) => {
+                        if (!t) return 0;
+                        if (t.toMillis && typeof t.toMillis === 'function') return t.toMillis();
+                        if (t.getTime && typeof t.getTime === 'function') return t.getTime();
+                        return new Date(t).getTime() || 0;
+                    };
+                    return getTime(b.lastActive) - getTime(a.lastActive);
               });
 
-
-
               setVisitors(usersData.slice(0, 50)); 
-
           }, (error) => {
-
               console.error("Admin fetch error:", error);
-
           });
-
           return () => unsubscribe();
-
       }
-
   }, [currentView, firebaseUser]);
 
-
-
   // --- UPDATE FUNCTIONS ---
-
   const updateLead = (id, newData) => {
 
       setLeads(prev => prev.map(lead => lead.id === id ? { ...lead, ...newData } : lead));
@@ -3009,6 +2989,9 @@ const App = () => {
       setTapCount(prev => {
           const newCount = prev + 1;
           if (newCount >= 5) {
+              // DEBUG: Log current ID to console to verify
+              console.log("Attempting Admin Entry. Current User ID:", currentUserId);
+              
               // UPDATED: Check for specific Telegram ID instead of password modal
               if (String(currentUserId) === '8469497672') {
                   haptic('success');

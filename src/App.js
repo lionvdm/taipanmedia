@@ -589,62 +589,33 @@ const TelegramLogoMain = React.memo(({ className }) => (
 
 
 // 4. SmartImage
-
-const SmartImage = React.memo(({ src, alt, className, style, wrapperClass = "", overflowHidden = true }) => {
-
+const SmartImage = React.memo(({ src, alt, className, style, wrapperClass = "", overflowHidden = true, loading = "lazy" }) => {
   const [isLoaded, setIsLoaded] = useState(false);
-
   const [hasError, setHasError] = useState(false);
 
-
-
   return (
-
     <div className={`relative ${overflowHidden ? 'overflow-hidden' : ''} ${wrapperClass} ${className?.includes('rounded') ? '' : 'rounded-none'}`}>
-
       {!isLoaded && !hasError && (
-
         <div className={`absolute inset-0 bg-zinc-900/50 animate-pulse z-0 ${className}`} style={style} />
-
       )}
-
       <img
-
         src={src}
-
         alt={alt}
-
-        loading="lazy"
-
+        loading={loading}
         decoding="async"
-
         onLoad={() => setIsLoaded(true)}
-
         onError={(e) => {
-
            setHasError(true);
-
            if (e.target.src !== "https://via.placeholder.com/400x200?text=Error") {
-
              e.target.style.display = 'none'; 
-
            }
-
         }}
-
         className={`${className} hw-accelerated transition-opacity duration-700 ease-out ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
-
         style={{ ...style, contentVisibility: 'auto' }} 
-
       />
-
     </div>
-
   );
-
 });
-
-
 
 // 5. InputField
 
@@ -1749,132 +1720,79 @@ const ShopIntroSequence = ({ onComplete }) => {
 
 
 // --- PartnersCredits (RESTORED) ---
-
 const PartnersCredits = () => {
-
-  const logos = [
-
+  // Use useMemo to keep the array reference stable
+  const logos = useMemo(() => [
     "https://i.ibb.co.com/PvND9HRh/Picsart-Background-Remover.png", "https://i.ibb.co.com/YHbCZm2/Yandex-Metrika-hd-Picsart-Background-Remover.png",
-
     "https://i.ibb.co.com/DfQywRwj/Picsart-Background-Remover.png", "https://i.ibb.co.com/QZpjR8B/salon-cvetov-janym-photo-place-Picsart-Background-Remover.png",
-
     "https://i.ibb.co.com/3mKHz61B/Picsart-Background-Remover.png", "https://i.ibb.co.com/MDKssj1s/mojsklad-Picsart-Background-Remover.png"
+  ], []);
 
-  ];
+  // Preload images immediately on mount
+  useEffect(() => {
+      logos.forEach(src => {
+          const img = new Image();
+          img.src = src;
+      });
+  }, [logos]);
 
   const [currentIndex, setCurrentIndex] = useState(0);
-
   useEffect(() => {
-
     const timer = setInterval(() => { setCurrentIndex((prev) => (prev + 1) % logos.length); }, 2500);
-
     return () => clearInterval(timer);
-
-  }, []);
-
+  }, [logos.length]);
   const currentLogo = logos[currentIndex];
-
   const isYandex = currentLogo.includes("Yandex");
-
   const isRomantic = currentLogo.includes("janym");
-
   const isFood = currentLogo.includes("DfQywRwj");
-
   const isPicsartLogo = currentLogo.includes("PvND9HRh");
-
   const isMoiSklad = currentLogo.includes("3mKHz61B") || currentLogo.includes("PvND9HRh"); 
-
   const isNewPartner = currentLogo.includes("MDKssj1s"); // Updated ID for the new MoiSklad logo
-
   
-
   // Base filters
-
   let specificStyle = { 
-
     filter: 'drop-shadow(0 0 20px rgba(0,255,157,0.15)) brightness(1.1) contrast(1.1) saturate(1.2)',
-
     transition: 'transform 0.5s ease' // Smooth scaling
-
   };
 
-
-
   // Specific styles
-
   if (isYandex) specificStyle = { ...specificStyle, filter: 'invert(1) hue-rotate(180deg) saturate(3) brightness(1.2)' };
-
   else if (isRomantic) specificStyle = { ...specificStyle, filter: 'brightness(1.5) contrast(1.2)' };
-
   else if (isFood) specificStyle = { ...specificStyle, filter: 'brightness(1.1) contrast(1.1)' };
-
   else if (isPicsartLogo) specificStyle = { ...specificStyle, filter: 'brightness(0) invert(1) drop-shadow(0 0 10px rgba(255, 255, 255, 0.6))' };
-
   else if (isNewPartner) {
-
       // Adjusted scale down from 1.5 to 0.75 as requested (approx 2x smaller)
-
       specificStyle = { 
-
           ...specificStyle, 
-
           filter: 'brightness(1.1) contrast(1.1) drop-shadow(0 0 15px rgba(255,255,255,0.2))',
-
           transform: 'scale(0.75)' 
-
       };
-
   } 
 
-
-
   // Uniform scaling for others (scale-125 matches Romantic), removing generic scaling for isNewPartner from classes to use inline style instead
-
   const logoClasses = `h-24 w-auto object-contain max-w-[90%] transform ${!isNewPartner ? 'scale-125' : ''} ${isFood ? 'translate-y-10' : ''}`;
-
   
-
   return (
-
     <div className="w-full mt-2 mb-4 relative px-4 flex flex-col items-center justify-center">
-
       <div className="flex items-center justify-center gap-4 mb-3 opacity-100">
-
         <div className="h-[1px] w-6 bg-gradient-to-r from-transparent to-[#00FF9D]"></div>
-
         <p className="text-center text-[9px] text-[#00FF9D] uppercase tracking-[0.4em] mr-[-0.4em] font-bold shadow-green-glow animate-pulse">Наши партнёры</p>
-
         <div className="h-[1px] w-6 bg-gradient-to-l from-transparent to-[#00FF9D]"></div>
-
       </div>
-
       <div className="relative w-full h-32 flex items-center justify-center overflow-hidden bg-white/5 rounded-xl border border-[#00FF9D]/10 shadow-[0_0_30px_rgba(0,0,0,0.5)]">
-
          <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:20px_20px]"></div>
-
          <div key={currentIndex} className="relative z-10 animate-[cyberReveal_0.5s_cubic-bezier(0.215,0.61,0.355,1)_both] w-full flex justify-center">
-
-            <SmartImage src={currentLogo} alt="Partner Logo" style={specificStyle} className={logoClasses} wrapperClass="relative z-10 flex justify-center w-full" />
-
+            {/* Added loading="eager" to force immediate loading */}
+            <SmartImage src={currentLogo} alt="Partner Logo" style={specificStyle} className={logoClasses} wrapperClass="relative z-10 flex justify-center w-full" loading="eager" />
          </div>
-
          <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-[#00FF9D]/10 to-transparent animate-[scanLine_2.5s_linear_infinite]"></div>
-
       </div>
-
       <div className="flex gap-1.5 mt-3">
-
         {logos.map((_, idx) => ( <div key={idx} className={`h-1 rounded-full transition-all duration-300 ${idx === currentIndex ? 'w-8 bg-[#00FF9D] shadow-[0_0_10px_#00FF9D]' : 'w-1.5 bg-zinc-800'}`} /> ))}
-
       </div>
-
     </div>
-
   );
-
 };
-
-
 
 // --- RoiView (RESTORED) ---
 
@@ -2159,430 +2077,232 @@ const AnalyticsChart = ({ leads }) => {
 
 
 // --- Admin Panel Component ---
-
 const AdminPanel = ({ leads, visitors, onBack, onClearLeads, onUpdateLead, onUpdateVisitor }) => {
-
-    const [activeTab, setActiveTab] = useState('visitors');
-
+    const [activeTab, setActiveTab] = useState('business'); // Default to business tab
     const [editingItem, setEditingItem] = useState(null); 
-
     const [editCollection, setEditCollection] = useState(''); 
 
+    // --- Filter Visitors by Segment ---
+    const businessVisitors = useMemo(() => visitors.filter(v => v.segment === 'business'), [visitors]);
+    const academyVisitors = useMemo(() => visitors.filter(v => v.segment === 'academy'), [visitors]);
 
-
-    // --- Daily Visitors Calculation ---
-
+    // --- Daily Visitors Calculation (Total) ---
     const dailyVisitorsCount = useMemo(() => {
-
         const todayStr = new Date().toDateString();
-
         return visitors.filter(v => {
-
             if (!v.lastActive) return false;
-
-            // Handle both Firestore Timestamp and JS Date
-
             const d = v.lastActive.toDate ? v.lastActive.toDate() : new Date(v.lastActive);
-
             return d.toDateString() === todayStr;
-
         }).length;
-
     }, [visitors]);
 
-
-
     const handleEditClick = (item, collectionType) => {
-
         setEditingItem(item);
-
         setEditCollection(collectionType);
-
         haptic('light');
-
     };
-
-
 
     const handleSave = (e) => {
-
         e.preventDefault();
-
         haptic('medium');
-
         const formData = new FormData(e.target);
-
         const updates = Object.fromEntries(formData.entries());
 
-
-
         if (editCollection === 'leads') {
-
             onUpdateLead(editingItem.id, updates);
-
         } else if (editCollection === 'visitors') {
-
             onUpdateVisitor(editingItem.id, updates);
-
         }
-
         setEditingItem(null);
-
     };
 
-
-
     const handleTabChange = (tab) => {
-
         haptic('light');
-
         setActiveTab(tab);
-
     }
 
-
+    // Helper to render visitor list
+    const renderVisitorList = (list, emptyMessage) => {
+        if (list.length === 0) {
+            return (
+                <div className="text-center py-10 border border-dashed border-zinc-800 rounded-xl">
+                    <Activity className="w-8 h-8 text-zinc-700 mx-auto mb-2" />
+                    <p className="text-[10px] text-zinc-600 uppercase tracking-wider">{emptyMessage}</p>
+                </div>
+            );
+        }
+        return list.map((user) => (
+            <div key={user.id} className="glass-card p-3 rounded-lg border border-zinc-800 flex items-center justify-between group hover:bg-[#00FF9D]/5 transition-all">
+                <div className="flex items-center gap-3">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold border ${user.segment === 'academy' ? 'bg-blue-900/30 border-blue-500/50 text-blue-400' : 'bg-zinc-800 border-zinc-700 text-[#00FF9D]'}`}>
+                        {user.userName?.charAt(0)}
+                    </div>
+                    <div>
+                        <p className="text-xs font-bold text-white font-mono">{user.userName}</p>
+                        <p className="text-[9px] text-zinc-500 font-mono">ID: {user.chatId}</p>
+                        {user.notes && <p className="text-[8px] text-[#00FF9D] mt-1 bg-[#00FF9D]/10 px-1 rounded inline-block">{user.notes}</p>}
+                    </div>
+                </div>
+                <div className="flex items-center gap-3">
+                    <div className="text-right">
+                        <div className="flex items-center justify-end gap-1.5 mb-1">
+                            <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${user.segment === 'academy' ? 'bg-blue-500 shadow-[0_0_5px_#3B82F6]' : 'bg-[#00FF9D] shadow-[0_0_5px_#00FF9D]'}`}></div>
+                            <span className={`text-[9px] font-bold uppercase ${user.segment === 'academy' ? 'text-blue-500' : 'text-[#00FF9D]'}`}>ONLINE</span>
+                        </div>
+                        <p className="text-[8px] text-zinc-600 font-mono">
+                            {user.lastActive?.toDate ? user.lastActive.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Сейчас'}
+                        </p>
+                    </div>
+                    <button onClick={() => handleEditClick(user, 'visitors')} className="p-2 bg-zinc-800 rounded-full hover:bg-zinc-700 text-zinc-400 hover:text-white transition-colors">
+                        <Edit2 className="w-3 h-3" />
+                    </button>
+                </div>
+            </div>
+        ));
+    };
 
     return (
-
         <div className="animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col h-full items-center w-full relative">
-
             <button onClick={() => { haptic('light'); onBack(); }} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-4 hover:opacity-70 transition-all w-fit">
-
                 <ChevronLeft className="w-4 h-4 mr-1" /> ВЫХОД ИЗ СИСТЕМЫ
-
             </button>
-
             
-
             <div className="w-full flex flex-col items-center mb-6">
-
                 <div className="w-16 h-16 bg-zinc-900 border border-[#00FF9D]/30 rounded-full flex items-center justify-center mb-4 relative">
-
                     <div className="absolute inset-0 rounded-full animate-ping bg-[#00FF9D]/10"></div>
-
                     <Shield className="w-8 h-8 text-[#00FF9D]" />
-
                 </div>
-
                 <h2 className="text-2xl font-black font-['Chakra_Petch'] uppercase tracking-widest">ПАНЕЛЬ УПРАВЛЕНИЯ</h2>
-
                 <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] font-bold">Admin Mode: ACCESS GRANTED</p>
-
             </div>
-
-
 
             <div className="flex w-full mb-4 bg-zinc-900/50 p-1 rounded-lg border border-zinc-800 gap-1 overflow-x-auto no-scrollbar">
-
-                <button onClick={() => handleTabChange('stats')} className={`flex-1 py-2 px-2 whitespace-nowrap text-[9px] font-bold uppercase tracking-widest rounded-md transition-all ${activeTab === 'stats' ? 'bg-[#00FF9D] text-black shadow-lg shadow-[#00FF9D]/20' : 'text-zinc-500 hover:text-white'}`}>📊 Статистика</button>
-
+                <button onClick={() => handleTabChange('stats')} className={`flex-1 py-2 px-2 whitespace-nowrap text-[9px] font-bold uppercase tracking-widest rounded-md transition-all ${activeTab === 'stats' ? 'bg-[#00FF9D] text-black shadow-lg shadow-[#00FF9D]/20' : 'text-zinc-500 hover:text-white'}`}>📊 Инфо</button>
                 <button onClick={() => handleTabChange('leads')} className={`flex-1 py-2 px-2 whitespace-nowrap text-[9px] font-bold uppercase tracking-widest rounded-md transition-all ${activeTab === 'leads' ? 'bg-[#00FF9D] text-black shadow-lg shadow-[#00FF9D]/20' : 'text-zinc-500 hover:text-white'}`}>Заявки ({leads.length})</button>
-
-                {/* Updated Visitors Button Label */}
-
-                <button onClick={() => handleTabChange('visitors')} className={`flex-1 py-2 px-2 whitespace-nowrap text-[9px] font-bold uppercase tracking-widest rounded-md transition-all ${activeTab === 'visitors' ? 'bg-[#00FF9D] text-black shadow-lg shadow-[#00FF9D]/20' : 'text-zinc-500 hover:text-white'}`}>
-
-                    Посетители <span className="opacity-70 text-[8px] ml-1">({dailyVisitorsCount}/{visitors.length})</span>
-
+                
+                <button onClick={() => handleTabChange('business')} className={`flex-1 py-2 px-2 whitespace-nowrap text-[9px] font-bold uppercase tracking-widest rounded-md transition-all ${activeTab === 'business' ? 'bg-[#00FF9D] text-black shadow-lg shadow-[#00FF9D]/20' : 'text-zinc-500 hover:text-white'}`}>
+                    Бизнес <span className="opacity-70 text-[8px] ml-1">({businessVisitors.length})</span>
                 </button>
-
+                
+                <button onClick={() => handleTabChange('academy')} className={`flex-1 py-2 px-2 whitespace-nowrap text-[9px] font-bold uppercase tracking-widest rounded-md transition-all ${activeTab === 'academy' ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20' : 'text-zinc-500 hover:text-white'}`}>
+                    Обучение <span className="opacity-70 text-[8px] ml-1">({academyVisitors.length})</span>
+                </button>
             </div>
-
-
 
             <div className="w-full flex-grow overflow-hidden flex flex-col">
-
                 <div className="flex items-center justify-between mb-3 px-1">
-
                     <p className="text-[10px] text-zinc-400 uppercase tracking-widest font-bold">
-
-                        {activeTab === 'leads' ? 'ВХОДЯЩИЕ ЛИДЫ' : activeTab === 'visitors' ? `ТРАФИК (СЕГОДНЯ: ${dailyVisitorsCount})` : 'ОТЧЕТЫ СИСТЕМЫ'}
-
+                        {activeTab === 'leads' ? 'ВХОДЯЩИЕ ЛИДЫ' : activeTab === 'business' ? 'СЕГМЕНТ: БИЗНЕС' : activeTab === 'academy' ? 'СЕГМЕНТ: ОБУЧЕНИЕ' : 'ОТЧЕТЫ СИСТЕМЫ'}
                     </p>
-
                     {(activeTab === 'leads' || activeTab === 'stats') && (
-
                         <button onClick={() => { haptic('warning'); onClearLeads(); }} className="text-[9px] text-red-500 uppercase font-bold hover:text-red-400 flex items-center gap-1">
-
                             <Trash2 className="w-3 h-3" /> {activeTab === 'stats' ? 'СБРОСИТЬ ВСЁ' : 'ОЧИСТИТЬ'}
-
                         </button>
-
                     )}
-
                 </div>
-
                 
-
                 <div className="flex-grow overflow-y-auto no-scrollbar space-y-2 pb-20">
-
                     
-
-                    {/* STATS TAB (NEW) */}
-
+                    {/* STATS TAB */}
                     {activeTab === 'stats' && <AnalyticsChart leads={leads} />}
 
-
-
                     {/* LEADS TAB */}
-
                     {activeTab === 'leads' && (
-
                         leads.length === 0 ? (
-
                             <div className="text-center py-10 border border-dashed border-zinc-800 rounded-xl">
-
                                 <Database className="w-8 h-8 text-zinc-700 mx-auto mb-2" />
-
                                 <p className="text-[10px] text-zinc-600 uppercase tracking-wider">Нет новых заявок</p>
-
                             </div>
-
                         ) : (
-
                             leads.map((lead) => (
-
                                 <div key={lead.id} className="glass-card p-3 rounded-lg border border-zinc-800 flex items-center justify-between group hover:border-[#00FF9D]/30 transition-all">
-
                                     <div className="flex-grow">
-
                                         <div className="flex items-center gap-2 mb-1">
-
                                             <div className="w-1.5 h-1.5 bg-[#00FF9D] rounded-full animate-pulse"></div>
-
                                             <p className="text-xs font-bold text-white font-mono">{lead.name}</p>
-
                                         </div>
-
                                         <p className="text-[10px] text-zinc-400 font-mono">{lead.contact}</p>
-
                                         <p className="text-[8px] text-zinc-600 mt-1 uppercase tracking-wider">{lead.type}</p>
-
                                     </div>
-
                                     <div className="flex items-center gap-3">
-
                                         <div className="text-right">
-
                                             <p className="text-[9px] text-zinc-500 font-mono">{lead.time}</p>
-
                                             <a href={`https://t.me/${lead.contact.replace('@', '')}`} target="_blank" rel="noreferrer" className="mt-2 inline-block bg-[#00FF9D]/10 text-[#00FF9D] text-[8px] font-bold px-2 py-1 rounded border border-[#00FF9D]/20 hover:bg-[#00FF9D]/20">
-
                                                 НАПИСАТЬ
-
                                             </a>
-
                                         </div>
-
                                         <button onClick={() => handleEditClick(lead, 'leads')} className="p-2 bg-zinc-800 rounded-full hover:bg-zinc-700 text-zinc-400 hover:text-white transition-colors">
-
                                             <Edit2 className="w-3 h-3" />
-
                                         </button>
-
                                     </div>
-
                                 </div>
-
                             ))
-
                         )
-
                     )}
 
+                    {/* BUSINESS VISITORS TAB */}
+                    {activeTab === 'business' && renderVisitorList(businessVisitors, "Нет посетителей в сегменте Бизнес")}
 
-
-                    {/* VISITORS TAB */}
-
-                    {activeTab === 'visitors' && (
-
-                        visitors.length === 0 ? (
-
-                            <div className="text-center py-10 border border-dashed border-zinc-800 rounded-xl">
-
-                                <Activity className="w-8 h-8 text-zinc-700 mx-auto mb-2" />
-
-                                <p className="text-[10px] text-zinc-600 uppercase tracking-wider">Загрузка трафика...</p>
-
-                            </div>
-
-                        ) : (
-
-                            visitors.map((user) => (
-
-                                <div key={user.id} className="glass-card p-3 rounded-lg border border-zinc-800 flex items-center justify-between group hover:bg-[#00FF9D]/5 transition-all">
-
-                                    <div className="flex items-center gap-3">
-
-                                        <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center text-[10px] font-bold text-[#00FF9D] border border-zinc-700">
-
-                                            {user.userName?.charAt(0)}
-
-                                        </div>
-
-                                        <div>
-
-                                            <p className="text-xs font-bold text-white font-mono">{user.userName}</p>
-
-                                            <p className="text-[9px] text-zinc-500 font-mono">ID: {user.chatId}</p>
-
-                                            {user.notes && <p className="text-[8px] text-[#00FF9D] mt-1 bg-[#00FF9D]/10 px-1 rounded inline-block">{user.notes}</p>}
-
-                                        </div>
-
-                                    </div>
-
-                                    <div className="flex items-center gap-3">
-
-                                        <div className="text-right">
-
-                                            <div className="flex items-center justify-end gap-1.5 mb-1">
-
-                                                <div className="w-1.5 h-1.5 bg-[#00FF9D] rounded-full animate-pulse shadow-[0_0_5px_#00FF9D]"></div>
-
-                                                <span className="text-[9px] text-[#00FF9D] font-bold uppercase">ONLINE</span>
-
-                                            </div>
-
-                                            <p className="text-[8px] text-zinc-600 font-mono">
-
-                                                {user.lastActive?.toDate ? user.lastActive.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Сейчас'}
-
-                                            </p>
-
-                                        </div>
-
-                                        <button onClick={() => handleEditClick(user, 'visitors')} className="p-2 bg-zinc-800 rounded-full hover:bg-zinc-700 text-zinc-400 hover:text-white transition-colors">
-
-                                            <Edit2 className="w-3 h-3" />
-
-                                        </button>
-
-                                    </div>
-
-                                </div>
-
-                            ))
-
-                        )
-
-                    )}
-
+                    {/* ACADEMY VISITORS TAB */}
+                    {activeTab === 'academy' && renderVisitorList(academyVisitors, "Нет посетителей в сегменте Обучение")}
                 </div>
-
             </div>
 
-
-
-            {/* EDIT MODAL */}
-
+            {/* EDIT MODAL - Same as before */}
             {editingItem && (
-
                 <div className="absolute inset-0 z-50 bg-black/95 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in zoom-in duration-200">
-
                     <div className="w-full max-w-sm bg-[#0F0F0F] border border-[#00FF9D]/30 p-6 rounded-2xl shadow-2xl relative">
-
                         <button 
-
                             onClick={() => setEditingItem(null)} 
-
                             className="absolute top-4 right-4 text-zinc-500 hover:text-white"
-
                         >
-
                             <X className="w-5 h-5" />
-
                         </button>
-
                         <h3 className="text-lg font-bold text-white mb-4 uppercase tracking-wider font-mono flex items-center gap-2">
-
                             <Edit2 className="w-4 h-4 text-[#00FF9D]" /> 
-
                             Редактирование
-
                         </h3>
-
                         
-
                         <form onSubmit={handleSave} className="space-y-3">
-
                             {editCollection === 'leads' ? (
-
                                 <>
-
                                     <div>
-
                                         <label className="text-[9px] text-zinc-500 uppercase font-bold block mb-1">Имя</label>
-
                                         <input name="name" defaultValue={editingItem.name} className="w-full bg-zinc-900 border border-zinc-700 rounded p-2 text-xs text-white focus:border-[#00FF9D] outline-none" />
-
                                     </div>
-
                                     <div>
-
                                         <label className="text-[9px] text-zinc-500 uppercase font-bold block mb-1">Контакт</label>
-
                                         <input name="contact" defaultValue={editingItem.contact} className="w-full bg-zinc-900 border border-zinc-700 rounded p-2 text-xs text-white focus:border-[#00FF9D] outline-none" />
-
                                     </div>
-
                                     <div>
-
                                         <label className="text-[9px] text-zinc-500 uppercase font-bold block mb-1">Услуга</label>
-
                                         <input name="type" defaultValue={editingItem.type} className="w-full bg-zinc-900 border border-zinc-700 rounded p-2 text-xs text-white focus:border-[#00FF9D] outline-none" />
-
                                     </div>
-
                                 </>
-
                             ) : (
-
                                 <>
-
                                     <div className="mb-2">
-
                                         <p className="text-[10px] text-zinc-400">ID: {editingItem.chatId}</p>
-
                                         <p className="text-[10px] text-zinc-400">Name: {editingItem.userName}</p>
-
+                                        <p className="text-[10px] text-zinc-500">Segment: {editingItem.segment === 'academy' ? 'Обучение' : 'Бизнес'}</p>
                                     </div>
-
                                     <div>
-
                                         <label className="text-[9px] text-zinc-500 uppercase font-bold block mb-1">Заметки о клиенте</label>
-
                                         <textarea name="notes" defaultValue={editingItem.notes || ''} placeholder="Например: интересовался обучением..." className="w-full bg-zinc-900 border border-zinc-700 rounded p-2 text-xs text-white focus:border-[#00FF9D] outline-none h-20 resize-none" />
-
                                     </div>
-
                                 </>
-
                             )}
-
                             
-
                             <button type="submit" className="w-full bg-[#00FF9D] hover:bg-[#00FF9D]/90 text-black font-bold uppercase text-xs py-3 rounded-xl mt-4 flex items-center justify-center gap-2">
-
                                 <Save className="w-4 h-4" /> Сохранить
-
                             </button>
-
                         </form>
-
                     </div>
-
                 </div>
-
             )}
-
         </div>
-
     );
-
 };
-
-
 
 const App = () => {
 
@@ -2707,17 +2427,23 @@ const App = () => {
   // Фейковые данные рефералов (потом заменишь на реальные из БД)
 
   const [referrals, setReferrals] = useState([
-
       { id: 1, name: 'Алишер К.', date: '27.01.26', profit: 5000 },
-
       { id: 2, name: 'Елена М.', date: '28.01.26', profit: 5000 }
-
   ]);
 
-
+  // Function to save user segment (Business or Academy)
+  const saveUserSegment = async (segment) => {
+      if (!currentUserId) return;
+      try {
+          const userRef = doc(db, 'artifacts', appId, 'public', 'data', 'app_visitors', currentUserId.toString());
+          // Update segment and lastActive. Using merge to keep referrerId and other data.
+          await setDoc(userRef, { segment: segment, lastActive: serverTimestamp() }, { merge: true });
+      } catch (e) {
+          console.error("Error saving segment:", e);
+      }
+  };
 
   // --- TELEGRAM MAIN BUTTON INTEGRATION (FOR MODAL) ---
-
   useEffect(() => {
 
     if (!tg) return;
@@ -3279,37 +3005,29 @@ const App = () => {
 
 
   // --- Admin Logic ---
-
   const handleTitleClick = () => {
-
       setTapCount(prev => {
-
           const newCount = prev + 1;
-
           if (newCount >= 5) {
-
-              haptic('warning');
-
-              setIsAdminAuthOpen(true);
-
+              // UPDATED: Check for specific Telegram ID instead of password modal
+              if (String(currentUserId) === '8469497672') {
+                  haptic('success');
+                  setCurrentView('admin');
+              } else {
+                  haptic('error');
+                  // Optionally show a toast or alert for unauthorized users, or just do nothing
+                  // console.log("Unauthorized admin attempt: ", currentUserId);
+              }
               return 0;
-
           }
-
           haptic('light');
-
           return newCount;
-
       });
-
   };
 
-
-
+  // Keep handleAdminAuth for legacy/fallback if needed, though it's no longer triggered by title click
   const handleAdminAuth = (e) => {
-
       e.preventDefault();
-
       const code = e.target[0].value;
 
       if (code === 'admin') {
@@ -3399,83 +3117,50 @@ const App = () => {
                   
 
                   <div className="flex items-center justify-center gap-4 mt-4">
-
                       <div className="h-[1px] w-8 bg-gradient-to-r from-transparent to-[#00FF9D]"></div>
-
                       <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] font-bold">Выберите цель</p>
-
                       <div className="h-[1px] w-8 bg-gradient-to-l from-transparent to-[#00FF9D]"></div>
-
                   </div>
-
               </div>
-
               
-
               <div className="w-full space-y-4 mb-8 flex flex-col items-center">
-
                   {/* BUSINESS CARD */}
-
-                  <div onClick={() => { setUserRole('business'); setCurrentView('main'); haptic('medium'); }} className="group relative w-10/12 max-w-[280px] bg-zinc-900/60 backdrop-blur-xl border border-[#00FF9D]/20 p-1 rounded-3xl overflow-hidden transition-all duration-300 hover:border-[#00FF9D] hover:shadow-[0_0_30px_rgba(0,255,157,0.15)] active:scale-[0.98] cursor-pointer">
-
+                  <div onClick={() => { 
+                      setUserRole('business'); 
+                      saveUserSegment('business'); // SAVE SEGMENT
+                      setCurrentView('main'); 
+                      haptic('medium'); 
+                  }} className="group relative w-10/12 max-w-[280px] bg-zinc-900/60 backdrop-blur-xl border border-[#00FF9D]/20 p-1 rounded-3xl overflow-hidden transition-all duration-300 hover:border-[#00FF9D] hover:shadow-[0_0_30px_rgba(0,255,157,0.15)] active:scale-[0.98] cursor-pointer">
                       <div className="absolute inset-0 bg-gradient-to-r from-[#00FF9D]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-
                       <div className="relative flex flex-col items-center justify-center bg-[#050505]/50 rounded-[20px] p-5 h-full text-center">
-
                           <div className="w-14 h-14 mb-3 rounded-full bg-gradient-to-br from-[#00FF9D]/20 to-black border border-[#00FF9D]/30 flex items-center justify-center shadow-[0_0_15px_rgba(0,255,157,0.1)] group-hover:scale-110 transition-transform duration-300">
-
                                <TelegramLogoMain className="w-7 h-7 text-[#00FF9D] drop-shadow-[0_0_5px_rgba(0,255,157,0.8)]" />
-
                           </div>
-
                           
-
                           <h3 className="text-lg font-black font-['Chakra_Petch'] uppercase tracking-wider text-white group-hover:text-[#00FF9D] transition-colors mb-1">ДЛЯ БИЗНЕСА</h3>
-
                           <p className="text-[9px] text-zinc-400 font-mono tracking-wide group-hover:text-zinc-300">Заказать разработку</p>
-
                       </div>
-
                   </div>
-
-
 
                   {/* ACADEMY CARD */}
-
                   <div onClick={() => { 
-
                       setUserRole('academy'); 
-
+                      saveUserSegment('academy'); // SAVE SEGMENT
                       setPreviousView('role_selection'); // Запоминаем, что пришли с выбора роли
-
                       setCurrentView('education'); 
-
                       haptic('medium'); 
-
                   }} className="group relative w-10/12 max-w-[280px] bg-zinc-900/60 backdrop-blur-xl border border-blue-500/20 p-1 rounded-3xl overflow-hidden transition-all duration-300 hover:border-blue-500 hover:shadow-[0_0_30px_rgba(59,130,246,0.15)] active:scale-[0.98] cursor-pointer">
-
                       <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-
                       <div className="relative flex flex-col items-center justify-center bg-[#050505]/50 rounded-[20px] p-5 h-full text-center">
-
                           <div className="w-14 h-14 mb-3 rounded-full bg-gradient-to-br from-blue-500/20 to-black border border-blue-500/30 flex items-center justify-center shadow-[0_0_15px_rgba(59,130,246,0.1)] group-hover:scale-110 transition-transform duration-300">
-
                                <GraduationCap className="w-7 h-7 text-blue-400 drop-shadow-[0_0_5px_rgba(96,165,250,0.8)]" />
-
                           </div>
-
                           
-
                           <h3 className="text-lg font-black font-['Chakra_Petch'] uppercase tracking-wider text-white group-hover:text-blue-400 transition-colors mb-1 leading-tight">НАЧАТЬ<br/>ЗАРАБАТЫВАТЬ</h3>
-
                       </div>
-
                   </div>
-
               </div>
-
               
-
               {/* PARTNERS */}
 
               <PartnersCredits />
@@ -3673,19 +3358,12 @@ const App = () => {
 
 
             {/* --- SWITCHER FOOTER --- */}
-
             <div className="w-full mt-12 pt-6 border-t border-zinc-900 flex flex-col items-center gap-6">
-
                 <button 
-
                     onClick={() => { haptic('light'); setCurrentView('role_selection'); }}
-
                     className="text-[9px] text-zinc-500 uppercase tracking-[0.2em] hover:text-[#00FF9D] transition-colors border border-zinc-800 px-6 py-3 rounded-full hover:border-[#00FF9D]/30 active:scale-95"
-
                 >
-
                     Сменить направление
-
                 </button>
 
                 

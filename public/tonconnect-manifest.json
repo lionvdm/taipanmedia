@@ -1,5 +1,7 @@
 {
-  "url": "https://taipanmedia.vercel.app",
-  "name": "TAIPAN Academy",
-  "iconUrl": "https://taipanmedia.vercel.app/logo.png"
+  "url": "https://taipan-rose.vercel.app/",
+  "name": "Taipan Academy",
+  "iconUrl": "https://taipan-rose.vercel.app/logo192.png",
+  "termsOfUseUrl": "https://taipan-rose.vercel.app/terms",
+  "privacyPolicyUrl": "https://taipan-rose.vercel.app/privacy"
 }

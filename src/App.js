@@ -388,7 +388,7 @@ const ProfitCalculator = ({ onAction, data, setData }) => {
   }, [onAction]);
 
   return (
-    <div className="w-full animate-in slide-in-from-bottom duration-500">
+    <div className="w-full">
       <InputField label="Сколько людей в месяц?" value={data.traffic} setValue={(v) => setData({...data, traffic: v})} />
       <InputField label="Какая конверсия?" value={data.conversion} setValue={(v) => setData({...data, conversion: v})} suffix="%" />
       <InputField label="Средний чек" value={data.avgCheck} setValue={(v) => setData({...data, avgCheck: v})} suffix="₸" />
@@ -439,7 +439,7 @@ const AcademyCalculator = ({ onAction }) => {
   };
 
   return (
-    <div className="w-full animate-in slide-in-from-bottom duration-500">
+    <div className="w-full">
       <div className="text-center mb-6">
         <p className="text-[10px] text-zinc-500 tracking-widest font-bold mb-1">средний ежемесячный объём рынка</p>
         <h2 className="text-3xl sm:text-4xl font-black text-white font-['Chakra_Petch'] drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]">
@@ -980,7 +980,7 @@ const RoiView = ({ profit, onBack, onAction }) => {
   const animatedProfit = useOdometer(conservativeProfit);
   const animatedPercentage = useOdometer(returnPercentage);
   return (
-    <div className="animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col h-full items-center w-full">
+    <div className="flex flex-col h-full items-center w-full">
         <button onClick={() => { haptic('light'); onBack(); }} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-4 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
         <div className="flex-grow flex flex-col items-center w-full space-y-6">
             <div className="text-center px-4 w-full"><h2 className="text-2xl sm:text-3xl font-black tracking-tighter uppercase mb-1 font-['Chakra_Petch'] leading-none whitespace-nowrap">РАСЧЁТ <span className="text-[#00FF9D]">ОКУПАЕМОСТИ</span></h2><p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] mr-[-0.3em] font-bold">Эффективность инвестиций</p></div>
@@ -1375,7 +1375,7 @@ const App = () => {
       {/* GLOBAL IMAGE VIEWER MODAL */}
       {previewImage && (
         <div 
-          className="fixed inset-0 z-[300] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 animate-in fade-in duration-300 cursor-zoom-out" 
+          className="fixed inset-0 z-[300] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 cursor-zoom-out" 
           onClick={() => { haptic('light'); setPreviewImage(null); }}
         >
           {/* Уменьшил max-w-2xl до max-w-sm (размер смартфона), чтобы скриншоты не были огромными */}
@@ -1402,7 +1402,7 @@ const App = () => {
       <div className="relative z-10 flex-grow flex flex-col max-w-lg mx-auto w-full px-4 pt-5 pb-20">
         
         {currentView === 'role_selection' && (
-          <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 flex flex-col items-center justify-center h-full w-full px-4 pt-5 pb-20">
+          <div className="flex flex-col items-center justify-center h-full w-full px-4 pt-5 pb-20">
               <div className="text-center mb-12">
                   {/* GLOWING TITLE */}
                   <h1 className="font-['Chakra_Petch'] font-[700] uppercase tracking-[0.15em] whitespace-nowrap overflow-visible relative block w-full text-center" style={{ fontSize: 'clamp(1.5rem, 8.5vw, 3.5rem)', textShadow: '0 0 20px #00FF9D', color: '#ffffff' }}>
@@ -1464,7 +1464,7 @@ const App = () => {
         )}
         
         {currentView === 'main' && (
-          <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 flex flex-col items-center w-full">
+          <div className="flex flex-col items-center w-full">
             <div className="mb-14 w-full text-center">
               <h1 className="font-['Chakra_Petch'] font-[700] uppercase tracking-[0.15em] whitespace-nowrap overflow-visible relative block w-full text-center select-none cursor-pointer active:scale-95 transition-transform" style={{ fontSize: 'clamp(1.5rem, 8.5vw, 3.5rem)', textShadow: '0 0 20px rgba(0,255,157,0.3)', color: '#ffffff' }}>
                 <span className="relative inline-block mr-[-0.15em]">TAIPAN MEDIA<span className="absolute inset-0 -z-10 opacity-40 blur-[12px] animate-pulse text-[#00FF9D]">TAIPAN MEDIA</span></span>
@@ -1587,7 +1587,7 @@ const App = () => {
         
         {/* VIEW: SHOP (Kept as is) */}
         {currentView === 'shop' && (
-          <div className="animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col h-full items-center w-full">
+          <div className="flex flex-col h-full items-center w-full">
              {!shopIntroFinished ? (
                 <ShopIntroSequence onComplete={() => setShopIntroFinished(true)} />
              ) : (
@@ -1661,10 +1661,10 @@ const App = () => {
 
         {/* VIEW: CALCULATOR (Kept as is) */}
         {currentView === 'calculator' && (
-          <div className="animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col h-full items-center w-full">
+          <div className="flex flex-col h-full items-center w-full">
             {/* Logic for Back Button: Return to Main if Academy, else go back to Shop or Main based on context */}
             <button onClick={() => handleBackClick(userRole === 'academy' ? 'main' : 'shop')} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-4 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
-            <div className="flex-grow flex flex-col items-center w-full space-y-2 animate-in slide-in-from-bottom duration-700">
+            <div className="flex-grow flex flex-col items-center w-full space-y-2">
                 {userRole === 'business' ? (
                     <div className="text-center px-4 w-full mb-2">
                         <Wallet className="w-12 h-12 mx-auto text-[#00FF9D] mb-2 drop-shadow-[0_0_15px_rgba(0,255,157,0.5)] animate-[contourPulse_3s_ease-in-out_infinite]" />
@@ -1955,7 +1955,7 @@ const App = () => {
 
         {/* VIEW: REVIEWS (NEW) */}
         {currentView === 'reviews' && (
-          <div className="animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col h-full items-center w-full">
+          <div className="flex flex-col h-full items-center w-full">
              <button onClick={() => handleBackClick('main')} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-4 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
              <div className="flex-grow flex flex-col items-center w-full space-y-6 overflow-y-auto pb-20 no-scrollbar">
                 <div className="text-center px-4 w-full">
@@ -2004,7 +2004,7 @@ const App = () => {
 
         {/* VIEW: CASES (SEPARATE VIEW) */}
         {currentView === 'cases' && (
-          <div className="animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col h-full items-center w-full">
+          <div className="flex flex-col h-full items-center w-full">
              <button onClick={() => handleBackClick('main')} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-4 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
              <div className="flex-grow flex flex-col items-center w-full space-y-6 overflow-y-auto pb-20 no-scrollbar">
                 <div className="text-center px-4 w-full">
@@ -2037,7 +2037,7 @@ const App = () => {
 
         {/* VIEW: EDUCATION (Kept as is) */}
         {currentView === 'education' && (
-          <div className="animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col h-full items-center">
+          <div className="flex flex-col h-full items-center">
             {/* Используем previousView для кнопки Назад */}
             <button onClick={() => handleBackClick(previousView)} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-6 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
             <div className="flex-grow flex flex-col items-center justify-center space-y-10 w-full">
@@ -2063,7 +2063,7 @@ const App = () => {
 
         {/* VIEW: FAQ (Kept as is) */}
         {currentView === 'faq' && (
-          <div className="animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col h-full">
+          <div className="flex flex-col h-full">
             <button onClick={() => handleBackClick(userRole === 'academy' ? 'main' : 'education')} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-6 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
             <div className="flex-grow flex flex-col items-center w-full space-y-6">
               <div className="w-full mb-6"><Carousel3D /><div className="text-center mt-2"></div></div>
@@ -2082,7 +2082,7 @@ const App = () => {
 
         {/* VIEW: PROGRAM (Kept as is) */}
         {currentView === 'program' && (
-          <div className="animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col h-full">
+          <div className="flex flex-col h-full">
             <button onClick={() => handleBackClick(userRole === 'academy' ? 'main' : 'faq')} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-6 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
             <div className="flex-grow flex flex-col items-center w-full space-y-6">
               <div className="flex flex-col items-center text-center px-4 w-full mb-6 mx-auto max-w-sm"><h2 className="text-3xl sm:text-4xl font-black tracking-tight uppercase mb-2 font-['Chakra_Petch'] leading-tight">Модули обучения<br/><span className="text-[#00FF9D]">TAIPAN ACADEMY</span></h2><p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] mr-[-0.3em] font-bold">Система доминирования</p></div>
@@ -2117,7 +2117,7 @@ const App = () => {
 
         {/* VIEW: ABOUT (Kept as is) */}
         {currentView === 'about' && (
-          <div className="animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col h-full items-center">
+          <div className="flex flex-col h-full items-center">
             <button onClick={() => handleBackClick('main')} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-6 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
             <div className="flex-grow flex flex-col items-center w-full space-y-6">
                 <div className="text-center px-4 w-full mb-4">
@@ -2229,8 +2229,8 @@ const App = () => {
       {/* Modals & Toasts */}
       {isModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-end justify-center px-4">
-          <div className="absolute inset-0 bg-black/80 backdrop-blur-md animate-in fade-in duration-300" onClick={closeModal} />
-          <div className="relative w-full max-w-lg bg-[#0F0F0F] rounded-t-[40px] border-t border-white/10 p-8 transform translate-y-0 animate-in slide-in-from-bottom duration-300 shadow-[0_-10px_50px_rgba(0,0,0,1)]">
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={closeModal} />
+          <div className="relative w-full max-w-lg bg-[#0F0F0F] rounded-t-[40px] border-t border-white/10 p-8 transform translate-y-0 shadow-[0_-10px_50px_rgba(0,0,0,1)]">
             <div className="w-12 h-1.5 bg-zinc-800 rounded-full mx-auto mb-8 cursor-pointer" onClick={closeModal} />
             <h2 className="text-2xl font-bold text-center mb-2 tracking-tight">Начать сейчас</h2>
             <p className="text-center text-zinc-500 text-xs uppercase tracking-widest mb-8 font-mono">Интерес: <span className="text-[#00FF9D]">{modalType}</span></p>

@@ -980,7 +980,7 @@ const RoiView = ({ profit, onBack, onAction }) => {
   const animatedProfit = useOdometer(conservativeProfit);
   const animatedPercentage = useOdometer(returnPercentage);
   return (
-    <div className="flex flex-col h-full items-center w-full">
+    <div className="flex flex-col items-center w-full min-h-screen">
         <button onClick={() => { haptic('light'); onBack(); }} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-4 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
         <div className="flex-grow flex flex-col items-center w-full space-y-6">
             <div className="text-center px-4 w-full"><h2 className="text-2xl sm:text-3xl font-black tracking-tighter uppercase mb-1 font-['Chakra_Petch'] leading-none whitespace-nowrap">РАСЧЁТ <span className="text-[#00FF9D]">ОКУПАЕМОСТИ</span></h2><p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] mr-[-0.3em] font-bold">Эффективность инвестиций</p></div>
@@ -2228,9 +2228,9 @@ const App = () => {
 
       {/* Modals & Toasts */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-end justify-center px-4">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
           <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={closeModal} />
-          <div className="relative w-full max-w-lg bg-[#0F0F0F] rounded-t-[40px] border-t border-white/10 p-8 transform translate-y-0 shadow-[0_-10px_50px_rgba(0,0,0,1)]">
+          <div className="relative w-full max-w-lg bg-[#0F0F0F] rounded-[40px] border-t border-white/10 p-8 shadow-[0_-10px_50px_rgba(0,0,0,1)]">
             <div className="w-12 h-1.5 bg-zinc-800 rounded-full mx-auto mb-8 cursor-pointer" onClick={closeModal} />
             <h2 className="text-2xl font-bold text-center mb-2 tracking-tight">Начать сейчас</h2>
             <p className="text-center text-zinc-500 text-xs uppercase tracking-widest mb-8 font-mono">Интерес: <span className="text-[#00FF9D]">{modalType}</span></p>

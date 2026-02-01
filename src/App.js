@@ -10,7 +10,7 @@ import { initializeApp } from 'firebase/app';
 
 import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from 'firebase/auth';
 
-import { getFirestore, doc, setDoc, updateDoc, serverTimestamp, collection, query, onSnapshot, deleteDoc, where, getDoc, orderBy, limit } from 'firebase/firestore';
+import { getFirestore, doc, setDoc, updateDoc, serverTimestamp, collection, query, onSnapshot, deleteDoc, where, getDoc } from 'firebase/firestore';
 
 
 
@@ -1857,218 +1857,6 @@ const RoiView = ({ profit, onBack, onAction }) => {
 
 };
 
-// --- CHAT OVERLAY COMPONENT ---
-const ChatOverlay = ({ chatData, onClose }) => {
-  return (
-    <div className="fixed inset-0 z-[300] bg-black/95 backdrop-blur-xl flex flex-col animate-in fade-in slide-in-from-bottom duration-300">
-      {/* Header */}
-      <div className="bg-[#1c1c1e] border-b border-zinc-800 p-4 flex items-center justify-between shadow-lg z-10">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold text-sm">
-             {chatData.clientInitials || 'C'}
-          </div>
-          <div>
-            <h3 className="text-sm font-bold text-white leading-none mb-1">{chatData.clientName || 'Заказчик'}</h3>
-            <p className="text-[10px] text-blue-400">был(а) недавно</p>
-          </div>
-        </div>
-        <button onClick={onClose} className="p-2 rounded-full hover:bg-zinc-800 transition-colors">
-          <X className="w-6 h-6 text-zinc-400" />
-        </button>
-      </div>
-
-      {/* Messages Area */}
-      <div className="flex-grow overflow-y-auto p-4 space-y-4 bg-[#0e0e0e]" style={{ backgroundImage: 'url("https://web.telegram.org/img/bg_0.png")', backgroundSize: 'cover', backgroundBlendMode: 'overlay' }}>
-        {chatData.messages.map((msg, index) => (
-          <div key={index} className={`flex w-full ${msg.from === 'me' ? 'justify-end' : 'justify-start'} ${msg.from === 'system' ? 'justify-center' : ''}`}>
-            
-            {msg.from === 'system' ? (
-               <div className="bg-zinc-800/80 backdrop-blur-sm px-3 py-1 rounded-full border border-zinc-700">
-                  <p className="text-[10px] text-zinc-300 font-mono">{msg.text}</p>
-               </div>
-            ) : (
-              <div className={`max-w-[80%] rounded-2xl px-4 py-2 relative shadow-sm ${msg.from === 'me' ? 'bg-[#00FF9D] text-black rounded-tr-sm' : 'bg-[#212121] text-white rounded-tl-sm border border-zinc-800'}`}>
-                <p className="text-[13px] leading-snug whitespace-pre-wrap">{msg.text}</p>
-                <div className={`text-[9px] text-right mt-1 ${msg.from === 'me' ? 'text-black/60' : 'text-zinc-500'}`}>{msg.time}</div>
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-
-      {/* Input Area (Fake) */}
-      <div className="bg-[#1c1c1e] border-t border-zinc-800 p-3 flex items-center gap-3 pb-8">
-         <div className="p-2"><div className="w-6 h-6 rounded-full border-2 border-zinc-600"></div></div>
-         <div className="flex-grow bg-[#0e0e0e] rounded-full h-10 px-4 flex items-center text-zinc-500 text-sm">Написать сообщение...</div>
-         <div className="p-2"><Send className="w-6 h-6 text-zinc-500" /></div>
-      </div>
-    </div>
-  );
-};
-
-// --- ADMIN PANEL COMPONENT ---
-const AdminPanel = ({ onBack }) => {
-    const [pin, setPin] = useState('');
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
-    const [stats, setStats] = useState({ totalUsers: 0, activeStudents: 0, leads: [] });
-    const [loading, setLoading] = useState(false);
-
-    // Hardcoded PIN for demo purposes (In real app, manage this securely)
-    const SECRET_PIN = "7777"; 
-
-    useEffect(() => {
-        if (isAuthenticated) {
-            setLoading(true);
-            // Fetch stats from Firestore
-            const fetchStats = async () => {
-                try {
-                    // Count total users
-                    const usersRef = collection(db, 'artifacts', appId, 'public', 'data', 'app_visitors');
-                    const usersSnapshot = await new Promise(resolve => {
-                        // Using a simple workaround since count() requires newer SDK features or aggregation queries
-                        // For small datasets, client-side counting is okay. ideally use count()
-                        onSnapshot(usersRef, (snap) => resolve(snap));
-                    });
-                    
-                    // Fetch Leads (assuming we stored them somewhere or just mock them for now if 'leads' collection doesn't exist)
-                    // For this demo, let's look for users who have a 'segment' field defined as 'academy'
-                    const studentsQuery = query(usersRef, where("segment", "==", "academy"));
-                    
-                    // Real implementation would ideally require an index for complex queries, 
-                    // so we might just fetch all and filter client side for this MVP to avoid "index required" errors
-                    
-                    const totalCount = usersSnapshot.size;
-                    const studentsCount = usersSnapshot.docs.filter(doc => doc.data().segment === 'academy').length;
-                    
-                    setStats({
-                        totalUsers: totalCount,
-                        activeStudents: studentsCount,
-                        leads: [
-                            { id: 1, name: "@dark_lord", status: "New", date: "Сегодня, 14:30" },
-                            { id: 2, name: "@crypto_king", status: "Pending", date: "Вчера, 09:15" },
-                            { id: 3, name: "87771234567", status: "Paid", date: "28.01.26" }
-                        ]
-                    });
-                } catch (e) {
-                    console.error("Admin fetch error:", e);
-                } finally {
-                    setLoading(false);
-                }
-            };
-            fetchStats();
-        }
-    }, [isAuthenticated]);
-
-    const handlePinSubmit = (e) => {
-        e.preventDefault();
-        if (pin === SECRET_PIN) {
-            setIsAuthenticated(true);
-            haptic('success');
-        } else {
-            haptic('error');
-            setPin('');
-            alert("Неверный PIN");
-        }
-    };
-
-    if (!isAuthenticated) {
-        return (
-            <div className="flex flex-col items-center justify-center h-full w-full p-6 animate-in fade-in zoom-in duration-300">
-                <button onClick={onBack} className="absolute top-6 left-4 text-zinc-500"><ChevronLeft className="w-6 h-6" /></button>
-                <div className="mb-8 p-4 bg-[#00FF9D]/10 rounded-full border border-[#00FF9D]/30 shadow-[0_0_30px_rgba(0,255,157,0.2)]">
-                    <Lock className="w-8 h-8 text-[#00FF9D]" />
-                </div>
-                <h2 className="text-xl font-bold text-white mb-2 font-mono">ДОСТУП ЗАПРЕЩЕН</h2>
-                <p className="text-xs text-zinc-500 mb-6 font-mono text-center">Введите код доступа администратора</p>
-                <form onSubmit={handlePinSubmit} className="w-full max-w-xs">
-                    <input 
-                        type="password" 
-                        pattern="[0-9]*" 
-                        inputMode="numeric"
-                        maxLength="4"
-                        value={pin}
-                        onChange={(e) => setPin(e.target.value)}
-                        className="w-full bg-[#0A0A0A] border border-zinc-800 rounded-xl p-4 text-center text-2xl tracking-[1em] text-[#00FF9D] focus:border-[#00FF9D] outline-none font-mono mb-4"
-                        placeholder="••••"
-                        autoFocus
-                    />
-                    <button type="submit" className="w-full bg-[#00FF9D] text-black font-bold py-3 rounded-xl uppercase tracking-widest text-xs">Войти</button>
-                </form>
-            </div>
-        );
-    }
-
-    return (
-        <div className="flex flex-col h-full w-full bg-[#050505] p-4 overflow-y-auto pb-20 animate-in fade-in slide-in-from-bottom duration-500">
-            <div className="flex items-center justify-between mb-6">
-                <button onClick={onBack} className="text-zinc-500 hover:text-white"><ChevronLeft className="w-6 h-6" /></button>
-                <span className="text-xs font-mono text-[#00FF9D] border border-[#00FF9D]/30 px-2 py-1 rounded bg-[#00FF9D]/10">ADMIN_MODE_V1</span>
-            </div>
-
-            {loading ? (
-                <div className="flex-grow flex items-center justify-center text-[#00FF9D] font-mono text-xs animate-pulse">ЗАГРУЗКА ДАННЫХ...</div>
-            ) : (
-                <div className="space-y-6">
-                    {/* Stats Grid */}
-                    <div className="grid grid-cols-2 gap-3">
-                        <div className="bg-[#121212] border border-zinc-800 p-4 rounded-xl">
-                            <div className="text-zinc-500 mb-2"><Users className="w-5 h-5" /></div>
-                            <p className="text-2xl font-black text-white font-mono">{stats.totalUsers}</p>
-                            <p className="text-[9px] text-zinc-500 uppercase tracking-wider mt-1">Всего посетителей</p>
-                        </div>
-                        <div className="bg-[#121212] border border-zinc-800 p-4 rounded-xl">
-                            <div className="text-zinc-500 mb-2"><GraduationCap className="w-5 h-5" /></div>
-                            <p className="text-2xl font-black text-[#00FF9D] font-mono">{stats.activeStudents}</p>
-                            <p className="text-[9px] text-zinc-500 uppercase tracking-wider mt-1">Академия (Interest)</p>
-                        </div>
-                    </div>
-
-                    {/* Leads Section */}
-                    <div>
-                        <h3 className="text-xs font-bold text-white uppercase tracking-widest mb-3 pl-1 flex items-center gap-2">
-                            <div className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></div>
-                            Последние заявки (Mock)
-                        </h3>
-                        <div className="bg-[#121212] border border-zinc-800 rounded-xl overflow-hidden">
-                            {stats.leads.map((lead, i) => (
-                                <div key={i} className="p-3 border-b border-zinc-800/50 flex items-center justify-between last:border-0 hover:bg-zinc-900/50">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center text-[10px] font-bold text-zinc-400">
-                                            {lead.name.charAt(0).toUpperCase()}
-                                        </div>
-                                        <div>
-                                            <p className="text-xs font-bold text-white mb-0.5">{lead.name}</p>
-                                            <p className="text-[9px] text-zinc-500">{lead.date}</p>
-                                        </div>
-                                    </div>
-                                    <span className={`text-[8px] font-bold px-2 py-1 rounded border ${lead.status === 'New' ? 'text-red-400 border-red-500/30 bg-red-500/10' : 'text-[#00FF9D] border-[#00FF9D]/30 bg-[#00FF9D]/10'}`}>
-                                        {lead.status.toUpperCase()}
-                                    </span>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Quick Actions */}
-                    <div>
-                        <h3 className="text-xs font-bold text-white uppercase tracking-widest mb-3 pl-1">Управление</h3>
-                        <div className="space-y-2">
-                            <button className="w-full bg-[#1c1c1e] border border-zinc-700 p-3 rounded-xl flex items-center justify-between hover:bg-zinc-800 transition-all group">
-                                <span className="text-xs font-mono text-zinc-300">Очистить кэш приложения</span>
-                                <Trash2 className="w-4 h-4 text-zinc-500 group-hover:text-red-500 transition-colors" />
-                            </button>
-                            <button className="w-full bg-[#1c1c1e] border border-zinc-700 p-3 rounded-xl flex items-center justify-between hover:bg-zinc-800 transition-all group">
-                                <span className="text-xs font-mono text-zinc-300">Выгрузить базу (CSV)</span>
-                                <Database className="w-4 h-4 text-zinc-500 group-hover:text-[#00FF9D] transition-colors" />
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-        </div>
-    );
-};
-
 const App = () => {
 
   useEffect(() => { console.log("Taipan Media App Initialized"); }, []);
@@ -2089,12 +1877,7 @@ const App = () => {
 
   const [onlineCount, setOnlineCount] = useState(0);
 
-  // --- FAKE CHAT STATE ---
-  const [activeChat, setActiveChat] = useState(null);
-
-  // --- ADMIN PANEL STATE ---
-  const [adminTapCount, setAdminTapCount] = useState(0);
-
+  
   // NEW: Certificate State (Expanded/Collapsed)
 
   const [isCertExpanded, setIsCertExpanded] = useState(false);
@@ -2227,20 +2010,6 @@ const App = () => {
       } catch (e) {
           console.error("Error saving segment:", e);
       }
-  };
-
-  const handleSecretTap = () => {
-      setAdminTapCount(prev => {
-          const newCount = prev + 1;
-          if (newCount === 5) {
-              haptic('heavy');
-              setCurrentView('admin');
-              return 0;
-          }
-          return newCount;
-      });
-      // Reset counter if not tapped quickly enough
-      setTimeout(() => setAdminTapCount(0), 1000);
   };
 
   // --- FIREBASE SETUP & AUTH ---
@@ -2535,14 +2304,17 @@ const App = () => {
   }, []);
 
   useEffect(() => {
-    // Initial set
+
     setOnlineCount(Math.floor(Math.random() * 16)); 
-    // Update every 10 seconds (10000 ms)
-    const interval = setInterval(() => { setOnlineCount(Math.floor(Math.random() * 16)); }, 10000); 
+
+    const interval = setInterval(() => { setOnlineCount(Math.floor(Math.random() * 16)); }, 60000); 
+
     return () => clearInterval(interval);
+
   }, []);
 
   
+
   const [shopIntroFinished, setShopIntroFinished] = useState(false);
 
   const [activeFaq, setActiveFaq] = useState(null);
@@ -2805,7 +2577,7 @@ const App = () => {
 
                   {/* GLOWING TITLE */}
 
-                  <h1 onClick={handleSecretTap} className="font-['Chakra_Petch'] font-[700] uppercase tracking-[0.15em] whitespace-nowrap overflow-visible relative block w-full text-center select-none" style={{ fontSize: 'clamp(1.5rem, 8.5vw, 3.5rem)', textShadow: '0 0 20px #00FF9D', color: '#ffffff' }}>
+                  <h1 className="font-['Chakra_Petch'] font-[700] uppercase tracking-[0.15em] whitespace-nowrap overflow-visible relative block w-full text-center" style={{ fontSize: 'clamp(1.5rem, 8.5vw, 3.5rem)', textShadow: '0 0 20px #00FF9D', color: '#ffffff' }}>
 
                     <span className="relative inline-block mr-[-0.15em]">TAIPAN MEDIA<span className="absolute inset-0 -z-10 opacity-40 blur-[12px] animate-pulse text-[#00FF9D]">TAIPAN MEDIA</span></span>
 
@@ -2818,11 +2590,6 @@ const App = () => {
                       <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] font-bold">Выберите цель</p>
                       <div className="h-[1px] w-8 bg-gradient-to-l from-transparent to-[#00FF9D]"></div>
                   </div>
-                  
-                  {/* NEW: Dynamic Online Counter */}
-                  <p className="text-[9px] text-[#00FF9D] font-mono mt-2 animate-pulse opacity-80 tracking-wider">
-                      СЕЙЧАС ОНЛАЙН: {onlineCount}
-                  </p>
               </div>
               
               <div className="w-full space-y-4 mb-8 flex flex-col items-center">
@@ -2887,7 +2654,7 @@ const App = () => {
 
             <div className="mb-14 w-full text-center">
 
-              <h1 onClick={handleSecretTap} className="font-['Chakra_Petch'] font-[700] uppercase tracking-[0.15em] whitespace-nowrap overflow-visible relative block w-full text-center select-none cursor-pointer active:scale-95 transition-transform" style={{ fontSize: 'clamp(1.5rem, 8.5vw, 3.5rem)', textShadow: '0 0 20px rgba(0,255,157,0.3)', color: '#ffffff' }}>
+              <h1 className="font-['Chakra_Petch'] font-[700] uppercase tracking-[0.15em] whitespace-nowrap overflow-visible relative block w-full text-center select-none cursor-pointer active:scale-95 transition-transform" style={{ fontSize: 'clamp(1.5rem, 8.5vw, 3.5rem)', textShadow: '0 0 20px rgba(0,255,157,0.3)', color: '#ffffff' }}>
 
                 <span className="relative inline-block mr-[-0.15em]">TAIPAN MEDIA<span className="absolute inset-0 -z-10 opacity-40 blur-[12px] animate-pulse text-[#00FF9D]">TAIPAN MEDIA</span></span>
 
@@ -3096,10 +2863,7 @@ const App = () => {
 
         {/* ... Rest of components follow similar logic ... */}
 
-        {/* VIEW: ADMIN PANEL */}
-        {currentView === 'admin' && (
-            <AdminPanel onBack={() => handleBackClick('role_selection')} />
-        )}
+        
 
         {/* VIEW: SHOP (Kept as is) */}
 

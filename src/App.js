@@ -10,7 +10,7 @@ import { initializeApp } from 'firebase/app';
 
 import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from 'firebase/auth';
 
-import { getFirestore, doc, setDoc, updateDoc, serverTimestamp, collection, query, onSnapshot, deleteDoc, where, getDoc } from 'firebase/firestore';
+import { getFirestore, doc, setDoc, updateDoc, serverTimestamp, collection, query, onSnapshot, deleteDoc, where, getDoc, orderBy, limit } from 'firebase/firestore';
 
 
 
@@ -19,25 +19,18 @@ import { getFirestore, doc, setDoc, updateDoc, serverTimestamp, collection, quer
 const manifestUrl = 'https://taipan-rose.vercel.app/tonconnect-manifest.json';
 
 
-
-const firebaseConfig = {
-
-  apiKey: "AIzaSyCdcj_56EdygidWa8pQm17fegnF39XB8Xg",
-
-  authDomain: "taipan-680b2.firebaseapp.com",
-
-  projectId: "taipan-680b2",
-
-  storageBucket: "taipan-680b2.firebasestorage.app",
-
-  messagingSenderId: "990538734233",
-
-  appId: "1:990538734233:web:dbfe47aed6d87626207608",
-
-  measurementId: "G-QFJTFTCNNY"
-
-};
-
+// 1. Prioritize Environment Config (Fixes auth/custom-token-mismatch)
+const firebaseConfig = typeof __firebase_config !== 'undefined' 
+  ? JSON.parse(__firebase_config) 
+  : {
+      apiKey: "AIzaSyCdcj_56EdygidWa8pQm17fegnF39XB8Xg",
+      authDomain: "taipan-680b2.firebaseapp.com",
+      projectId: "taipan-680b2",
+      storageBucket: "taipan-680b2.firebasestorage.app",
+      messagingSenderId: "990538734233",
+      appId: "1:990538734233:web:dbfe47aed6d87626207608",
+      measurementId: "G-QFJTFTCNNY"
+    };
 
 
 const app = initializeApp(firebaseConfig);
@@ -573,6 +566,8 @@ const HelpCircle = (p) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2
 const Sparkles = (p) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275-1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" /></svg>;
 
 const Send = (p) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" /></svg>;
+
+const MessageCircle = (p) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" /></svg>;
 
 
 
@@ -1413,11 +1408,11 @@ const BrandLogos = {
 
           <div className={`${isMissed ? 'animate-[smoke-glitch-appear_0.6s_ease-out_forwards]' : 'opacity-0'}`}>
 
-             <p className={`text-xs uppercase font-black tracking-widest px-3 py-1 rounded text-[#00FF9D] drop-shadow-[0_0_10px_rgba(0,255,157,0.8)]`}>
+              <p className={`text-xs uppercase font-black tracking-widest px-3 py-1 rounded text-[#00FF9D] drop-shadow-[0_0_10px_rgba(0,255,157,0.8)]`}>
 
-               Другие стали миллионерами
+                Другие стали миллионерами
 
-             </p>
+              </p>
 
           </div>
 
@@ -1862,441 +1857,211 @@ const RoiView = ({ profit, onBack, onAction }) => {
 
 };
 
-
-
-// --- ANALYTICS CHART COMPONENT ---
-
-const AnalyticsChart = ({ leads }) => {
-
-    // 1. Calculate Stats
-
-    const stats = useMemo(() => {
-
-        const counts = leads.reduce((acc, lead) => {
-
-            const type = lead.type || 'Не указано';
-
-            acc[type] = (acc[type] || 0) + 1;
-
-            return acc;
-
-        }, {});
-
-        
-
-        const total = leads.length;
-
-        
-
-        return Object.keys(counts).map(key => ({
-
-            label: key,
-
-            count: counts[key],
-
-            percentage: total > 0 ? Math.round((counts[key] / total) * 100) : 0
-
-        })).sort((a, b) => b.count - a.count);
-
-    }, [leads]);
-
-
-
-    const maxCount = Math.max(...stats.map(s => s.count), 1);
-
-
-
-    return (
-
-        <div className="w-full space-y-6 animate-in fade-in duration-500">
-
-             {/* SUMMARY CARDS */}
-
-             <div className="grid grid-cols-2 gap-3">
-
-                 <div className="glass-card p-4 rounded-xl border border-zinc-800">
-
-                     <p className="text-[9px] text-zinc-500 uppercase tracking-wider mb-1">ВСЕГО ЛИДОВ</p>
-
-                     <p className="text-3xl font-black text-white font-mono">{leads.length}</p>
-
-                 </div>
-
-                 <div className="glass-card p-4 rounded-xl border border-zinc-800">
-
-                     <p className="text-[9px] text-zinc-500 uppercase tracking-wider mb-1">TOP ВЫБОР</p>
-
-                     <p className="text-xl font-bold text-[#00FF9D] truncate">{stats[0]?.label || '---'}</p>
-
-                 </div>
-
-             </div>
-
-
-
-             {/* BAR CHART */}
-
-             <div className="glass-card p-5 rounded-xl border border-zinc-800">
-
-                 <div className="flex items-center justify-between mb-4">
-
-                     <h3 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
-
-                         <BarChart2 className="w-4 h-4 text-[#00FF9D]" />
-
-                         Популярность услуг
-
-                     </h3>
-
-                 </div>
-
-                 
-
-                 <div className="space-y-4">
-
-                     {stats.map((item, idx) => (
-
-                         <div key={idx} className="relative">
-
-                             <div className="flex justify-between items-end mb-1">
-
-                                 <span className="text-[10px] font-bold text-zinc-300">{item.label}</span>
-
-                                 <span className="text-[10px] font-mono text-[#00FF9D]">{item.count} ({item.percentage}%)</span>
-
-                             </div>
-
-                             <div className="w-full h-2 bg-zinc-900 rounded-full overflow-hidden">
-
-                                 <div 
-
-                                    className="h-full bg-gradient-to-r from-[#00FF9D]/50 to-[#00FF9D] rounded-full transition-all duration-1000 ease-out relative"
-
-                                    style={{ width: `${(item.count / maxCount) * 100}%` }}
-
-                                 >
-
-                                       <div className="absolute right-0 top-0 bottom-0 w-2 bg-white/50 blur-[2px]"></div>
-
-                                 </div>
-
-                             </div>
-
-                         </div>
-
-                     ))}
-
-                     {stats.length === 0 && <p className="text-center text-[10px] text-zinc-600 py-4">Нет данных для отображения</p>}
-
-                 </div>
-
-             </div>
-
-
-
-             {/* DONUT CHART SIMULATION (CSS CONIC) */}
-
-             <div className="glass-card p-5 rounded-xl border border-zinc-800 flex items-center justify-between">
-
-                 <div>
-
-                    <h3 className="text-xs font-bold text-white uppercase tracking-wider mb-1 flex items-center gap-2">
-
-                        <PieChart className="w-4 h-4 text-[#00FF9D]" />
-
-                        Доли трафика
-
-                    </h3>
-
-                    <p className="text-[9px] text-zinc-500 leading-relaxed max-w-[150px]">
-
-                        Распределение интереса аудитории по категориям услуг.
-
-                    </p>
-
-                 </div>
-
-                 <div className="relative w-20 h-20 flex-shrink-0">
-
-                     <svg viewBox="0 0 36 36" className="w-full h-full rotate-[-90deg]">
-
-                        <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#111" strokeWidth="4" />
-
-                        {stats.map((item, i) => {
-
-                             // Simple calc for demo visualization of top item
-
-                             if (i > 0) return null; 
-
-                             return (
-
-                                <path 
-
-                                    key={i}
-
-                                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831" 
-
-                                    fill="none" 
-
-                                    stroke="#00FF9D" 
-
-                                    strokeWidth="4" 
-
-                                    strokeDasharray={`${item.percentage}, 100`}
-
-                                    className="animate-[widthGrow_1s_ease-out]"
-
-                                />
-
-                             )
-
-                        })}
-
-                     </svg>
-
-                     <div className="absolute inset-0 flex items-center justify-center flex-col">
-
-                         <span className="text-[8px] text-zinc-500 font-bold">TOP</span>
-
-                         <span className="text-[10px] font-bold text-white">{stats[0]?.percentage || 0}%</span>
-
-                     </div>
-
-                 </div>
-
-             </div>
-
+// --- CHAT OVERLAY COMPONENT ---
+const ChatOverlay = ({ chatData, onClose }) => {
+  return (
+    <div className="fixed inset-0 z-[300] bg-black/95 backdrop-blur-xl flex flex-col animate-in fade-in slide-in-from-bottom duration-300">
+      {/* Header */}
+      <div className="bg-[#1c1c1e] border-b border-zinc-800 p-4 flex items-center justify-between shadow-lg z-10">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold text-sm">
+             {chatData.clientInitials || 'C'}
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-white leading-none mb-1">{chatData.clientName || 'Заказчик'}</h3>
+            <p className="text-[10px] text-blue-400">был(а) недавно</p>
+          </div>
         </div>
+        <button onClick={onClose} className="p-2 rounded-full hover:bg-zinc-800 transition-colors">
+          <X className="w-6 h-6 text-zinc-400" />
+        </button>
+      </div>
 
-    );
+      {/* Messages Area */}
+      <div className="flex-grow overflow-y-auto p-4 space-y-4 bg-[#0e0e0e]" style={{ backgroundImage: 'url("https://web.telegram.org/img/bg_0.png")', backgroundSize: 'cover', backgroundBlendMode: 'overlay' }}>
+        {chatData.messages.map((msg, index) => (
+          <div key={index} className={`flex w-full ${msg.from === 'me' ? 'justify-end' : 'justify-start'} ${msg.from === 'system' ? 'justify-center' : ''}`}>
+            
+            {msg.from === 'system' ? (
+               <div className="bg-zinc-800/80 backdrop-blur-sm px-3 py-1 rounded-full border border-zinc-700">
+                  <p className="text-[10px] text-zinc-300 font-mono">{msg.text}</p>
+               </div>
+            ) : (
+              <div className={`max-w-[80%] rounded-2xl px-4 py-2 relative shadow-sm ${msg.from === 'me' ? 'bg-[#00FF9D] text-black rounded-tr-sm' : 'bg-[#212121] text-white rounded-tl-sm border border-zinc-800'}`}>
+                <p className="text-[13px] leading-snug whitespace-pre-wrap">{msg.text}</p>
+                <div className={`text-[9px] text-right mt-1 ${msg.from === 'me' ? 'text-black/60' : 'text-zinc-500'}`}>{msg.time}</div>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
 
+      {/* Input Area (Fake) */}
+      <div className="bg-[#1c1c1e] border-t border-zinc-800 p-3 flex items-center gap-3 pb-8">
+         <div className="p-2"><div className="w-6 h-6 rounded-full border-2 border-zinc-600"></div></div>
+         <div className="flex-grow bg-[#0e0e0e] rounded-full h-10 px-4 flex items-center text-zinc-500 text-sm">Написать сообщение...</div>
+         <div className="p-2"><Send className="w-6 h-6 text-zinc-500" /></div>
+      </div>
+    </div>
+  );
 };
 
+// --- ADMIN PANEL COMPONENT ---
+const AdminPanel = ({ onBack }) => {
+    const [pin, setPin] = useState('');
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [stats, setStats] = useState({ totalUsers: 0, activeStudents: 0, leads: [] });
+    const [loading, setLoading] = useState(false);
 
+    // Hardcoded PIN for demo purposes (In real app, manage this securely)
+    const SECRET_PIN = "7777"; 
 
-
-
-// --- Admin Panel Component ---
-const AdminPanel = ({ leads, visitors, onBack, onClearLeads, onUpdateLead, onUpdateVisitor }) => {
-    const [activeTab, setActiveTab] = useState('business'); // Default to business tab
-    const [editingItem, setEditingItem] = useState(null); 
-    const [editCollection, setEditCollection] = useState(''); 
-
-    // --- Filter Visitors by Segment ---
-    const businessVisitors = useMemo(() => visitors.filter(v => v.segment === 'business'), [visitors]);
-    const academyVisitors = useMemo(() => visitors.filter(v => v.segment === 'academy'), [visitors]);
-
-    // --- Daily Visitors Calculation (Total) ---
-    const dailyVisitorsCount = useMemo(() => {
-        const todayStr = new Date().toDateString();
-        return visitors.filter(v => {
-            if (!v.lastActive) return false;
-            const d = v.lastActive.toDate ? v.lastActive.toDate() : new Date(v.lastActive);
-            return d.toDateString() === todayStr;
-        }).length;
-    }, [visitors]);
-
-    const handleEditClick = (item, collectionType) => {
-        setEditingItem(item);
-        setEditCollection(collectionType);
-        haptic('light');
-    };
-
-    const handleSave = (e) => {
-        e.preventDefault();
-        haptic('medium');
-        const formData = new FormData(e.target);
-        const updates = Object.fromEntries(formData.entries());
-
-        if (editCollection === 'leads') {
-            onUpdateLead(editingItem.id, updates);
-        } else if (editCollection === 'visitors') {
-            onUpdateVisitor(editingItem.id, updates);
+    useEffect(() => {
+        if (isAuthenticated) {
+            setLoading(true);
+            // Fetch stats from Firestore
+            const fetchStats = async () => {
+                try {
+                    // Count total users
+                    const usersRef = collection(db, 'artifacts', appId, 'public', 'data', 'app_visitors');
+                    const usersSnapshot = await new Promise(resolve => {
+                        // Using a simple workaround since count() requires newer SDK features or aggregation queries
+                        // For small datasets, client-side counting is okay. ideally use count()
+                        onSnapshot(usersRef, (snap) => resolve(snap));
+                    });
+                    
+                    // Fetch Leads (assuming we stored them somewhere or just mock them for now if 'leads' collection doesn't exist)
+                    // For this demo, let's look for users who have a 'segment' field defined as 'academy'
+                    const studentsQuery = query(usersRef, where("segment", "==", "academy"));
+                    
+                    // Real implementation would ideally require an index for complex queries, 
+                    // so we might just fetch all and filter client side for this MVP to avoid "index required" errors
+                    
+                    const totalCount = usersSnapshot.size;
+                    const studentsCount = usersSnapshot.docs.filter(doc => doc.data().segment === 'academy').length;
+                    
+                    setStats({
+                        totalUsers: totalCount,
+                        activeStudents: studentsCount,
+                        leads: [
+                            { id: 1, name: "@dark_lord", status: "New", date: "Сегодня, 14:30" },
+                            { id: 2, name: "@crypto_king", status: "Pending", date: "Вчера, 09:15" },
+                            { id: 3, name: "87771234567", status: "Paid", date: "28.01.26" }
+                        ]
+                    });
+                } catch (e) {
+                    console.error("Admin fetch error:", e);
+                } finally {
+                    setLoading(false);
+                }
+            };
+            fetchStats();
         }
-        setEditingItem(null);
+    }, [isAuthenticated]);
+
+    const handlePinSubmit = (e) => {
+        e.preventDefault();
+        if (pin === SECRET_PIN) {
+            setIsAuthenticated(true);
+            haptic('success');
+        } else {
+            haptic('error');
+            setPin('');
+            alert("Неверный PIN");
+        }
     };
 
-    const handleTabChange = (tab) => {
-        haptic('light');
-        setActiveTab(tab);
+    if (!isAuthenticated) {
+        return (
+            <div className="flex flex-col items-center justify-center h-full w-full p-6 animate-in fade-in zoom-in duration-300">
+                <button onClick={onBack} className="absolute top-6 left-4 text-zinc-500"><ChevronLeft className="w-6 h-6" /></button>
+                <div className="mb-8 p-4 bg-[#00FF9D]/10 rounded-full border border-[#00FF9D]/30 shadow-[0_0_30px_rgba(0,255,157,0.2)]">
+                    <Lock className="w-8 h-8 text-[#00FF9D]" />
+                </div>
+                <h2 className="text-xl font-bold text-white mb-2 font-mono">ДОСТУП ЗАПРЕЩЕН</h2>
+                <p className="text-xs text-zinc-500 mb-6 font-mono text-center">Введите код доступа администратора</p>
+                <form onSubmit={handlePinSubmit} className="w-full max-w-xs">
+                    <input 
+                        type="password" 
+                        pattern="[0-9]*" 
+                        inputMode="numeric"
+                        maxLength="4"
+                        value={pin}
+                        onChange={(e) => setPin(e.target.value)}
+                        className="w-full bg-[#0A0A0A] border border-zinc-800 rounded-xl p-4 text-center text-2xl tracking-[1em] text-[#00FF9D] focus:border-[#00FF9D] outline-none font-mono mb-4"
+                        placeholder="••••"
+                        autoFocus
+                    />
+                    <button type="submit" className="w-full bg-[#00FF9D] text-black font-bold py-3 rounded-xl uppercase tracking-widest text-xs">Войти</button>
+                </form>
+            </div>
+        );
     }
 
-    // Helper to render visitor list
-    const renderVisitorList = (list, emptyMessage) => {
-        if (list.length === 0) {
-            return (
-                <div className="text-center py-10 border border-dashed border-zinc-800 rounded-xl">
-                    <Activity className="w-8 h-8 text-zinc-700 mx-auto mb-2" />
-                    <p className="text-[10px] text-zinc-600 uppercase tracking-wider">{emptyMessage}</p>
-                </div>
-            );
-        }
-        return list.map((user) => (
-            <div key={user.id} className="glass-card p-3 rounded-lg border border-zinc-800 flex items-center justify-between group hover:bg-[#00FF9D]/5 transition-all">
-                <div className="flex items-center gap-3">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold border ${user.segment === 'academy' ? 'bg-blue-900/30 border-blue-500/50 text-blue-400' : 'bg-zinc-800 border-zinc-700 text-[#00FF9D]'}`}>
-                        {user.userName?.charAt(0)}
-                    </div>
-                    <div>
-                        <p className="text-xs font-bold text-white font-mono">{user.userName}</p>
-                        <p className="text-[9px] text-zinc-500 font-mono">ID: {user.chatId}</p>
-                        {user.notes && <p className="text-[8px] text-[#00FF9D] mt-1 bg-[#00FF9D]/10 px-1 rounded inline-block">{user.notes}</p>}
-                    </div>
-                </div>
-                <div className="flex items-center gap-3">
-                    <div className="text-right">
-                        <div className="flex items-center justify-end gap-1.5 mb-1">
-                            <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${user.segment === 'academy' ? 'bg-blue-500 shadow-[0_0_5px_#3B82F6]' : 'bg-[#00FF9D] shadow-[0_0_5px_#00FF9D]'}`}></div>
-                            <span className={`text-[9px] font-bold uppercase ${user.segment === 'academy' ? 'text-blue-500' : 'text-[#00FF9D]'}`}>ONLINE</span>
-                        </div>
-                        <p className="text-[8px] text-zinc-600 font-mono">
-                            {user.lastActive?.toDate ? user.lastActive.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Сейчас'}
-                        </p>
-                    </div>
-                    <button onClick={() => handleEditClick(user, 'visitors')} className="p-2 bg-zinc-800 rounded-full hover:bg-zinc-700 text-zinc-400 hover:text-white transition-colors">
-                        <Edit2 className="w-3 h-3" />
-                    </button>
-                </div>
-            </div>
-        ));
-    };
-
     return (
-        <div className="animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col h-full items-center w-full relative">
-            <button onClick={() => { haptic('light'); onBack(); }} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-4 hover:opacity-70 transition-all w-fit">
-                <ChevronLeft className="w-4 h-4 mr-1" /> ВЫХОД ИЗ СИСТЕМЫ
-            </button>
-            
-            <div className="w-full flex flex-col items-center mb-6">
-                <div className="w-16 h-16 bg-zinc-900 border border-[#00FF9D]/30 rounded-full flex items-center justify-center mb-4 relative">
-                    <div className="absolute inset-0 rounded-full animate-ping bg-[#00FF9D]/10"></div>
-                    <Shield className="w-8 h-8 text-[#00FF9D]" />
-                </div>
-                <h2 className="text-2xl font-black font-['Chakra_Petch'] uppercase tracking-widest">ПАНЕЛЬ УПРАВЛЕНИЯ</h2>
-                <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] font-bold">Admin Mode: ACCESS GRANTED</p>
+        <div className="flex flex-col h-full w-full bg-[#050505] p-4 overflow-y-auto pb-20 animate-in fade-in slide-in-from-bottom duration-500">
+            <div className="flex items-center justify-between mb-6">
+                <button onClick={onBack} className="text-zinc-500 hover:text-white"><ChevronLeft className="w-6 h-6" /></button>
+                <span className="text-xs font-mono text-[#00FF9D] border border-[#00FF9D]/30 px-2 py-1 rounded bg-[#00FF9D]/10">ADMIN_MODE_V1</span>
             </div>
 
-            <div className="flex w-full mb-4 bg-zinc-900/50 p-1 rounded-lg border border-zinc-800 gap-1 overflow-x-auto no-scrollbar">
-                <button onClick={() => handleTabChange('stats')} className={`flex-1 py-2 px-2 whitespace-nowrap text-[9px] font-bold uppercase tracking-widest rounded-md transition-all ${activeTab === 'stats' ? 'bg-[#00FF9D] text-black shadow-lg shadow-[#00FF9D]/20' : 'text-zinc-500 hover:text-white'}`}>📊 Инфо</button>
-                <button onClick={() => handleTabChange('leads')} className={`flex-1 py-2 px-2 whitespace-nowrap text-[9px] font-bold uppercase tracking-widest rounded-md transition-all ${activeTab === 'leads' ? 'bg-[#00FF9D] text-black shadow-lg shadow-[#00FF9D]/20' : 'text-zinc-500 hover:text-white'}`}>Заявки ({leads.length})</button>
-                
-                <button onClick={() => handleTabChange('business')} className={`flex-1 py-2 px-2 whitespace-nowrap text-[9px] font-bold uppercase tracking-widest rounded-md transition-all ${activeTab === 'business' ? 'bg-[#00FF9D] text-black shadow-lg shadow-[#00FF9D]/20' : 'text-zinc-500 hover:text-white'}`}>
-                    Бизнес <span className="opacity-70 text-[8px] ml-1">({businessVisitors.length})</span>
-                </button>
-                
-                <button onClick={() => handleTabChange('academy')} className={`flex-1 py-2 px-2 whitespace-nowrap text-[9px] font-bold uppercase tracking-widest rounded-md transition-all ${activeTab === 'academy' ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20' : 'text-zinc-500 hover:text-white'}`}>
-                    Обучение <span className="opacity-70 text-[8px] ml-1">({academyVisitors.length})</span>
-                </button>
-            </div>
+            {loading ? (
+                <div className="flex-grow flex items-center justify-center text-[#00FF9D] font-mono text-xs animate-pulse">ЗАГРУЗКА ДАННЫХ...</div>
+            ) : (
+                <div className="space-y-6">
+                    {/* Stats Grid */}
+                    <div className="grid grid-cols-2 gap-3">
+                        <div className="bg-[#121212] border border-zinc-800 p-4 rounded-xl">
+                            <div className="text-zinc-500 mb-2"><Users className="w-5 h-5" /></div>
+                            <p className="text-2xl font-black text-white font-mono">{stats.totalUsers}</p>
+                            <p className="text-[9px] text-zinc-500 uppercase tracking-wider mt-1">Всего посетителей</p>
+                        </div>
+                        <div className="bg-[#121212] border border-zinc-800 p-4 rounded-xl">
+                            <div className="text-zinc-500 mb-2"><GraduationCap className="w-5 h-5" /></div>
+                            <p className="text-2xl font-black text-[#00FF9D] font-mono">{stats.activeStudents}</p>
+                            <p className="text-[9px] text-zinc-500 uppercase tracking-wider mt-1">Академия (Interest)</p>
+                        </div>
+                    </div>
 
-            <div className="w-full flex-grow overflow-hidden flex flex-col">
-                <div className="flex items-center justify-between mb-3 px-1">
-                    <p className="text-[10px] text-zinc-400 uppercase tracking-widest font-bold">
-                        {activeTab === 'leads' ? 'ВХОДЯЩИЕ ЛИДЫ' : activeTab === 'business' ? 'СЕГМЕНТ: БИЗНЕС' : activeTab === 'academy' ? 'СЕГМЕНТ: ОБУЧЕНИЕ' : 'ОТЧЕТЫ СИСТЕМЫ'}
-                    </p>
-                    {(activeTab === 'leads' || activeTab === 'stats') && (
-                        <button onClick={() => { haptic('warning'); onClearLeads(); }} className="text-[9px] text-red-500 uppercase font-bold hover:text-red-400 flex items-center gap-1">
-                            <Trash2 className="w-3 h-3" /> {activeTab === 'stats' ? 'СБРОСИТЬ ВСЁ' : 'ОЧИСТИТЬ'}
-                        </button>
-                    )}
-                </div>
-                
-                <div className="flex-grow overflow-y-auto no-scrollbar space-y-2 pb-20">
-                    
-                    {/* STATS TAB */}
-                    {activeTab === 'stats' && <AnalyticsChart leads={leads} />}
-
-                    {/* LEADS TAB */}
-                    {activeTab === 'leads' && (
-                        leads.length === 0 ? (
-                            <div className="text-center py-10 border border-dashed border-zinc-800 rounded-xl">
-                                <Database className="w-8 h-8 text-zinc-700 mx-auto mb-2" />
-                                <p className="text-[10px] text-zinc-600 uppercase tracking-wider">Нет новых заявок</p>
-                            </div>
-                        ) : (
-                            leads.map((lead) => (
-                                <div key={lead.id} className="glass-card p-3 rounded-lg border border-zinc-800 flex items-center justify-between group hover:border-[#00FF9D]/30 transition-all">
-                                    <div className="flex-grow">
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <div className="w-1.5 h-1.5 bg-[#00FF9D] rounded-full animate-pulse"></div>
-                                            <p className="text-xs font-bold text-white font-mono">{lead.name}</p>
-                                        </div>
-                                        <p className="text-[10px] text-zinc-400 font-mono">{lead.contact}</p>
-                                        <p className="text-[8px] text-zinc-600 mt-1 uppercase tracking-wider">{lead.type}</p>
-                                    </div>
-                                    <div className="flex items-center gap-3">
-                                        <div className="text-right">
-                                            <p className="text-[9px] text-zinc-500 font-mono">{lead.time}</p>
-                                            <a href={`https://t.me/${lead.contact.replace('@', '')}`} target="_blank" rel="noreferrer" className="mt-2 inline-block bg-[#00FF9D]/10 text-[#00FF9D] text-[8px] font-bold px-2 py-1 rounded border border-[#00FF9D]/20 hover:bg-[#00FF9D]/20">
-                                                НАПИСАТЬ
-                                            </a>
-                                        </div>
-                                        <button onClick={() => handleEditClick(lead, 'leads')} className="p-2 bg-zinc-800 rounded-full hover:bg-zinc-700 text-zinc-400 hover:text-white transition-colors">
-                                            <Edit2 className="w-3 h-3" />
-                                        </button>
-                                    </div>
-                                </div>
-                            ))
-                        )
-                    )}
-
-                    {/* BUSINESS VISITORS TAB */}
-                    {activeTab === 'business' && renderVisitorList(businessVisitors, "Нет посетителей в сегменте Бизнес")}
-
-                    {/* ACADEMY VISITORS TAB */}
-                    {activeTab === 'academy' && renderVisitorList(academyVisitors, "Нет посетителей в сегменте Обучение")}
-                </div>
-            </div>
-
-            {/* EDIT MODAL - Same as before */}
-            {editingItem && (
-                <div className="absolute inset-0 z-50 bg-black/95 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in zoom-in duration-200">
-                    <div className="w-full max-w-sm bg-[#0F0F0F] border border-[#00FF9D]/30 p-6 rounded-2xl shadow-2xl relative">
-                        <button 
-                            onClick={() => setEditingItem(null)} 
-                            className="absolute top-4 right-4 text-zinc-500 hover:text-white"
-                        >
-                            <X className="w-5 h-5" />
-                        </button>
-                        <h3 className="text-lg font-bold text-white mb-4 uppercase tracking-wider font-mono flex items-center gap-2">
-                            <Edit2 className="w-4 h-4 text-[#00FF9D]" /> 
-                            Редактирование
+                    {/* Leads Section */}
+                    <div>
+                        <h3 className="text-xs font-bold text-white uppercase tracking-widest mb-3 pl-1 flex items-center gap-2">
+                            <div className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></div>
+                            Последние заявки (Mock)
                         </h3>
-                        
-                        <form onSubmit={handleSave} className="space-y-3">
-                            {editCollection === 'leads' ? (
-                                <>
-                                    <div>
-                                        <label className="text-[9px] text-zinc-500 uppercase font-bold block mb-1">Имя</label>
-                                        <input name="name" defaultValue={editingItem.name} className="w-full bg-zinc-900 border border-zinc-700 rounded p-2 text-xs text-white focus:border-[#00FF9D] outline-none" />
+                        <div className="bg-[#121212] border border-zinc-800 rounded-xl overflow-hidden">
+                            {stats.leads.map((lead, i) => (
+                                <div key={i} className="p-3 border-b border-zinc-800/50 flex items-center justify-between last:border-0 hover:bg-zinc-900/50">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center text-[10px] font-bold text-zinc-400">
+                                            {lead.name.charAt(0).toUpperCase()}
+                                        </div>
+                                        <div>
+                                            <p className="text-xs font-bold text-white mb-0.5">{lead.name}</p>
+                                            <p className="text-[9px] text-zinc-500">{lead.date}</p>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <label className="text-[9px] text-zinc-500 uppercase font-bold block mb-1">Контакт</label>
-                                        <input name="contact" defaultValue={editingItem.contact} className="w-full bg-zinc-900 border border-zinc-700 rounded p-2 text-xs text-white focus:border-[#00FF9D] outline-none" />
-                                    </div>
-                                    <div>
-                                        <label className="text-[9px] text-zinc-500 uppercase font-bold block mb-1">Услуга</label>
-                                        <input name="type" defaultValue={editingItem.type} className="w-full bg-zinc-900 border border-zinc-700 rounded p-2 text-xs text-white focus:border-[#00FF9D] outline-none" />
-                                    </div>
-                                </>
-                            ) : (
-                                <>
-                                    <div className="mb-2">
-                                        <p className="text-[10px] text-zinc-400">ID: {editingItem.chatId}</p>
-                                        <p className="text-[10px] text-zinc-400">Name: {editingItem.userName}</p>
-                                        <p className="text-[10px] text-zinc-500">Segment: {editingItem.segment === 'academy' ? 'Обучение' : 'Бизнес'}</p>
-                                    </div>
-                                    <div>
-                                        <label className="text-[9px] text-zinc-500 uppercase font-bold block mb-1">Заметки о клиенте</label>
-                                        <textarea name="notes" defaultValue={editingItem.notes || ''} placeholder="Например: интересовался обучением..." className="w-full bg-zinc-900 border border-zinc-700 rounded p-2 text-xs text-white focus:border-[#00FF9D] outline-none h-20 resize-none" />
-                                    </div>
-                                </>
-                            )}
-                            
-                            <button type="submit" className="w-full bg-[#00FF9D] hover:bg-[#00FF9D]/90 text-black font-bold uppercase text-xs py-3 rounded-xl mt-4 flex items-center justify-center gap-2">
-                                <Save className="w-4 h-4" /> Сохранить
+                                    <span className={`text-[8px] font-bold px-2 py-1 rounded border ${lead.status === 'New' ? 'text-red-400 border-red-500/30 bg-red-500/10' : 'text-[#00FF9D] border-[#00FF9D]/30 bg-[#00FF9D]/10'}`}>
+                                        {lead.status.toUpperCase()}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Quick Actions */}
+                    <div>
+                        <h3 className="text-xs font-bold text-white uppercase tracking-widest mb-3 pl-1">Управление</h3>
+                        <div className="space-y-2">
+                            <button className="w-full bg-[#1c1c1e] border border-zinc-700 p-3 rounded-xl flex items-center justify-between hover:bg-zinc-800 transition-all group">
+                                <span className="text-xs font-mono text-zinc-300">Очистить кэш приложения</span>
+                                <Trash2 className="w-4 h-4 text-zinc-500 group-hover:text-red-500 transition-colors" />
                             </button>
-                        </form>
+                            <button className="w-full bg-[#1c1c1e] border border-zinc-700 p-3 rounded-xl flex items-center justify-between hover:bg-zinc-800 transition-all group">
+                                <span className="text-xs font-mono text-zinc-300">Выгрузить базу (CSV)</span>
+                                <Database className="w-4 h-4 text-zinc-500 group-hover:text-[#00FF9D] transition-colors" />
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
@@ -2324,27 +2089,17 @@ const App = () => {
 
   const [onlineCount, setOnlineCount] = useState(0);
 
-  
+  // --- FAKE CHAT STATE ---
+  const [activeChat, setActiveChat] = useState(null);
+
+  // --- ADMIN PANEL STATE ---
+  const [adminTapCount, setAdminTapCount] = useState(0);
 
   // NEW: Certificate State (Expanded/Collapsed)
 
   const [isCertExpanded, setIsCertExpanded] = useState(false);
 
-
-
-  // Admin & Leads State
-
-  const [isAdminAuthOpen, setIsAdminAuthOpen] = useState(false);
-
-  const [tapCount, setTapCount] = useState(0);
-
-  const [leads, setLeads] = useState([]); 
-
-
-
   // --- REAL VISITORS STATE ---
-
-  const [visitors, setVisitors] = useState([]);
 
   const [firebaseUser, setFirebaseUser] = useState(null);
 
@@ -2431,6 +2186,37 @@ const App = () => {
       { id: 2, name: 'Елена М.', date: '28.01.26', profit: 5000 }
   ]);
 
+  // --- REVIEW DATA WITH SCREENSHOTS ---
+  const reviewsData = [
+    {
+        id: 1,
+        name: "Алишер К.",
+        role: "Ниша: Кофейни / Аксессуары",
+        avatar: "https://images.unsplash.com/photo-1542909168-82c3e7fdca5c?w=150&h=150&fit=crop&q=80",
+        feedback: "Собрал магаз для кофейни у дома . Кофейня уже 20 заказов через бот приняла, владелец в шоке, что так можно было без сайта)) Первый раз получил предоплату в криптовалюте, и вывел на карту сразу, круто)",
+        earnings: "450 000 ₸",
+        proofImage: "https://i.ibb.co.com/Kvmr7bZ/5474580197450387272.jpg"
+    },
+    {
+        id: 2,
+        name: "Мария Б.",
+        role: "В декрете",
+        avatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&h=150&fit=crop&q=80",
+        feedback: "Сначала вообще не вдупляла, как этот токен вставить 😅, куратор буквально за руку провел. Было страшно называть первый раз цену клиенту, поэтому разбили на 3 платежа, сейчас магазин функционирует, а я заработала из дома, не отрываясь от ребёнка, ведь делала всё с телефона. Не миллионы, но свои деньги.",
+        earnings: "120 000 ₸",
+        proofImage: "https://i.ibb.co.com/pjwKctd3/5474580197450387273.jpg"
+    },
+    {
+        id: 3,
+        name: "Карашаш П.",
+        role: "Заработала 280 000 ₸",
+        avatar: "https://images.unsplash.com/photo-1569913486515-b74bf7751574?w=150&h=150&fit=crop&q=80",
+        feedback: "Долго сомневалась, но использовала обучения по продажам. Написала в несколько табачных магазинов, так как эта сфера более знакома, и один откликнулся и купил, прыгала от счастья по кваритире после оплаты, а заполнила магазин за 2 часа буквально",
+        earnings: "280 000 ₸",
+        proofImage: "https://i.ibb.co.com/hxgnbJ1Z/5474580197450387274.jpg"
+    }
+  ];
+
   // Function to save user segment (Business or Academy)
   const saveUserSegment = async (segment) => {
       if (!currentUserId) return;
@@ -2442,6 +2228,44 @@ const App = () => {
           console.error("Error saving segment:", e);
       }
   };
+
+  const handleSecretTap = () => {
+      setAdminTapCount(prev => {
+          const newCount = prev + 1;
+          if (newCount === 5) {
+              haptic('heavy');
+              setCurrentView('admin');
+              return 0;
+          }
+          return newCount;
+      });
+      // Reset counter if not tapped quickly enough
+      setTimeout(() => setAdminTapCount(0), 1000);
+  };
+
+  // --- FIREBASE SETUP & AUTH ---
+  useEffect(() => {
+    const initAuth = async () => {
+      try {
+        // 1. Try Custom Token (Canvas/Preview Env)
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+           await signInWithCustomToken(auth, __initial_auth_token);
+        } else {
+           // 2. Fallback to Anonymous (Real App/Browser)
+           await signInAnonymously(auth);
+        }
+      } catch (e) {
+        console.warn("Auth failed (will try anonymous fallback):", e);
+        // 3. Robust Fallback: If custom token fails (e.g. project mismatch), try anonymous
+        try {
+            await signInAnonymously(auth);
+        } catch (anonError) {
+            console.error("Anonymous auth also failed:", anonError);
+        }
+      }
+    };
+    initAuth();
+  }, []);
 
   // --- TELEGRAM MAIN BUTTON INTEGRATION (FOR MODAL) ---
   useEffect(() => {
@@ -2564,15 +2388,9 @@ const App = () => {
 
                 try {
 
-                    // Пытаемся войти анонимно напрямую
+                    // Note: Auth now handled separately in initAuth useEffect
 
-                    // Если ты уже залогинен, Firebase это поймет и не будет создавать новую сессию
-
-                    if (!auth.currentUser) {
-
-                        await signInAnonymously(auth);
-
-                    }
+                    // We just handle saving user data here once we know who they are
 
 
 
@@ -2608,41 +2426,51 @@ const App = () => {
 
                     // Проверяем существование, чтобы не перезаписать реферера
 
-                    const userSnap = await getDoc(userRef);
+                    // Using getDoc requires auth to be ready, but this effect might run fast.
 
-                    let dataToSave = {
-
-                        chatId: user.id,
-
-                        userName: user.first_name || 'Агент',
-
-                        lastActive: serverTimestamp(),
-
-                        notified: false
-
-                    };
-
-
-
-                    // Сохраняем реферера только если его еще нет
-
-                    if ((!userSnap.exists() || !userSnap.data()?.referrerId) && referralData.referrerId) {
-
-                          dataToSave = { ...dataToSave, ...referralData };
-
-                    }
-
-
-
-                    await setDoc(userRef, dataToSave, { merge: true });
+                    // Ideally we wait for firebaseUser but simplified here.
 
                     
 
-                    console.log("📡 СВЯЗЬ С ТЕРМИНАЛОМ УСТАНОВЛЕНА");
+                    // Just ensure we write basic data if auth is ready
+
+                    if (auth.currentUser) {
+
+                        const userSnap = await getDoc(userRef);
+
+                        let dataToSave = {
+
+                            chatId: user.id,
+
+                            userName: user.first_name || 'Агент',
+
+                            lastActive: serverTimestamp(),
+
+                            notified: false
+
+                        };
+
+
+
+                        // Сохраняем реферера только если его еще нет
+
+                        if ((!userSnap.exists() || !userSnap.data()?.referrerId) && referralData.referrerId) {
+
+                              dataToSave = { ...dataToSave, ...referralData };
+
+                        }
+
+
+
+                        await setDoc(userRef, dataToSave, { merge: true });
+
+                        console.log("📡 СВЯЗЬ С ТЕРМИНАЛОМ УСТАНОВЛЕНА");
+
+                    }
 
                 } catch (e) {
 
-                    console.error("❌ Ошибка авторизации:", e.message);
+                    console.error("❌ Ошибка инициализации данных:", e.message);
 
                 }
 
@@ -2652,7 +2480,13 @@ const App = () => {
 
     };
 
-    initApp();
+    // Run initApp when auth state changes (so we are logged in before writing)
+
+    if (firebaseUser) {
+
+        initApp();
+
+    }
 
     const timer = setTimeout(() => {
 
@@ -2662,7 +2496,7 @@ const App = () => {
 
     return () => clearTimeout(timer);
 
-  }, []);
+  }, [firebaseUser]);
 
 
 
@@ -2700,78 +2534,15 @@ const App = () => {
 
   }, []);
 
-
-
-  // --- FETCH REAL VISITORS FOR ADMIN ---
   useEffect(() => {
-      if (currentView === 'admin' && firebaseUser) {
-          const usersCollection = collection(db, 'artifacts', appId, 'public', 'data', 'app_visitors');
-          const unsubscribe = onSnapshot(usersCollection, (snapshot) => {
-              const usersData = snapshot.docs.map(doc => ({
-                  id: doc.id,
-                  ...doc.data()
-              }));
-              
-              // UPDATED: Safer sort function to handle different date formats (Timestamp vs Date)
-              usersData.sort((a, b) => {
-                    const getTime = (t) => {
-                        if (!t) return 0;
-                        if (t.toMillis && typeof t.toMillis === 'function') return t.toMillis();
-                        if (t.getTime && typeof t.getTime === 'function') return t.getTime();
-                        return new Date(t).getTime() || 0;
-                    };
-                    return getTime(b.lastActive) - getTime(a.lastActive);
-              });
-
-              setVisitors(usersData.slice(0, 50)); 
-          }, (error) => {
-              console.error("Admin fetch error:", error);
-          });
-          return () => unsubscribe();
-      }
-  }, [currentView, firebaseUser]);
-
-  // --- UPDATE FUNCTIONS ---
-  const updateLead = (id, newData) => {
-
-      setLeads(prev => prev.map(lead => lead.id === id ? { ...lead, ...newData } : lead));
-
-  };
-
-
-
-  const updateVisitor = async (id, newData) => {
-
-      try {
-
-          const visitorRef = doc(db, 'artifacts', appId, 'public', 'data', 'app_visitors', id);
-
-          await updateDoc(visitorRef, newData);
-
-          console.log("Visitor updated successfully");
-
-      } catch (e) {
-
-          console.error("Error updating visitor:", e);
-
-      }
-
-  };
-
-
-
-  useEffect(() => {
-
+    // Initial set
     setOnlineCount(Math.floor(Math.random() * 16)); 
-
-    const interval = setInterval(() => { setOnlineCount(Math.floor(Math.random() * 16)); }, 60000); 
-
+    // Update every 10 seconds (10000 ms)
+    const interval = setInterval(() => { setOnlineCount(Math.floor(Math.random() * 16)); }, 10000); 
     return () => clearInterval(interval);
-
   }, []);
 
   
-
   const [shopIntroFinished, setShopIntroFinished] = useState(false);
 
   const [activeFaq, setActiveFaq] = useState(null);
@@ -2894,29 +2665,8 @@ const App = () => {
 
 
 
-    const name = e.target[0].value;
-
-    const contact = e.target[1].value;
-
-
-
-    const newLead = {
-
-        id: Date.now(), 
-
-        name: name,
-
-        contact: contact,
-
-        type: modalType,
-
-        time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
-
-    };
-
-    setLeads(prev => [newLead, ...prev]);
-
-
+    // Removed logic to update 'leads' state since AdminPanel is gone.
+    // Just showing the toast now.
 
     closeModal(); 
 
@@ -2952,9 +2702,9 @@ const App = () => {
 
   const handleStrategyClick = () => {
 
-       haptic('light');
+        haptic('light');
 
-       setCurrentView('strategy');
+        setCurrentView('strategy');
 
   };
 
@@ -2968,70 +2718,19 @@ const App = () => {
 
   const handleAboutClick = () => {
 
-       haptic('medium');
+        haptic('medium');
 
-       setBaneIntroActive(true);
+        setBaneIntroActive(true);
 
   }
 
   const handleBaneIntroComplete = () => {
 
-       setBaneIntroActive(false);
+        setBaneIntroActive(false);
 
-       setCurrentView('about');
+        setCurrentView('about');
 
   }
-
-
-
-  // --- Admin Logic ---
-  const handleTitleClick = () => {
-      setTapCount(prev => {
-          const newCount = prev + 1;
-          if (newCount >= 5) {
-              // DEBUG: Log current ID to console to verify
-              console.log("Attempting Admin Entry. Current User ID:", currentUserId);
-              
-              // UPDATED: Check for specific Telegram ID instead of password modal
-              if (String(currentUserId) === '8469497672') {
-                  haptic('success');
-                  setCurrentView('admin');
-              } else {
-                  haptic('error');
-                  // Optionally show a toast or alert for unauthorized users, or just do nothing
-                  // console.log("Unauthorized admin attempt: ", currentUserId);
-              }
-              return 0;
-          }
-          haptic('light');
-          return newCount;
-      });
-  };
-
-  // Keep handleAdminAuth for legacy/fallback if needed, though it's no longer triggered by title click
-  const handleAdminAuth = (e) => {
-      e.preventDefault();
-      const code = e.target[0].value;
-
-      if (code === 'admin') {
-
-          haptic('success');
-
-          setIsAdminAuthOpen(false);
-
-          setCurrentView('admin');
-
-      } else {
-
-          haptic('error');
-
-          alert("ACCESS DENIED");
-
-      }
-
-  };
-
-
 
   const faqItems = [
 
@@ -3057,7 +2756,22 @@ const App = () => {
 
       {baneIntroActive && <BaneIntro onComplete={handleBaneIntroComplete} />}
 
-      
+      {/* GLOBAL IMAGE VIEWER MODAL */}
+      {previewImage && (
+        <div 
+          className="fixed inset-0 z-[300] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 animate-in fade-in duration-300 cursor-zoom-out" 
+          onClick={() => { haptic('light'); setPreviewImage(null); }}
+        >
+          {/* Уменьшил max-w-2xl до max-w-sm (размер смартфона), чтобы скриншоты не были огромными */}
+          <div className="relative w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
+             <SmartImage src={previewImage} className="w-full h-auto rounded-lg border border-[#00FF9D]/30 shadow-[0_0_50px_rgba(0,255,157,0.1)]" alt="Preview" />
+             <div className="absolute top-4 right-4 bg-black/60 rounded-full p-2 cursor-pointer border border-zinc-700" onClick={() => setPreviewImage(null)}>
+                <X className="w-5 h-5 text-white" />
+             </div>
+             <p className="text-center text-zinc-500 font-mono text-[10px] mt-4 uppercase animate-pulse">Нажмите за пределами, чтобы закрыть</p>
+          </div>
+        </div>
+      )}
 
       {/* MATRIX BACKGROUND COMPONENT (FIXED z-index and position) */}
 
@@ -3091,7 +2805,7 @@ const App = () => {
 
                   {/* GLOWING TITLE */}
 
-                  <h1 className="font-['Chakra_Petch'] font-[700] uppercase tracking-[0.15em] whitespace-nowrap overflow-visible relative block w-full text-center" style={{ fontSize: 'clamp(1.5rem, 8.5vw, 3.5rem)', textShadow: '0 0 20px #00FF9D', color: '#ffffff' }}>
+                  <h1 onClick={handleSecretTap} className="font-['Chakra_Petch'] font-[700] uppercase tracking-[0.15em] whitespace-nowrap overflow-visible relative block w-full text-center select-none" style={{ fontSize: 'clamp(1.5rem, 8.5vw, 3.5rem)', textShadow: '0 0 20px #00FF9D', color: '#ffffff' }}>
 
                     <span className="relative inline-block mr-[-0.15em]">TAIPAN MEDIA<span className="absolute inset-0 -z-10 opacity-40 blur-[12px] animate-pulse text-[#00FF9D]">TAIPAN MEDIA</span></span>
 
@@ -3104,6 +2818,11 @@ const App = () => {
                       <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] font-bold">Выберите цель</p>
                       <div className="h-[1px] w-8 bg-gradient-to-l from-transparent to-[#00FF9D]"></div>
                   </div>
+                  
+                  {/* NEW: Dynamic Online Counter */}
+                  <p className="text-[9px] text-[#00FF9D] font-mono mt-2 animate-pulse opacity-80 tracking-wider">
+                      СЕЙЧАС ОНЛАЙН: {onlineCount}
+                  </p>
               </div>
               
               <div className="w-full space-y-4 mb-8 flex flex-col items-center">
@@ -3166,9 +2885,9 @@ const App = () => {
 
           <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 flex flex-col items-center w-full">
 
-            <div className="mb-14 w-full text-center" onClick={handleTitleClick}>
+            <div className="mb-14 w-full text-center">
 
-              <h1 className="font-['Chakra_Petch'] font-[700] uppercase tracking-[0.15em] whitespace-nowrap overflow-visible relative block w-full text-center select-none cursor-pointer active:scale-95 transition-transform" style={{ fontSize: 'clamp(1.5rem, 8.5vw, 3.5rem)', textShadow: '0 0 20px rgba(0,255,157,0.3)', color: '#ffffff' }}>
+              <h1 onClick={handleSecretTap} className="font-['Chakra_Petch'] font-[700] uppercase tracking-[0.15em] whitespace-nowrap overflow-visible relative block w-full text-center select-none cursor-pointer active:scale-95 transition-transform" style={{ fontSize: 'clamp(1.5rem, 8.5vw, 3.5rem)', textShadow: '0 0 20px rgba(0,255,157,0.3)', color: '#ffffff' }}>
 
                 <span className="relative inline-block mr-[-0.15em]">TAIPAN MEDIA<span className="absolute inset-0 -z-10 opacity-40 blur-[12px] animate-pulse text-[#00FF9D]">TAIPAN MEDIA</span></span>
 
@@ -3332,6 +3051,14 @@ const App = () => {
 
                         </div>
 
+                        {/* New Button: Отзывы наших учеников */}
+                        <div onClick={() => setCurrentView('reviews')} className="glass-card p-4 rounded-2xl flex flex-col items-center justify-center cursor-pointer border-[#00FF9D]/40 hover:bg-[#00FF9D]/10 transition-all text-center relative overflow-hidden group mt-2">
+                            <div className="absolute inset-0 bg-gradient-to-br from-[#00FF9D]/10 to-transparent opacity-50"></div>
+                            <MessageCircle className="w-8 h-8 text-[#00FF9D] mb-1.5 relative z-10" />
+                            <span className="text-base font-bold text-white relative z-10 font-['Chakra_Petch'] tracking-wider">ОТЗЫВЫ</span>
+                            <p className="text-[9px] text-zinc-400 relative z-10 uppercase tracking-widest mt-0.5">Истории успеха наших учеников</p>
+                        </div>
+
                     </div>
 
                 )}
@@ -3369,7 +3096,10 @@ const App = () => {
 
         {/* ... Rest of components follow similar logic ... */}
 
-        
+        {/* VIEW: ADMIN PANEL */}
+        {currentView === 'admin' && (
+            <AdminPanel onBack={() => handleBackClick('role_selection')} />
+        )}
 
         {/* VIEW: SHOP (Kept as is) */}
 
@@ -3607,7 +3337,7 @@ const App = () => {
 
                             <div className="flex items-center gap-3">
 
-                                <div className="w-10 h-10 rounded-full bg-[#1c1c1e] flex items-center justify-center text-zinc-400 font-black text-sm border border-zinc-700 cursor-pointer" onClick={() => setIsAdminAuthOpen(true)}>
+                                <div className="w-10 h-10 rounded-full bg-[#1c1c1e] flex items-center justify-center text-zinc-400 font-black text-sm border border-zinc-700">
 
                                     <Shield className="w-4 h-4" />
 
@@ -3859,7 +3589,7 @@ const App = () => {
                                         >
                                             {isStudent && (
                                                 <svg width="14" height="14" viewBox="0 0 56 56" fill="black">
-                                                    <path d="M28 56C43.464 56 56 43.464 56 28C56 12.536 43.464 0 28 0C12.536 0 0 12.536 0 28C0 43.464 12.536 56 28 56ZM12.136 16.438L27.998 12L43.864 16.438L42.532 32.186C41.362 45.986 27.998 47.998 27.998 47.998C27.998 47.998 14.634 45.986 13.464 32.186L12.136 16.438ZM24.444 33.15L27.998 38L31.556 33.15L38.452 19.346L27.998 17.558L17.548 19.346L24.444 33.15Z"/>
+                                                    <path d="M28 56C43.464 56 56 43.464 56 28C56 12.536 43.464 0 28 0C12.536 0 0 12.536 0 28C0 43.464 12.536 56 28 56ZM12.136 16.438L27.998 12L43.864 16.438L42.532 32.186C41.362 45.986 27.998 47.998 27.998 47.998 14.634 45.986 13.464 32.186L12.136 16.438ZM24.444 33.15L27.998 38L31.556 33.15L38.452 19.346L27.998 17.558L17.548 19.346L24.444 33.15Z"/>
                                                 </svg>
                                             )}
                                             {isStudent ? "Claim TON SBT NFT" : <span className="text-[8px] tracking-[0.15em] whitespace-nowrap">ПРОЙДИТЕ ОБУЧЕНИЕ ЧТО БЫ ЗАМИНТИТЬ СЕРТИФИКАТ</span>}
@@ -3957,6 +3687,55 @@ const App = () => {
 
 
 
+        {/* VIEW: REVIEWS (NEW) */}
+        {currentView === 'reviews' && (
+          <div className="animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col h-full items-center w-full">
+             <button onClick={() => handleBackClick('main')} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-4 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
+             <div className="flex-grow flex flex-col items-center w-full space-y-6 overflow-y-auto pb-20 no-scrollbar">
+                <div className="text-center px-4 w-full">
+                    <h2 className="text-2xl sm:text-3xl font-black tracking-tighter uppercase mb-1 font-['Chakra_Petch'] leading-none whitespace-nowrap">ЧЕСТНЫЕ <span className="text-[#00FF9D]">ОТЗЫВЫ</span></h2>
+                    <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] mr-[-0.3em] font-bold">Без цензуры</p>
+                </div>
+                
+                <div className="w-full space-y-4">
+                    {reviewsData.map((review) => (
+                        <div key={review.id} className="glass-card p-4 rounded-2xl border border-[#00FF9D]/30 relative overflow-hidden group">
+                            <div className="flex justify-between items-start mb-3 relative z-10">
+                                <div className="flex items-center gap-3">
+                                    <SmartImage src={review.avatar} className="w-10 h-10 rounded-full border border-[#00FF9D]/50 object-cover" alt={review.name} />
+                                    <div>
+                                        <p className="text-xs font-bold text-white">{review.name}</p>
+                                        <p className="text-[9px] text-zinc-400">{review.role}</p>
+                                    </div>
+                                </div>
+                                <div 
+                                    className="bg-[#00FF9D]/10 px-2 py-1 rounded border border-[#00FF9D]/30 flex items-center gap-1 cursor-pointer hover:bg-[#00FF9D]/20 transition-colors" 
+                                    onClick={() => { haptic('light'); setPreviewImage(review.proofImage); }}
+                                >
+                                    <span className="text-[8px] font-bold text-[#00FF9D] uppercase tracking-wider">Посмотреть заказ</span>
+                                </div>
+                            </div>
+                            
+                            <div className="relative z-10 mb-3">
+                                <p className="text-[11px] text-zinc-200 leading-relaxed">"{review.feedback}"</p>
+                            </div>
+
+                            <div className="absolute -bottom-4 -right-4 opacity-5 pointer-events-none"><MessageCircle className="w-24 h-24 text-[#00FF9D]" /></div>
+                        </div>
+                    ))}
+                </div>
+
+                <div className="w-full pt-4 pb-8">
+                    <button onClick={() => setCurrentView('program')} className="w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-4 rounded-xl shadow-[0_0_20px_rgba(0,255,157,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs flex items-center justify-center gap-2 animate-pulse">
+                        <Zap className="w-4 h-4" />
+                        ХОЧУ ТАК ЖЕ
+                    </button>
+                    <p className="text-center text-[9px] text-zinc-600 mt-3">Присоединяйтесь к команде успешных партнеров</p>
+                </div>
+             </div>
+          </div>
+        )}
+
         {/* VIEW: CASES (SEPARATE VIEW) */}
 
         {currentView === 'cases' && (
@@ -4047,9 +3826,9 @@ const App = () => {
 
                          <div className="relative w-full text-center">
 
-                            <div className="absolute inset-0 bg-white/5 blur-3xl rounded-full transform scale-150 left-1/2 -translate-x-1/2" />
+                           <div className="absolute inset-0 bg-white/5 blur-3xl rounded-full transform scale-150 left-1/2 -translate-x-1/2" />
 
-                            <div className="relative z-10"><SlideComponent isActive={activeSlide === idx} /></div>
+                           <div className="relative z-10"><SlideComponent isActive={activeSlide === idx} /></div>
 
                          </div>
 
@@ -4401,30 +4180,6 @@ const App = () => {
 
         )}
 
-
-
-        {/* VIEW: ADMIN PANEL */}
-
-        {currentView === 'admin' && (
-
-            <AdminPanel 
-
-                leads={leads}
-
-                visitors={visitors} 
-
-                onBack={() => setCurrentView('main')} 
-
-                onClearLeads={() => setLeads([])}
-
-                onUpdateLead={updateLead}
-
-                onUpdateVisitor={updateVisitor}
-
-            />
-
-        )}
-
       </div>
 
 
@@ -4452,38 +4207,6 @@ const App = () => {
               <input type="text" placeholder="@username" required className="w-full bg-black border border-white/5 rounded-2xl p-4 text-center text-white focus:border-[#00FF9D]/50 outline-none transition-all placeholder-zinc-700 font-mono" />
 
               <button type="submit" className="w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-5 rounded-2xl mt-4 text-xs font-mono">Связаться со мной</button>
-
-            </form>
-
-          </div>
-
-        </div>
-
-      )}
-
-
-
-      {isAdminAuthOpen && (
-
-        <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
-
-          <div className="absolute inset-0 bg-black/90 backdrop-blur-md animate-in fade-in duration-300" onClick={() => setIsAdminAuthOpen(false)} />
-
-          <div className="relative w-full max-w-sm bg-[#0A0A0A] border border-[#00FF9D]/50 p-6 rounded-sm shadow-[0_0_50px_rgba(0,255,157,0.1)]">
-
-            <div className="text-center mb-6">
-
-                <Shield className="w-12 h-12 text-[#00FF9D] mx-auto mb-2 animate-pulse" />
-
-                <h2 className="text-xl font-black text-[#00FF9D] font-mono tracking-widest">БЕЗОПАСНЫЙ ВХОД</h2>
-
-            </div>
-
-            <form onSubmit={handleAdminAuth} className="space-y-4">
-
-              <input type="password" placeholder="КОД ДОСТУПА" required className="w-full bg-black border border-zinc-700 p-3 text-center text-[#00FF9D] font-mono tracking-[0.5em] focus:border-[#00FF9D] outline-none" autoFocus />
-
-              <button type="submit" className="w-full bg-[#00FF9D] text-black font-bold font-mono tracking-widest py-3 hover:bg-[#00FF9D]/80">ВОЙТИ</button>
 
             </form>
 

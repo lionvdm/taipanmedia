@@ -99,6 +99,40 @@ const GlobalStyles = () => (
         backface-visibility: hidden;
     }
 
+    /* Strategy Card Style */
+    .strategy-card {
+        background-color: #0A0A0A;
+        border: 1px solid #1f1f1f;
+        border-radius: 16px;
+        padding: 20px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    /* UPDATED: Crystal clear locked state - NO BLUR, NO GRAYSCALE */
+    .cert-locked {
+        filter: none;
+        opacity: 1;
+        pointer-events: none;
+    }
+    .stamp-red {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) rotate(-15deg);
+        border: 4px solid #ff4d4d;
+        color: #ff4d4d;
+        padding: 10px 20px;
+        font-family: 'Chakra Petch', sans-serif;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.2em;
+        border-radius: 8px;
+        background: rgba(0,0,0,0.4);
+        box-shadow: 0 0 15px rgba(255,77,77,0.3);
+        z-index: 20;
+    }
+
     @keyframes contourPulse {
       0% { filter: drop-shadow(0 0 1px rgba(0, 255, 157, 0.3)); opacity: 0.8; }
       50% { filter: drop-shadow(0 0 6px rgba(0, 255, 157, 0.6)); opacity: 1; }
@@ -1320,37 +1354,14 @@ const App = () => {
   return (
     <div className="min-h-screen bg-[#050505] text-white font-sans selection:bg-[#00FF9D]/30 relative overflow-hidden flex flex-col">
       <GlobalStyles />
-      {/* Bane Intro Overlay */}
       {baneIntroActive && <BaneIntro onComplete={handleBaneIntroComplete} />}
-      {/* GLOBAL IMAGE VIEWER MODAL */}
-      {previewImage && (
-        <div 
-          className="fixed inset-0 z-[300] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 cursor-zoom-out" 
-          onClick={() => { haptic('light'); setPreviewImage(null); }}
-        >
-          {/* Уменьшил max-w-2xl до max-w-sm (размер смартфона), чтобы скриншоты не были огромными */}
-          <div className="relative w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
-             <SmartImage src={previewImage} className="w-full h-auto rounded-lg border border-[#00FF9D]/30 shadow-[0_0_50px_rgba(0,255,157,0.1)]" alt="Preview" />
-             <div className="absolute top-4 right-4 bg-black/60 rounded-full p-2 cursor-pointer border border-zinc-700" onClick={() => setPreviewImage(null)}>
-                <X className="w-5 h-5 text-white" />
-             </div>
-             <p className="text-center text-zinc-500 font-mono text-[10px] mt-4 uppercase animate-pulse">Нажмите за пределами, чтобы закрыть</p>
-          </div>
-        </div>
-      )}
-
-      {/* MATRIX BACKGROUND COMPONENT (FIXED z-index and position) */}
+      
+      {/* МАТРИЦА НА ФОНЕ */}
       <MatrixBackground />
-
-      <div className="fixed inset-0 z-0 pointer-events-none">
-        <div className="absolute inset-0 bg-[#020202] -z-20" />
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-purple-500/10 rounded-full blur-[120px] animate-pulse"></div>
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-[#00FF9D]/5 rounded-full blur-[120px] animate-pulse"></div>
-        <div className="absolute inset-0 opacity-20 -z-10" style={{ backgroundImage: `linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px)`, backgroundSize: '50px 50px', maskImage: 'radial-gradient(circle at 50% 30%, black 40%, transparent 100%)', WebkitMaskImage: 'radial-gradient(circle at 50% 30%, black 40%, transparent 100%)' }} />
-      </div>
 
       <div className="relative z-10 flex-grow flex flex-col max-w-lg mx-auto w-full px-4 pt-5 pb-20">
         
+        {/* 1. ВЫБОР РОЛИ */}
         {currentView === 'role_selection' && (
           <div className="flex flex-col items-center justify-center h-full w-full px-4 pt-5 pb-20">
               <div className="text-center mb-12">
@@ -1412,7 +1423,8 @@ const App = () => {
               </div>
           </div>
         )}
-        
+
+        {/* 2. ГЛАВНОЕ МЕНЮ */}
         {currentView === 'main' && (
           <div className="flex flex-col items-center w-full">
             <div className="mb-14 w-full text-center">
@@ -1465,6 +1477,15 @@ const App = () => {
                                 <span className="text-[8px] text-zinc-500 text-center leading-tight font-mono">Примеры партнёров</span>
                             </div>
                         </div>
+
+                        <div onClick={() => openModal('Личный кабинет')} className="glass-card p-4 rounded-2xl flex items-center justify-center cursor-pointer border-white/5 hover:border-[#00FF9D]/30 hover:bg-[#00FF9D]/5 transition-all group mt-2 relative">
+                             <div className="absolute left-4 p-2 rounded-full bg-zinc-800/50 border border-white/10 group-hover:border-[#00FF9D]/30 transition-colors">
+                                <Users className="w-5 h-5 text-zinc-400 group-hover:text-[#00FF9D] transition-colors" />
+                             </div>
+                             <div className="text-center">
+                                <h4 className="text-sm font-bold text-white group-hover:text-[#00FF9D] transition-colors font-['Chakra_Petch'] tracking-wider uppercase">ЛИЧНЫЙ КАБИНЕТ</h4>
+                             </div>
+                        </div>
                     </>
                 ) : (
                     // === ACADEMY ROLE ===
@@ -1479,7 +1500,12 @@ const App = () => {
                         </div>
 
                         {/* Secondary Buttons Grid - Larger Version */}
-                        <div className="grid grid-cols-2 gap-2">
+                        <div className="grid grid-cols-3 gap-2">
+                             <div onClick={() => openModal('Личный кабинет')} className="glass-card p-3 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-[#00FF9D]/30 transition-all h-28 group">
+                                <Users className="w-8 h-8 text-zinc-500 group-hover:text-[#00FF9D] mb-3 transition-colors" />
+                                <span className="text-[10px] font-bold text-zinc-300 text-center leading-tight uppercase tracking-wider">Личный кабинет</span>
+                            </div>
+
                             <div onClick={() => setCurrentView('calculator')} className="glass-card p-3 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-[#00FF9D]/30 transition-all h-28 group">
                                 <Wallet className="w-8 h-8 text-zinc-500 group-hover:text-[#00FF9D] mb-3 transition-colors" />
                                 <span className="text-[10px] font-bold text-zinc-300 text-center leading-tight uppercase tracking-wider">Ваш доход</span>
@@ -1519,11 +1545,9 @@ const App = () => {
           </div>
         )}
 
-        {/* ... Rest of components follow similar logic ... */}
-        
-        {/* VIEW: SHOP (Kept as is) */}
+        {/* 3. МАГАЗИН */}
         {currentView === 'shop' && (
-          <div className="flex flex-col h-full items-center w-full">
+          <div className="animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col h-full items-center w-full">
              {!shopIntroFinished ? (
                 <ShopIntroSequence onComplete={() => setShopIntroFinished(true)} />
              ) : (
@@ -1595,39 +1619,31 @@ const App = () => {
           </div>
         )}
 
-        {/* VIEW: CALCULATOR (Kept as is) */}
+        {/* 4. КАЛЬКУЛЯТОР (из меню) */}
         {currentView === 'calculator' && (
-          <div className="w-full flex flex-col items-center pb-24">
-            {/* Logic for Back Button: Return to Main if Academy, else go back to Shop or Main based on context */}
-            <button onClick={() => handleBackClick(userRole === 'academy' ? 'main' : 'shop')} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-4 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
-            <div className="w-full space-y-2">
+          <div className="flex flex-col h-full items-center w-full">
+            <button onClick={() => handleBackClick('main')} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-4 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
+            <div className="w-full">
                 {userRole === 'business' ? (
-                    <div className="text-center px-4 w-full mb-2">
-                        <Wallet className="w-12 h-12 mx-auto text-[#00FF9D] mb-2 drop-shadow-[0_0_15px_rgba(0,255,157,0.5)] animate-[contourPulse_3s_ease-in-out_infinite]" />
-                        <h2 className="text-2xl sm:text-3xl font-black tracking-tighter uppercase mb-1 font-['Chakra_Petch'] leading-none whitespace-nowrap">ВАША <span className="text-[#00FF9D]">ПРИБЫЛЬ</span></h2>
-                        <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] mr-[-0.3em] font-bold">Узнайте сколько вы теряете</p>
-                    </div>
+                     <ProfitCalculator data={calcData} setData={setCalcData} onAction={() => setCurrentView('roi')} />
                 ) : (
-                    <div className="text-center px-4 w-full mb-2">
-                        <Wallet className="w-12 h-12 mx-auto text-[#00FF9D] mb-2 drop-shadow-[0_0_15px_rgba(0,255,157,0.5)] animate-[contourPulse_3s_ease-in-out_infinite]" />
-                        <h2 className="text-2xl sm:text-3xl font-black tracking-tighter uppercase mb-1 font-['Chakra_Petch'] leading-none whitespace-nowrap">ЧАС НА <span className="text-[#00FF9D]">МИЛЛИОН</span></h2>
-                        <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] mr-[-0.3em] font-bold">Узнай реальную цену своего времени</p>
-                    </div>
+                     <AcademyCalculator data={academyCalcData} setData={setAcademyCalcData} onAction={() => openModal('Consultation')} />
                 )}
-                
-                <div className="w-full glass-card p-4 rounded-3xl border border-[#00FF9D]/20 relative overflow-hidden">
-                    {userRole === 'business' ? (
-                        <ProfitCalculator data={calcData} setData={setCalcData} onAction={() => {
-                            openModal('Consultation'); // Redirect to Modal instead of Strategy
-                        }} />
-                    ) : (
-                        <AcademyCalculator data={academyCalcData} setData={setAcademyCalcData} onAction={() => openModal('Consultation')} /> // Redirect to Modal instead of Strategy
-                    )}
-                </div>
             </div>
           </div>
         )}
 
+        {/* 5. ЭКРАН ROI (ТОТ САМЫЙ, КОТОРОГО НЕ БЫЛО) */}
+        {currentView === 'roi' && (
+           <RoiView 
+             profit={calculateProfit()} 
+             onBack={() => setCurrentView('shop')} 
+             onAction={() => openModal('Start Project')} 
+           />
+        )}
+
+        {/* ... (остальные вью: cases, education, faq, program, about, reviews) ... */}
+        
         {/* VIEW: REVIEWS (NEW) */}
         {currentView === 'reviews' && (
           <div className="flex flex-col h-full items-center w-full">
@@ -1703,11 +1719,6 @@ const App = () => {
                 </div>
              </div>
           </div>
-        )}
-
-        {/* VIEW: ROI VIEW (Kept as is) */}
-        {currentView === 'roi' && (
-           <RoiView profit={calculateProfit()} onBack={() => handleBackClick('shop')} onAction={() => openModal('Start Project')} />
         )}
 
         {/* VIEW: EDUCATION (Kept as is) */}

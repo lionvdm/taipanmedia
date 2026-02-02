@@ -37,7 +37,7 @@ class ErrorBoundary extends React.Component {
 // --- CONFIGURATION & INIT ---
 const manifestUrl = 'https://taipan-rose.vercel.app/tonconnect-manifest.json';
 
-// 1. Prioritize Environment Config (SAFE VERSION)
+// 1. Prioritize Environment Config
 let firebaseConfig;
 try {
   if (typeof window !== 'undefined' && window.__firebase_config) {
@@ -1497,7 +1497,8 @@ const App = () => {
                             </div>
                         </div>
 
-                        <div onClick={() => openModal('Личный кабинет')} className="glass-card p-4 rounded-2xl flex items-center justify-center cursor-pointer border-white/5 hover:border-[#00FF9D]/30 hover:bg-[#00FF9D]/5 transition-all group mt-2 relative">
+                        {/* --- ИСПРАВЛЕННЫЙ БЛОК ЛИЧНОГО КАБИНЕТА (ВЕДЕТ В STRATEGY) --- */}
+                        <div onClick={() => setCurrentView('strategy')} className="glass-card p-4 rounded-2xl flex items-center justify-center cursor-pointer border-white/5 hover:border-[#00FF9D]/30 hover:bg-[#00FF9D]/5 transition-all group mt-2 relative">
                              <div className="absolute left-4 p-2 rounded-full bg-zinc-800/50 border border-white/10 group-hover:border-[#00FF9D]/30 transition-colors">
                                 <Users className="w-5 h-5 text-zinc-400 group-hover:text-[#00FF9D] transition-colors" />
                              </div>
@@ -1673,8 +1674,347 @@ const App = () => {
           </div>
         )}
 
+        {currentView === 'strategy' && (
+          <div className="flex flex-col h-full items-center w-full">
+              <button onClick={() => handleBackClick(userRole === 'academy' ? 'main' : 'calculator')} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-4 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
+              <div className="flex-grow flex flex-col items-center w-full space-y-6 overflow-y-auto pb-20 no-scrollbar">
+                
+                {/* UNIFIED PERSONAL CABINET HEADER */}
+                {(userRole === 'academy' || userRole === 'business') && (
+                    <div className="w-full space-y-3">
+                        {/* 1. Profile Card */}
+                        <div className="strategy-card flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-[#1c1c1e] flex items-center justify-center text-zinc-400 font-black text-sm border border-zinc-700">
+                                    <Shield className="w-4 h-4" />
+                                </div>
+                                <div>
+                                    <h3 className="text-base font-black text-white uppercase tracking-wider leading-none">{userName}</h3>
+                                    <div className="flex items-center gap-1.5 mt-1">
+                                        <div className={`w-1.5 h-1.5 rounded-full ${isStudent ? 'bg-[#00FF9D]' : 'bg-zinc-600'}`}></div>
+                                        <span className={`text-[10px] uppercase font-bold tracking-wider ${isStudent ? 'text-[#00FF9D]' : 'text-zinc-500'}`}>
+                                            {isStudent ? 'АКТИВНЫЙ СТУДЕНТ' : 'ГОСТЬ'}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            {!isStudent && (
+                                <button 
+                                    onClick={() => window.open('https://t.me/taipanmedia', '_blank')}
+                                    className="text-[10px] font-bold border border-zinc-700 px-4 py-2 rounded-lg text-white hover:bg-white/5 transition-all uppercase tracking-widest"
+                                >
+                                    НАЧАТЬ
+                                </button>
+                            )}
+                        </div>
+
+                        {/* 2. Finance Card */}
+                        <div className="strategy-card relative animate-[frame-pulse_3s_ease-in-out_infinite]">
+                            <p className="text-[9px] text-zinc-500 uppercase font-bold tracking-[0.2em] mb-4">
+                                {userRole === 'academy' ? 'ВАШ ПОТЕНЦИАЛЬНЫЙ ДОХОД В МЕСЯЦ' : 'ПОТЕНЦИАЛЬНАЯ ПРИБЫЛЬ'}
+                            </p>
+                            <div className="flex items-baseline gap-2 mb-6">
+                                <div className="text-5xl font-black text-white font-['Chakra_Petch'] tracking-tighter animate-[text-pulse-glow_3s_ease-in-out_infinite]">
+                                    {userRole === 'academy' 
+                                      ? animatedPotentialEarnings.toLocaleString().replace(/\s/g, ' ')
+                                      : businessProfit.toLocaleString().replace(/\s/g, ' ')
+                                    }
+                                </div>
+                                <span className="text-zinc-500 text-xs font-bold uppercase tracking-wider">
+                                    {userRole === 'academy' ? '₸ / мес' : '₸ / мес'}
+                                </span>
+                            </div>
+                            
+                            <div className="flex items-center gap-3">
+                                <button 
+                                    onClick={() => setCurrentView('calculator')}
+                                    className="flex items-center gap-2 bg-[#1c1c1e] hover:bg-[#252525] px-3 py-2 rounded-lg text-[10px] text-zinc-400 border border-zinc-800 transition-all"
+                                >
+                                    <Edit2 className="w-3 h-3" /> 
+                                    <span className="font-bold">Пересчитать</span>
+                                </button>
+                                <span className="text-[9px] text-zinc-600 font-mono">Обновлено: только что</span>
+                            </div>
+                            
+                            <div className="absolute right-5 top-1/2 -translate-y-1/2 opacity-10 pointer-events-none">
+                                <Wallet className="w-24 h-24 text-white stroke-1" />
+                            </div>
+                        </div>
+
+                        {/* --- 4. БЛОК СЕРТИФИКАТА (EXPANDABLE) --- */}
+                        {userRole === 'academy' && (
+                            <div 
+                                className={`strategy-card mt-4 transition-all duration-500 ease-in-out ${isCertExpanded ? 'border-[#00FF9D]/50 bg-[#0A0A0A]' : 'hover:border-[#00FF9D]/50 cursor-pointer'}`}
+                                onClick={() => { 
+                                    if (!isCertExpanded) {
+                                        haptic('medium'); 
+                                        setIsCertExpanded(true);
+                                    }
+                                }}
+                            >
+                                {/* Header Row */}
+                                <div className="flex items-center justify-between" onClick={(e) => {
+                                    if (isCertExpanded) {
+                                        e.stopPropagation(); 
+                                        haptic('light');
+                                        setIsCertExpanded(false);
+                                    }
+                                }}>
+                                    <div className="flex items-center gap-3">
+                                        <div className={`w-10 h-10 rounded-full flex items-center justify-center border transition-colors ${isStudent ? 'bg-[#00FF9D]/10 border-[#00FF9D]/30 text-[#00FF9D]' : 'bg-zinc-900 border-zinc-800 text-zinc-600'}`}>
+                                            <Shield className="w-5 h-5" />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-xs font-bold text-white uppercase tracking-wider mb-1">СЕРТИФИКАТ ОБ ОБУЧЕНИИ</h3>
+                                            <div className="text-[8px] text-zinc-500 leading-tight max-w-[230px]">
+                                                <p className="mb-0.5">Сертификаты Taipan academy являются официальными в блокчейне Ton.</p>
+                                                <p>Их нельзя продать или подделать</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className={`bg-zinc-900 p-2 rounded-lg border border-zinc-800 transition-all duration-300 ${isCertExpanded ? 'rotate-90 bg-[#00FF9D] text-black' : 'group-hover:bg-[#00FF9D] group-hover:text-black'}`}>
+                                        <ArrowRight className="w-4 h-4" />
+                                    </div>
+                                </div>
+
+                                {/* Expanded Content */}
+                                <div className={`overflow-hidden transition-all duration-500 ease-in-out ${isCertExpanded ? 'max-h-[800px] opacity-100 mt-6' : 'max-h-0 opacity-0'}`}>
+                                    <div className={`relative overflow-hidden rounded-[20px] transition-all duration-1000 
+                                        ${!isStudent ? 'cert-locked' : 'shadow-[0_0_30px_rgba(6,182,212,0.6)]'}`}
+                                        style={{
+                                            background: '#000000',
+                                            border: '2px solid #06b6d4',
+                                            boxShadow: '0 0 20px rgba(6, 182, 212, 0.4), inset 0 0 20px rgba(6, 182, 212, 0.2)'
+                                        }}
+                                    >
+                                        {/* Tech Background Grid - Crisp Lines */}
+                                        <div className="absolute inset-0 bg-[linear-gradient(rgba(6,182,212,0.15)_1px,transparent_1px),linear-gradient(90deg,rgba(6,182,212,0.15)_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none"></div>
+                                        
+                                        {/* Corner Decorations (High Contrast) */}
+                                        <div className="absolute top-0 left-0 w-24 h-24 border-t-[3px] border-l-[3px] border-cyan-400 rounded-tl-3xl opacity-100 drop-shadow-[0_0_10px_rgba(34,211,238,0.8)]"></div>
+                                        <div className="absolute top-0 right-0 w-24 h-24 border-t-[3px] border-r-[3px] border-cyan-400 rounded-tr-3xl opacity-100 drop-shadow-[0_0_10px_rgba(34,211,238,0.8)]"></div>
+                                        <div className="absolute bottom-0 left-0 w-24 h-24 border-b-[3px] border-l-[3px] border-cyan-400 rounded-bl-3xl opacity-100 drop-shadow-[0_0_10px_rgba(34,211,238,0.8)]"></div>
+                                        <div className="absolute bottom-0 right-0 w-24 h-24 border-b-[3px] border-r-[3px] border-cyan-400 rounded-br-3xl opacity-100 drop-shadow-[0_0_10px_rgba(34,211,238,0.8)]"></div>
+
+                                        {/* Decorative Center Lines */}
+                                        <div className="absolute top-10 left-10 right-10 h-[1px] bg-cyan-500/30"></div>
+                                        <div className="absolute bottom-10 left-10 right-10 h-[1px] bg-cyan-500/30"></div>
+
+                                        <div className="relative z-10 p-8 flex flex-col items-center text-center">
+                                            
+                                            {/* 1. TAIPAN ACADEMY Header - Metallic Look */}
+                                            <h3 className="text-xl sm:text-2xl font-black text-white font-['Chakra_Petch'] tracking-[0.2em] uppercase mb-8 drop-shadow-[0_0_5px_rgba(255,255,255,0.8)]">
+                                                TAIPAN ACADEMY
+                                            </h3>
+
+                                            {/* 2. Certificate Title - Glowing Cyan */}
+                                            <h1 className="text-3xl sm:text-4xl font-black text-cyan-400 font-['Chakra_Petch'] tracking-wide uppercase mb-4 leading-none"
+                                                style={{ textShadow: '0 0 15px rgba(34, 211, 238, 0.8)' }}>
+                                                СЕРТИФИКАТ<br/>СПЕЦИАЛИСТА
+                                            </h1>
+
+                                            {/* 3. Divider Line - Sharp Beam */}
+                                            <div className="w-full max-w-[200px] h-[2px] bg-cyan-400 my-6 shadow-[0_0_15px_#22d3ee]"></div>
+
+                                            {/* 4. USER NAME (Dynamic) - Crisp White */}
+                                            <div className="mb-8 relative">
+                                                 <p className="text-2xl sm:text-3xl font-bold text-white font-mono tracking-widest uppercase drop-shadow-[0_0_10px_rgba(255,255,255,0.8)]">
+                                                    {userName}
+                                                 </p>
+                                                 {/* Decorative underbars */}
+                                                 <div className="flex justify-center gap-1 mt-3">
+                                                      <div className="w-2 h-1 bg-cyan-400"></div>
+                                                      <div className="w-20 h-1 bg-cyan-400/50"></div>
+                                                      <div className="w-2 h-1 bg-cyan-400"></div>
+                                                 </div>
+                                            </div>
+
+                                            {/* 5. Subtitle/Qualification */}
+                                            <div className="bg-black border border-cyan-500 px-6 py-2 rounded-none mb-10 shadow-[0_0_15px_rgba(6,182,212,0.3)]">
+                                                <p className="text-[9px] sm:text-[10px] text-cyan-200 font-bold uppercase tracking-[0.15em] font-mono">
+                                                    РАЗРАБОТЧИК TELEGRAM E-COMMERCE МАГАЗИНОВ
+                                                </p>
+                                            </div>
+
+                                            {/* 6. Verification Badge (Bottom) */}
+                                            <div className="flex items-center gap-4 bg-black border border-blue-500 px-5 py-3 rounded-lg shadow-[0_0_20px_rgba(59,130,246,0.4)]">
+                                                <div className="w-10 h-10 flex items-center justify-center relative">
+                                                     {/* TON Diamond Logo SVG (Updated to 1:1 Reference) */}
+                                                     <svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full drop-shadow-[0_0_10px_#0098EA] relative z-10">
+                                                        <circle cx="28" cy="28" r="28" fill="#0098EA"/>
+                                                        {/* Outline Triangle */}
+                                                        <path d="M15 17H41L28 42L15 17Z" stroke="white" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                                        {/* Center Vertical Line */}
+                                                        <path d="M28 17V42" stroke="white" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                                     </svg>
+                                                </div>
+                                                <div className="text-left">
+                                                    <p className="text-[9px] text-blue-200 font-bold uppercase leading-tight tracking-wider font-mono">Верифицировано<br/><span className="text-white">в блокчейне TON</span></p>
+                                                </div>
+                                            </div>
+
+                                        </div>
+
+                                        {!isStudent && (
+                                            <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40">
+                                                <div className="border-[6px] border-white/10 px-8 py-4 rounded-xl rotate-[-15deg] select-none backdrop-blur-[1px]">
+                                                    <span className="text-white/10 font-black text-2xl sm:text-4xl tracking-[0.2em] uppercase font-['Chakra_Petch'] flex items-center gap-4">
+                                                        <Lock className="w-8 h-8 sm:w-10 sm:h-10" /> ЗАБЛОКИРОВАНО
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                    
+                                    <div className="mt-4">
+                                        <button 
+                                            disabled={!isStudent}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                haptic('medium');
+                                                // Action to claim/mint NFT
+                                            }}
+                                            className={`w-full py-4 rounded-xl font-black text-[10px] uppercase tracking-[0.3em] transition-all duration-500 flex items-center justify-center gap-3
+                                                ${isStudent 
+                                                    ? 'bg-white text-black shadow-[0_20px_40px_rgba(255,255,255,0.15)] hover:scale-[1.02]' 
+                                                    : 'bg-zinc-900 text-zinc-700 border border-zinc-800'}`}
+                                        >
+                                            {isStudent && (
+                                                <svg width="14" height="14" viewBox="0 0 56 56" fill="black">
+                                                    <path d="M28 56C43.464 56 56 43.464 56 28C56 12.536 43.464 0 28 0C12.536 0 0 12.536 0 28C0 43.464 12.536 56 28 56ZM12.136 16.438L27.998 12L43.864 16.438L42.532 32.186C41.362 45.986 27.998 47.998 27.998 47.998 14.634 45.986 13.464 32.186L12.136 16.438ZM24.444 33.15L27.998 38L31.556 33.15L38.452 19.346L27.998 17.558L17.548 19.346L24.444 33.15Z"/>
+                                                </svg>
+                                            )}
+                                            {isStudent ? "Claim TON SBT NFT" : <span className="text-[8px] tracking-[0.15em] whitespace-nowrap">ПРОЙДИТЕ ОБУЧЕНИЕ ЧТО БЫ ЗАМИНТИТЬ СЕРТИФИКАТ</span>}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* 3. Partner Program - ONLY FOR ACADEMY */}
+                        {userRole === 'academy' && (
+                            <div className="strategy-card relative overflow-hidden" style={{ borderColor: 'rgba(168, 85, 247, 0.3)' }}>
+                                <div className="absolute inset-0 bg-gradient-to-b from-purple-900/10 to-transparent pointer-events-none"></div>
+                                
+                                <div className="flex justify-between items-start mb-5 relative z-10">
+                                    <div>
+                                        <h3 className="text-sm font-black text-white uppercase tracking-wider mb-1">ПАРТНЕРСКАЯ ПРОГРАММА</h3>
+                                        <p className="text-[10px] text-zinc-400 leading-snug max-w-[200px]">
+                                            Ваш бонус: <span className="text-[#a855f7] font-bold">10% (5 000 ₸)</span> с каждой оплаты привлеченного ученика.
+                                        </p>
+                                    </div>
+                                    <div className="bg-[#1a1625] border border-purple-500/20 rounded-lg p-2 text-center min-w-[70px]">
+                                        <div className="text-lg font-black text-white font-mono leading-none mb-1">
+                                            {referralCount}
+                                        </div>
+                                        <div className="text-[7px] text-[#a855f7] font-bold uppercase tracking-wider">ПАРТНЕРОВ</div>
+                                    </div>
+                                </div>
+
+                                {/* Input Field */}
+                                <div className="flex items-center gap-2 bg-[#121212] border border-zinc-800 p-2 rounded-xl mb-3 relative z-10">
+                                    <div className="flex-grow text-[10px] text-zinc-500 font-mono px-2 truncate select-all">
+                                        t.me/taipan_bot?start={currentUserId || 'id'}
+                                    </div>
+                                    <button 
+                                        onClick={() => {
+                                            navigator.clipboard.writeText(`https://t.me/taipan_bot?start=${currentUserId}`);
+                                            notify('success');
+                                        }}
+                                        className="bg-[#1c1c1e] hover:bg-[#252525] p-2 rounded-lg text-zinc-400 transition-colors border border-zinc-700"
+                                    >
+                                        <Copy className="w-4 h-4" />
+                                    </button>
+                                </div>
+                                <p className="text-center text-[9px] text-zinc-600 font-mono">Используйте эту ссылку для приглашения</p>
+                            </div>
+                        )}
+                    </div>
+                )}
+             </div>
+          </div>
+        )}
+
+        {/* VIEW: REVIEWS (NEW) */}
+        {currentView === 'reviews' && (
+          <div className="flex flex-col h-full items-center w-full">
+             <button onClick={() => handleBackClick('main')} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-4 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
+             <div className="flex-grow flex flex-col items-center w-full space-y-6 overflow-y-auto pb-20 no-scrollbar">
+                <div className="text-center px-4 w-full">
+                    <h2 className="text-2xl sm:text-3xl font-black tracking-tighter uppercase mb-1 font-['Chakra_Petch'] leading-none whitespace-nowrap">ЧЕСТНЫЕ <span className="text-[#00FF9D]">ОТЗЫВЫ</span></h2>
+                    <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] mr-[-0.3em] font-bold">Без цензуры</p>
+                </div>
+                
+                <div className="w-full space-y-4">
+                    {reviewsData.map((review) => (
+                        <div key={review.id} className="glass-card p-4 rounded-2xl border border-[#00FF9D]/30 relative overflow-hidden group">
+                            <div className="flex justify-between items-start mb-3 relative z-10">
+                                <div className="flex items-center gap-3">
+                                    <SmartImage src={review.avatar} className="w-10 h-10 rounded-full border border-[#00FF9D]/50 object-cover" alt={review.name} />
+                                    <div>
+                                        <p className="text-xs font-bold text-white">{review.name}</p>
+                                        <p className="text-[9px] text-zinc-400">{review.role}</p>
+                                    </div>
+                                </div>
+                                <div 
+                                    className="bg-[#00FF9D]/10 px-2 py-1 rounded border border-[#00FF9D]/30 flex items-center gap-1 cursor-pointer hover:bg-[#00FF9D]/20 transition-colors" 
+                                    onClick={() => { haptic('light'); setPreviewImage(review.proofImage); }}
+                                >
+                                    <span className="text-[8px] font-bold text-[#00FF9D] uppercase tracking-wider">Посмотреть заказ</span>
+                                </div>
+                            </div>
+                            
+                            <div className="relative z-10 mb-3">
+                                <p className="text-[11px] text-zinc-200 leading-relaxed">"{review.feedback}"</p>
+                            </div>
+
+                            <div className="absolute -bottom-4 -right-4 opacity-5 pointer-events-none"><MessageCircle className="w-24 h-24 text-[#00FF9D]" /></div>
+                        </div>
+                    ))}
+                </div>
+
+                <div className="w-full pt-4 pb-8">
+                    <button onClick={() => setCurrentView('program')} className="w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-4 rounded-xl shadow-[0_0_20px_rgba(0,255,157,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs flex items-center justify-center gap-2 animate-pulse">
+                        <Zap className="w-4 h-4" />
+                        ХОЧУ ТАК ЖЕ
+                    </button>
+                    <p className="text-center text-[9px] text-zinc-600 mt-3">Присоединяйтесь к команде успешных партнеров</p>
+                </div>
+             </div>
+          </div>
+        )}
+
+        {/* VIEW: CASES (SEPARATE VIEW) */}
+        {currentView === 'cases' && (
+          <div className="flex flex-col h-full items-center w-full">
+             <button onClick={() => handleBackClick('main')} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-4 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
+             <div className="flex-grow flex flex-col items-center w-full space-y-6 overflow-y-auto pb-20 no-scrollbar">
+                <div className="text-center px-4 w-full">
+                    <h2 className="text-2xl sm:text-3xl font-black tracking-tighter uppercase mb-1 font-['Chakra_Petch'] leading-none whitespace-nowrap">КЕЙСЫ <span className="text-[#00FF9D]">ПАРТНЕРОВ</span></h2>
+                    <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] mr-[-0.3em] font-bold">Реальные магазины на платформе</p>
+                </div>
+                
+                <div className="w-full mb-4 flex flex-col items-center">
+                    <div className="w-2/3 max-w-[200px]"><SmartImage src="https://i.ibb.co.com/gMTG4QXt/5438294939344244553.jpg" className="rounded-[20px] w-full h-auto object-contain" alt="Fashion Store Case" /></div>
+                    <div className="w-full mt-4 px-2 text-center"><h3 className="text-sm font-black text-white uppercase tracking-wider mb-2">КЕЙС «КАСТРЮЛЬКА ЕДЫ»</h3><p className="text-[10px] text-zinc-400 leading-relaxed">Пока другие тратят бюджет на рекламу, мы включили продажи по расписанию. Пуш в 18:00 на пустой желудок принес <span className="text-[#00FF9D] font-bold">+43% к чекам</span>. Мы превратили хаотичные заказы в предсказуемый алгоритм. Taipan Media заставляет технологии работать на ваших инстинктах.</p></div>
+                </div>
+
+                <div className="w-full mb-4 flex flex-col items-center">
+                    <div className="w-2/3 max-w-[200px]"><SmartImage src="https://i.ibb.co.com/ks9Sz9zz/5438294939344244554.jpg" className="rounded-[20px] w-full h-auto object-contain" alt="Romantic Store Case" /></div>
+                    <div className="w-full mt-4 px-2 text-center"><h3 className="text-sm font-black text-white uppercase tracking-wider mb-2">КЕЙС «ROMANTIC»</h3><p className="text-[10px] text-zinc-400 leading-relaxed">Мы внедрили ИИ-алгоритмы, которые анализируют поведение ваших покупателей и допродают товар в момент пикового интереса, показывая, что с этим товаром обычно покупают другие. Результат: <span className="text-[#00FF9D] font-bold">+57% к чеку</span> за счет маржинальных допов. Мы не ждем желания клиента — Taipan Media создает его через алгоритмы.</p></div>
+                </div>
+
+                <div className="w-full pt-4 pb-8">
+                    <button onClick={() => setCurrentView('roi')} className="w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-4 rounded-xl shadow-[0_0_20px_rgba(0,255,157,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs flex items-center justify-center gap-2 animate-pulse">УЗНАТЬ СТОИМОСТЬ И СРОКИ</button>
+                    <p className="text-center text-[9px] text-zinc-600 mt-3">Оставьте заявку для бесплатной консультации</p>
+                </div>
+             </div>
+          </div>
+        )}
+
+        {/* VIEW: ROI VIEW (Kept as is) */}
         {currentView === 'roi' && (
-           <RoiView profit={calculateProfit()} onBack={() => handleBackClick('calculator')} onAction={() => openModal('Start Project')} />
+           <RoiView profit={calculateProfit()} onBack={() => handleBackClick('main')} onAction={() => openModal('Start Project')} />
         )}
 
         {/* VIEW: EDUCATION (Kept as is) */}

@@ -1,7 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 
-// import { TonConnectUIProvider } from '@tonconnect/ui-react'; // Removed to prevent build errors as it is unused in the render
-
 // --- FIREBASE INTEGRATION ---
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from 'firebase/auth';
@@ -26,8 +24,6 @@ const firebaseConfig = typeof __firebase_config !== 'undefined'
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
-
-// Use global variable if available (for compatibility with internal environments), otherwise default
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'taipan-default-id';
 
 // --- TELEGRAM WEB APP UTILS ---
@@ -37,17 +33,6 @@ const haptic = (style = 'light') => {
   if (tg?.HapticFeedback) {
     tg.HapticFeedback.impactOccurred(style);
   }
-};
-
-// Safe vibration helper
-const safeVibrate = (pattern) => {
-    try {
-        if (typeof navigator !== 'undefined' && navigator.vibrate) {
-            navigator.vibrate(pattern);
-        }
-    } catch (e) {
-        // Ignore vibration errors
-    }
 };
 
 const notify = (type = 'success') => {
@@ -77,29 +62,21 @@ const GlobalStyles = () => (
     input[type=number] { -moz-appearance: textfield; }
 
     .glass-card {
-        background-color: rgba(15, 15, 15, 0.4);
-        backdrop-filter: blur(8px);
-        -webkit-backdrop-filter: blur(8px);
+        background-color: #1a1a1a; 
+        background-color: rgba(20, 20, 20, 0.95); 
         border: 1px solid rgba(0, 255, 157, 0.2);
-        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
-        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
         position: relative;
         overflow: hidden;
     }
       
-    .glass-card:hover {
-        background-color: rgba(0, 255, 157, 0.05);
-        border-color: rgba(0, 255, 157, 0.4);
-        box-shadow: 0 0 20px rgba(0, 255, 157, 0.1);
-    }
-    .glass-card:active { transform: scale(0.98); }
+    .glass-card:active { transform: scale(0.98); transition: transform 0.1s; }
     .hw-accelerated {
         will-change: transform, opacity;
         transform: translateZ(0);
         backface-visibility: hidden;
     }
 
-    /* Strategy Card Style */
     .strategy-card {
         background-color: #0A0A0A;
         border: 1px solid #1f1f1f;
@@ -109,30 +86,12 @@ const GlobalStyles = () => (
         overflow: hidden;
     }
 
-    /* UPDATED: Crystal clear locked state - NO BLUR, NO GRAYSCALE */
     .cert-locked {
         filter: none;
         opacity: 1;
         pointer-events: none;
     }
-    .stamp-red {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%) rotate(-15deg);
-        border: 4px solid #ff4d4d;
-        color: #ff4d4d;
-        padding: 10px 20px;
-        font-family: 'Chakra Petch', sans-serif;
-        font-weight: 900;
-        text-transform: uppercase;
-        letter-spacing: 0.2em;
-        border-radius: 8px;
-        background: rgba(0,0,0,0.4);
-        box-shadow: 0 0 15px rgba(255,77,77,0.3);
-        z-index: 20;
-    }
-
+    
     @keyframes contourPulse {
       0% { filter: drop-shadow(0 0 1px rgba(0, 255, 157, 0.3)); opacity: 0.8; }
       50% { filter: drop-shadow(0 0 6px rgba(0, 255, 157, 0.6)); opacity: 1; }
@@ -143,38 +102,10 @@ const GlobalStyles = () => (
       50% { opacity: 1; }
       100% { transform: translateY(100%); opacity: 0; }
     }
-    @keyframes cyberReveal {
-      0% { opacity: 0; transform: scale(1.5); filter: blur(20px) hue-rotate(90deg); }
-      20% { opacity: 1; transform: scale(1.2); filter: blur(0); }
-      40% { transform: scale(1.35); filter: brightness(1.5); }
-      100% { opacity: 1; transform: scale(1.25); filter: none; }
-    }
     @keyframes widthGrow { from { width: 0; } }
     @keyframes simple-glow {
       0%, 100% { text-shadow: 0 0 10px rgba(0, 255, 157, 0.3); transform: scale(1); color: #fff; }
       50% { text-shadow: 0 0 25px rgba(0, 255, 157, 0.8), 0 0 10px rgba(0, 255, 157, 0.5); transform: scale(1.02); color: #00FF9D; }
-    }
-    @keyframes smoke-fade {
-      0% { opacity: 0; transform: translateY(10px); }
-      100% { opacity: 1; transform: translateY(0); }
-    }
-    @keyframes aggressive-glitch-text {
-      0% { clip-path: inset(50% 0 30% 0); transform: translate(-5px, 0); }
-      20% { clip-path: inset(10% 0 60% 0); transform: translate(5px, 0); }
-      40% { clip-path: inset(80% 0 5% 0); transform: translate(-5px, 0); }
-      60% { clip-path: inset(20% 0 40% 0); transform: translate(5px, 0); }
-      80% { clip-path: inset(60% 0 10% 0); transform: translate(-5px, 0); }
-      100% { clip-path: inset(0 0 0 0); transform: translate(0); }
-    }
-    @keyframes voiceWave {
-        0%, 100% { height: 10%; }
-        50% { height: 80%; }
-    }
-    @keyframes smoke-glitch-appear {
-        0% { opacity: 0; filter: blur(12px) brightness(0.5); transform: translateY(15px) scale(0.85) skew(15deg); text-shadow: 4px 0 rgba(255,0,0,0.5), -4px 0 rgba(0,0,255,0.5); }
-        40% { opacity: 0.6; filter: blur(6px); transform: translateY(5px) scale(0.95) skew(-10deg); text-shadow: -3px 0 rgba(255,0,0,0.7), 3px 0 rgba(0,0,255,0.7); }
-        70% { opacity: 0.9; filter: blur(2px); transform: scale(1.05) skew(5deg); text-shadow: 2px 0 rgba(0,255,157,0.5), -2px 0 rgba(255,0,255,0.5); }
-        100% { opacity: 1; transform: translateY(0) scale(1) skew(0); filter: none; text-shadow: 0 0 10px rgba(0,255,157,0.6); }
     }
     @keyframes frame-pulse {
       0%, 100% { border-color: rgba(0, 255, 157, 0.3); box-shadow: 0 0 10px rgba(0, 255, 157, 0.05); }
@@ -580,11 +511,11 @@ const HackerProof = React.memo(() => {
   return (
     <React.Fragment>
       <div 
-        className="relative rounded-xl overflow-hidden border border-[#00FF9D]/40 mb-6 group animate-in zoom-in duration-500 shadow-[0_0_20px_rgba(0,255,157,0.1)] cursor-zoom-in"
+        className="relative rounded-xl overflow-hidden border border-[#00FF9D]/40 mb-6 group cursor-zoom-in"
         onClick={(e) => { e.stopPropagation(); setIsExpanded(true); }}
       >
         <SmartImage src="https://i.ibb.co.com/FdhqGvD/2025-11-09-113228-fotor-20251109143545.jpg" className="w-full object-cover" alt="Encrypted Proof" />
-        <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-md rounded-full p-1.5 opacity-60 group-hover:opacity-100 transition-opacity border border-[#00FF9D]/30 z-10"><Search className="w-3 h-3 text-[#00FF9D]" /></div>
+        <div className="absolute top-2 right-2 bg-black/60 rounded-full p-1.5 opacity-60 group-hover:opacity-100 transition-opacity border border-[#00FF9D]/30 z-10"><Search className="w-3 h-3 text-[#00FF9D]" /></div>
         <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none z-10"></div>
         <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-[#00FF9D]/10 to-transparent animate-[scanLine_2.5s_linear_infinite] z-10"></div>
         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-black/20 pointer-events-none z-10"></div>
@@ -594,7 +525,7 @@ const HackerProof = React.memo(() => {
         </div>
       </div>
       {isExpanded && (
-        <div className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 animate-in fade-in duration-300" onClick={(e) => { e.stopPropagation(); setIsExpanded(false); }}>
+        <div className="fixed inset-0 z-[200] bg-black/95 flex items-center justify-center p-4" onClick={(e) => { e.stopPropagation(); setIsExpanded(false); }}>
           <div className="relative w-full max-w-2xl">
              <SmartImage src="https://i.ibb.co.com/FdhqGvD/2025-11-09-113228-fotor-20251109143545.jpg" className="w-full h-auto rounded-lg border border-[#00FF9D]/50 shadow-[0_0_50px_rgba(0,255,157,0.2)]" alt="Proof Full" />
              <p className="text-center text-zinc-500 font-mono text-[10px] mt-4 uppercase animate-pulse">Нажмите в любом месте, чтобы закрыть</p>
@@ -610,9 +541,9 @@ const ClientDemandProof = React.memo(() => {
   const [isExpanded, setIsExpanded] = useState(false);
   return (
     <React.Fragment>
-      <div className="relative rounded-xl overflow-hidden border border-[#00FF9D]/40 mb-6 group animate-in zoom-in duration-500 shadow-[0_0_20px_rgba(0,255,157,0.1)] cursor-zoom-in" onClick={(e) => { e.stopPropagation(); setIsExpanded(true); }}>
+      <div className="relative rounded-xl overflow-hidden border border-[#00FF9D]/40 mb-6 group cursor-zoom-in" onClick={(e) => { e.stopPropagation(); setIsExpanded(true); }}>
         <SmartImage src="https://i.ibb.co.com/h1mN3kL0/5427147012425059102.jpg" className="w-full object-cover opacity-90 filter grayscale-[0.5] contrast-[1.1] brightness-[0.9]" alt="Client Demand" />
-        <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-md rounded-full p-1.5 opacity-60 group-hover:opacity-100 transition-opacity border border-[#00FF9D]/30 z-10"><Search className="w-3 h-3 text-[#00FF9D]" /></div>
+        <div className="absolute top-2 right-2 bg-black/60 rounded-full p-1.5 opacity-60 group-hover:opacity-100 transition-opacity border border-[#00FF9D]/30 z-10"><Search className="w-3 h-3 text-[#00FF9D]" /></div>
         <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none z-10"></div>
         <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-[#00FF9D]/10 to-transparent animate-[scanLine_2.5s_linear_infinite] z-10"></div>
         <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent pointer-events-none z-10"></div>
@@ -621,7 +552,7 @@ const ClientDemandProof = React.memo(() => {
         </div>
       </div>
        {isExpanded && (
-        <div className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 animate-in fade-in duration-300" onClick={(e) => { e.stopPropagation(); setIsExpanded(false); }}>
+        <div className="fixed inset-0 z-[200] bg-black/95 flex items-center justify-center p-4" onClick={(e) => { e.stopPropagation(); setIsExpanded(false); }}>
           <div className="relative w-full max-w-2xl">
              <SmartImage src="https://i.ibb.co.com/h1mN3kL0/5427147012425059102.jpg" className="w-full h-auto rounded-lg border border-[#00FF9D]/50 shadow-[0_0_50px_rgba(0,255,157,0.2)]" alt="Demand Full" />
              <p className="text-center text-zinc-500 font-mono text-[10px] mt-4 uppercase animate-pulse">Нажмите в любом месте, чтобы закрыть</p>
@@ -634,7 +565,7 @@ const ClientDemandProof = React.memo(() => {
 
 // 10. SkillScanner
 const SkillScanner = () => (
-  <div className="w-full bg-[#0A0A0A] rounded-xl border border-[#00FF9D]/20 p-4 mb-6 relative overflow-hidden animate-in slide-in-from-bottom duration-500 group">
+  <div className="w-full bg-[#0A0A0A] rounded-xl border border-[#00FF9D]/20 p-4 mb-6 relative overflow-hidden group">
     <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none"></div>
     <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-[#00FF9D]/05 to-transparent animate-[scanLine_4s_linear_infinite]"></div>
     <div className="relative z-10">
@@ -661,7 +592,7 @@ const SetupTimeline = () => {
     { title: "ШАГ 4: ДОСТАВКА", time: "~ 1.5 МИН", desc: "Настройте зоны доставки или самовывоз." }
   ];
   return (
-    <div className="w-full pl-2 mb-4 animate-in slide-in-from-bottom duration-500">
+    <div className="w-full pl-2 mb-4">
       <div className="flex items-center justify-between mb-6"><span className="text-[10px] text-[#00FF9D] font-mono tracking-widest border border-[#00FF9D]/30 px-2 py-1 rounded">ПРОТОКОЛ ЗАПУСКА</span><span className="text-[10px] text-zinc-500 font-mono">TOTAL: ~10 МИН</span></div>
       <div className="relative border-l border-[#00FF9D]/20 ml-2 space-y-6">
         {steps.map((step, i) => (
@@ -694,11 +625,11 @@ const WordstatGraph = React.memo(() => {
           <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none z-10"></div>
           <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-[#00FF9D]/10 to-transparent animate-[scanLine_2.5s_linear_infinite] z-10"></div>
           <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors pointer-events-none z-10"></div>
-          <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-md rounded-full p-1.5 opacity-60 group-hover:opacity-100 transition-opacity border border-white/20 z-20"><Search className="w-3 h-3 text-white" /></div>
+          <div className="absolute top-2 right-2 bg-black/60 rounded-full p-1.5 opacity-60 group-hover:opacity-100 transition-opacity border border-white/20 z-20"><Search className="w-3 h-3 text-white" /></div>
         </div>
       </div>
        {isExpanded && (
-        <div className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 animate-in fade-in duration-300" onClick={(e) => { e.stopPropagation(); setIsExpanded(false); }}>
+        <div className="fixed inset-0 z-[200] bg-black/95 flex items-center justify-center p-4" onClick={(e) => { e.stopPropagation(); setIsExpanded(false); }}>
           <div className="relative w-full max-w-4xl"><SmartImage src="https://i.ibb.co.com/Y7WjS1Tc/2026-01-16-014054.png" className="w-full h-auto rounded-lg border border-zinc-700 shadow-2xl" alt="Wordstat Full" /><p className="text-center text-zinc-500 font-mono text-[10px] mt-4 uppercase animate-pulse">Нажмите в любом месте, чтобы закрыть</p></div>
         </div>
       )}
@@ -721,7 +652,7 @@ const BrandLogos = {
       }
     }, [isActive]);
     return (
-      <div className={`flex flex-col items-center animate-in fade-in zoom-in duration-1000 relative`}>
+      <div className={`flex flex-col items-center relative`}>
         {/* Logo Container */}
         <div className={`transition-all duration-1000 ${isMissed ? 'grayscale opacity-40 scale-90 blur-[1px]' : 'grayscale-0 opacity-100 scale-100'}`}>
             <svg viewBox="-2 -2 28 28" fill="#F7931A" className="w-20 h-20 mb-4 drop-shadow-[0_0_15px_rgba(247,147,26,0.5)]"><path d="M23.638 14.904c-1.602 6.43-8.113 10.34-14.542 8.736C2.67 22.05-1.244 15.556.358 9.126 1.96 2.695 8.47-1.216 14.9-.388c6.426 1.602 10.34 8.09 8.738 15.292zM18.106 10.12c.264-1.765-1.08-2.71-2.914-3.344l.596-2.39-1.454-.362-.58 2.33c-.382-.096-.776-.186-1.166-.273l.586-2.355-1.454-.362-.596 2.39c-.316-.072-.625-.144-.925-.218l.002-.008-2.007-.502-.388 1.55s1.08.247 1.057.263c.59.147.696.537.678.847l-.68 2.73c.04.01.094.026.152.05-.054-.014-.112-.03-.17-.044l-1.103 4.426c-.072.178-.254.445-.664.343.014.02-1.057-.263-1.057-.263l-.723 1.67 1.894.474c.35.088.694.18 1.034.266l-.604 2.43 1.452.362.598-2.396c.396.108.783.21 1.16.307l-.592 2.38 1.454.363.604-2.43c2.482.47 4.35.28 5.136-1.965.634-1.808-.032-2.852-1.336-3.535 1.03-.238 1.81-.916 2.02-2.31zM14.47 14.524c-.45 1.81-3.5 0.83-4.484.588l.8-3.212c.983.244 4.14.726 3.684 2.624zm.45-4.44c-.41 1.644-2.96.81-3.774.606l.724-2.912c.814.204 3.468.583 3.05 2.306z"/></svg>
@@ -756,7 +687,7 @@ const BrandLogos = {
       }
     }, [isActive]);
     return (
-      <div className={`flex flex-col items-center animate-in fade-in zoom-in duration-1000 relative`}>
+      <div className={`flex flex-col items-center relative`}>
         {/* Logo Container */}
         <div className={`transition-all duration-1000 ${isMissed ? 'grayscale opacity-40 scale-90 blur-[1px]' : 'grayscale-0 opacity-100 scale-100'}`}>
             <svg viewBox="0 0 24 24" fill="none" stroke="#E1306C" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-20 h-20 mb-4 drop-shadow-[0_0_15px_rgba(225,48,108,0.5)]"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
@@ -791,7 +722,7 @@ const BrandLogos = {
       }
     }, [isActive]);
     return (
-      <div className={`flex flex-col items-center animate-in fade-in zoom-in duration-1000 relative`}>
+      <div className={`flex flex-col items-center relative`}>
         {/* Logo Container */}
         <div className={`flex gap-3 mb-4 items-center transition-all duration-1000 ${isMissed ? 'grayscale opacity-40 scale-90 blur-[1px]' : 'grayscale-0 opacity-100 scale-100'}`}>
             <span className="text-4xl font-black italic text-purple-500">WB</span><span className="text-3xl font-bold text-red-600">Kaspi</span>
@@ -814,7 +745,7 @@ const BrandLogos = {
     );
   },
   Telegram: ({ isActive }) => (
-    <div className="flex flex-col items-center animate-in fade-in zoom-in duration-1000">
+    <div className="flex flex-col items-center">
       <svg viewBox="0 0 24 24" fill="#0088cc" className="w-20 h-20 mb-4 drop-shadow-[0_0_25px_rgba(0,136,204,0.5)]"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.446 1.394c-.16.16-.295.293-.605.293l.214-3.054 5.56-5.022c.24-.213-.054-.334-.373-.121l-6.869 4.326-2.962-.924c-.64-.203-.658-.64.135-.954l11.566-4.458c.538-.196 1.006.128.832.942z"/></svg>
       <p className="text-white font-black text-2xl tracking-[0.1em] font-['Chakra_Petch']">2026: TELEGRAM STORE</p>
       <p className="text-[#00FF9D] text-[12px] uppercase tracking-[0.3em] mt-3 font-bold bg-[#00FF9D]/10 border border-[#00FF9D]/30 px-6 py-2 rounded-full shadow-[0_0_15px_rgba(0,255,157,0.2)] text-center">Обучись новому тренду с нами</p>
@@ -847,7 +778,7 @@ const Carousel3D = () => {
          return (
            <div key={i} className={`absolute transition-all duration-700 cubic-bezier(0.34, 1.56, 0.64, 1) w-[340px] h-[180px] flex items-center justify-center ${styleClass}`}>
              {/* Dark Glass Container */}
-             <div className="relative inline-block rounded-[24px] overflow-hidden bg-[#0A0A0A]/80 backdrop-blur-xl border border-white/10 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.8)]">
+             <div className="relative inline-block rounded-[24px] overflow-hidden bg-[#0A0A0A]/80 border border-white/10 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.8)]">
                  
                  {/* Top Lighting/Gloss - Very subtle to not obscure text */}
                  <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent z-30"></div>
@@ -877,7 +808,7 @@ const ShopIntroSequence = ({ onComplete }) => {
   return (
     <div className="flex flex-col items-center justify-center h-full w-full min-h-[60vh] px-4 cursor-pointer" onClick={onComplete}>
        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80%] h-[200px] bg-white/5 blur-[80px] rounded-full -z-10 pointer-events-none animate-[pulse_4s_infinite]"></div>
-       <div className="w-full text-center max-w-3xl animate-in fade-in duration-1000">
+       <div className="w-full text-center max-w-3xl">
          <h2 className="text-lg sm:text-2xl font-light uppercase tracking-[0.2em] font-['Outfit'] text-zinc-300 drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">{message.part1}</h2>
          <div className="relative inline-block mt-6">
              <h2 className="text-3xl sm:text-5xl font-black uppercase font-['Chakra_Petch'] text-transparent bg-clip-text bg-gradient-to-r from-[#444] via-[#00FF9D] to-[#444] bg-[length:200%_auto] animate-[snakeFlow_3s_linear_infinite] drop-shadow-[0_0_30px_rgba(0,255,157,0.3)] tracking-widest">{message.part2}</h2>
@@ -950,7 +881,7 @@ const PartnersCredits = () => {
       </div>
       <div className="relative w-full h-32 flex items-center justify-center overflow-hidden bg-white/5 rounded-xl border border-[#00FF9D]/10 shadow-[0_0_30px_rgba(0,0,0,0.5)]">
          <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:20px_20px]"></div>
-         <div key={currentIndex} className="relative z-10 animate-[cyberReveal_0.5s_cubic-bezier(0.215,0.61,0.355,1)_both] w-full flex justify-center">
+         <div key={currentIndex} className="relative z-10 w-full flex justify-center">
             {/* Added loading="eager" to force immediate loading */}
             <SmartImage src={currentLogo} alt="Partner Logo" style={specificStyle} className={logoClasses} wrapperClass="relative z-10 flex justify-center w-full" loading="eager" />
          </div>
@@ -980,9 +911,9 @@ const RoiView = ({ profit, onBack, onAction }) => {
   const animatedProfit = useOdometer(conservativeProfit);
   const animatedPercentage = useOdometer(returnPercentage);
   return (
-    <div className="flex flex-col items-center w-full min-h-screen">
+    <div className="w-full flex flex-col items-center pt-2">
         <button onClick={() => { haptic('light'); onBack(); }} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-4 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
-        <div className="flex-grow flex flex-col items-center w-full space-y-6">
+        <div className="w-full flex flex-col gap-4">
             <div className="text-center px-4 w-full"><h2 className="text-2xl sm:text-3xl font-black tracking-tighter uppercase mb-1 font-['Chakra_Petch'] leading-none whitespace-nowrap">РАСЧЁТ <span className="text-[#00FF9D]">ОКУПАЕМОСТИ</span></h2><p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] mr-[-0.3em] font-bold">Эффективность инвестиций</p></div>
             <div className="w-full glass-card p-4 rounded-2xl flex justify-between items-center border border-zinc-800"><span className="text-xs text-zinc-400 font-bold uppercase tracking-wider">Стоимость разработки</span><span className="text-sm font-black text-white font-['Chakra_Petch']">100 000 ₸</span></div>
              <div className="w-full glass-card p-4 rounded-2xl flex justify-between items-center border border-[#00FF9D]/20 bg-[#00FF9D]/5"><span className="text-xs text-zinc-400 font-bold uppercase tracking-wider">Потенциальный возврат</span><span className="text-sm font-black text-[#00FF9D] font-['Chakra_Petch']">{animatedProfit.toLocaleString()} ₸/мес</span></div>
@@ -1048,6 +979,14 @@ const App = () => {
   const [workHours, setWorkHours] = useState(3); // Количество магазинов
   const potentialEarnings = workHours * 100000;
   const animatedPotentialEarnings = useOdometer(potentialEarnings);
+
+  // Состояние вкладки рефералов
+  const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' or 'referrals'
+  // Фейковые данные рефералов (потом заменишь на реальные из БД)
+  const [referrals, setReferrals] = useState([
+      { id: 1, name: 'Алишер К.', date: '27.01.26', profit: 5000 },
+      { id: 2, name: 'Елена М.', date: '28.01.26', profit: 5000 }
+  ]);
 
   // --- REVIEW DATA WITH SCREENSHOTS ---
   const reviewsData = [
@@ -1316,6 +1255,10 @@ const App = () => {
   const handleSubmit = (e) => { 
     e.preventDefault(); 
     notify('success');
+
+    // Removed logic to update 'leads' state since AdminPanel is gone.
+    // Just showing the toast now.
+
     closeModal(); 
     setShowToast(true); 
     setTimeout(() => setShowToast(false), 3000); 
@@ -1332,6 +1275,10 @@ const App = () => {
     haptic('medium');
     setCurrentView('education');
   }
+  const handleStrategyClick = () => {
+        haptic('light');
+        setCurrentView('strategy');
+  };
   const handleBackClick = (target) => {
     haptic('light');
     setCurrentView(target);
@@ -1354,14 +1301,37 @@ const App = () => {
   return (
     <div className="min-h-screen bg-[#050505] text-white font-sans selection:bg-[#00FF9D]/30 relative overflow-hidden flex flex-col">
       <GlobalStyles />
+      {/* Bane Intro Overlay */}
       {baneIntroActive && <BaneIntro onComplete={handleBaneIntroComplete} />}
-      
-      {/* МАТРИЦА НА ФОНЕ */}
+      {/* GLOBAL IMAGE VIEWER MODAL */}
+      {previewImage && (
+        <div 
+          className="fixed inset-0 z-[9999] bg-black/95 flex items-center justify-center p-4 cursor-zoom-out visible" 
+          onClick={() => { haptic('light'); setPreviewImage(null); }}
+        >
+          {/* Уменьшил max-w-2xl до max-w-sm (размер смартфона), чтобы скриншоты не были огромными */}
+          <div className="relative w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
+             <SmartImage src={previewImage} className="w-full h-auto rounded-lg border border-[#00FF9D]/30 shadow-[0_0_50px_rgba(0,255,157,0.1)]" alt="Preview" />
+             <div className="absolute top-4 right-4 bg-black/60 rounded-full p-2 cursor-pointer border border-zinc-700" onClick={() => setPreviewImage(null)}>
+                <X className="w-5 h-5 text-white" />
+             </div>
+             <p className="text-center text-zinc-500 font-mono text-[10px] mt-4 uppercase animate-pulse">Нажмите за пределами, чтобы закрыть</p>
+          </div>
+        </div>
+      )}
+
+      {/* MATRIX BACKGROUND COMPONENT (FIXED z-index and position) */}
       <MatrixBackground />
+
+      <div className="fixed inset-0 z-0 pointer-events-none">
+        <div className="absolute inset-0 bg-[#020202] -z-20" />
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-purple-500/10 rounded-full blur-[120px] animate-pulse"></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-[#00FF9D]/5 rounded-full blur-[120px] animate-pulse"></div>
+        <div className="absolute inset-0 opacity-20 -z-10" style={{ backgroundImage: `linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px)`, backgroundSize: '50px 50px', maskImage: 'radial-gradient(circle at 50% 30%, black 40%, transparent 100%)', WebkitMaskImage: 'radial-gradient(circle at 50% 30%, black 40%, transparent 100%)' }} />
+      </div>
 
       <div className="relative z-10 flex-grow flex flex-col max-w-lg mx-auto w-full px-4 pt-5 pb-20">
         
-        {/* 1. ВЫБОР РОЛИ */}
         {currentView === 'role_selection' && (
           <div className="flex flex-col items-center justify-center h-full w-full px-4 pt-5 pb-20">
               <div className="text-center mb-12">
@@ -1384,7 +1354,7 @@ const App = () => {
                       saveUserSegment('business'); // SAVE SEGMENT
                       setCurrentView('main'); 
                       haptic('medium'); 
-                  }} className="group relative w-10/12 max-w-[280px] bg-zinc-900/60 backdrop-blur-xl border border-[#00FF9D]/20 p-1 rounded-3xl overflow-hidden transition-all duration-300 hover:border-[#00FF9D] hover:shadow-[0_0_30px_rgba(0,255,157,0.15)] active:scale-[0.98] cursor-pointer">
+                  }} className="group relative w-10/12 max-w-[280px] bg-zinc-900/60 border border-[#00FF9D]/20 p-1 rounded-3xl overflow-hidden transition-all duration-300 hover:border-[#00FF9D] hover:shadow-[0_0_30px_rgba(0,255,157,0.15)] active:scale-[0.98] cursor-pointer">
                       <div className="absolute inset-0 bg-gradient-to-r from-[#00FF9D]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                       <div className="relative flex flex-col items-center justify-center bg-[#050505]/50 rounded-[20px] p-5 h-full text-center">
                           <div className="w-14 h-14 mb-3 rounded-full bg-gradient-to-br from-[#00FF9D]/20 to-black border border-[#00FF9D]/30 flex items-center justify-center shadow-[0_0_15px_rgba(0,255,157,0.1)] group-hover:scale-110 transition-transform duration-300">
@@ -1403,7 +1373,7 @@ const App = () => {
                       setPreviousView('role_selection'); // Запоминаем, что пришли с выбора роли
                       setCurrentView('education'); 
                       haptic('medium'); 
-                  }} className="group relative w-10/12 max-w-[280px] bg-zinc-900/60 backdrop-blur-xl border border-blue-500/20 p-1 rounded-3xl overflow-hidden transition-all duration-300 hover:border-blue-500 hover:shadow-[0_0_30px_rgba(59,130,246,0.15)] active:scale-[0.98] cursor-pointer">
+                  }} className="group relative w-10/12 max-w-[280px] bg-zinc-900/60 border border-blue-500/20 p-1 rounded-3xl overflow-hidden transition-all duration-300 hover:border-blue-500 hover:shadow-[0_0_30px_rgba(59,130,246,0.15)] active:scale-[0.98] cursor-pointer">
                       <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                       <div className="relative flex flex-col items-center justify-center bg-[#050505]/50 rounded-[20px] p-5 h-full text-center">
                           <div className="w-14 h-14 mb-3 rounded-full bg-gradient-to-br from-blue-500/20 to-black border border-blue-500/30 flex items-center justify-center shadow-[0_0_15px_rgba(59,130,246,0.1)] group-hover:scale-110 transition-transform duration-300">
@@ -1423,8 +1393,7 @@ const App = () => {
               </div>
           </div>
         )}
-
-        {/* 2. ГЛАВНОЕ МЕНЮ */}
+        
         {currentView === 'main' && (
           <div className="flex flex-col items-center w-full">
             <div className="mb-14 w-full text-center">
@@ -1478,7 +1447,7 @@ const App = () => {
                             </div>
                         </div>
 
-                        <div onClick={() => openModal('Личный кабинет')} className="glass-card p-4 rounded-2xl flex items-center justify-center cursor-pointer border-white/5 hover:border-[#00FF9D]/30 hover:bg-[#00FF9D]/5 transition-all group mt-2 relative">
+                        <div onClick={() => setCurrentView('strategy')} className="glass-card p-4 rounded-2xl flex items-center justify-center cursor-pointer border-white/5 hover:border-[#00FF9D]/30 hover:bg-[#00FF9D]/5 transition-all group mt-2 relative">
                              <div className="absolute left-4 p-2 rounded-full bg-zinc-800/50 border border-white/10 group-hover:border-[#00FF9D]/30 transition-colors">
                                 <Users className="w-5 h-5 text-zinc-400 group-hover:text-[#00FF9D] transition-colors" />
                              </div>
@@ -1501,7 +1470,7 @@ const App = () => {
 
                         {/* Secondary Buttons Grid - Larger Version */}
                         <div className="grid grid-cols-3 gap-2">
-                             <div onClick={() => openModal('Личный кабинет')} className="glass-card p-3 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-[#00FF9D]/30 transition-all h-28 group">
+                             <div onClick={() => setCurrentView('strategy')} className="glass-card p-3 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-[#00FF9D]/30 transition-all h-28 group">
                                 <Users className="w-8 h-8 text-zinc-500 group-hover:text-[#00FF9D] mb-3 transition-colors" />
                                 <span className="text-[10px] font-bold text-zinc-300 text-center leading-tight uppercase tracking-wider">Личный кабинет</span>
                             </div>
@@ -1545,9 +1514,11 @@ const App = () => {
           </div>
         )}
 
-        {/* 3. МАГАЗИН */}
+        {/* ... Rest of components follow similar logic ... */}
+        
+        {/* VIEW: SHOP (Kept as is) */}
         {currentView === 'shop' && (
-          <div className="animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col h-full items-center w-full">
+          <div className="flex flex-col h-full items-center w-full">
              {!shopIntroFinished ? (
                 <ShopIntroSequence onComplete={() => setShopIntroFinished(true)} />
              ) : (
@@ -1619,31 +1590,300 @@ const App = () => {
           </div>
         )}
 
-        {/* 4. КАЛЬКУЛЯТОР (из меню) */}
+        {/* VIEW: CALCULATOR (Kept as is) */}
         {currentView === 'calculator' && (
           <div className="flex flex-col h-full items-center w-full">
-            <button onClick={() => handleBackClick('main')} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-4 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
-            <div className="w-full">
+            {/* Logic for Back Button: Return to Main if Academy, else go back to Shop or Main based on context */}
+            <button onClick={() => handleBackClick(userRole === 'academy' ? 'main' : 'shop')} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-4 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
+            <div className="flex-grow flex flex-col items-center w-full space-y-2">
                 {userRole === 'business' ? (
-                     <ProfitCalculator data={calcData} setData={setCalcData} onAction={() => setCurrentView('roi')} />
+                    <div className="text-center px-4 w-full mb-2">
+                        <Wallet className="w-12 h-12 mx-auto text-[#00FF9D] mb-2 drop-shadow-[0_0_15px_rgba(0,255,157,0.5)] animate-[contourPulse_3s_ease-in-out_infinite]" />
+                        <h2 className="text-2xl sm:text-3xl font-black tracking-tighter uppercase mb-1 font-['Chakra_Petch'] leading-none whitespace-nowrap">ВАША <span className="text-[#00FF9D]">ПРИБЫЛЬ</span></h2>
+                        <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] mr-[-0.3em] font-bold">Узнайте сколько вы теряете</p>
+                    </div>
                 ) : (
-                     <AcademyCalculator data={academyCalcData} setData={setAcademyCalcData} onAction={() => openModal('Consultation')} />
+                    <div className="text-center px-4 w-full mb-2">
+                        <Wallet className="w-12 h-12 mx-auto text-[#00FF9D] mb-2 drop-shadow-[0_0_15px_rgba(0,255,157,0.5)] animate-[contourPulse_3s_ease-in-out_infinite]" />
+                        <h2 className="text-2xl sm:text-3xl font-black tracking-tighter uppercase mb-1 font-['Chakra_Petch'] leading-none whitespace-nowrap">ЧАС НА <span className="text-[#00FF9D]">МИЛЛИОН</span></h2>
+                        <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] mr-[-0.3em] font-bold">Узнай реальную цену своего времени</p>
+                    </div>
                 )}
+                
+                <div className="w-full glass-card p-4 rounded-3xl border border-[#00FF9D]/20 relative overflow-hidden">
+                    {userRole === 'business' ? (
+                        <ProfitCalculator data={calcData} setData={setCalcData} onAction={() => {
+                            setCurrentView('roi');
+                        }} />
+                    ) : (
+                        <AcademyCalculator data={academyCalcData} setData={setAcademyCalcData} onAction={() => setCurrentView('roi')} />
+                    )}
+                </div>
             </div>
           </div>
         )}
 
-        {/* 5. ЭКРАН ROI (ТОТ САМЫЙ, КОТОРОГО НЕ БЫЛО) */}
-        {currentView === 'roi' && (
-           <RoiView 
-             profit={calculateProfit()} 
-             onBack={() => setCurrentView('shop')} 
-             onAction={() => openModal('Start Project')} 
-           />
+        {currentView === 'strategy' && (
+          <div className="flex flex-col h-full items-center w-full">
+              <button onClick={() => handleBackClick(userRole === 'academy' ? 'main' : 'calculator')} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-4 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
+              <div className="flex-grow flex flex-col items-center w-full space-y-6 overflow-y-auto pb-20 no-scrollbar">
+                
+                {/* UNIFIED PERSONAL CABINET HEADER */}
+                {(userRole === 'academy' || userRole === 'business') && (
+                    <div className="w-full space-y-3">
+                        {/* 1. Profile Card */}
+                        <div className="strategy-card flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-[#1c1c1e] flex items-center justify-center text-zinc-400 font-black text-sm border border-zinc-700">
+                                    <Shield className="w-4 h-4" />
+                                </div>
+                                <div>
+                                    <h3 className="text-base font-black text-white uppercase tracking-wider leading-none">{userName}</h3>
+                                    <div className="flex items-center gap-1.5 mt-1">
+                                        <div className={`w-1.5 h-1.5 rounded-full ${isStudent ? 'bg-[#00FF9D]' : 'bg-zinc-600'}`}></div>
+                                        <span className={`text-[10px] uppercase font-bold tracking-wider ${isStudent ? 'text-[#00FF9D]' : 'text-zinc-500'}`}>
+                                            {isStudent ? 'АКТИВНЫЙ СТУДЕНТ' : 'ГОСТЬ'}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            {!isStudent && (
+                                <button 
+                                    onClick={() => window.open('https://t.me/taipanmedia', '_blank')}
+                                    className="text-[10px] font-bold border border-zinc-700 px-4 py-2 rounded-lg text-white hover:bg-white/5 transition-all uppercase tracking-widest"
+                                >
+                                    НАЧАТЬ
+                                </button>
+                            )}
+                        </div>
+
+                        {/* 2. Finance Card */}
+                        <div className="strategy-card relative animate-[frame-pulse_3s_ease-in-out_infinite]">
+                            <p className="text-[9px] text-zinc-500 uppercase font-bold tracking-[0.2em] mb-4">
+                                {userRole === 'academy' ? 'ВАШ ПОТЕНЦИАЛЬНЫЙ ДОХОД В МЕСЯЦ' : 'ПОТЕНЦИАЛЬНАЯ ПРИБЫЛЬ'}
+                            </p>
+                            <div className="flex items-baseline gap-2 mb-6">
+                                <div className="text-5xl font-black text-white font-['Chakra_Petch'] tracking-tighter animate-[text-pulse-glow_3s_ease-in-out_infinite]">
+                                    {userRole === 'academy' 
+                                      ? animatedPotentialEarnings.toLocaleString().replace(/\s/g, ' ')
+                                      : businessProfit.toLocaleString().replace(/\s/g, ' ')
+                                    }
+                                </div>
+                                <span className="text-zinc-500 text-xs font-bold uppercase tracking-wider">
+                                    {userRole === 'academy' ? '₸ / мес' : '₸ / мес'}
+                                </span>
+                            </div>
+                            
+                            <div className="flex items-center gap-3">
+                                <button 
+                                    onClick={() => setCurrentView('calculator')}
+                                    className="flex items-center gap-2 bg-[#1c1c1e] hover:bg-[#252525] px-3 py-2 rounded-lg text-[10px] text-zinc-400 border border-zinc-800 transition-all"
+                                >
+                                    <Edit2 className="w-3 h-3" /> 
+                                    <span className="font-bold">Пересчитать</span>
+                                </button>
+                                <span className="text-[9px] text-zinc-600 font-mono">Обновлено: только что</span>
+                            </div>
+                            
+                            <div className="absolute right-5 top-1/2 -translate-y-1/2 opacity-10 pointer-events-none">
+                                <Wallet className="w-24 h-24 text-white stroke-1" />
+                            </div>
+                        </div>
+
+                        {/* --- 4. БЛОК СЕРТИФИКАТА (EXPANDABLE) --- */}
+                        {userRole === 'academy' && (
+                            <div 
+                                className={`strategy-card mt-4 transition-all duration-500 ease-in-out ${isCertExpanded ? 'border-[#00FF9D]/50 bg-[#0A0A0A]' : 'hover:border-[#00FF9D]/50 cursor-pointer'}`}
+                                onClick={() => { 
+                                    if (!isCertExpanded) {
+                                        haptic('medium'); 
+                                        setIsCertExpanded(true);
+                                    }
+                                }}
+                            >
+                                {/* Header Row */}
+                                <div className="flex items-center justify-between" onClick={(e) => {
+                                    if (isCertExpanded) {
+                                        e.stopPropagation(); 
+                                        haptic('light');
+                                        setIsCertExpanded(false);
+                                    }
+                                }}>
+                                    <div className="flex items-center gap-3">
+                                        <div className={`w-10 h-10 rounded-full flex items-center justify-center border transition-colors ${isStudent ? 'bg-[#00FF9D]/10 border-[#00FF9D]/30 text-[#00FF9D]' : 'bg-zinc-900 border-zinc-800 text-zinc-600'}`}>
+                                            <Shield className="w-5 h-5" />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-xs font-bold text-white uppercase tracking-wider mb-1">СЕРТИФИКАТ ОБ ОБУЧЕНИИ</h3>
+                                            <div className="text-[8px] text-zinc-500 leading-tight max-w-[230px]">
+                                                <p className="mb-0.5">Сертификаты Taipan academy являются официальными в блокчейне Ton.</p>
+                                                <p>Их нельзя продать или подделать</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className={`bg-zinc-900 p-2 rounded-lg border border-zinc-800 transition-all duration-300 ${isCertExpanded ? 'rotate-90 bg-[#00FF9D] text-black' : 'group-hover:bg-[#00FF9D] group-hover:text-black'}`}>
+                                        <ArrowRight className="w-4 h-4" />
+                                    </div>
+                                </div>
+
+                                {/* Expanded Content */}
+                                <div className={`overflow-hidden transition-all duration-500 ease-in-out ${isCertExpanded ? 'max-h-[800px] opacity-100 mt-6' : 'max-h-0 opacity-0'}`}>
+                                    <div className={`relative overflow-hidden rounded-[20px] transition-all duration-1000 
+                                        ${!isStudent ? 'cert-locked' : 'shadow-[0_0_30px_rgba(6,182,212,0.6)]'}`}
+                                        style={{
+                                            background: '#000000',
+                                            border: '2px solid #06b6d4',
+                                            boxShadow: '0 0 20px rgba(6, 182, 212, 0.4), inset 0 0 20px rgba(6, 182, 212, 0.2)'
+                                        }}
+                                    >
+                                        {/* Tech Background Grid - Crisp Lines */}
+                                        <div className="absolute inset-0 bg-[linear-gradient(rgba(6,182,212,0.15)_1px,transparent_1px),linear-gradient(90deg,rgba(6,182,212,0.15)_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none"></div>
+                                        
+                                        {/* Corner Decorations (High Contrast) */}
+                                        <div className="absolute top-0 left-0 w-24 h-24 border-t-[3px] border-l-[3px] border-cyan-400 rounded-tl-3xl opacity-100 drop-shadow-[0_0_10px_rgba(34,211,238,0.8)]"></div>
+                                        <div className="absolute top-0 right-0 w-24 h-24 border-t-[3px] border-r-[3px] border-cyan-400 rounded-tr-3xl opacity-100 drop-shadow-[0_0_10px_rgba(34,211,238,0.8)]"></div>
+                                        <div className="absolute bottom-0 left-0 w-24 h-24 border-b-[3px] border-l-[3px] border-cyan-400 rounded-bl-3xl opacity-100 drop-shadow-[0_0_10px_rgba(34,211,238,0.8)]"></div>
+                                        <div className="absolute bottom-0 right-0 w-24 h-24 border-b-[3px] border-r-[3px] border-cyan-400 rounded-br-3xl opacity-100 drop-shadow-[0_0_10px_rgba(34,211,238,0.8)]"></div>
+
+                                        {/* Decorative Center Lines */}
+                                        <div className="absolute top-10 left-10 right-10 h-[1px] bg-cyan-500/30"></div>
+                                        <div className="absolute bottom-10 left-10 right-10 h-[1px] bg-cyan-500/30"></div>
+
+                                        <div className="relative z-10 p-8 flex flex-col items-center text-center">
+                                            
+                                            {/* 1. TAIPAN ACADEMY Header - Metallic Look */}
+                                            <h3 className="text-xl sm:text-2xl font-black text-white font-['Chakra_Petch'] tracking-[0.2em] uppercase mb-8 drop-shadow-[0_0_5px_rgba(255,255,255,0.8)]">
+                                                TAIPAN ACADEMY
+                                            </h3>
+
+                                            {/* 2. Certificate Title - Glowing Cyan */}
+                                            <h1 className="text-3xl sm:text-4xl font-black text-cyan-400 font-['Chakra_Petch'] tracking-wide uppercase mb-4 leading-none"
+                                                style={{ textShadow: '0 0 15px rgba(34, 211, 238, 0.8)' }}>
+                                                СЕРТИФИКАТ<br/>СПЕЦИАЛИСТА
+                                            </h1>
+
+                                            {/* 3. Divider Line - Sharp Beam */}
+                                            <div className="w-full max-w-[200px] h-[2px] bg-cyan-400 my-6 shadow-[0_0_15px_#22d3ee]"></div>
+
+                                            {/* 4. USER NAME (Dynamic) - Crisp White */}
+                                            <div className="mb-8 relative">
+                                                 <p className="text-2xl sm:text-3xl font-bold text-white font-mono tracking-widest uppercase drop-shadow-[0_0_10px_rgba(255,255,255,0.8)]">
+                                                    {userName}
+                                                 </p>
+                                                 {/* Decorative underbars */}
+                                                 <div className="flex justify-center gap-1 mt-3">
+                                                      <div className="w-2 h-1 bg-cyan-400"></div>
+                                                      <div className="w-20 h-1 bg-cyan-400/50"></div>
+                                                      <div className="w-2 h-1 bg-cyan-400"></div>
+                                                 </div>
+                                            </div>
+
+                                            {/* 5. Subtitle/Qualification */}
+                                            <div className="bg-black border border-cyan-500 px-6 py-2 rounded-none mb-10 shadow-[0_0_15px_rgba(6,182,212,0.3)]">
+                                                <p className="text-[9px] sm:text-[10px] text-cyan-200 font-bold uppercase tracking-[0.15em] font-mono">
+                                                    РАЗРАБОТЧИК TELEGRAM E-COMMERCE МАГАЗИНОВ
+                                                </p>
+                                            </div>
+
+                                            {/* 6. Verification Badge (Bottom) */}
+                                            <div className="flex items-center gap-4 bg-black border border-blue-500 px-5 py-3 rounded-lg shadow-[0_0_20px_rgba(59,130,246,0.4)]">
+                                                <div className="w-10 h-10 flex items-center justify-center relative">
+                                                     {/* TON Diamond Logo SVG (Updated to 1:1 Reference) */}
+                                                     <svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full drop-shadow-[0_0_10px_#0098EA] relative z-10">
+                                                        <circle cx="28" cy="28" r="28" fill="#0098EA"/>
+                                                        {/* Outline Triangle */}
+                                                        <path d="M15 17H41L28 42L15 17Z" stroke="white" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                                        {/* Center Vertical Line */}
+                                                        <path d="M28 17V42" stroke="white" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                                     </svg>
+                                                </div>
+                                                <div className="text-left">
+                                                    <p className="text-[9px] text-blue-200 font-bold uppercase leading-tight tracking-wider font-mono">Верифицировано<br/><span className="text-white">в блокчейне TON</span></p>
+                                                </div>
+                                            </div>
+
+                                        </div>
+
+                                        {!isStudent && (
+                                            <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40">
+                                                <div className="border-[6px] border-white/10 px-8 py-4 rounded-xl rotate-[-15deg] select-none backdrop-blur-[1px]">
+                                                    <span className="text-white/10 font-black text-2xl sm:text-4xl tracking-[0.2em] uppercase font-['Chakra_Petch'] flex items-center gap-4">
+                                                        <Lock className="w-8 h-8 sm:w-10 sm:h-10" /> ЗАБЛОКИРОВАНО
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                    
+                                    <div className="mt-4">
+                                        <button 
+                                            disabled={!isStudent}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                haptic('medium');
+                                                // Action to claim/mint NFT
+                                            }}
+                                            className={`w-full py-4 rounded-xl font-black text-[10px] uppercase tracking-[0.3em] transition-all duration-500 flex items-center justify-center gap-3
+                                                ${isStudent 
+                                                    ? 'bg-white text-black shadow-[0_20px_40px_rgba(255,255,255,0.15)] hover:scale-[1.02]' 
+                                                    : 'bg-zinc-900 text-zinc-700 border border-zinc-800'}`}
+                                        >
+                                            {isStudent && (
+                                                <svg width="14" height="14" viewBox="0 0 56 56" fill="black">
+                                                    <path d="M28 56C43.464 56 56 43.464 56 28C56 12.536 43.464 0 28 0C12.536 0 0 12.536 0 28C0 43.464 12.536 56 28 56ZM12.136 16.438L27.998 12L43.864 16.438L42.532 32.186C41.362 45.986 27.998 47.998 27.998 47.998 14.634 45.986 13.464 32.186L12.136 16.438ZM24.444 33.15L27.998 38L31.556 33.15L38.452 19.346L27.998 17.558L17.548 19.346L24.444 33.15Z"/>
+                                                </svg>
+                                            )}
+                                            {isStudent ? "Claim TON SBT NFT" : <span className="text-[8px] tracking-[0.15em] whitespace-nowrap">ПРОЙДИТЕ ОБУЧЕНИЕ ЧТО БЫ ЗАМИНТИТЬ СЕРТИФИКАТ</span>}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* 3. Partner Program - ONLY FOR ACADEMY */}
+                        {userRole === 'academy' && (
+                            <div className="strategy-card relative overflow-hidden" style={{ borderColor: 'rgba(168, 85, 247, 0.3)' }}>
+                                <div className="absolute inset-0 bg-gradient-to-b from-purple-900/10 to-transparent pointer-events-none"></div>
+                                
+                                <div className="flex justify-between items-start mb-5 relative z-10">
+                                    <div>
+                                        <h3 className="text-sm font-black text-white uppercase tracking-wider mb-1">ПАРТНЕРСКАЯ ПРОГРАММА</h3>
+                                        <p className="text-[10px] text-zinc-400 leading-snug max-w-[200px]">
+                                            Ваш бонус: <span className="text-[#a855f7] font-bold">10% (5 000 ₸)</span> с каждой оплаты привлеченного ученика.
+                                        </p>
+                                    </div>
+                                    <div className="bg-[#1a1625] border border-purple-500/20 rounded-lg p-2 text-center min-w-[70px]">
+                                        <div className="text-lg font-black text-white font-mono leading-none mb-1">
+                                            {referralCount}
+                                        </div>
+                                        <div className="text-[7px] text-[#a855f7] font-bold uppercase tracking-wider">ПАРТНЕРОВ</div>
+                                    </div>
+                                </div>
+
+                                {/* Input Field */}
+                                <div className="flex items-center gap-2 bg-[#121212] border border-zinc-800 p-2 rounded-xl mb-3 relative z-10">
+                                    <div className="flex-grow text-[10px] text-zinc-500 font-mono px-2 truncate select-all">
+                                        t.me/taipan_bot?start={currentUserId || 'id'}
+                                    </div>
+                                    <button 
+                                        onClick={() => {
+                                            navigator.clipboard.writeText(`https://t.me/taipan_bot?start=${currentUserId}`);
+                                            notify('success');
+                                        }}
+                                        className="bg-[#1c1c1e] hover:bg-[#252525] p-2 rounded-lg text-zinc-400 transition-colors border border-zinc-700"
+                                    >
+                                        <Copy className="w-4 h-4" />
+                                    </button>
+                                </div>
+                                <p className="text-center text-[9px] text-zinc-600 font-mono">Используйте эту ссылку для приглашения</p>
+                            </div>
+                        )}
+                    </div>
+                )}
+             </div>
+          </div>
         )}
 
-        {/* ... (остальные вью: cases, education, faq, program, about, reviews) ... */}
-        
         {/* VIEW: REVIEWS (NEW) */}
         {currentView === 'reviews' && (
           <div className="flex flex-col h-full items-center w-full">
@@ -1719,6 +1959,11 @@ const App = () => {
                 </div>
              </div>
           </div>
+        )}
+
+        {/* VIEW: ROI VIEW (Kept as is) */}
+        {currentView === 'roi' && (
+           <RoiView profit={calculateProfit()} onBack={() => handleBackClick('strategy')} onAction={() => openModal('Start Project')} />
         )}
 
         {/* VIEW: EDUCATION (Kept as is) */}
@@ -1914,9 +2159,9 @@ const App = () => {
 
       {/* Modals & Toasts */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center px-4">
-          <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={closeModal} />
-          <div className="relative w-full max-w-lg bg-[#0F0F0F] rounded-[40px] border-t border-white/10 p-8 shadow-[0_-10px_50px_rgba(0,0,0,1)]">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center px-4 visible">
+          <div className="absolute inset-0 bg-black/90" onClick={closeModal} />
+          <div className="relative w-full max-w-lg bg-[#0F0F0F] rounded-[40px] border-t border-white/10 p-8 shadow-[0_-10px_50px_rgba(0,0,0,1)] z-[10000]">
             <div className="w-12 h-1.5 bg-zinc-800 rounded-full mx-auto mb-8 cursor-pointer" onClick={closeModal} />
             <h2 className="text-2xl font-bold text-center mb-2 tracking-tight">Начать сейчас</h2>
             <p className="text-center text-zinc-500 text-xs uppercase tracking-widest mb-8 font-mono">Интерес: <span className="text-[#00FF9D]">{modalType}</span></p>
@@ -1930,7 +2175,7 @@ const App = () => {
       )}
 
       {showToast && (
-        <div className="fixed top-10 left-1/2 -translate-x-1/2 z-[110] bg-zinc-900 border border-[#00FF9D]/30 px-6 py-3 rounded-full flex items-center gap-3 shadow-2xl animate-in zoom-in duration-300">
+        <div className="fixed top-10 left-1/2 -translate-x-1/2 z-[110] bg-zinc-900 border border-[#00FF9D]/30 px-6 py-3 rounded-full flex items-center gap-3 shadow-2xl">
           <CheckCircle2 className="w-4 h-4 text-[#00FF9D]" />
           <span className="text-xs font-bold uppercase tracking-wider font-mono">Запрос принят</span>
         </div>

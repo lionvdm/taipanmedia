@@ -625,7 +625,7 @@ const WordstatGraph = React.memo(() => {
           <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none z-10"></div>
           <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-[#00FF9D]/10 to-transparent animate-[scanLine_2.5s_linear_infinite] z-10"></div>
           <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors pointer-events-none z-10"></div>
-          <div className="absolute top-2 right-2 bg-black/60 rounded-full p-1.5 opacity-60 group-hover:opacity-100 transition-opacity border border-white/20 z-20"><Search className="w-3 h-3 text-white" /></div>
+          <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-md rounded-full p-1.5 opacity-60 group-hover:opacity-100 transition-opacity border border-white/20 z-20"><Search className="w-3 h-3 text-white" /></div>
         </div>
       </div>
        {isExpanded && (
@@ -652,7 +652,7 @@ const BrandLogos = {
       }
     }, [isActive]);
     return (
-      <div className={`flex flex-col items-center relative`}>
+      <div className={`flex flex-col items-center animate-in fade-in zoom-in duration-1000 relative`}>
         {/* Logo Container */}
         <div className={`transition-all duration-1000 ${isMissed ? 'grayscale opacity-40 scale-90 blur-[1px]' : 'grayscale-0 opacity-100 scale-100'}`}>
             <svg viewBox="-2 -2 28 28" fill="#F7931A" className="w-20 h-20 mb-4 drop-shadow-[0_0_15px_rgba(247,147,26,0.5)]"><path d="M23.638 14.904c-1.602 6.43-8.113 10.34-14.542 8.736C2.67 22.05-1.244 15.556.358 9.126 1.96 2.695 8.47-1.216 14.9-.388c6.426 1.602 10.34 8.09 8.738 15.292zM18.106 10.12c.264-1.765-1.08-2.71-2.914-3.344l.596-2.39-1.454-.362-.58 2.33c-.382-.096-.776-.186-1.166-.273l.586-2.355-1.454-.362-.596 2.39c-.316-.072-.625-.144-.925-.218l.002-.008-2.007-.502-.388 1.55s1.08.247 1.057.263c.59.147.696.537.678.847l-.68 2.73c.04.01.094.026.152.05-.054-.014-.112-.03-.17-.044l-1.103 4.426c-.072.178-.254.445-.664.343.014.02-1.057-.263-1.057-.263l-.723 1.67 1.894.474c.35.088.694.18 1.034.266l-.604 2.43 1.452.362.598-2.396c.396.108.783.21 1.16.307l-.592 2.38 1.454.363.604-2.43c2.482.47 4.35.28 5.136-1.965.634-1.808-.032-2.852-1.336-3.535 1.03-.238 1.81-.916 2.02-2.31zM14.47 14.524c-.45 1.81-3.5 0.83-4.484.588l.8-3.212c.983.244 4.14.726 3.684 2.624zm.45-4.44c-.41 1.644-2.96.81-3.774.606l.724-2.912c.814.204 3.468.583 3.05 2.306z"/></svg>
@@ -687,7 +687,7 @@ const BrandLogos = {
       }
     }, [isActive]);
     return (
-      <div className={`flex flex-col items-center relative`}>
+      <div className={`flex flex-col items-center animate-in fade-in zoom-in duration-1000 relative`}>
         {/* Logo Container */}
         <div className={`transition-all duration-1000 ${isMissed ? 'grayscale opacity-40 scale-90 blur-[1px]' : 'grayscale-0 opacity-100 scale-100'}`}>
             <svg viewBox="0 0 24 24" fill="none" stroke="#E1306C" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-20 h-20 mb-4 drop-shadow-[0_0_15px_rgba(225,48,108,0.5)]"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
@@ -722,7 +722,7 @@ const BrandLogos = {
       }
     }, [isActive]);
     return (
-      <div className={`flex flex-col items-center relative`}>
+      <div className={`flex flex-col items-center animate-in fade-in zoom-in duration-1000 relative`}>
         {/* Logo Container */}
         <div className={`flex gap-3 mb-4 items-center transition-all duration-1000 ${isMissed ? 'grayscale opacity-40 scale-90 blur-[1px]' : 'grayscale-0 opacity-100 scale-100'}`}>
             <span className="text-4xl font-black italic text-purple-500">WB</span><span className="text-3xl font-bold text-red-600">Kaspi</span>
@@ -745,7 +745,7 @@ const BrandLogos = {
     );
   },
   Telegram: ({ isActive }) => (
-    <div className="flex flex-col items-center">
+    <div className="flex flex-col items-center animate-in fade-in zoom-in duration-1000">
       <svg viewBox="0 0 24 24" fill="#0088cc" className="w-20 h-20 mb-4 drop-shadow-[0_0_25px_rgba(0,136,204,0.5)]"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.446 1.394c-.16.16-.295.293-.605.293l.214-3.054 5.56-5.022c.24-.213-.054-.334-.373-.121l-6.869 4.326-2.962-.924c-.64-.203-.658-.64.135-.954l11.566-4.458c.538-.196 1.006.128.832.942z"/></svg>
       <p className="text-white font-black text-2xl tracking-[0.1em] font-['Chakra_Petch']">2026: TELEGRAM STORE</p>
       <p className="text-[#00FF9D] text-[12px] uppercase tracking-[0.3em] mt-3 font-bold bg-[#00FF9D]/10 border border-[#00FF9D]/30 px-6 py-2 rounded-full shadow-[0_0_15px_rgba(0,255,157,0.2)] text-center">Обучись новому тренду с нами</p>
@@ -808,7 +808,7 @@ const ShopIntroSequence = ({ onComplete }) => {
   return (
     <div className="flex flex-col items-center justify-center h-full w-full min-h-[60vh] px-4 cursor-pointer" onClick={onComplete}>
        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80%] h-[200px] bg-white/5 blur-[80px] rounded-full -z-10 pointer-events-none animate-[pulse_4s_infinite]"></div>
-       <div className="w-full text-center max-w-3xl">
+       <div className="w-full text-center max-w-3xl animate-in fade-in duration-1000">
          <h2 className="text-lg sm:text-2xl font-light uppercase tracking-[0.2em] font-['Outfit'] text-zinc-300 drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">{message.part1}</h2>
          <div className="relative inline-block mt-6">
              <h2 className="text-3xl sm:text-5xl font-black uppercase font-['Chakra_Petch'] text-transparent bg-clip-text bg-gradient-to-r from-[#444] via-[#00FF9D] to-[#444] bg-[length:200%_auto] animate-[snakeFlow_3s_linear_infinite] drop-shadow-[0_0_30px_rgba(0,255,157,0.3)] tracking-widest">{message.part2}</h2>
@@ -881,7 +881,7 @@ const PartnersCredits = () => {
       </div>
       <div className="relative w-full h-32 flex items-center justify-center overflow-hidden bg-white/5 rounded-xl border border-[#00FF9D]/10 shadow-[0_0_30px_rgba(0,0,0,0.5)]">
          <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:20px_20px]"></div>
-         <div key={currentIndex} className="relative z-10 w-full flex justify-center">
+         <div key={currentIndex} className="relative z-10 animate-[cyberReveal_0.5s_cubic-bezier(0.215,0.61,0.355,1)_both] w-full flex justify-center">
             {/* Added loading="eager" to force immediate loading */}
             <SmartImage src={currentLogo} alt="Partner Logo" style={specificStyle} className={logoClasses} wrapperClass="relative z-10 flex justify-center w-full" loading="eager" />
          </div>
@@ -911,7 +911,7 @@ const RoiView = ({ profit, onBack, onAction }) => {
   const animatedProfit = useOdometer(conservativeProfit);
   const animatedPercentage = useOdometer(returnPercentage);
   return (
-    <div className="w-full flex flex-col items-center pt-2">
+    <div className="w-full h-full flex flex-col items-center pt-2">
         <button onClick={() => { haptic('light'); onBack(); }} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-4 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
         <div className="w-full flex flex-col gap-4">
             <div className="text-center px-4 w-full"><h2 className="text-2xl sm:text-3xl font-black tracking-tighter uppercase mb-1 font-['Chakra_Petch'] leading-none whitespace-nowrap">РАСЧЁТ <span className="text-[#00FF9D]">ОКУПАЕМОСТИ</span></h2><p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] mr-[-0.3em] font-bold">Эффективность инвестиций</p></div>
@@ -966,7 +966,9 @@ const App = () => {
   const animatedHourlyRate = useOdometer(currentHourlyRate);
 
   // --- BUSINESS LOGIC: Profit Calculation ---
-  const [calcData, setCalcData] = useState({ traffic: 0, conversion: 0, avgCheck: 0, margin: 0 });
+  // --- UPDATED: Initialized with default values for better UX ---
+  const [calcData, setCalcData] = useState({ traffic: 300, conversion: 5, avgCheck: 5000, margin: 30 });
+  
   const calculateProfit = () => {
       // Logic for Business Profit (from ROI calculator)
       const sales = Math.floor(calcData.traffic * (calcData.conversion / 100));
@@ -1299,14 +1301,14 @@ const App = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-[#050505] text-white font-sans selection:bg-[#00FF9D]/30 relative overflow-hidden flex flex-col">
+    <div className="min-h-[100dvh] bg-[#050505] text-white font-sans selection:bg-[#00FF9D]/30 relative flex flex-col">
       <GlobalStyles />
       {/* Bane Intro Overlay */}
       {baneIntroActive && <BaneIntro onComplete={handleBaneIntroComplete} />}
       {/* GLOBAL IMAGE VIEWER MODAL */}
       {previewImage && (
         <div 
-          className="fixed inset-0 z-[9999] bg-black/95 flex items-center justify-center p-4 cursor-zoom-out visible" 
+          className="fixed inset-0 z-[300] bg-black/95 flex items-center justify-center p-4 cursor-zoom-out" 
           onClick={() => { haptic('light'); setPreviewImage(null); }}
         >
           {/* Уменьшил max-w-2xl до max-w-sm (размер смартфона), чтобы скриншоты не были огромными */}
@@ -1592,10 +1594,10 @@ const App = () => {
 
         {/* VIEW: CALCULATOR (Kept as is) */}
         {currentView === 'calculator' && (
-          <div className="flex flex-col h-full items-center w-full">
+          <div className="w-full flex flex-col items-center pb-24">
             {/* Logic for Back Button: Return to Main if Academy, else go back to Shop or Main based on context */}
             <button onClick={() => handleBackClick(userRole === 'academy' ? 'main' : 'shop')} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-4 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
-            <div className="flex-grow flex flex-col items-center w-full space-y-2">
+            <div className="w-full space-y-2">
                 {userRole === 'business' ? (
                     <div className="text-center px-4 w-full mb-2">
                         <Wallet className="w-12 h-12 mx-auto text-[#00FF9D] mb-2 drop-shadow-[0_0_15px_rgba(0,255,157,0.5)] animate-[contourPulse_3s_ease-in-out_infinite]" />

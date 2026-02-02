@@ -2,33 +2,72 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 
 // --- FIREBASE INTEGRATION ---
 import { initializeApp } from 'firebase/app';
-import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from 'firebase/auth';
-import { getFirestore, doc, setDoc, updateDoc, serverTimestamp, collection, query, onSnapshot, deleteDoc, where, getDoc } from 'firebase/firestore';
+import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
+import { getFirestore, doc, setDoc, updateDoc, serverTimestamp, collection, query, onSnapshot, deleteDoc } from 'firebase/firestore';
+
+// --- GEMINI API INTEGRATION ---
+const apiKey = ""; // Ключ API будет предоставлен средой выполнения
+
+const generateGeminiResponse = async (userQuery, userRole) => {
+  if (!apiKey) {
+    console.warn("Gemini API Key is missing");
+    return "Система перегружена. Попробуйте позже."; // Fallback message
+  }
+
+  const systemInstruction = userRole === 'business'
+    ? "Ты — элитный бизнес-консультант Taipan Media. Пользователь хочет открыть бизнес в Telegram. Твоя задача: дать 3 жестких, конкретных и коротких совета, как разорвать конкурентов в его нише. Используй эмодзи. Стиль: киберпанк, агрессивный маркетинг, успех. Язык: Русский."
+    : "Ты — ментор миллионеров из Taipan Academy. Пользователь хочет заработать. Дай ему 3 конкретных шага, как быстро выйти на доход в Telegram, используя навыки разработки ботов. Стиль: мотивационный, жесткий, «волк с уолл-стрит». Язык: Русский.";
+
+  try {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: userQuery }] }],
+        systemInstruction: { parts: [{ text: systemInstruction }] }
+      })
+    });
+
+    if (!response.ok) {
+        if (response.status === 429) {
+            throw new Error("Too many requests");
+        }
+        throw new Error(`API Error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.candidates?.[0]?.content?.parts?.[0]?.text || "Данные не получены.";
+  } catch (error) {
+    console.error("Gemini API Error:", error);
+    return "Связь с ИИ-ядром нестабильна. Повторите запрос.";
+  }
+};
 
 // --- CONFIGURATION & INIT ---
-const manifestUrl = 'https://taipan-rose.vercel.app/tonconnect-manifest.json';
+const firebaseConfig = {
+  apiKey: "AIzaSyCdcj_56EdygidWa8pQm17fegnF39XB8Xg",
+  authDomain: "taipan-680b2.firebaseapp.com",
+  projectId: "taipan-680b2",
+  storageBucket: "taipan-680b2.firebasestorage.app",
+  messagingSenderId: "990538734233",
+  appId: "1:990538734233:web:dbfe47aed6d87626207608",
+  measurementId: "G-QFJTFTCNNY"
+};
 
-// 1. Prioritize Environment Config
-const firebaseConfig = typeof __firebase_config !== 'undefined' 
-  ? JSON.parse(__firebase_config) 
-  : {
-      apiKey: "AIzaSyCdcj_56EdygidWa8pQm17fegnF39XB8Xg",
-      authDomain: "taipan-680b2.firebaseapp.com",
-      projectId: "taipan-680b2",
-      storageBucket: "taipan-680b2.firebasestorage.app",
-      messagingSenderId: "990538734233",
-      appId: "1:990538734233:web:dbfe47aed6d87626207608",
-      measurementId: "G-QFJTFTCNNY"
-    };
-
+// Инициализация Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'taipan-default-id';
+
+// Получаем ID приложения
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
 // --- TELEGRAM WEB APP UTILS ---
 const tg = window.Telegram?.WebApp;
 
+// Helper for Haptic Feedback
 const haptic = (style = 'light') => {
   if (tg?.HapticFeedback) {
     tg.HapticFeedback.impactOccurred(style);
@@ -41,6 +80,7 @@ const notify = (type = 'success') => {
   }
 };
 
+// --- HELPER FUNCTION: GET PLURAL ---
 const getPlural = (number, one, two, five) => {
   let n = Math.abs(number);
   n %= 100;
@@ -62,21 +102,36 @@ const GlobalStyles = () => (
     input[type=number] { -moz-appearance: textfield; }
 
     .glass-card {
-        background-color: #1a1a1a; 
-        background-color: rgba(20, 20, 20, 0.95); 
+        background-color: rgba(15, 15, 15, 0.4);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
         border: 1px solid rgba(0, 255, 157, 0.2);
-        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
+        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
         position: relative;
         overflow: hidden;
     }
-      
-    .glass-card:active { transform: scale(0.98); transition: transform 0.1s; }
+    
+    .grid-bg {
+        background-image: 
+            linear-gradient(rgba(0, 255, 157, 0.07) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(0, 255, 157, 0.07) 1px, transparent 1px);
+        background-size: 20px 20px;
+    }
+
+    .glass-card:hover {
+        background-color: rgba(0, 255, 157, 0.05);
+        border-color: rgba(0, 255, 157, 0.4);
+        box-shadow: 0 0 20px rgba(0, 255, 157, 0.1);
+    }
+    .glass-card:active { transform: scale(0.98); }
     .hw-accelerated {
         will-change: transform, opacity;
         transform: translateZ(0);
         backface-visibility: hidden;
     }
 
+    /* Strategy Card Style (Minimalist Dark) */
     .strategy-card {
         background-color: #0A0A0A;
         border: 1px solid #1f1f1f;
@@ -86,12 +141,6 @@ const GlobalStyles = () => (
         overflow: hidden;
     }
 
-    .cert-locked {
-        filter: none;
-        opacity: 1;
-        pointer-events: none;
-    }
-    
     @keyframes contourPulse {
       0% { filter: drop-shadow(0 0 1px rgba(0, 255, 157, 0.3)); opacity: 0.8; }
       50% { filter: drop-shadow(0 0 6px rgba(0, 255, 157, 0.6)); opacity: 1; }
@@ -102,44 +151,101 @@ const GlobalStyles = () => (
       50% { opacity: 1; }
       100% { transform: translateY(100%); opacity: 0; }
     }
+    @keyframes cyberReveal {
+      0% { opacity: 0; transform: scale(1.5); filter: blur(20px) hue-rotate(90deg); }
+      20% { opacity: 1; transform: scale(1.2); filter: blur(0); }
+      40% { transform: scale(1.35); filter: brightness(1.5); }
+      100% { opacity: 1; transform: scale(1.25); filter: none; }
+    }
     @keyframes widthGrow { from { width: 0; } }
     @keyframes simple-glow {
       0%, 100% { text-shadow: 0 0 10px rgba(0, 255, 157, 0.3); transform: scale(1); color: #fff; }
       50% { text-shadow: 0 0 25px rgba(0, 255, 157, 0.8), 0 0 10px rgba(0, 255, 157, 0.5); transform: scale(1.02); color: #00FF9D; }
     }
-    @keyframes frame-pulse {
-      0%, 100% { border-color: rgba(0, 255, 157, 0.3); box-shadow: 0 0 10px rgba(0, 255, 157, 0.05); }
-      50% { border-color: rgba(0, 255, 157, 0.8); box-shadow: 0 0 30px rgba(0, 255, 157, 0.2); }
+    @keyframes smoke-fade {
+      0% { opacity: 0; transform: translateY(10px); }
+      100% { opacity: 1; transform: translateY(0); }
     }
-    @keyframes text-pulse-glow {
-      0%, 100% { opacity: 1; text-shadow: 0 0 10px rgba(0,255,157,0.1); }
-      50% { opacity: 0.9; text-shadow: 0 0 25px rgba(0,255,157,0.6); color: #00FF9D; }
+    /* GLITCH EFFECT KEYFRAMES */
+    @keyframes glitch {
+      0% { transform: translate(0) skew(0deg); opacity: 1; filter: hue-rotate(0deg); }
+      20% { transform: translate(-4px, 4px) skew(5deg); opacity: 0.8; filter: hue-rotate(90deg); }
+      40% { transform: translate(-4px, -4px) skew(-5deg); opacity: 1; filter: hue-rotate(0deg); }
+      60% { transform: translate(4px, 4px) skew(5deg); opacity: 0.8; filter: hue-rotate(-90deg); }
+      80% { transform: translate(4px, -4px) skew(-5deg); opacity: 1; filter: hue-rotate(0deg); }
+      100% { transform: translate(0) skew(0deg); opacity: 1; filter: hue-rotate(0deg); }
+    }
+    @keyframes aggressive-glitch-text {
+      0% { clip-path: inset(50% 0 30% 0); transform: translate(-5px, 0); }
+      20% { clip-path: inset(10% 0 60% 0); transform: translate(5px, 0); }
+      40% { clip-path: inset(80% 0 5% 0); transform: translate(-5px, 0); }
+      60% { clip-path: inset(20% 0 40% 0); transform: translate(5px, 0); }
+      80% { clip-path: inset(60% 0 10% 0); transform: translate(-5px, 0); }
+      100% { clip-path: inset(0 0 0 0); transform: translate(0); }
+    }
+    @keyframes voiceWave {
+        0%, 100% { height: 10%; }
+        50% { height: 80%; }
+    }
+    /* NEW: SMOKE + GLITCH APPEAR ANIMATION */
+    @keyframes smoke-glitch-appear {
+        0% { 
+            opacity: 0; 
+            filter: blur(12px) brightness(0.5); 
+            transform: translateY(15px) scale(0.85) skew(15deg); 
+            text-shadow: 4px 0 rgba(255,0,0,0.5), -4px 0 rgba(0,0,255,0.5);
+        }
+        40% {
+            opacity: 0.6;
+            filter: blur(6px);
+            transform: translateY(5px) scale(0.95) skew(-10deg);
+            text-shadow: -3px 0 rgba(255,0,0,0.7), 3px 0 rgba(0,0,255,0.7);
+        }
+        70% {
+            opacity: 0.9;
+            filter: blur(2px);
+            transform: scale(1.05) skew(5deg);
+            text-shadow: 2px 0 rgba(0,255,157,0.5), -2px 0 rgba(255,0,255,0.5);
+        }
+        100% { 
+            opacity: 1; 
+            transform: translateY(0) scale(1) skew(0); 
+            filter: none;
+            text-shadow: 0 0 10px rgba(0,255,157,0.6); 
+        }
     }
   `}} />
 );
 
+// --- COMPONENT DEFINITIONS ---
+
 // 1. Matrix Background
 const MatrixBackground = React.memo(() => {
   const canvasRef = useRef(null);
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
+
     const ctx = canvas.getContext('2d');
+    
     let width = canvas.width = window.innerWidth;
     let height = canvas.height = window.innerHeight;
+
     const chars = "TAIPAN0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     const fontSize = 14;
     const columns = Math.floor(width / 20);
     const drops = Array(columns).fill(1);
-    
-    let animationFrameId;
+
     let lastTime = 0;
-    const fps = 20; 
+    const fps = 30; 
     const interval = 1000 / fps;
+
+    let animationFrameId;
 
     const draw = (currentTime) => {
       animationFrameId = requestAnimationFrame(draw);
-      
+
       const deltaTime = currentTime - lastTime;
       if (deltaTime < interval) return;
 
@@ -147,16 +253,23 @@ const MatrixBackground = React.memo(() => {
 
       ctx.fillStyle = 'rgba(5, 5, 5, 0.1)'; 
       ctx.fillRect(0, 0, width, height);
+
       ctx.fillStyle = '#00FF9D';
       ctx.font = `${fontSize}px monospace`;
+
       for (let i = 0; i < drops.length; i++) {
         const text = chars.charAt(Math.floor(Math.random() * chars.length));
         ctx.fillText(text, i * 20, drops[i] * fontSize);
-        if (drops[i] * fontSize > height && Math.random() > 0.975) drops[i] = 0;
+
+        if (drops[i] * fontSize > height && Math.random() > 0.975) {
+          drops[i] = 0;
+        }
         drops[i]++;
       }
     };
+
     draw(0);
+
     const handleResize = () => {
       width = canvas.width = window.innerWidth;
       height = canvas.height = window.innerHeight;
@@ -167,6 +280,7 @@ const MatrixBackground = React.memo(() => {
       window.removeEventListener('resize', handleResize);
     };
   }, []);
+
   return <canvas ref={canvasRef} className="fixed inset-0 z-[1] opacity-20 mix-blend-screen pointer-events-none" style={{ willChange: 'contents' }} />;
 });
 
@@ -176,10 +290,12 @@ const useOdometer = (targetValue, duration = 1000) => {
   const frameRef = useRef(0);
   const startValueRef = useRef(0);
   const startTimeRef = useRef(0);
+
   useEffect(() => {
     const startValue = startValueRef.current;
     const endValue = targetValue;
     if (startValue === endValue) return;
+
     const animate = (currentTime) => {
       if (!startTimeRef.current) startTimeRef.current = currentTime;
       const elapsed = currentTime - startTimeRef.current;
@@ -188,6 +304,7 @@ const useOdometer = (targetValue, duration = 1000) => {
       const current = Math.floor(startValue + (endValue - startValue) * ease);
       setDisplayValue(current);
       startValueRef.current = current;
+
       if (progress < 1) {
         frameRef.current = requestAnimationFrame(animate);
       } else {
@@ -201,6 +318,7 @@ const useOdometer = (targetValue, duration = 1000) => {
     frameRef.current = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(frameRef.current);
   }, [targetValue, duration]);
+
   return displayValue;
 };
 
@@ -228,10 +346,7 @@ const Filter = (p) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24
 const BarChart2 = (p) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" /></svg>;
 const PieChart = (p) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><path d="M21.21 15.89A10 10 0 1 1 8 2.83" /><path d="M22 12A10 10 0 0 0 12 2v10z" /></svg>;
 const Copy = (p) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><rect width="14" height="14" x="8" y="8" rx="2" ry="2" /><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" /></svg>;
-const HelpCircle = (p) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>;
-const Sparkles = (p) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275-1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" /></svg>;
-const Send = (p) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" /></svg>;
-const MessageCircle = (p) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" /></svg>;
+const Sparkles = (p) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" /></svg>;
 
 const TelegramLogoMain = React.memo(({ className }) => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" stroke="none" className={className}>
@@ -240,7 +355,7 @@ const TelegramLogoMain = React.memo(({ className }) => (
 ));
 
 // 4. SmartImage
-const SmartImage = React.memo(({ src, alt, className, style, wrapperClass = "", overflowHidden = true, loading = "lazy" }) => {
+const SmartImage = React.memo(({ src, alt, className, style, wrapperClass = "", overflowHidden = true }) => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
 
@@ -252,7 +367,7 @@ const SmartImage = React.memo(({ src, alt, className, style, wrapperClass = "", 
       <img
         src={src}
         alt={alt}
-        loading={loading}
+        loading="lazy"
         decoding="async"
         onLoad={() => setIsLoaded(true)}
         onError={(e) => {
@@ -284,6 +399,88 @@ const InputField = ({ label, value, setValue, suffix = "" }) => (
     </div>
   </div>
 );
+
+// --- AI ADVISOR COMPONENT ---
+const AIAdvisor = ({ userRole }) => {
+    const [prompt, setPrompt] = useState('');
+    const [response, setResponse] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [isExpanded, setIsExpanded] = useState(false);
+
+    const handleGenerate = async () => {
+        if (!prompt) return;
+        setLoading(true);
+        haptic('medium');
+        
+        try {
+            const result = await generateGeminiResponse(prompt, userRole);
+            setResponse(result);
+        } catch (error) {
+            setResponse("Ошибка соединения. Попробуйте снова.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <div className="glass-card p-4 rounded-xl border border-[#00FF9D]/30 w-full mb-4 animate-in slide-in-from-bottom duration-500">
+            <div className="flex items-center justify-between mb-3" onClick={() => setIsExpanded(!isExpanded)}>
+                 <div className="flex items-center gap-2">
+                    <Sparkles className="w-5 h-5 text-[#00FF9D] animate-pulse" />
+                    <h3 className="text-sm font-black text-white font-['Chakra_Petch'] uppercase tracking-wider">
+                         {userRole === 'business' ? 'AI БИЗНЕС-СТРАТЕГ' : 'AI МЕНТОР'}
+                    </h3>
+                 </div>
+                 <div className={`text-[10px] text-zinc-500 uppercase tracking-widest transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`}>
+                    ▼
+                 </div>
+            </div>
+
+            {isExpanded && (
+                <div className="animate-in fade-in duration-300">
+                     <p className="text-[10px] text-zinc-400 mb-3 leading-relaxed">
+                         {userRole === 'business' 
+                            ? "Опишите вашу нишу, и я создам план захвата рынка в Telegram." 
+                            : "Напиши, что тебя останавливает, и я дам пошаговый план действий."}
+                     </p>
+                     
+                     <textarea 
+                        value={prompt}
+                        onChange={(e) => setPrompt(e.target.value)}
+                        placeholder={userRole === 'business' ? "Например: Магазин кроссовок в Алматы..." : "Например: Боюсь, что не найду клиентов..."}
+                        className="w-full bg-[#0A0A0A] border border-zinc-800 rounded-lg p-3 text-xs text-white focus:border-[#00FF9D] outline-none resize-none h-20 mb-3 font-mono"
+                     />
+                     
+                     <button 
+                        onClick={handleGenerate}
+                        disabled={loading || !prompt}
+                        className={`w-full bg-[#00FF9D] text-black font-bold text-xs py-2.5 rounded-lg uppercase tracking-wider flex items-center justify-center gap-2 transition-all ${loading ? 'opacity-70' : 'hover:scale-[1.02] active:scale-[0.98]'}`}
+                     >
+                        {loading ? (
+                            <>
+                                <div className="w-3 h-3 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
+                                АНАЛИЗ ДАННЫХ...
+                            </>
+                        ) : (
+                            <>
+                                ✨ {userRole === 'business' ? 'СГЕНЕРИРОВАТЬ СТРАТЕГИЮ' : 'ПОЛУЧИТЬ ПЛАН'}
+                            </>
+                        )}
+                     </button>
+                     
+                     {response && (
+                         <div className="mt-4 p-3 bg-zinc-900/80 border-l-2 border-[#00FF9D] rounded-r-lg">
+                             <p className="text-[10px] text-zinc-300 whitespace-pre-line font-mono leading-relaxed">
+                                 {response}
+                             </p>
+                         </div>
+                     )}
+                </div>
+            )}
+        </div>
+    );
+};
+
 
 // 6. ProfitCalculator
 const ProfitCalculator = ({ onAction, data, setData }) => {
@@ -319,7 +516,7 @@ const ProfitCalculator = ({ onAction, data, setData }) => {
   }, [onAction]);
 
   return (
-    <div className="w-full">
+    <div className="w-full animate-in slide-in-from-bottom duration-500">
       <InputField label="Сколько людей в месяц?" value={data.traffic} setValue={(v) => setData({...data, traffic: v})} />
       <InputField label="Какая конверсия?" value={data.conversion} setValue={(v) => setData({...data, conversion: v})} suffix="%" />
       <InputField label="Средний чек" value={data.avgCheck} setValue={(v) => setData({...data, avgCheck: v})} suffix="₸" />
@@ -370,7 +567,7 @@ const AcademyCalculator = ({ onAction }) => {
   };
 
   return (
-    <div className="w-full">
+    <div className="w-full animate-in slide-in-from-bottom duration-500">
       <div className="text-center mb-6">
         <p className="text-[10px] text-zinc-500 tracking-widest font-bold mb-1">средний ежемесячный объём рынка</p>
         <h2 className="text-3xl sm:text-4xl font-black text-white font-['Chakra_Petch'] drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]">
@@ -410,13 +607,13 @@ const AcademyCalculator = ({ onAction }) => {
           </div>
       </div>
 
-      <div className="relative overflow-hidden bg-[#00FF9D]/5 border border-[#00FF9D]/30 p-6 rounded-2xl text-center group shadow-[0_0_30px_rgba(0,255,157,0.1)] mb-4 animate-[frame-pulse_3s_ease-in-out_infinite]">
+      <div className="relative overflow-hidden bg-[#00FF9D]/5 border border-[#00FF9D]/30 p-6 rounded-2xl text-center group shadow-[0_0_30px_rgba(0,255,157,0.1)] mb-4">
          <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,157,0.05)_1px,transparent_1px)] bg-[size:15px_15px] pointer-events-none"></div>
          <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-[#00FF9D]/5 to-transparent animate-[scanLine_3s_linear_infinite]"></div>
          
          <div className="relative z-10">
             <p className="text-[9px] text-zinc-400 uppercase font-bold tracking-widest mb-2">ВАШ ПОТЕНЦИАЛЬНЫЙ ДОХОД В МЕСЯЦ</p>
-            <p className="text-4xl sm:text-5xl font-black text-white font-['Chakra_Petch'] drop-shadow-[0_0_15px_rgba(0,255,157,0.4)] mb-3 animate-[text-pulse-glow_3s_ease-in-out_infinite]">
+            <p className="text-4xl sm:text-5xl font-black text-white font-['Chakra_Petch'] drop-shadow-[0_0_15px_rgba(0,255,157,0.4)] mb-3">
               от {animatedMonthly.toLocaleString()} ₸
             </p>
             <div className="border-t border-[#00FF9D]/20 pt-3 mt-2">
@@ -442,15 +639,13 @@ const BaneIntro = ({ onComplete }) => {
     const [phase, setPhase] = useState(0);
 
     useEffect(() => {
-        // Audio playback logic wrapped safely
         const audio = new Audio('/VID_20260122_010534_539 (online-audio-converter.com).mp3');
         audio.volume = 1.0;
         
         const playPromise = audio.play();
         if (playPromise !== undefined) {
             playPromise.catch(error => {
-                // Autoplay prevented or file not found - expected behavior in sandbox
-                console.log("Audio skipped");
+                console.log("Audio autoplay prevented (expected in preview):", error);
             });
         }
 
@@ -511,11 +706,11 @@ const HackerProof = React.memo(() => {
   return (
     <React.Fragment>
       <div 
-        className="relative rounded-xl overflow-hidden border border-[#00FF9D]/40 mb-6 group cursor-zoom-in"
+        className="relative rounded-xl overflow-hidden border border-[#00FF9D]/40 mb-6 group animate-in zoom-in duration-500 shadow-[0_0_20px_rgba(0,255,157,0.1)] cursor-zoom-in"
         onClick={(e) => { e.stopPropagation(); setIsExpanded(true); }}
       >
         <SmartImage src="https://i.ibb.co.com/FdhqGvD/2025-11-09-113228-fotor-20251109143545.jpg" className="w-full object-cover" alt="Encrypted Proof" />
-        <div className="absolute top-2 right-2 bg-black/60 rounded-full p-1.5 opacity-60 group-hover:opacity-100 transition-opacity border border-[#00FF9D]/30 z-10"><Search className="w-3 h-3 text-[#00FF9D]" /></div>
+        <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-md rounded-full p-1.5 opacity-60 group-hover:opacity-100 transition-opacity border border-[#00FF9D]/30 z-10"><Search className="w-3 h-3 text-[#00FF9D]" /></div>
         <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none z-10"></div>
         <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-[#00FF9D]/10 to-transparent animate-[scanLine_2.5s_linear_infinite] z-10"></div>
         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-black/20 pointer-events-none z-10"></div>
@@ -525,7 +720,7 @@ const HackerProof = React.memo(() => {
         </div>
       </div>
       {isExpanded && (
-        <div className="fixed inset-0 z-[200] bg-black/95 flex items-center justify-center p-4" onClick={(e) => { e.stopPropagation(); setIsExpanded(false); }}>
+        <div className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 animate-in fade-in duration-300" onClick={(e) => { e.stopPropagation(); setIsExpanded(false); }}>
           <div className="relative w-full max-w-2xl">
              <SmartImage src="https://i.ibb.co.com/FdhqGvD/2025-11-09-113228-fotor-20251109143545.jpg" className="w-full h-auto rounded-lg border border-[#00FF9D]/50 shadow-[0_0_50px_rgba(0,255,157,0.2)]" alt="Proof Full" />
              <p className="text-center text-zinc-500 font-mono text-[10px] mt-4 uppercase animate-pulse">Нажмите в любом месте, чтобы закрыть</p>
@@ -541,9 +736,9 @@ const ClientDemandProof = React.memo(() => {
   const [isExpanded, setIsExpanded] = useState(false);
   return (
     <React.Fragment>
-      <div className="relative rounded-xl overflow-hidden border border-[#00FF9D]/40 mb-6 group cursor-zoom-in" onClick={(e) => { e.stopPropagation(); setIsExpanded(true); }}>
+      <div className="relative rounded-xl overflow-hidden border border-[#00FF9D]/40 mb-6 group animate-in zoom-in duration-500 shadow-[0_0_20px_rgba(0,255,157,0.1)] cursor-zoom-in" onClick={(e) => { e.stopPropagation(); setIsExpanded(true); }}>
         <SmartImage src="https://i.ibb.co.com/h1mN3kL0/5427147012425059102.jpg" className="w-full object-cover opacity-90 filter grayscale-[0.5] contrast-[1.1] brightness-[0.9]" alt="Client Demand" />
-        <div className="absolute top-2 right-2 bg-black/60 rounded-full p-1.5 opacity-60 group-hover:opacity-100 transition-opacity border border-[#00FF9D]/30 z-10"><Search className="w-3 h-3 text-[#00FF9D]" /></div>
+        <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-md rounded-full p-1.5 opacity-60 group-hover:opacity-100 transition-opacity border border-[#00FF9D]/30 z-10"><Search className="w-3 h-3 text-[#00FF9D]" /></div>
         <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none z-10"></div>
         <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-[#00FF9D]/10 to-transparent animate-[scanLine_2.5s_linear_infinite] z-10"></div>
         <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent pointer-events-none z-10"></div>
@@ -552,7 +747,7 @@ const ClientDemandProof = React.memo(() => {
         </div>
       </div>
        {isExpanded && (
-        <div className="fixed inset-0 z-[200] bg-black/95 flex items-center justify-center p-4" onClick={(e) => { e.stopPropagation(); setIsExpanded(false); }}>
+        <div className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 animate-in fade-in duration-300" onClick={(e) => { e.stopPropagation(); setIsExpanded(false); }}>
           <div className="relative w-full max-w-2xl">
              <SmartImage src="https://i.ibb.co.com/h1mN3kL0/5427147012425059102.jpg" className="w-full h-auto rounded-lg border border-[#00FF9D]/50 shadow-[0_0_50px_rgba(0,255,157,0.2)]" alt="Demand Full" />
              <p className="text-center text-zinc-500 font-mono text-[10px] mt-4 uppercase animate-pulse">Нажмите в любом месте, чтобы закрыть</p>
@@ -565,7 +760,7 @@ const ClientDemandProof = React.memo(() => {
 
 // 10. SkillScanner
 const SkillScanner = () => (
-  <div className="w-full bg-[#0A0A0A] rounded-xl border border-[#00FF9D]/20 p-4 mb-6 relative overflow-hidden group">
+  <div className="w-full bg-[#0A0A0A] rounded-xl border border-[#00FF9D]/20 p-4 mb-6 relative overflow-hidden animate-in slide-in-from-bottom duration-500 group">
     <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none"></div>
     <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-[#00FF9D]/05 to-transparent animate-[scanLine_4s_linear_infinite]"></div>
     <div className="relative z-10">
@@ -592,16 +787,16 @@ const SetupTimeline = () => {
     { title: "ШАГ 4: ДОСТАВКА", time: "~ 1.5 МИН", desc: "Настройте зоны доставки или самовывоз." }
   ];
   return (
-    <div className="w-full pl-2 mb-4">
+    <div className="w-full pl-2 mb-4 animate-in slide-in-from-bottom duration-500">
       <div className="flex items-center justify-between mb-6"><span className="text-[10px] text-[#00FF9D] font-mono tracking-widest border border-[#00FF9D]/30 px-2 py-1 rounded">ПРОТОКОЛ ЗАПУСКА</span><span className="text-[10px] text-zinc-500 font-mono">TOTAL: ~10 МИН</span></div>
       <div className="relative border-l border-[#00FF9D]/20 ml-2 space-y-6">
         {steps.map((step, i) => (
           <div key={i} className="relative pl-6 group">
-              <div className="absolute -left-[5px] top-1 w-2.5 h-2.5 bg-[#050505] border border-[#00FF9D] rounded-full group-hover:bg-[#00FF9D] group-hover:shadow-[0_0_10px_#00FF9D] transition-all"></div>
-              <div className="flex justify-between items-start">
-                <div><h4 className="text-sm font-bold text-white font-['Chakra_Petch'] leading-none mb-1 group-hover:text-[#00FF9D] transition-colors">{step.title}</h4><p className="text-[11px] text-zinc-400 leading-snug max-w-[220px]">{step.desc}</p></div>
-                <span className="text-[9px] font-mono text-[#00FF9D]/70 bg-[#00FF9D]/5 px-1.5 py-0.5 rounded ml-2 whitespace-nowrap">{step.time}</span>
-              </div>
+             <div className="absolute -left-[5px] top-1 w-2.5 h-2.5 bg-[#050505] border border-[#00FF9D] rounded-full group-hover:bg-[#00FF9D] group-hover:shadow-[0_0_10px_#00FF9D] transition-all"></div>
+             <div className="flex justify-between items-start">
+               <div><h4 className="text-sm font-bold text-white font-['Chakra_Petch'] leading-none mb-1 group-hover:text-[#00FF9D] transition-colors">{step.title}</h4><p className="text-[11px] text-zinc-400 leading-snug max-w-[220px]">{step.desc}</p></div>
+               <span className="text-[9px] font-mono text-[#00FF9D]/70 bg-[#00FF9D]/5 px-1.5 py-0.5 rounded ml-2 whitespace-nowrap">{step.time}</span>
+             </div>
           </div>
         ))}
         <div className="relative pl-6 mt-8"><div className="absolute -left-[7px] top-1 w-3.5 h-3.5 bg-[#00FF9D] rounded-full animate-pulse shadow-[0_0_15px_#00FF9D]"></div><div className="bg-[#00FF9D]/10 border border-[#00FF9D]/30 p-3 rounded-lg"><h4 className="text-sm font-black text-[#00FF9D] uppercase tracking-wider mb-1">МАГАЗИН ГОТОВ</h4><p className="text-[10px] text-zinc-300 leading-snug">Можно запускать трафик и получать прибыль. Система работает автономно.</p></div></div>
@@ -629,7 +824,7 @@ const WordstatGraph = React.memo(() => {
         </div>
       </div>
        {isExpanded && (
-        <div className="fixed inset-0 z-[200] bg-black/95 flex items-center justify-center p-4" onClick={(e) => { e.stopPropagation(); setIsExpanded(false); }}>
+        <div className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 animate-in fade-in duration-300" onClick={(e) => { e.stopPropagation(); setIsExpanded(false); }}>
           <div className="relative w-full max-w-4xl"><SmartImage src="https://i.ibb.co.com/Y7WjS1Tc/2026-01-16-014054.png" className="w-full h-auto rounded-lg border border-zinc-700 shadow-2xl" alt="Wordstat Full" /><p className="text-center text-zinc-500 font-mono text-[10px] mt-4 uppercase animate-pulse">Нажмите в любом месте, чтобы закрыть</p></div>
         </div>
       )}
@@ -666,9 +861,9 @@ const BrandLogos = {
         <div className="mt-4 text-center px-2 flex flex-col items-center">
           <p className="text-zinc-500 text-[11px] leading-tight font-medium mb-2">«Пока ты думал, что это фантики...»</p>
           <div className={`${isMissed ? 'animate-[smoke-glitch-appear_0.6s_ease-out_forwards]' : 'opacity-0'}`}>
-              <p className={`text-xs uppercase font-black tracking-widest px-3 py-1 rounded text-[#00FF9D] drop-shadow-[0_0_10px_rgba(0,255,157,0.8)]`}>
+             <p className={`text-xs uppercase font-black tracking-widest px-3 py-1 rounded text-[#00FF9D] drop-shadow-[0_0_10px_rgba(0,255,157,0.8)]`}>
                 Другие стали миллионерами
-              </p>
+             </p>
           </div>
         </div>
       </div>
@@ -701,9 +896,9 @@ const BrandLogos = {
         <div className="mt-4 text-center px-2 flex flex-col items-center">
           <p className="text-zinc-500 text-[11px] leading-tight font-medium mb-2">«Пока ты просто выкладывал еду...»</p>
           <div className={`${isMissed ? 'animate-[smoke-glitch-appear_0.6s_ease-out_forwards]' : 'opacity-0'}`}>
-              <p className={`text-xs uppercase font-black tracking-widest px-3 py-1 rounded text-[#00FF9D] drop-shadow-[0_0_10px_rgba(0,255,157,0.8)]`}>
+             <p className={`text-xs uppercase font-black tracking-widest px-3 py-1 rounded text-[#00FF9D] drop-shadow-[0_0_10px_rgba(0,255,157,0.8)]`}>
                 Другие построили империи
-              </p>
+             </p>
           </div>
         </div>
       </div>
@@ -736,9 +931,9 @@ const BrandLogos = {
         <div className="mt-4 text-center px-2 flex flex-col items-center">
           <p className="text-zinc-500 text-[11px] leading-tight font-medium mb-2">«Пока ты боялся логистики...»</p>
           <div className={`${isMissed ? 'animate-[smoke-glitch-appear_0.6s_ease-out_forwards]' : 'opacity-0'}`}>
-              <p className={`text-xs uppercase font-black tracking-widest px-3 py-1 rounded text-[#00FF9D] drop-shadow-[0_0_10px_rgba(0,255,157,0.8)]`}>
+             <p className={`text-xs uppercase font-black tracking-widest px-3 py-1 rounded text-[#00FF9D] drop-shadow-[0_0_10px_rgba(0,255,157,0.8)]`}>
                 Другие захватили рынок
-              </p>
+             </p>
           </div>
         </div>
       </div>
@@ -766,26 +961,28 @@ const Carousel3D = () => {
     return () => clearInterval(timer);
   }, [images.length]);
   return (
-    <div className="relative w-full h-[320px] flex items-center justify-center">
+    <div className="relative w-full h-[280px] flex items-center justify-center">
        {images.map((img, i) => {
          const total = images.length;
          const dist = (index - i + total) % total;
          let styleClass = "opacity-0 scale-50 z-0 translate-y-[100px]"; 
-         if (dist === 0) styleClass = "opacity-100 scale-100 z-30 translate-y-[0px] rotate-0";
-         else if (dist === 1) styleClass = "opacity-60 scale-90 z-20 -translate-y-[40px] rotate-[-5deg]";
-         else if (dist === 2) styleClass = "opacity-30 scale-80 z-10 -translate-y-[70px] rotate-[-10deg]";
+         if (dist === 0) styleClass = "opacity-100 scale-100 z-30 translate-y-[0px]";
+         else if (dist === 1) styleClass = "opacity-60 scale-90 z-20 -translate-y-[40px]";
+         else if (dist === 2) styleClass = "opacity-30 scale-80 z-10 -translate-y-[70px]";
          else if (dist === total - 1) styleClass = "opacity-0 scale-100 z-40 translate-y-[100%] pointer-events-none"; 
          return (
-           <div key={i} className={`absolute transition-all duration-700 cubic-bezier(0.34, 1.56, 0.64, 1) w-[340px] h-[180px] flex items-center justify-center ${styleClass}`}>
+           <div key={i} className={`absolute transition-all duration-700 cubic-bezier(0.25, 0.8, 0.25, 1) w-[320px] h-[180px] flex items-center justify-center ${styleClass}`}>
              {/* Dark Glass Container */}
-             <div className="relative inline-block rounded-[24px] overflow-hidden bg-[#0A0A0A]/80 border border-white/10 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.8)]">
+             <div className="relative inline-block rounded-[24px] overflow-hidden bg-[#0A0A0A]/80 backdrop-blur-xl border border-white/10 shadow-[0_20px_60px_-15px_rgba(0,0,0,1)]">
+                 
+                 {/* Subtle Noise Texture for realism (optional, kept simple here) */}
                  
                  {/* Top Lighting/Gloss - Very subtle to not obscure text */}
                  <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent z-30"></div>
                  
                  {/* The Image itself */}
                  <div className="relative z-10 p-1">
-                   <img src={img} alt="Notification" className="max-w-full max-h-full object-contain rounded-[16px]" />
+                   <img src={img} alt="Notification" className="max-w-full max-h-full object-contain rounded-[20px]" />
                  </div>
 
                  {/* Inner Glow / Bottom Reflection */}
@@ -821,26 +1018,16 @@ const ShopIntroSequence = ({ onComplete }) => {
 
 // --- PartnersCredits (RESTORED) ---
 const PartnersCredits = () => {
-  // Use useMemo to keep the array reference stable
-  const logos = useMemo(() => [
+  const logos = [
     "https://i.ibb.co.com/PvND9HRh/Picsart-Background-Remover.png", "https://i.ibb.co.com/YHbCZm2/Yandex-Metrika-hd-Picsart-Background-Remover.png",
     "https://i.ibb.co.com/DfQywRwj/Picsart-Background-Remover.png", "https://i.ibb.co.com/QZpjR8B/salon-cvetov-janym-photo-place-Picsart-Background-Remover.png",
     "https://i.ibb.co.com/3mKHz61B/Picsart-Background-Remover.png", "https://i.ibb.co.com/MDKssj1s/mojsklad-Picsart-Background-Remover.png"
-  ], []);
-
-  // Preload images immediately on mount
-  useEffect(() => {
-      logos.forEach(src => {
-          const img = new Image();
-          img.src = src;
-      });
-  }, [logos]);
-
+  ];
   const [currentIndex, setCurrentIndex] = useState(0);
   useEffect(() => {
     const timer = setInterval(() => { setCurrentIndex((prev) => (prev + 1) % logos.length); }, 2500);
     return () => clearInterval(timer);
-  }, [logos.length]);
+  }, []);
   const currentLogo = logos[currentIndex];
   const isYandex = currentLogo.includes("Yandex");
   const isRomantic = currentLogo.includes("janym");
@@ -882,8 +1069,7 @@ const PartnersCredits = () => {
       <div className="relative w-full h-32 flex items-center justify-center overflow-hidden bg-white/5 rounded-xl border border-[#00FF9D]/10 shadow-[0_0_30px_rgba(0,0,0,0.5)]">
          <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.03)_1px,transparent_1px),linear-gradient(deg,rgba(0,255,157,0.03)_1px,transparent_1px)] bg-[size:20px_20px]"></div>
          <div key={currentIndex} className="relative z-10 animate-[cyberReveal_0.5s_cubic-bezier(0.215,0.61,0.355,1)_both] w-full flex justify-center">
-            {/* Added loading="eager" to force immediate loading */}
-            <SmartImage src={currentLogo} alt="Partner Logo" style={specificStyle} className={logoClasses} wrapperClass="relative z-10 flex justify-center w-full" loading="eager" />
+            <SmartImage src={currentLogo} alt="Partner Logo" style={specificStyle} className={logoClasses} wrapperClass="relative z-10 flex justify-center w-full" />
          </div>
          <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-[#00FF9D]/10 to-transparent animate-[scanLine_2.5s_linear_infinite]"></div>
       </div>
@@ -911,9 +1097,9 @@ const RoiView = ({ profit, onBack, onAction }) => {
   const animatedProfit = useOdometer(conservativeProfit);
   const animatedPercentage = useOdometer(returnPercentage);
   return (
-    <div className="w-full h-full flex flex-col items-center pt-2">
+    <div className="animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col h-full items-center w-full">
         <button onClick={() => { haptic('light'); onBack(); }} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-4 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
-        <div className="w-full flex flex-col gap-4">
+        <div className="flex-grow flex flex-col items-center w-full space-y-6">
             <div className="text-center px-4 w-full"><h2 className="text-2xl sm:text-3xl font-black tracking-tighter uppercase mb-1 font-['Chakra_Petch'] leading-none whitespace-nowrap">РАСЧЁТ <span className="text-[#00FF9D]">ОКУПАЕМОСТИ</span></h2><p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] mr-[-0.3em] font-bold">Эффективность инвестиций</p></div>
             <div className="w-full glass-card p-4 rounded-2xl flex justify-between items-center border border-zinc-800"><span className="text-xs text-zinc-400 font-bold uppercase tracking-wider">Стоимость разработки</span><span className="text-sm font-black text-white font-['Chakra_Petch']">100 000 ₸</span></div>
              <div className="w-full glass-card p-4 rounded-2xl flex justify-between items-center border border-[#00FF9D]/20 bg-[#00FF9D]/5"><span className="text-xs text-zinc-400 font-bold uppercase tracking-wider">Потенциальный возврат</span><span className="text-sm font-black text-[#00FF9D] font-['Chakra_Petch']">{animatedProfit.toLocaleString()} ₸/мес</span></div>
@@ -929,6 +1115,325 @@ const RoiView = ({ profit, onBack, onAction }) => {
   );
 };
 
+// --- ANALYTICS CHART COMPONENT ---
+const AnalyticsChart = ({ leads }) => {
+    // 1. Calculate Stats
+    const stats = useMemo(() => {
+        const counts = leads.reduce((acc, lead) => {
+            const type = lead.type || 'Не указано';
+            acc[type] = (acc[type] || 0) + 1;
+            return acc;
+        }, {});
+        
+        const total = leads.length;
+        
+        return Object.keys(counts).map(key => ({
+            label: key,
+            count: counts[key],
+            percentage: total > 0 ? Math.round((counts[key] / total) * 100) : 0
+        })).sort((a, b) => b.count - a.count);
+    }, [leads]);
+
+    const maxCount = Math.max(...stats.map(s => s.count), 1);
+
+    return (
+        <div className="w-full space-y-6 animate-in fade-in duration-500">
+             {/* SUMMARY CARDS */}
+             <div className="grid grid-cols-2 gap-3">
+                 <div className="glass-card p-4 rounded-xl border border-zinc-800">
+                     <p className="text-[9px] text-zinc-500 uppercase tracking-wider mb-1">ВСЕГО ЛИДОВ</p>
+                     <p className="text-3xl font-black text-white font-mono">{leads.length}</p>
+                 </div>
+                 <div className="glass-card p-4 rounded-xl border border-zinc-800">
+                     <p className="text-[9px] text-zinc-500 uppercase tracking-wider mb-1">TOP ВЫБОР</p>
+                     <p className="text-xl font-bold text-[#00FF9D] truncate">{stats[0]?.label || '---'}</p>
+                 </div>
+             </div>
+
+             {/* BAR CHART */}
+             <div className="glass-card p-5 rounded-xl border border-zinc-800">
+                 <div className="flex items-center justify-between mb-4">
+                     <h3 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                         <BarChart2 className="w-4 h-4 text-[#00FF9D]" />
+                         Популярность услуг
+                     </h3>
+                 </div>
+                 
+                 <div className="space-y-4">
+                     {stats.map((item, idx) => (
+                         <div key={idx} className="relative">
+                             <div className="flex justify-between items-end mb-1">
+                                 <span className="text-[10px] font-bold text-zinc-300">{item.label}</span>
+                                 <span className="text-[10px] font-mono text-[#00FF9D]">{item.count} ({item.percentage}%)</span>
+                             </div>
+                             <div className="w-full h-2 bg-zinc-900 rounded-full overflow-hidden">
+                                 <div 
+                                    className="h-full bg-gradient-to-r from-[#00FF9D]/50 to-[#00FF9D] rounded-full transition-all duration-1000 ease-out relative"
+                                    style={{ width: `${(item.count / maxCount) * 100}%` }}
+                                 >
+                                      <div className="absolute right-0 top-0 bottom-0 w-2 bg-white/50 blur-[2px]"></div>
+                                 </div>
+                             </div>
+                         </div>
+                     ))}
+                     {stats.length === 0 && <p className="text-center text-[10px] text-zinc-600 py-4">Нет данных для отображения</p>}
+                 </div>
+             </div>
+
+             {/* DONUT CHART SIMULATION (CSS CONIC) */}
+             <div className="glass-card p-5 rounded-xl border border-zinc-800 flex items-center justify-between">
+                 <div>
+                    <h3 className="text-xs font-bold text-white uppercase tracking-wider mb-1 flex items-center gap-2">
+                        <PieChart className="w-4 h-4 text-[#00FF9D]" />
+                        Доли трафика
+                    </h3>
+                    <p className="text-[9px] text-zinc-500 leading-relaxed max-w-[150px]">
+                        Распределение интереса аудитории по категориям услуг.
+                    </p>
+                 </div>
+                 <div className="relative w-20 h-20 flex-shrink-0">
+                     <svg viewBox="0 0 36 36" className="w-full h-full rotate-[-90deg]">
+                        <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#111" strokeWidth="4" />
+                        {stats.map((item, i) => {
+                             // Simple calc for demo visualization of top item
+                             if (i > 0) return null; 
+                             return (
+                                <path 
+                                    key={i}
+                                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831" 
+                                    fill="none" 
+                                    stroke="#00FF9D" 
+                                    strokeWidth="4" 
+                                    strokeDasharray={`${item.percentage}, 100`}
+                                    className="animate-[widthGrow_1s_ease-out]"
+                                />
+                             )
+                        })}
+                     </svg>
+                     <div className="absolute inset-0 flex items-center justify-center flex-col">
+                         <span className="text-[8px] text-zinc-500 font-bold">TOP</span>
+                         <span className="text-[10px] font-bold text-white">{stats[0]?.percentage || 0}%</span>
+                     </div>
+                 </div>
+             </div>
+        </div>
+    );
+};
+
+
+// --- Admin Panel Component ---
+const AdminPanel = ({ leads, visitors, onBack, onClearLeads, onUpdateLead, onUpdateVisitor }) => {
+    const [activeTab, setActiveTab] = useState('visitors');
+    const [editingItem, setEditingItem] = useState(null); 
+    const [editCollection, setEditCollection] = useState(''); 
+
+    // --- Daily Visitors Calculation ---
+    const dailyVisitorsCount = useMemo(() => {
+        const todayStr = new Date().toDateString();
+        return visitors.filter(v => {
+            if (!v.lastActive) return false;
+            // Handle both Firestore Timestamp and JS Date
+            const d = v.lastActive.toDate ? v.lastActive.toDate() : new Date(v.lastActive);
+            return d.toDateString() === todayStr;
+        }).length;
+    }, [visitors]);
+
+    const handleEditClick = (item, collectionType) => {
+        setEditingItem(item);
+        setEditCollection(collectionType);
+        haptic('light');
+    };
+
+    const handleSave = (e) => {
+        e.preventDefault();
+        haptic('medium');
+        const formData = new FormData(e.target);
+        const updates = Object.fromEntries(formData.entries());
+
+        if (editCollection === 'leads') {
+            onUpdateLead(editingItem.id, updates);
+        } else if (editCollection === 'visitors') {
+            onUpdateVisitor(editingItem.id, updates);
+        }
+        setEditingItem(null);
+    };
+
+    const handleTabChange = (tab) => {
+        haptic('light');
+        setActiveTab(tab);
+    }
+
+    return (
+        <div className="animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col h-full items-center w-full relative">
+            <button onClick={() => { haptic('light'); onBack(); }} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-4 hover:opacity-70 transition-all w-fit">
+                <ChevronLeft className="w-4 h-4 mr-1" /> ВЫХОД ИЗ СИСТЕМЫ
+            </button>
+            
+            <div className="w-full flex flex-col items-center mb-6">
+                <div className="w-16 h-16 bg-zinc-900 border border-[#00FF9D]/30 rounded-full flex items-center justify-center mb-4 relative">
+                    <div className="absolute inset-0 rounded-full animate-ping bg-[#00FF9D]/10"></div>
+                    <Shield className="w-8 h-8 text-[#00FF9D]" />
+                </div>
+                <h2 className="text-2xl font-black font-['Chakra_Petch'] uppercase tracking-widest">ПАНЕЛЬ УПРАВЛЕНИЯ</h2>
+                <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] font-bold">Admin Mode: ACCESS GRANTED</p>
+            </div>
+
+            <div className="flex w-full mb-4 bg-zinc-900/50 p-1 rounded-lg border border-zinc-800 gap-1 overflow-x-auto no-scrollbar">
+                <button onClick={() => handleTabChange('stats')} className={`flex-1 py-2 px-2 whitespace-nowrap text-[9px] font-bold uppercase tracking-widest rounded-md transition-all ${activeTab === 'stats' ? 'bg-[#00FF9D] text-black shadow-lg shadow-[#00FF9D]/20' : 'text-zinc-500 hover:text-white'}`}>📊 Статистика</button>
+                <button onClick={() => handleTabChange('leads')} className={`flex-1 py-2 px-2 whitespace-nowrap text-[9px] font-bold uppercase tracking-widest rounded-md transition-all ${activeTab === 'leads' ? 'bg-[#00FF9D] text-black shadow-lg shadow-[#00FF9D]/20' : 'text-zinc-500 hover:text-white'}`}>Заявки ({leads.length})</button>
+                {/* Updated Visitors Button Label */}
+                <button onClick={() => handleTabChange('visitors')} className={`flex-1 py-2 px-2 whitespace-nowrap text-[9px] font-bold uppercase tracking-widest rounded-md transition-all ${activeTab === 'visitors' ? 'bg-[#00FF9D] text-black shadow-lg shadow-[#00FF9D]/20' : 'text-zinc-500 hover:text-white'}`}>
+                    Посетители <span className="opacity-70 text-[8px] ml-1">({dailyVisitorsCount}/{visitors.length})</span>
+                </button>
+            </div>
+
+            <div className="w-full flex-grow overflow-hidden flex flex-col">
+                <div className="flex items-center justify-between mb-3 px-1">
+                    <p className="text-[10px] text-zinc-400 uppercase tracking-widest font-bold">
+                        {activeTab === 'leads' ? 'ВХОДЯЩИЕ ЛИДЫ' : activeTab === 'visitors' ? `ТРАФИК (СЕГОДНЯ: ${dailyVisitorsCount})` : 'ОТЧЕТЫ СИСТЕМЫ'}
+                    </p>
+                    {(activeTab === 'leads' || activeTab === 'stats') && (
+                        <button onClick={() => { haptic('warning'); onClearLeads(); }} className="text-[9px] text-red-500 uppercase font-bold hover:text-red-400 flex items-center gap-1">
+                            <Trash2 className="w-3 h-3" /> {activeTab === 'stats' ? 'СБРОСИТЬ ВСЁ' : 'ОЧИСТИТЬ'}
+                        </button>
+                    )}
+                </div>
+                
+                <div className="flex-grow overflow-y-auto no-scrollbar space-y-2 pb-20">
+                    
+                    {/* STATS TAB (NEW) */}
+                    {activeTab === 'stats' && <AnalyticsChart leads={leads} />}
+
+                    {/* LEADS TAB */}
+                    {activeTab === 'leads' && (
+                        leads.length === 0 ? (
+                            <div className="text-center py-10 border border-dashed border-zinc-800 rounded-xl">
+                                <Database className="w-8 h-8 text-zinc-700 mx-auto mb-2" />
+                                <p className="text-[10px] text-zinc-600 uppercase tracking-wider">Нет новых заявок</p>
+                            </div>
+                        ) : (
+                            leads.map((lead) => (
+                                <div key={lead.id} className="glass-card p-3 rounded-lg border border-zinc-800 flex items-center justify-between group hover:border-[#00FF9D]/30 transition-all">
+                                    <div className="flex-grow">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <div className="w-1.5 h-1.5 bg-[#00FF9D] rounded-full animate-pulse"></div>
+                                            <p className="text-xs font-bold text-white font-mono">{lead.name}</p>
+                                        </div>
+                                        <p className="text-[10px] text-zinc-400 font-mono">{lead.contact}</p>
+                                        <p className="text-[8px] text-zinc-600 mt-1 uppercase tracking-wider">{lead.type}</p>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <div className="text-right">
+                                            <p className="text-[9px] text-zinc-500 font-mono">{lead.time}</p>
+                                            <a href={`https://t.me/${lead.contact.replace('@', '')}`} target="_blank" rel="noreferrer" className="mt-2 inline-block bg-[#00FF9D]/10 text-[#00FF9D] text-[8px] font-bold px-2 py-1 rounded border border-[#00FF9D]/20 hover:bg-[#00FF9D]/20">
+                                                НАПИСАТЬ
+                                            </a>
+                                        </div>
+                                        <button onClick={() => handleEditClick(lead, 'leads')} className="p-2 bg-zinc-800 rounded-full hover:bg-zinc-700 text-zinc-400 hover:text-white transition-colors">
+                                            <Edit2 className="w-3 h-3" />
+                                        </button>
+                                    </div>
+                                </div>
+                            ))
+                        )
+                    )}
+
+                    {/* VISITORS TAB */}
+                    {activeTab === 'visitors' && (
+                        visitors.length === 0 ? (
+                            <div className="text-center py-10 border border-dashed border-zinc-800 rounded-xl">
+                                <Activity className="w-8 h-8 text-zinc-700 mx-auto mb-2" />
+                                <p className="text-[10px] text-zinc-600 uppercase tracking-wider">Загрузка трафика...</p>
+                            </div>
+                        ) : (
+                            visitors.map((user) => (
+                                <div key={user.id} className="glass-card p-3 rounded-lg border border-zinc-800 flex items-center justify-between group hover:bg-[#00FF9D]/5 transition-all">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center text-[10px] font-bold text-[#00FF9D] border border-zinc-700">
+                                            {user.userName?.charAt(0)}
+                                        </div>
+                                        <div>
+                                            <p className="text-xs font-bold text-white font-mono">{user.userName}</p>
+                                            <p className="text-[9px] text-zinc-500 font-mono">ID: {user.chatId}</p>
+                                            {user.notes && <p className="text-[8px] text-[#00FF9D] mt-1 bg-[#00FF9D]/10 px-1 rounded inline-block">{user.notes}</p>}
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <div className="text-right">
+                                            <div className="flex items-center justify-end gap-1.5 mb-1">
+                                                <div className="w-1.5 h-1.5 bg-[#00FF9D] rounded-full animate-pulse shadow-[0_0_5px_#00FF9D]"></div>
+                                                <span className="text-[9px] text-[#00FF9D] font-bold uppercase">ONLINE</span>
+                                            </div>
+                                            <p className="text-[8px] text-zinc-600 font-mono">
+                                                {user.lastActive?.toDate ? user.lastActive.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Сейчас'}
+                                            </p>
+                                        </div>
+                                        <button onClick={() => handleEditClick(user, 'visitors')} className="p-2 bg-zinc-800 rounded-full hover:bg-zinc-700 text-zinc-400 hover:text-white transition-colors">
+                                            <Edit2 className="w-3 h-3" />
+                                        </button>
+                                    </div>
+                                </div>
+                            ))
+                        )
+                    )}
+                </div>
+            </div>
+
+            {/* EDIT MODAL */}
+            {editingItem && (
+                <div className="absolute inset-0 z-50 bg-black/95 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in zoom-in duration-200">
+                    <div className="w-full max-w-sm bg-[#0F0F0F] border border-[#00FF9D]/30 p-6 rounded-2xl shadow-2xl relative">
+                        <button 
+                            onClick={() => setEditingItem(null)} 
+                            className="absolute top-4 right-4 text-zinc-500 hover:text-white"
+                        >
+                            <X className="w-5 h-5" />
+                        </button>
+                        <h3 className="text-lg font-bold text-white mb-4 uppercase tracking-wider font-mono flex items-center gap-2">
+                            <Edit2 className="w-4 h-4 text-[#00FF9D]" /> 
+                            Редактирование
+                        </h3>
+                        
+                        <form onSubmit={handleSave} className="space-y-3">
+                            {editCollection === 'leads' ? (
+                                <>
+                                    <div>
+                                        <label className="text-[9px] text-zinc-500 uppercase font-bold block mb-1">Имя</label>
+                                        <input name="name" defaultValue={editingItem.name} className="w-full bg-zinc-900 border border-zinc-700 rounded p-2 text-xs text-white focus:border-[#00FF9D] outline-none" />
+                                    </div>
+                                    <div>
+                                        <label className="text-[9px] text-zinc-500 uppercase font-bold block mb-1">Контакт</label>
+                                        <input name="contact" defaultValue={editingItem.contact} className="w-full bg-zinc-900 border border-zinc-700 rounded p-2 text-xs text-white focus:border-[#00FF9D] outline-none" />
+                                    </div>
+                                    <div>
+                                        <label className="text-[9px] text-zinc-500 uppercase font-bold block mb-1">Услуга</label>
+                                        <input name="type" defaultValue={editingItem.type} className="w-full bg-zinc-900 border border-zinc-700 rounded p-2 text-xs text-white focus:border-[#00FF9D] outline-none" />
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                                    <div className="mb-2">
+                                        <p className="text-[10px] text-zinc-400">ID: {editingItem.chatId}</p>
+                                        <p className="text-[10px] text-zinc-400">Name: {editingItem.userName}</p>
+                                    </div>
+                                    <div>
+                                        <label className="text-[9px] text-zinc-500 uppercase font-bold block mb-1">Заметки о клиенте</label>
+                                        <textarea name="notes" defaultValue={editingItem.notes || ''} placeholder="Например: интересовался обучением..." className="w-full bg-zinc-900 border border-zinc-700 rounded p-2 text-xs text-white focus:border-[#00FF9D] outline-none h-20 resize-none" />
+                                    </div>
+                                </>
+                            )}
+                            
+                            <button type="submit" className="w-full bg-[#00FF9D] hover:bg-[#00FF9D]/90 text-black font-bold uppercase text-xs py-3 rounded-xl mt-4 flex items-center justify-center gap-2">
+                                <Save className="w-4 h-4" /> Сохранить
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
+
 const App = () => {
   useEffect(() => { console.log("Taipan Media App Initialized"); }, []);
   const [currentView, setCurrentView] = useState('role_selection'); 
@@ -940,9 +1445,13 @@ const App = () => {
   const [activeSlide, setActiveSlide] = useState(0);
   const [onlineCount, setOnlineCount] = useState(0);
   
-  // NEW: Certificate State (Expanded/Collapsed)
-  const [isCertExpanded, setIsCertExpanded] = useState(false);
+  // Admin & Leads State
+  const [isAdminAuthOpen, setIsAdminAuthOpen] = useState(false);
+  const [tapCount, setTapCount] = useState(0);
+  const [leads, setLeads] = useState([]); 
+
   // --- REAL VISITORS STATE ---
+  const [visitors, setVisitors] = useState([]);
   const [firebaseUser, setFirebaseUser] = useState(null);
 
   // State for Bane Intro
@@ -954,7 +1463,6 @@ const App = () => {
   const [userRole, setUserRole] = useState('business'); 
   const [currentUserId, setCurrentUserId] = useState(null); 
   const [spotsLeft, setSpotsLeft] = useState(4);
-  const [referralCount, setReferralCount] = useState(0);
 
   // New State for Academy Calculator (Lifted Up)
   const [academyCalcData, setAcademyCalcData] = useState({ salary: 300000, days: 22, hours: 8 });
@@ -966,9 +1474,7 @@ const App = () => {
   const animatedHourlyRate = useOdometer(currentHourlyRate);
 
   // --- BUSINESS LOGIC: Profit Calculation ---
-  // --- UPDATED: Initialized with default values for better UX ---
-  const [calcData, setCalcData] = useState({ traffic: 300, conversion: 5, avgCheck: 5000, margin: 30 });
-  
+  const [calcData, setCalcData] = useState({ traffic: 0, conversion: 0, avgCheck: 0, margin: 0 });
   const calculateProfit = () => {
       // Logic for Business Profit (from ROI calculator)
       const sales = Math.floor(calcData.traffic * (calcData.conversion / 100));
@@ -989,73 +1495,6 @@ const App = () => {
       { id: 1, name: 'Алишер К.', date: '27.01.26', profit: 5000 },
       { id: 2, name: 'Елена М.', date: '28.01.26', profit: 5000 }
   ]);
-
-  // --- REVIEW DATA WITH SCREENSHOTS ---
-  const reviewsData = [
-    {
-        id: 1,
-        name: "Алишер К.",
-        role: "Ниша: Кофейни / Аксессуары",
-        avatar: "https://images.unsplash.com/photo-1542909168-82c3e7fdca5c?w=150&h=150&fit=crop&q=80",
-        feedback: "Собрал магаз для кофейни у дома . Кофейня уже 20 заказов через бот приняла, владелец в шоке, что так можно было без сайта)) Первый раз получил предоплату в криптовалюте, и вывел на карту сразу, круто)",
-        earnings: "450 000 ₸",
-        proofImage: "https://i.ibb.co.com/Kvmr7bZ/5474580197450387272.jpg"
-    },
-    {
-        id: 2,
-        name: "Мария Б.",
-        role: "В декрете",
-        avatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&h=150&fit=crop&q=80",
-        feedback: "Сначала вообще не вдупляла, как этот токен вставить 😅, куратор буквально за руку провел. Было страшно называть первый раз цену клиенту, поэтому разбили на 3 платежа, сейчас магазин функционирует, а я заработала из дома, не отрываясь от ребёнка, ведь делала всё с телефона. Не миллионы, но свои деньги.",
-        earnings: "120 000 ₸",
-        proofImage: "https://i.ibb.co.com/pjwKctd3/5474580197450387273.jpg"
-    },
-    {
-        id: 3,
-        name: "Карашаш П.",
-        role: "Заработала 280 000 ₸",
-        avatar: "https://images.unsplash.com/photo-1569913486515-b74bf7751574?w=150&h=150&fit=crop&q=80",
-        feedback: "Долго сомневалась, но использовала обучения по продажам. Написала в несколько табачных магазинов, так как эта сфера более знакома, и один откликнулся и купил, прыгала от счастья по кваритире после оплаты, а заполнила магазин за 2 часа буквально",
-        earnings: "280 000 ₸",
-        proofImage: "https://i.ibb.co.com/hxgnbJ1Z/5474580197450387274.jpg"
-    }
-  ];
-
-  // Function to save user segment (Business or Academy)
-  const saveUserSegment = async (segment) => {
-      if (!currentUserId) return;
-      try {
-          const userRef = doc(db, 'artifacts', appId, 'public', 'data', 'app_visitors', currentUserId.toString());
-          // Update segment and lastActive. Using merge to keep referrerId and other data.
-          await setDoc(userRef, { segment: segment, lastActive: serverTimestamp() }, { merge: true });
-      } catch (e) {
-          console.error("Error saving segment:", e);
-      }
-  };
-
-  // --- FIREBASE SETUP & AUTH ---
-  useEffect(() => {
-    const initAuth = async () => {
-      try {
-        // 1. Try Custom Token (Canvas/Preview Env)
-        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-           await signInWithCustomToken(auth, __initial_auth_token);
-        } else {
-           // 2. Fallback to Anonymous (Real App/Browser)
-           await signInAnonymously(auth);
-        }
-      } catch (e) {
-        console.warn("Auth failed (will try anonymous fallback):", e);
-        // 3. Robust Fallback: If custom token fails (e.g. project mismatch), try anonymous
-        try {
-            await signInAnonymously(auth);
-        } catch (anonError) {
-            console.error("Anonymous auth also failed:", anonError);
-        }
-      }
-    };
-    initAuth();
-  }, []);
 
   // --- TELEGRAM MAIN BUTTON INTEGRATION (FOR MODAL) ---
   useEffect(() => {
@@ -1093,104 +1532,103 @@ const App = () => {
       return () => unsubscribe();
   }, []);
 
-  // --- REFERRAL COUNT EFFECT ---
-  useEffect(() => {
-    if (!currentUserId) return;
-    const vRef = collection(db, 'artifacts', appId, 'public', 'data', 'app_visitors');
-    const q = query(vRef, where("referrerId", "==", currentUserId.toString()));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-        setReferralCount(snapshot.size);
-    });
-    return () => unsubscribe();
-  }, [currentUserId]);
-
   // --- FIREBASE TRACKING EFFECT ---
   useEffect(() => {
     const initApp = async () => {
         const tg = window.Telegram?.WebApp;
         if (tg) {
             tg.ready();
-            tg.expand();
+            tg.expand(); 
             const user = tg.initDataUnsafe?.user;
-            
+            if (user?.first_name) {
+                setUserName(user.first_name.toUpperCase());
+            }
             if (user?.id) {
-                setCurrentUserId(user.id);
-                setUserName(user.first_name?.toUpperCase() || 'AGENT');
-                
+                setCurrentUserId(user.id); 
                 try {
-                    // Note: Auth now handled separately in initAuth useEffect
-                    // We just handle saving user data here once we know who they are
-
-                    // --- REFERRAL LOGIC ---
-                    const startParam = tg.initDataUnsafe?.start_param;
-                    const currentUserIdStr = user.id.toString();
-                    let referralData = {};
-                    
-                    if (startParam && startParam !== currentUserIdStr) {
-                        referralData = { 
-                            referrerId: startParam,
-                            referredAt: serverTimestamp() 
-                        };
-                    }
-
-                    // Логика записи в базу (Firestore)
-                    const userRef = doc(db, 'artifacts', appId, 'public', 'data', 'app_visitors', currentUserIdStr);
-                    
-                    // Проверяем существование, чтобы не перезаписать реферера
-                    // Using getDoc requires auth to be ready, but this effect might run fast.
-                    // Ideally we wait for firebaseUser but simplified here.
-                    
-                    // Just ensure we write basic data if auth is ready
-                    if (auth.currentUser) {
-                        const userSnap = await getDoc(userRef);
-                        let dataToSave = {
-                            chatId: user.id,
-                            userName: user.first_name || 'Агент',
-                            lastActive: serverTimestamp(),
-                            notified: false
-                        };
-
-                        // Сохраняем реферера только если его еще нет
-                        if ((!userSnap.exists() || !userSnap.data()?.referrerId) && referralData.referrerId) {
-                              dataToSave = { ...dataToSave, ...referralData };
-                        }
-
-                        await setDoc(userRef, dataToSave, { merge: true });
-                        console.log("📡 СВЯЗЬ С ТЕРМИНАЛОМ УСТАНОВЛЕНА");
-                    }
+                    await signInAnonymously(auth);
+                    const userRef = doc(db, 'artifacts', appId, 'public', 'data', 'app_visitors', user.id.toString());
+                    await setDoc(userRef, {
+                        chatId: user.id,
+                        userName: user.first_name || 'Агент',
+                        lastActive: serverTimestamp(),
+                        notified: false 
+                    }, { merge: true });
+                    console.log("📡 СВЯЗЬ С ТЕРМИНАЛОМ УСТАНОВЛЕНА");
                 } catch (e) {
-                    console.error("❌ Ошибка инициализации данных:", e.message);
+                    console.error("Ошибка синхронизации с базой:", e);
                 }
             }
         }
     };
-    // Run initApp when auth state changes (so we are logged in before writing)
-    if (firebaseUser) {
-        initApp();
-    }
+    initApp();
     const timer = setTimeout(() => {
         setSpotsLeft(prev => prev > 2 ? prev - 1 : prev);
     }, 15000); 
     return () => clearTimeout(timer);
-  }, [firebaseUser]);
+  }, []);
 
-  // --- PRELOAD KASPI CAROUSEL IMAGES ---
+  // --- PRELOAD IMAGES (CAROUSEL & CASES) ---
   useEffect(() => {
       const images = [
+        // Kaspi Carousel
         "https://i.ibb.co.com/Fp52kXy/666.png", 
         "https://i.ibb.co.com/9H5ZxPfy/555.png",
         "https://i.ibb.co.com/bjV5YtR2/444.png", 
         "https://i.ibb.co.com/Q3k778bd/333.png", 
         "https://i.ibb.co.com/M5tCqhDs/222.png", 
-        "https://i.ibb.co.com/BV1gXyf7/111.png"
+        "https://i.ibb.co.com/BV1gXyf7/111.png",
+        // Case Studies (Preload for faster display)
+        "https://i.ibb.co.com/gMTG4QXt/5438294939344244553.jpg",
+        "https://i.ibb.co.com/ks9Sz9zz/5438294939344244554.jpg"
       ];
       // Keep references to prevent GC
-      window.preloadedKaspiImages = images.map(src => {
+      window.preloadedImages = images.map(src => {
           const img = new Image();
           img.src = src;
           return img;
       });
   }, []);
+
+  // --- FETCH REAL VISITORS FOR ADMIN ---
+  useEffect(() => {
+      if (currentView === 'admin' && firebaseUser) {
+          const usersCollection = collection(db, 'artifacts', appId, 'public', 'data', 'app_visitors');
+          const unsubscribe = onSnapshot(usersCollection, (snapshot) => {
+              const usersData = snapshot.docs.map(doc => ({
+                  id: doc.id,
+                  ...doc.data()
+              }));
+              
+              usersData.sort((a, b) => {
+                    const timeA = a.lastActive?.toMillis ? a.lastActive.toMillis() : 0;
+                    const timeB = b.lastActive?.toMillis ? b.lastActive.toMillis() : 0;
+                    return timeB - timeA;
+              });
+
+              setVisitors(usersData.slice(0, 50)); 
+          }, (error) => {
+              console.error("Admin fetch error:", error);
+          });
+          return () => unsubscribe();
+      }
+  }, [currentView, firebaseUser]);
+
+  // --- UPDATE FUNCTIONS ---
+  const updateLead = (id, newData) => {
+      setLeads(prev => prev.map(lead => lead.id === id ? { ...lead, ...newData } : lead));
+  };
+
+  const updateVisitor = async (id, newData) => {
+      try {
+          const visitorRef = doc(db, 'artifacts', appId, 'public', 'data', 'app_visitors', id);
+          await updateDoc(visitorRef, newData);
+          console.log("Visitor updated successfully");
+      } catch (e) {
+          console.error("Error updating visitor:", e);
+      }
+  };
+
   useEffect(() => {
     setOnlineCount(Math.floor(Math.random() * 16)); 
     const interval = setInterval(() => { setOnlineCount(Math.floor(Math.random() * 16)); }, 60000); 
@@ -1218,8 +1656,6 @@ const App = () => {
     let height = window.innerHeight;
     let columns, drops = [];
     const chars = "TAIPAN0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    const fontSize = 14;
-
     const initMatrix = () => {
       width = canvas.width = window.innerWidth;
       height = canvas.height = window.innerHeight;
@@ -1258,8 +1694,17 @@ const App = () => {
     e.preventDefault(); 
     notify('success');
 
-    // Removed logic to update 'leads' state since AdminPanel is gone.
-    // Just showing the toast now.
+    const name = e.target[0].value;
+    const contact = e.target[1].value;
+
+    const newLead = {
+        id: Date.now(), 
+        name: name,
+        contact: contact,
+        type: modalType,
+        time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+    };
+    setLeads(prev => [newLead, ...prev]);
 
     closeModal(); 
     setShowToast(true); 
@@ -1278,50 +1723,62 @@ const App = () => {
     setCurrentView('education');
   }
   const handleStrategyClick = () => {
-        haptic('light');
-        setCurrentView('strategy');
+       haptic('light');
+       setCurrentView('strategy');
   };
   const handleBackClick = (target) => {
     haptic('light');
     setCurrentView(target);
   }
   const handleAboutClick = () => {
-        haptic('medium');
-        setBaneIntroActive(true);
+       haptic('medium');
+       setBaneIntroActive(true);
   }
   const handleBaneIntroComplete = () => {
-        setBaneIntroActive(false);
-        setCurrentView('about');
+       setBaneIntroActive(false);
+       setCurrentView('about');
   }
+
+  // --- Admin Logic ---
+  const handleTitleClick = () => {
+      setTapCount(prev => {
+          const newCount = prev + 1;
+          if (newCount >= 5) {
+              haptic('warning');
+              setIsAdminAuthOpen(true);
+              return 0;
+          }
+          haptic('light');
+          return newCount;
+      });
+  };
+
+  const handleAdminAuth = (e) => {
+      e.preventDefault();
+      const code = e.target[0].value;
+      if (code === 'admin') {
+          haptic('success');
+          setIsAdminAuthOpen(false);
+          setCurrentView('admin');
+      } else {
+          haptic('error');
+          alert("ACCESS DENIED");
+      }
+  };
+
   const faqItems = [
-    { id: 'stats', question: "Это вообще покупают?", icon: <TrendingUp className="w-5 h-5 text-stranger-red" />, component: (<div className="w-full"><WordstatGraph /><h3 className="text-white font-bold mb-3 uppercase tracking-wide text-sm font-mono leading-tight">6 650 человек ищут тебя. Как долго ты будешь их игнорировать?</h3><p className="text-sm text-zinc-300 leading-relaxed border-l-2 border-[#00FF9D]/50 pl-4 mb-4">Это официальная статистика Яндекса: <span className="text-stranger-red font-bold">6 650</span> прямых запросов на ТГ-магазины в месяц.<br/><br/>Пока ты ищешь «подходящий момент», наши ученики уже забирают эти чеки по <span className="text-white font-bold">100 000₸</span>, просто потому что они оказались на связи.<br/><br/>Мы даем тебе все инструменты и доступ к этому потоку. Твой результат — это просто вопрос того, возьмешь ли ты готовую систему и начнешь ли по ней работать.<br/><br/><span className="text-[#00FF9D] italic font-medium">Рынок платит тем, кто действует, а не тем, кто наблюдает.</span></p></div>) },
-    { id: 'proof', question: "А это реально работает?", icon: <Lock className="w-5 h-5 text-stranger-red" />, component: (<div className="w-full"><HackerProof /><p className="text-sm text-zinc-300 leading-relaxed border-l-2 border-[#00FF9D]/50 pl-4 mb-2">Пока ты сомневаешься, <span className="text-stranger-red font-bold">Карашаш</span> прошла наше обучение и уже забирает свои <span className="text-white font-bold">100 000₸</span>.<br/><br/>На скриншоте — результат её работы. Она просто взяла знания, которые мы даём, и закрыла одного из <span className="text-stranger-red font-bold">6 650</span> горячих клиентов в Яндексе. Ей не нужен был «подходящий момент», ей нужна была рабочая система.<br/><br/><span className="text-white italic">Рынок пустой. Деньги на столе. Ты следующий или так и будешь смотреть на чужие чеки?</span></p></div>) },
-    { id: 'difficulty', question: "А сложно это делать?", icon: <Zap className="w-5 h-5 text-stranger-red" />, component: (<div className="w-full"><SkillScanner /> <SetupTimeline /><p className="text-sm text-zinc-300 leading-relaxed border-l-2 border-[#00FF9D]/50 pl-4 mb-4"><span className="text-white font-bold">Программистом быть не нужно.</span><br/><br/>Собрать такой магазин проще, чем выложить пост в Инстаграм. Мы даем всё готовое: ты просто расставляешь блоки по местам за один вечер.<br/><br/><span className="text-[#00FF9D] font-bold">Работай с телефона:</span> Не нужен компьютер, всё настраивается прямо в смартфоне.<br/><br/><span className="text-[#00FF9D] font-bold">Для декрета или совмещения:</span> Занимайся этим, пока ребенок спит или после основной работы.<br/><br/><span className="text-[#00FF9D] font-bold">Просто и понятно:</span> Если умеешь переписываться в Telegram — ты справишься.<br/><br/><span className="text-white font-bold italic">Хватит смотреть на чужие чеки. Заходи и делай свои.</span></p></div>) },
-    { id: 'calc', question: "Найду ли я клиентов?", icon: <Wallet className="w-5 h-5 text-stranger-red" />, isCalc: true, component: (<div className="w-full"><ClientDemandProof /><div className="text-sm text-zinc-300 leading-relaxed border-l-2 border-[#00FF9D]/50 pl-4 mb-4"><p><span className="text-white font-bold">Ты не просто их найдешь — они тоже будут тебя искать.</span></p><br/><p>Статистика Яндекса не врет: каждый месяц <span className="text-[#00FF9D] font-bold">6 650</span> предпринимателей ищут, кто сделает им магазин в Telegram. Спрос огромный, а тех, кто умеет делать это качественно — единицы.</p><br/><p>На обучении мы даем не только технические навыки, но и <span className="text-white font-bold">полную систему продаж</span>:</p><br/><ul className="list-disc pl-4 space-y-2"><li><span className="text-[#00FF9D] font-bold">Где брать клиентов:</span> Покажем, как выйти на те самые тысячи заказов.</li><li><span className="text-[#00FF9D] font-bold">Как продавать:</span> Научим вести переговоры с бизнесменами и закрывать сделки на высокие чеки.</li><li><span className="text-[#00FF9D] font-bold">Готовые шаблоны предложений:</span> Тебе не нужно ничего придумывать — просто бери наше проверенное КП и отправляй клиенту.</li></ul><br/><p>Мы научим тебя делать результат «под ключ», чтобы ты мог уверенно забирать свои <span className="text-white font-bold">100 000₸</span> за проект.</p></div></div>) }
+    { id: 'stats', question: "Это вообще покупают?", icon: <TrendingUp className="w-5 h-5 text-[#00FF9D]" />, component: (<div className="w-full"><WordstatGraph /><h3 className="text-white font-bold mb-3 uppercase tracking-wide text-sm font-['Chakra_Petch'] leading-tight">6 650 человек ищут тебя. Как долго ты будешь их игнорировать?</h3><p className="text-sm text-zinc-300 leading-relaxed border-l-2 border-[#00FF9D]/50 pl-4 mb-4">Это официальная статистика Яндекса: <span className="text-[#00FF9D] font-bold">6 650</span> прямых запросов на ТГ-магазины в месяц.<br/><br/>Пока ты ищешь «подходящий момент», наши ученики уже забирают эти чеки по <span className="text-white font-bold">100 000₸</span>, просто потому что они оказались на связи.<br/><br/>Мы даем тебе все инструменты и доступ к этому потоку. Твой результат — это просто вопрос того, возьмешь ли ты готовую систему и начнешь ли по ней работать.<br/><br/><span className="text-[#00FF9D] italic font-medium">Рынок платит тем, кто действует, а не тем, кто наблюдает.</span></p></div>) },
+    { id: 'proof', question: "А это реально работает?", icon: <Lock className="w-5 h-5 text-[#00FF9D]" />, component: (<div className="w-full"><HackerProof /><p className="text-sm text-zinc-300 leading-relaxed border-l-2 border-[#00FF9D]/50 pl-4 mb-2">Пока ты сомневаешься, <span className="text-[#00FF9D] font-bold">Карашаш</span> прошла наше обучение и уже забирает свои <span className="text-white font-bold">100 000₸</span>.<br/><br/>На скриншоте — результат её работы. Она просто взяла знания, которые мы даём, и закрыла одного из <span className="text-[#00FF9D] font-bold">6 650</span> горячих клиентов в Яндексе. Ей не нужен был «подходящий момент», ей нужна была рабочая система.<br/><br/><span className="text-white italic">Рынок пустой. Деньги на столе. Ты следующий или так и будешь смотреть на чужие чеки?</span></p></div>) },
+    { id: 'difficulty', question: "А сложно это делать?", icon: <Zap className="w-5 h-5 text-[#00FF9D]" />, component: (<div className="w-full"><SkillScanner /> <SetupTimeline /><p className="text-sm text-zinc-300 leading-relaxed border-l-2 border-[#00FF9D]/50 pl-4 mb-4"><span className="text-white font-bold">Программистом быть не нужно.</span><br/><br/>Собрать такой магазин проще, чем выложить пост в Инстаграм. Мы даем всё готовое: ты просто расставляешь блоки по местам за один вечер.<br/><br/><span className="text-[#00FF9D] font-bold">Работай с телефона:</span> Не нужен компьютер, всё настраивается прямо в смартфоне.<br/><br/><span className="text-[#00FF9D] font-bold">Для декрета или совмещения:</span> Занимайся этим, пока ребенок спит или после основной работы.<br/><br/><span className="text-[#00FF9D] font-bold">Просто и понятно:</span> Если умеешь переписываться в Telegram — ты справишься.<br/><br/><span className="text-white font-bold italic">Хватит смотреть на чужие чеки. Заходи и делай свои.</span></p></div>) },
+    { id: 'calc', question: "Найду ли я клиентов?", icon: <Wallet className="w-5 h-5 text-[#00FF9D]" />, isCalc: true, component: (<div className="w-full"><ClientDemandProof /><div className="text-sm text-zinc-300 leading-relaxed border-l-2 border-[#00FF9D]/50 pl-4 mb-4"><p><span className="text-white font-bold">Ты не просто их найдешь — они тоже будут тебя искать.</span></p><br/><p>Статистика Яндекса не врет: каждый месяц <span className="text-[#00FF9D] font-bold">6 650</span> предпринимателей ищут, кто сделает им магазин в Telegram. Спрос огромный, а тех, кто умеет делать это качественно — единицы.</p><br/><p>На обучении мы даем не только технические навыки, но и <span className="text-white font-bold">полную систему продаж</span>:</p><br/><ul className="list-disc pl-4 space-y-2"><li><span className="text-[#00FF9D] font-bold">Где брать клиентов:</span> Покажем, как выйти на те самые тысячи заказов.</li><li><span className="text-[#00FF9D] font-bold">Как продавать:</span> Научим вести переговоры с бизнесменами и закрывать сделки на высокие чеки.</li><li><span className="text-[#00FF9D] font-bold">Готовые шаблоны предложений:</span> Тебе не нужно ничего придумывать — просто бери наше проверенное КП и отправляй клиенту.</li></ul><br/><p>Мы научим тебя делать результат «под ключ», чтобы ты мог уверенно забирать свои <span className="text-white font-bold">100 000₸</span> за проект.</p></div></div>) }
   ];
 
   return (
-    <div className="min-h-[100dvh] bg-[#050505] text-white font-sans selection:bg-[#00FF9D]/30 relative flex flex-col">
+    <div className="min-h-screen bg-[#050505] text-white font-sans selection:bg-[#00FF9D]/30 relative overflow-hidden flex flex-col">
       <GlobalStyles />
       {/* Bane Intro Overlay */}
       {baneIntroActive && <BaneIntro onComplete={handleBaneIntroComplete} />}
-      {/* GLOBAL IMAGE VIEWER MODAL */}
-      {previewImage && (
-        <div 
-          className="fixed inset-0 z-[300] bg-black/95 flex items-center justify-center p-4 cursor-zoom-out" 
-          onClick={() => { haptic('light'); setPreviewImage(null); }}
-        >
-          {/* Уменьшил max-w-2xl до max-w-sm (размер смартфона), чтобы скриншоты не были огромными */}
-          <div className="relative w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
-             <SmartImage src={previewImage} className="w-full h-auto rounded-lg border border-[#00FF9D]/30 shadow-[0_0_50px_rgba(0,255,157,0.1)]" alt="Preview" />
-             <div className="absolute top-4 right-4 bg-black/60 rounded-full p-2 cursor-pointer border border-zinc-700" onClick={() => setPreviewImage(null)}>
-                <X className="w-5 h-5 text-white" />
-             </div>
-             <p className="text-center text-zinc-500 font-mono text-[10px] mt-4 uppercase animate-pulse">Нажмите за пределами, чтобы закрыть</p>
-          </div>
-        </div>
-      )}
-
+      
       {/* MATRIX BACKGROUND COMPONENT (FIXED z-index and position) */}
       <MatrixBackground />
 
@@ -1335,7 +1792,7 @@ const App = () => {
       <div className="relative z-10 flex-grow flex flex-col max-w-lg mx-auto w-full px-4 pt-5 pb-20">
         
         {currentView === 'role_selection' && (
-          <div className="flex flex-col items-center justify-center h-full w-full px-4 pt-5 pb-20">
+          <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 flex flex-col items-center justify-center h-full w-full px-4 pt-5 pb-20">
               <div className="text-center mb-12">
                   {/* GLOWING TITLE */}
                   <h1 className="font-['Chakra_Petch'] font-[700] uppercase tracking-[0.15em] whitespace-nowrap overflow-visible relative block w-full text-center" style={{ fontSize: 'clamp(1.5rem, 8.5vw, 3.5rem)', textShadow: '0 0 20px #00FF9D', color: '#ffffff' }}>
@@ -1351,12 +1808,7 @@ const App = () => {
               
               <div className="w-full space-y-4 mb-8 flex flex-col items-center">
                   {/* BUSINESS CARD */}
-                  <div onClick={() => { 
-                      setUserRole('business'); 
-                      saveUserSegment('business'); // SAVE SEGMENT
-                      setCurrentView('main'); 
-                      haptic('medium'); 
-                  }} className="group relative w-10/12 max-w-[280px] bg-zinc-900/60 border border-[#00FF9D]/20 p-1 rounded-3xl overflow-hidden transition-all duration-300 hover:border-[#00FF9D] hover:shadow-[0_0_30px_rgba(0,255,157,0.15)] active:scale-[0.98] cursor-pointer">
+                  <div onClick={() => { setUserRole('business'); setCurrentView('main'); haptic('medium'); }} className="group relative w-10/12 max-w-[280px] bg-zinc-900/60 backdrop-blur-xl border border-[#00FF9D]/20 p-1 rounded-3xl overflow-hidden transition-all duration-300 hover:border-[#00FF9D] hover:shadow-[0_0_30px_rgba(0,255,157,0.15)] active:scale-[0.98] cursor-pointer">
                       <div className="absolute inset-0 bg-gradient-to-r from-[#00FF9D]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                       <div className="relative flex flex-col items-center justify-center bg-[#050505]/50 rounded-[20px] p-5 h-full text-center">
                           <div className="w-14 h-14 mb-3 rounded-full bg-gradient-to-br from-[#00FF9D]/20 to-black border border-[#00FF9D]/30 flex items-center justify-center shadow-[0_0_15px_rgba(0,255,157,0.1)] group-hover:scale-110 transition-transform duration-300">
@@ -1371,11 +1823,10 @@ const App = () => {
                   {/* ACADEMY CARD */}
                   <div onClick={() => { 
                       setUserRole('academy'); 
-                      saveUserSegment('academy'); // SAVE SEGMENT
                       setPreviousView('role_selection'); // Запоминаем, что пришли с выбора роли
                       setCurrentView('education'); 
                       haptic('medium'); 
-                  }} className="group relative w-10/12 max-w-[280px] bg-zinc-900/60 border border-blue-500/20 p-1 rounded-3xl overflow-hidden transition-all duration-300 hover:border-blue-500 hover:shadow-[0_0_30px_rgba(59,130,246,0.15)] active:scale-[0.98] cursor-pointer">
+                  }} className="group relative w-10/12 max-w-[280px] bg-zinc-900/60 backdrop-blur-xl border border-blue-500/20 p-1 rounded-3xl overflow-hidden transition-all duration-300 hover:border-blue-500 hover:shadow-[0_0_30px_rgba(59,130,246,0.15)] active:scale-[0.98] cursor-pointer">
                       <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                       <div className="relative flex flex-col items-center justify-center bg-[#050505]/50 rounded-[20px] p-5 h-full text-center">
                           <div className="w-14 h-14 mb-3 rounded-full bg-gradient-to-br from-blue-500/20 to-black border border-blue-500/30 flex items-center justify-center shadow-[0_0_15px_rgba(59,130,246,0.1)] group-hover:scale-110 transition-transform duration-300">
@@ -1396,9 +1847,10 @@ const App = () => {
           </div>
         )}
         
+        {/* ... (Rest of the component remains exactly the same: main, shop, calculator, etc.) ... */}
         {currentView === 'main' && (
-          <div className="flex flex-col items-center w-full">
-            <div className="mb-14 w-full text-center">
+          <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 flex flex-col items-center w-full">
+            <div className="mb-14 w-full text-center" onClick={handleTitleClick}>
               <h1 className="font-['Chakra_Petch'] font-[700] uppercase tracking-[0.15em] whitespace-nowrap overflow-visible relative block w-full text-center select-none cursor-pointer active:scale-95 transition-transform" style={{ fontSize: 'clamp(1.5rem, 8.5vw, 3.5rem)', textShadow: '0 0 20px rgba(0,255,157,0.3)', color: '#ffffff' }}>
                 <span className="relative inline-block mr-[-0.15em]">TAIPAN MEDIA<span className="absolute inset-0 -z-10 opacity-40 blur-[12px] animate-pulse text-[#00FF9D]">TAIPAN MEDIA</span></span>
               </h1>
@@ -1428,33 +1880,29 @@ const App = () => {
                             <span className="text-base font-bold text-white relative z-10 font-['Chakra_Petch'] tracking-wider">ТЕЛЕГРАМ МАГАЗИН</span>
                             <p className="text-[9px] text-zinc-400 relative z-10 uppercase tracking-widest mt-0.5">Заказать разработку под ключ</p>
                         </div>
-
                         <div className="grid grid-cols-3 gap-2">
-                            <div onClick={() => setCurrentView('calculator')} className="glass-card p-3 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-[#00FF9D]/30 transition-all h-auto py-4 group">
-                                <Wallet className="w-8 h-8 text-zinc-500 group-hover:text-[#00FF9D] mb-2 transition-colors" />
-                                <span className="text-[10px] font-bold text-zinc-300 text-center leading-tight uppercase tracking-wider mb-1 font-mono">ROI</span>
-                                <span className="text-[8px] text-zinc-500 text-center leading-tight font-mono">Рассчитайте потенциальную прибыль</span>
+                            <div onClick={() => setCurrentView('calculator')} className="glass-card p-3 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-[#00FF9D]/30 transition-all h-28 group">
+                                <Wallet className="w-8 h-8 text-zinc-500 group-hover:text-[#00FF9D] mb-3 transition-colors" />
+                                <span className="text-[10px] font-bold text-zinc-300 text-center leading-tight uppercase tracking-wider">ROI</span>
                             </div>
-
-                            <div onClick={() => openModal('Mini App')} className="glass-card p-3 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-[#00FF9D]/30 transition-all h-auto py-4 group">
-                                <Code className="w-8 h-8 text-zinc-500 group-hover:text-[#00FF9D] mb-2 transition-colors" />
-                                <span className="text-[10px] font-bold text-zinc-300 text-center leading-tight uppercase tracking-wider mb-1 font-mono">Mini App</span>
-                                <span className="text-[8px] text-zinc-500 text-center leading-tight font-mono">Заказать персональный</span>
+                            <div onClick={() => openModal('Mini App')} className="glass-card p-3 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-[#00FF9D]/30 transition-all h-28 group">
+                                <Code className="w-8 h-8 text-zinc-500 group-hover:text-[#00FF9D] mb-3 transition-colors" />
+                                <span className="text-[10px] font-bold text-zinc-300 text-center leading-tight uppercase tracking-wider">Mini App</span>
                             </div>
-
-                            <div onClick={() => setCurrentView('cases')} className="glass-card p-3 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-[#00FF9D]/30 transition-all h-auto py-4 group">
-                                <TrendingUp className="w-8 h-8 text-zinc-500 group-hover:text-[#00FF9D] mb-2 transition-colors" />
-                                <span className="text-[10px] font-bold text-zinc-300 text-center leading-tight uppercase tracking-wider mb-1 font-mono">Кейсы</span>
-                                <span className="text-[8px] text-zinc-500 text-center leading-tight font-mono">Примеры партнёров</span>
+                            <div onClick={() => setCurrentView('cases')} className="glass-card p-3 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-[#00FF9D]/30 transition-all h-28 group">
+                                <TrendingUp className="w-8 h-8 text-zinc-500 group-hover:text-[#00FF9D] mb-3 transition-colors" />
+                                <span className="text-[10px] font-bold text-zinc-300 text-center leading-tight uppercase tracking-wider">Кейсы</span>
                             </div>
                         </div>
 
+                        {/* NEW: Personal Cabinet Button for Business (Centered, No Arrow) */}
                         <div onClick={() => setCurrentView('strategy')} className="glass-card p-4 rounded-2xl flex items-center justify-center cursor-pointer border-white/5 hover:border-[#00FF9D]/30 hover:bg-[#00FF9D]/5 transition-all group mt-2 relative">
                              <div className="absolute left-4 p-2 rounded-full bg-zinc-800/50 border border-white/10 group-hover:border-[#00FF9D]/30 transition-colors">
                                 <Users className="w-5 h-5 text-zinc-400 group-hover:text-[#00FF9D] transition-colors" />
                              </div>
                              <div className="text-center">
                                 <h4 className="text-sm font-bold text-white group-hover:text-[#00FF9D] transition-colors font-['Chakra_Petch'] tracking-wider uppercase">ЛИЧНЫЙ КАБИНЕТ</h4>
+                                <p className="text-[9px] text-zinc-500 font-mono">Статус заказов и профиль</p>
                              </div>
                         </div>
                     </>
@@ -1466,34 +1914,24 @@ const App = () => {
                         <div onClick={() => setCurrentView('program')} className="glass-card p-4 rounded-2xl flex flex-col items-center justify-center cursor-pointer border-[#00FF9D]/40 hover:bg-[#00FF9D]/10 transition-all text-center relative overflow-hidden group mb-2">
                             <div className="absolute inset-0 bg-gradient-to-br from-[#00FF9D]/10 to-transparent opacity-50"></div>
                             <GraduationCap className="w-8 h-8 text-[#00FF9D] mb-1.5 relative z-10" />
-                            <span className="text-base font-bold text-white relative z-10 font-['Chakra_Petch'] tracking-wider">ОБУЧЕНИЕ</span>
-                            <p className="text-[9px] text-zinc-400 relative z-10 uppercase tracking-widest mt-0.5">Узнайте пошаговую программу выхода на новый доход</p>
+                            <span className="text-base font-bold text-white relative z-10 font-['Chakra_Petch'] tracking-wider">НАЧАТЬ ОБУЧЕНИЕ</span>
+                            <p className="text-[9px] text-zinc-400 relative z-10 uppercase tracking-widest mt-0.5">Пошаговая программа выхода на доход</p>
                         </div>
 
                         {/* Secondary Buttons Grid - Larger Version */}
                         <div className="grid grid-cols-3 gap-2">
                              <div onClick={() => setCurrentView('strategy')} className="glass-card p-3 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-[#00FF9D]/30 transition-all h-28 group">
                                 <Users className="w-8 h-8 text-zinc-500 group-hover:text-[#00FF9D] mb-3 transition-colors" />
-                                <span className="text-[10px] font-bold text-zinc-300 text-center leading-tight uppercase tracking-wider">Личный кабинет</span>
+                                <span className="text-[10px] font-bold text-zinc-300 text-center leading-tight uppercase tracking-wider">Кабинет</span>
                             </div>
-
                             <div onClick={() => setCurrentView('calculator')} className="glass-card p-3 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-[#00FF9D]/30 transition-all h-28 group">
                                 <Wallet className="w-8 h-8 text-zinc-500 group-hover:text-[#00FF9D] mb-3 transition-colors" />
-                                <span className="text-[10px] font-bold text-zinc-300 text-center leading-tight uppercase tracking-wider">Ваш доход</span>
+                                <span className="text-[10px] font-bold text-zinc-300 text-center leading-tight uppercase tracking-wider">Доход</span>
                             </div>
-
                             <div onClick={() => setCurrentView('faq')} className="glass-card p-3 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-[#00FF9D]/30 transition-all h-28 group">
-                                <HelpCircle className="w-8 h-8 text-zinc-500 group-hover:text-[#00FF9D] mb-3 transition-colors" />
-                                <span className="text-[10px] font-bold text-zinc-300 text-center leading-tight uppercase tracking-wider">Частые вопросы</span>
+                                <Lock className="w-8 h-8 text-zinc-500 group-hover:text-[#00FF9D] mb-3 transition-colors" />
+                                <span className="text-[10px] font-bold text-zinc-300 text-center leading-tight uppercase tracking-wider">FAQ</span>
                             </div>
-                        </div>
-
-                        {/* New Button: Отзывы наших учеников */}
-                        <div onClick={() => setCurrentView('reviews')} className="glass-card p-4 rounded-2xl flex flex-col items-center justify-center cursor-pointer border-[#00FF9D]/40 hover:bg-[#00FF9D]/10 transition-all text-center relative overflow-hidden group mt-2">
-                            <div className="absolute inset-0 bg-gradient-to-br from-[#00FF9D]/10 to-transparent opacity-50"></div>
-                            <MessageCircle className="w-8 h-8 text-[#00FF9D] mb-1.5 relative z-10" />
-                            <span className="text-base font-bold text-white relative z-10 font-['Chakra_Petch'] tracking-wider">ОТЗЫВЫ</span>
-                            <p className="text-[9px] text-zinc-400 relative z-10 uppercase tracking-widest mt-0.5">Истории успеха наших учеников</p>
                         </div>
                     </div>
                 )}
@@ -1516,88 +1954,44 @@ const App = () => {
           </div>
         )}
 
-        {/* ... Rest of components follow similar logic ... */}
-        
-        {/* VIEW: SHOP (Kept as is) */}
         {currentView === 'shop' && (
-          <div className="flex flex-col h-full items-center w-full">
-             {!shopIntroFinished ? (
-                <ShopIntroSequence onComplete={() => setShopIntroFinished(true)} />
-             ) : (
-                <>
-                  <button onClick={() => handleBackClick('main')} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-4 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
-                  <div className="flex-grow flex flex-col items-center w-full space-y-6 overflow-y-auto pb-20 no-scrollbar">
-                      <div className="text-center px-4 w-full">
-                        <div className="w-20 h-20 mx-auto bg-[#00FF9D]/10 rounded-full flex items-center justify-center border border-[#00FF9D]/30 mb-4 animate-[pulse_3s_infinite]">
-                            <TelegramLogoMain className="w-10 h-10 text-[#00FF9D] drop-shadow-[0_0_15px_rgba(0,255,157,0.5)]" />
-                        </div>
-                        <h2 className="text-2xl sm:text-3xl font-black tracking-tighter uppercase mb-2 font-['Chakra_Petch'] leading-none text-white">ТЕЛЕГРАМ <span className="text-[#00FF9D]">МАГАЗИН</span></h2>
-                        <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] font-bold">ПОЛНАЯ АВТОМАТИЗАЦИЯ</p>
-                      </div>
-
-                      <div className="w-full space-y-4">
-                          <div className="glass-card p-5 rounded-2xl border border-zinc-800">
-                              <h3 className="text-xs font-bold text-white uppercase tracking-wider mb-4 flex items-center gap-2">
-                                  <Zap className="w-4 h-4 text-[#00FF9D]" />
-                                  Преимущества
-                              </h3>
-                              <ul className="space-y-4">
-                                  <li className="flex items-start gap-3">
-                                      <div className="min-w-[4px] h-4 bg-[#00FF9D] rounded-full mt-0.5"></div>
-                                      <div>
-                                          <p className="text-xs font-bold text-white mb-0.5">Без скачивания</p>
-                                          <p className="text-[10px] text-zinc-400 leading-snug">Клиент покупает прямо в любимом мессенджере. Никаких лишних действий.</p>
-                                      </div>
-                                  </li>
-                                  <li className="flex items-start gap-3">
-                                      <div className="min-w-[4px] h-4 bg-[#00FF9D] rounded-full mt-0.5"></div>
-                                      <div>
-                                          <p className="text-xs font-bold text-white mb-0.5">Push-рассылки</p>
-                                          <p className="text-[10px] text-zinc-400 leading-snug">Бесплатные уведомления об акциях с открываемостью 95%.</p>
-                                      </div>
-                                  </li>
-                                  <li className="flex items-start gap-3">
-                                      <div className="min-w-[4px] h-4 bg-[#00FF9D] rounded-full mt-0.5"></div>
-                                      <div>
-                                          <p className="text-xs font-bold text-white mb-0.5">Синхронизация</p>
-                                          <p className="text-[10px] text-zinc-400 leading-snug">Выгрузка товаров из Excel, 1C или МойСклад. Автоматические остатки.</p>
-                                      </div>
-                                  </li>
-                              </ul>
-                          </div>
-
-                          <div className="glass-card p-5 rounded-2xl border border-[#00FF9D]/30 relative overflow-hidden bg-gradient-to-br from-[#00FF9D]/5 to-transparent">
-                              <div className="absolute top-2 right-2 opacity-50"><Sparkles className="w-4 h-4 text-[#00FF9D]" /></div>
-                              <h3 className="text-xs font-bold text-white uppercase tracking-wider mb-3 relative z-10">ФУНКЦИОНАЛ</h3>
-                              <div className="grid grid-cols-2 gap-2 relative z-10">
-                                  {['Каталог товаров', 'Корзина и оплата', 'Личный кабинет', 'История заказов', 'Бонусная система', 'Техподдержка'].map((tag, i) => (
-                                      <div key={i} className="bg-black/60 border border-zinc-700/50 rounded-lg p-2 text-center">
-                                          <span className="text-[9px] text-zinc-300 font-mono uppercase">{tag}</span>
-                                      </div>
-                                  ))}
-                              </div>
-                          </div>
-                      </div>
-
-                      <div className="w-full pb-8 pt-2">
-                          <button onClick={() => setCurrentView('roi')} className="w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-4 rounded-xl shadow-[0_0_20px_rgba(0,255,157,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs flex items-center justify-center gap-2 animate-pulse">
-                              <Wallet className="w-4 h-4" />
-                              РАССЧИТАТЬ ПРИБЫЛЬ
-                          </button>
-                          <p className="text-center text-[9px] text-zinc-600 mt-3">Узнайте, сколько вы теряете без магазина</p>
-                      </div>
+          <div className="animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col h-full items-center w-full">
+            {!shopIntroFinished ? (
+               <ShopIntroSequence onComplete={() => setShopIntroFinished(true)} />
+            ) : (
+              <React.Fragment>
+                <button onClick={() => handleBackClick('main')} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-6 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
+                <div className="flex-grow flex flex-col items-center w-full space-y-6 animate-in slide-in-from-bottom duration-700">
+                  <div className="text-center px-4 w-full mb-4">
+                      <TelegramLogoMain className="w-20 h-20 mx-auto text-[#00FF9D] mb-4 drop-shadow-[0_0_15px_rgba(0,255,157,0.5)] animate-[contourPulse_3s_ease-in-out_infinite]" />
+                      <h2 className="text-3xl font-black tracking-tighter uppercase mb-2 font-['Chakra_Petch'] leading-none">TELEGRAM<br/><span className="text-[#00FF9D]">STORE</span></h2>
+                      <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] mr-[-0.3em] font-bold">Ваш бизнес ещё никогда не был так близок к покупателю</p>
                   </div>
-                </>
-             )}
+                  <div className="w-full space-y-3">
+                      {[{ title: "Каталог и Корзина", desc: "Полноценный интернет-магазин внутри мессенджера. Удобный выбор товаров без лишних переходов." }, { title: "Оплата в 1 клик", desc: "Интеграция с Kaspi, картами и криптовалютой. Мгновенные транзакции." }, { title: "CRM Система", desc: "Управление заказами, статусами и клиентами прямо внутри Telegram." }, { title: "Авто-рассылки", desc: "Push-уведомления клиентам о новинках и акциях с открываемостью 90%." }].map((item, i) => (
+                        <div key={i} className="glass-card rounded-2xl p-4 flex items-start gap-4 hover:bg-white/5 transition-all">
+                           <div className="mt-1 bg-[#00FF9D]/10 p-2 rounded-full text-[#00FF9D] border border-[#00FF9D]/20"><CheckCircle2 className="w-4 h-4" /></div>
+                           <div><h4 className="text-sm font-bold text-white uppercase tracking-wider mb-1">{item.title}</h4><p className="text-[10px] text-zinc-400 leading-relaxed">{item.desc}</p></div>
+                        </div>
+                      ))}
+                  </div>
+                  <div className="mt-4 w-full glass-card p-6 rounded-3xl text-center border border-[#00FF9D]/20 relative overflow-hidden group">
+                      <div className="absolute inset-0 bg-gradient-to-t from-[#00FF9D]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                      <button onClick={() => {
+                          setCurrentView('calculator');
+                      }} className="w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-4 rounded-xl shadow-[0_0_20px_rgba(0,255,157,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs relative z-10 flex items-center justify-center gap-2 animate-pulse">РАССЧИТАТЬ УПУЩЕННУЮ ПРИБЫЛЬ</button>
+                  </div>
+                </div>
+              </React.Fragment>
+            )}
           </div>
         )}
 
-        {/* VIEW: CALCULATOR (Kept as is) */}
         {currentView === 'calculator' && (
-          <div className="w-full flex flex-col items-center pb-24">
+          <div className="animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col h-full items-center w-full">
             {/* Logic for Back Button: Return to Main if Academy, else go back to Shop or Main based on context */}
             <button onClick={() => handleBackClick(userRole === 'academy' ? 'main' : 'shop')} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-4 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
-            <div className="w-full space-y-2">
+            <div className="flex-grow flex flex-col items-center w-full space-y-2 animate-in slide-in-from-bottom duration-700">
                 {userRole === 'business' ? (
                     <div className="text-center px-4 w-full mb-2">
                         <Wallet className="w-12 h-12 mx-auto text-[#00FF9D] mb-2 drop-shadow-[0_0_15px_rgba(0,255,157,0.5)] animate-[contourPulse_3s_ease-in-out_infinite]" />
@@ -1615,10 +2009,10 @@ const App = () => {
                 <div className="w-full glass-card p-4 rounded-3xl border border-[#00FF9D]/20 relative overflow-hidden">
                     {userRole === 'business' ? (
                         <ProfitCalculator data={calcData} setData={setCalcData} onAction={() => {
-                            setCurrentView('roi');
+                            setCurrentView('strategy');
                         }} />
                     ) : (
-                        <AcademyCalculator data={academyCalcData} setData={setAcademyCalcData} onAction={() => setCurrentView('roi')} />
+                        <AcademyCalculator data={academyCalcData} setData={setAcademyCalcData} onAction={() => setCurrentView('strategy')} />
                     )}
                 </div>
             </div>
@@ -1626,17 +2020,17 @@ const App = () => {
         )}
 
         {currentView === 'strategy' && (
-          <div className="flex flex-col h-full items-center w-full">
-              <button onClick={() => handleBackClick(userRole === 'academy' ? 'main' : 'calculator')} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-4 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
-              <div className="flex-grow flex flex-col items-center w-full space-y-6 overflow-y-auto pb-20 no-scrollbar">
+          <div className="animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col h-full items-center w-full">
+             <button onClick={() => handleBackClick(userRole === 'academy' ? 'main' : 'calculator')} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-4 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
+             <div className="flex-grow flex flex-col items-center w-full space-y-6 overflow-y-auto pb-20 no-scrollbar">
                 
                 {/* UNIFIED PERSONAL CABINET HEADER */}
                 {(userRole === 'academy' || userRole === 'business') && (
-                    <div className="w-full space-y-3">
+                    <div className="w-full space-y-3 animate-in slide-in-from-bottom duration-500">
                         {/* 1. Profile Card */}
                         <div className="strategy-card flex items-center justify-between">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-full bg-[#1c1c1e] flex items-center justify-center text-zinc-400 font-black text-sm border border-zinc-700">
+                                <div className="w-10 h-10 rounded-full bg-[#1c1c1e] flex items-center justify-center text-zinc-400 font-black text-sm border border-zinc-700 cursor-pointer" onClick={() => setIsAdminAuthOpen(true)}>
                                     <Shield className="w-4 h-4" />
                                 </div>
                                 <div>
@@ -1660,15 +2054,15 @@ const App = () => {
                         </div>
 
                         {/* 2. Finance Card */}
-                        <div className="strategy-card relative animate-[frame-pulse_3s_ease-in-out_infinite]">
+                        <div className="strategy-card relative">
                             <p className="text-[9px] text-zinc-500 uppercase font-bold tracking-[0.2em] mb-4">
                                 {userRole === 'academy' ? 'ВАШ ПОТЕНЦИАЛЬНЫЙ ДОХОД В МЕСЯЦ' : 'ПОТЕНЦИАЛЬНАЯ ПРИБЫЛЬ'}
                             </p>
                             <div className="flex items-baseline gap-2 mb-6">
-                                <div className="text-5xl font-black text-white font-['Chakra_Petch'] tracking-tighter animate-[text-pulse-glow_3s_ease-in-out_infinite]">
+                                <div className="text-5xl font-black text-white font-['Chakra_Petch'] tracking-tighter">
                                     {userRole === 'academy' 
-                                      ? animatedPotentialEarnings.toLocaleString().replace(/\s/g, ' ')
-                                      : businessProfit.toLocaleString().replace(/\s/g, ' ')
+                                        ? animatedPotentialEarnings.toLocaleString().replace(/\s/g, ' ')
+                                        : businessProfit.toLocaleString().replace(/\s/g, ' ')
                                     }
                                 </div>
                                 <span className="text-zinc-500 text-xs font-bold uppercase tracking-wider">
@@ -1692,252 +2086,52 @@ const App = () => {
                             </div>
                         </div>
 
-                        {/* --- 4. БЛОК СЕРТИФИКАТА (EXPANDABLE) --- */}
-                        {userRole === 'academy' && (
-                            <div 
-                                className={`strategy-card mt-4 transition-all duration-500 ease-in-out ${isCertExpanded ? 'border-[#00FF9D]/50 bg-[#0A0A0A]' : 'hover:border-[#00FF9D]/50 cursor-pointer'}`}
-                                onClick={() => { 
-                                    if (!isCertExpanded) {
-                                        haptic('medium'); 
-                                        setIsCertExpanded(true);
-                                    }
-                                }}
-                            >
-                                {/* Header Row */}
-                                <div className="flex items-center justify-between" onClick={(e) => {
-                                    if (isCertExpanded) {
-                                        e.stopPropagation(); 
-                                        haptic('light');
-                                        setIsCertExpanded(false);
-                                    }
-                                }}>
-                                    <div className="flex items-center gap-3">
-                                        <div className={`w-10 h-10 rounded-full flex items-center justify-center border transition-colors ${isStudent ? 'bg-[#00FF9D]/10 border-[#00FF9D]/30 text-[#00FF9D]' : 'bg-zinc-900 border-zinc-800 text-zinc-600'}`}>
-                                            <Shield className="w-5 h-5" />
-                                        </div>
-                                        <div>
-                                            <h3 className="text-xs font-bold text-white uppercase tracking-wider mb-1">СЕРТИФИКАТ ОБ ОБУЧЕНИИ</h3>
-                                            <div className="text-[8px] text-zinc-500 leading-tight max-w-[230px]">
-                                                <p className="mb-0.5">Сертификаты Taipan academy являются официальными в блокчейне Ton.</p>
-                                                <p>Их нельзя продать или подделать</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className={`bg-zinc-900 p-2 rounded-lg border border-zinc-800 transition-all duration-300 ${isCertExpanded ? 'rotate-90 bg-[#00FF9D] text-black' : 'group-hover:bg-[#00FF9D] group-hover:text-black'}`}>
-                                        <ArrowRight className="w-4 h-4" />
-                                    </div>
+                        {/* --- NEW AI ADVISOR SECTION --- */}
+                        <AIAdvisor userRole={userRole} />
+
+                        {/* 3. Partner Program */}
+                        <div className="strategy-card relative overflow-hidden" style={{ borderColor: 'rgba(168, 85, 247, 0.3)' }}>
+                            <div className="absolute inset-0 bg-gradient-to-b from-purple-900/10 to-transparent pointer-events-none"></div>
+                            
+                            <div className="flex justify-between items-start mb-5 relative z-10">
+                                <div>
+                                    <h3 className="text-sm font-black text-white uppercase tracking-wider mb-1">ПАРТНЕРСКАЯ ПРОГРАММА</h3>
+                                    <p className="text-[10px] text-zinc-400 leading-snug max-w-[200px]">
+                                        Ваш бонус: <span className="text-[#a855f7] font-bold">10% (5 000 ₸)</span> с каждой оплаты привлеченного ученика.
+                                    </p>
                                 </div>
-
-                                {/* Expanded Content */}
-                                <div className={`overflow-hidden transition-all duration-500 ease-in-out ${isCertExpanded ? 'max-h-[800px] opacity-100 mt-6' : 'max-h-0 opacity-0'}`}>
-                                    <div className={`relative overflow-hidden rounded-[20px] transition-all duration-1000 
-                                        ${!isStudent ? 'cert-locked' : 'shadow-[0_0_30px_rgba(6,182,212,0.6)]'}`}
-                                        style={{
-                                            background: '#000000',
-                                            border: '2px solid #06b6d4',
-                                            boxShadow: '0 0 20px rgba(6, 182, 212, 0.4), inset 0 0 20px rgba(6, 182, 212, 0.2)'
-                                        }}
-                                    >
-                                        {/* Tech Background Grid - Crisp Lines */}
-                                        <div className="absolute inset-0 bg-[linear-gradient(rgba(6,182,212,0.15)_1px,transparent_1px),linear-gradient(90deg,rgba(6,182,212,0.15)_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none"></div>
-                                        
-                                        {/* Corner Decorations (High Contrast) */}
-                                        <div className="absolute top-0 left-0 w-24 h-24 border-t-[3px] border-l-[3px] border-cyan-400 rounded-tl-3xl opacity-100 drop-shadow-[0_0_10px_rgba(34,211,238,0.8)]"></div>
-                                        <div className="absolute top-0 right-0 w-24 h-24 border-t-[3px] border-r-[3px] border-cyan-400 rounded-tr-3xl opacity-100 drop-shadow-[0_0_10px_rgba(34,211,238,0.8)]"></div>
-                                        <div className="absolute bottom-0 left-0 w-24 h-24 border-b-[3px] border-l-[3px] border-cyan-400 rounded-bl-3xl opacity-100 drop-shadow-[0_0_10px_rgba(34,211,238,0.8)]"></div>
-                                        <div className="absolute bottom-0 right-0 w-24 h-24 border-b-[3px] border-r-[3px] border-cyan-400 rounded-br-3xl opacity-100 drop-shadow-[0_0_10px_rgba(34,211,238,0.8)]"></div>
-
-                                        {/* Decorative Center Lines */}
-                                        <div className="absolute top-10 left-10 right-10 h-[1px] bg-cyan-500/30"></div>
-                                        <div className="absolute bottom-10 left-10 right-10 h-[1px] bg-cyan-500/30"></div>
-
-                                        <div className="relative z-10 p-8 flex flex-col items-center text-center">
-                                            
-                                            {/* 1. TAIPAN ACADEMY Header - Metallic Look */}
-                                            <h3 className="text-xl sm:text-2xl font-black text-white font-['Chakra_Petch'] tracking-[0.2em] uppercase mb-8 drop-shadow-[0_0_5px_rgba(255,255,255,0.8)]">
-                                                TAIPAN ACADEMY
-                                            </h3>
-
-                                            {/* 2. Certificate Title - Glowing Cyan */}
-                                            <h1 className="text-3xl sm:text-4xl font-black text-cyan-400 font-['Chakra_Petch'] tracking-wide uppercase mb-4 leading-none"
-                                                style={{ textShadow: '0 0 15px rgba(34, 211, 238, 0.8)' }}>
-                                                СЕРТИФИКАТ<br/>СПЕЦИАЛИСТА
-                                            </h1>
-
-                                            {/* 3. Divider Line - Sharp Beam */}
-                                            <div className="w-full max-w-[200px] h-[2px] bg-cyan-400 my-6 shadow-[0_0_15px_#22d3ee]"></div>
-
-                                            {/* 4. USER NAME (Dynamic) - Crisp White */}
-                                            <div className="mb-8 relative">
-                                                 <p className="text-2xl sm:text-3xl font-bold text-white font-mono tracking-widest uppercase drop-shadow-[0_0_10px_rgba(255,255,255,0.8)]">
-                                                    {userName}
-                                                 </p>
-                                                 {/* Decorative underbars */}
-                                                 <div className="flex justify-center gap-1 mt-3">
-                                                      <div className="w-2 h-1 bg-cyan-400"></div>
-                                                      <div className="w-20 h-1 bg-cyan-400/50"></div>
-                                                      <div className="w-2 h-1 bg-cyan-400"></div>
-                                                 </div>
-                                            </div>
-
-                                            {/* 5. Subtitle/Qualification */}
-                                            <div className="bg-black border border-cyan-500 px-6 py-2 rounded-none mb-10 shadow-[0_0_15px_rgba(6,182,212,0.3)]">
-                                                <p className="text-[9px] sm:text-[10px] text-cyan-200 font-bold uppercase tracking-[0.15em] font-mono">
-                                                    РАЗРАБОТЧИК TELEGRAM E-COMMERCE МАГАЗИНОВ
-                                                </p>
-                                            </div>
-
-                                            {/* 6. Verification Badge (Bottom) */}
-                                            <div className="flex items-center gap-4 bg-black border border-blue-500 px-5 py-3 rounded-lg shadow-[0_0_20px_rgba(59,130,246,0.4)]">
-                                                <div className="w-10 h-10 flex items-center justify-center relative">
-                                                     {/* TON Diamond Logo SVG (Updated to 1:1 Reference) */}
-                                                     <svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full drop-shadow-[0_0_10px_#0098EA] relative z-10">
-                                                        <circle cx="28" cy="28" r="28" fill="#0098EA"/>
-                                                        {/* Outline Triangle */}
-                                                        <path d="M15 17H41L28 42L15 17Z" stroke="white" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"/>
-                                                        {/* Center Vertical Line */}
-                                                        <path d="M28 17V42" stroke="white" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"/>
-                                                     </svg>
-                                                </div>
-                                                <div className="text-left">
-                                                    <p className="text-[9px] text-blue-200 font-bold uppercase leading-tight tracking-wider font-mono">Верифицировано<br/><span className="text-white">в блокчейне TON</span></p>
-                                                </div>
-                                            </div>
-
-                                        </div>
-
-                                        {!isStudent && (
-                                            <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40">
-                                                <div className="border-[6px] border-white/10 px-8 py-4 rounded-xl rotate-[-15deg] select-none backdrop-blur-[1px]">
-                                                    <span className="text-white/10 font-black text-2xl sm:text-4xl tracking-[0.2em] uppercase font-['Chakra_Petch'] flex items-center gap-4">
-                                                        <Lock className="w-8 h-8 sm:w-10 sm:h-10" /> ЗАБЛОКИРОВАНО
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-                                    
-                                    <div className="mt-4">
-                                        <button 
-                                            disabled={!isStudent}
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                haptic('medium');
-                                                // Action to claim/mint NFT
-                                            }}
-                                            className={`w-full py-4 rounded-xl font-black text-[10px] uppercase tracking-[0.3em] transition-all duration-500 flex items-center justify-center gap-3
-                                                ${isStudent 
-                                                    ? 'bg-white text-black shadow-[0_20px_40px_rgba(255,255,255,0.15)] hover:scale-[1.02]' 
-                                                    : 'bg-zinc-900 text-zinc-700 border border-zinc-800'}`}
-                                        >
-                                            {isStudent && (
-                                                <svg width="14" height="14" viewBox="0 0 56 56" fill="black">
-                                                    <path d="M28 56C43.464 56 56 43.464 56 28C56 12.536 43.464 0 28 0C12.536 0 0 12.536 0 28C0 43.464 12.536 56 28 56ZM12.136 16.438L27.998 12L43.864 16.438L42.532 32.186C41.362 45.986 27.998 47.998 27.998 47.998 14.634 45.986 13.464 32.186L12.136 16.438ZM24.444 33.15L27.998 38L31.556 33.15L38.452 19.346L27.998 17.558L17.548 19.346L24.444 33.15Z"/>
-                                                </svg>
-                                            )}
-                                            {isStudent ? "Claim TON SBT NFT" : <span className="text-[8px] tracking-[0.15em] whitespace-nowrap">ПРОЙДИТЕ ОБУЧЕНИЕ ЧТО БЫ ЗАМИНТИТЬ СЕРТИФИКАТ</span>}
-                                        </button>
-                                    </div>
+                                <div className="bg-[#1a1625] border border-purple-500/20 rounded-lg p-2 text-center min-w-[70px]">
+                                    <div className="text-lg font-black text-white font-mono leading-none mb-1">0</div>
+                                    <div className="text-[7px] text-[#a855f7] font-bold uppercase tracking-wider">ПАРТНЕРОВ</div>
                                 </div>
                             </div>
-                        )}
 
-                        {/* 3. Partner Program - ONLY FOR ACADEMY */}
-                        {userRole === 'academy' && (
-                            <div className="strategy-card relative overflow-hidden" style={{ borderColor: 'rgba(168, 85, 247, 0.3)' }}>
-                                <div className="absolute inset-0 bg-gradient-to-b from-purple-900/10 to-transparent pointer-events-none"></div>
-                                
-                                <div className="flex justify-between items-start mb-5 relative z-10">
-                                    <div>
-                                        <h3 className="text-sm font-black text-white uppercase tracking-wider mb-1">ПАРТНЕРСКАЯ ПРОГРАММА</h3>
-                                        <p className="text-[10px] text-zinc-400 leading-snug max-w-[200px]">
-                                            Ваш бонус: <span className="text-[#a855f7] font-bold">10% (5 000 ₸)</span> с каждой оплаты привлеченного ученика.
-                                        </p>
-                                    </div>
-                                    <div className="bg-[#1a1625] border border-purple-500/20 rounded-lg p-2 text-center min-w-[70px]">
-                                        <div className="text-lg font-black text-white font-mono leading-none mb-1">
-                                            {referralCount}
-                                        </div>
-                                        <div className="text-[7px] text-[#a855f7] font-bold uppercase tracking-wider">ПАРТНЕРОВ</div>
-                                    </div>
+                            {/* Input Field */}
+                            <div className="flex items-center gap-2 bg-[#121212] border border-zinc-800 p-2 rounded-xl mb-3 relative z-10">
+                                <div className="flex-grow text-[10px] text-zinc-500 font-mono px-2 truncate select-all">
+                                    t.me/taipan_bot?start={currentUserId || 'id'}
                                 </div>
-
-                                {/* Input Field */}
-                                <div className="flex items-center gap-2 bg-[#121212] border border-zinc-800 p-2 rounded-xl mb-3 relative z-10">
-                                    <div className="flex-grow text-[10px] text-zinc-500 font-mono px-2 truncate select-all">
-                                        t.me/taipan_bot?start={currentUserId || 'id'}
-                                    </div>
-                                    <button 
-                                        onClick={() => {
-                                            navigator.clipboard.writeText(`https://t.me/taipan_bot?start=${currentUserId}`);
-                                            notify('success');
-                                        }}
-                                        className="bg-[#1c1c1e] hover:bg-[#252525] p-2 rounded-lg text-zinc-400 transition-colors border border-zinc-700"
-                                    >
-                                        <Copy className="w-4 h-4" />
-                                    </button>
-                                </div>
-                                <p className="text-center text-[9px] text-zinc-600 font-mono">Используйте эту ссылку для приглашения</p>
+                                <button 
+                                    onClick={() => {
+                                        navigator.clipboard.writeText(`https://t.me/taipan_bot?start=${currentUserId}`);
+                                        notify('success');
+                                    }}
+                                    className="bg-[#1c1c1e] hover:bg-[#252525] p-2 rounded-lg text-zinc-400 transition-colors border border-zinc-700"
+                                >
+                                    <Copy className="w-4 h-4" />
+                                </button>
                             </div>
-                        )}
+                            <p className="text-center text-[9px] text-zinc-600 font-mono">Используйте эту ссылку для приглашения</p>
+                        </div>
                     </div>
                 )}
              </div>
           </div>
         )}
 
-        {/* VIEW: REVIEWS (NEW) */}
-        {currentView === 'reviews' && (
-          <div className="flex flex-col h-full items-center w-full">
-             <button onClick={() => handleBackClick('main')} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-4 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
-             <div className="flex-grow flex flex-col items-center w-full space-y-6 overflow-y-auto pb-20 no-scrollbar">
-                <div className="text-center px-4 w-full">
-                    <h2 className="text-2xl sm:text-3xl font-black tracking-tighter uppercase mb-1 font-['Chakra_Petch'] leading-none whitespace-nowrap">ЧЕСТНЫЕ <span className="text-[#00FF9D]">ОТЗЫВЫ</span></h2>
-                    <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] mr-[-0.3em] font-bold">Без цензуры</p>
-                </div>
-                
-                <div className="w-full space-y-4">
-                    {reviewsData.map((review) => (
-                        <div key={review.id} className="glass-card p-4 rounded-2xl border border-[#00FF9D]/30 relative overflow-hidden group">
-                            <div className="flex justify-between items-start mb-3 relative z-10">
-                                <div className="flex items-center gap-3">
-                                    <SmartImage src={review.avatar} className="w-10 h-10 rounded-full border border-[#00FF9D]/50 object-cover" alt={review.name} />
-                                    <div>
-                                        <p className="text-xs font-bold text-white">{review.name}</p>
-                                        <p className="text-[9px] text-zinc-400">{review.role}</p>
-                                    </div>
-                                </div>
-                                <div 
-                                    className="bg-[#00FF9D]/10 px-2 py-1 rounded border border-[#00FF9D]/30 flex items-center gap-1 cursor-pointer hover:bg-[#00FF9D]/20 transition-colors" 
-                                    onClick={() => { haptic('light'); setPreviewImage(review.proofImage); }}
-                                >
-                                    <span className="text-[8px] font-bold text-[#00FF9D] uppercase tracking-wider">Посмотреть заказ</span>
-                                </div>
-                            </div>
-                            
-                            <div className="relative z-10 mb-3">
-                                <p className="text-[11px] text-zinc-200 leading-relaxed">"{review.feedback}"</p>
-                            </div>
-
-                            <div className="absolute -bottom-4 -right-4 opacity-5 pointer-events-none"><MessageCircle className="w-24 h-24 text-[#00FF9D]" /></div>
-                        </div>
-                    ))}
-                </div>
-
-                <div className="w-full pt-4 pb-8">
-                    <button onClick={() => setCurrentView('program')} className="w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-4 rounded-xl shadow-[0_0_20px_rgba(0,255,157,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs flex items-center justify-center gap-2 animate-pulse">
-                        <Zap className="w-4 h-4" />
-                        ХОЧУ ТАК ЖЕ
-                    </button>
-                    <p className="text-center text-[9px] text-zinc-600 mt-3">Присоединяйтесь к команде успешных партнеров</p>
-                </div>
-             </div>
-          </div>
-        )}
-
         {/* VIEW: CASES (SEPARATE VIEW) */}
         {currentView === 'cases' && (
-          <div className="flex flex-col h-full items-center w-full">
+          <div className="animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col h-full items-center w-full">
              <button onClick={() => handleBackClick('main')} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-4 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
              <div className="flex-grow flex flex-col items-center w-full space-y-6 overflow-y-auto pb-20 no-scrollbar">
                 <div className="text-center px-4 w-full">
@@ -1970,7 +2164,7 @@ const App = () => {
 
         {/* VIEW: EDUCATION (Kept as is) */}
         {currentView === 'education' && (
-          <div className="flex flex-col h-full items-center">
+          <div className="animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col h-full items-center">
             {/* Используем previousView для кнопки Назад */}
             <button onClick={() => handleBackClick(previousView)} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-6 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
             <div className="flex-grow flex flex-col items-center justify-center space-y-10 w-full">
@@ -1980,8 +2174,8 @@ const App = () => {
                     {slides.map((SlideComponent, idx) => (
                        <div key={idx} className={`absolute inset-0 flex items-center justify-center transition-all duration-[1200ms] ease-in-out transform ${activeSlide === idx ? 'opacity-100 scale-100 blur-0' : 'opacity-0 scale-75 blur-3xl'}`}>
                          <div className="relative w-full text-center">
-                           <div className="absolute inset-0 bg-white/5 blur-3xl rounded-full transform scale-150 left-1/2 -translate-x-1/2" />
-                           <div className="relative z-10"><SlideComponent isActive={activeSlide === idx} /></div>
+                            <div className="absolute inset-0 bg-white/5 blur-3xl rounded-full transform scale-150 left-1/2 -translate-x-1/2" />
+                            <div className="relative z-10"><SlideComponent isActive={activeSlide === idx} /></div>
                          </div>
                        </div>
                      ))}
@@ -1996,7 +2190,7 @@ const App = () => {
 
         {/* VIEW: FAQ (Kept as is) */}
         {currentView === 'faq' && (
-          <div className="flex flex-col h-full">
+          <div className="animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col h-full">
             <button onClick={() => handleBackClick(userRole === 'academy' ? 'main' : 'education')} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-6 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
             <div className="flex-grow flex flex-col items-center w-full space-y-6">
               <div className="w-full mb-6"><Carousel3D /><div className="text-center mt-2"></div></div>
@@ -2015,7 +2209,7 @@ const App = () => {
 
         {/* VIEW: PROGRAM (Kept as is) */}
         {currentView === 'program' && (
-          <div className="flex flex-col h-full">
+          <div className="animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col h-full">
             <button onClick={() => handleBackClick(userRole === 'academy' ? 'main' : 'faq')} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-6 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
             <div className="flex-grow flex flex-col items-center w-full space-y-6">
               <div className="flex flex-col items-center text-center px-4 w-full mb-6 mx-auto max-w-sm"><h2 className="text-3xl sm:text-4xl font-black tracking-tight uppercase mb-2 font-['Chakra_Petch'] leading-tight">Модули обучения<br/><span className="text-[#00FF9D]">TAIPAN ACADEMY</span></h2><p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] mr-[-0.3em] font-bold">Система доминирования</p></div>
@@ -2050,7 +2244,7 @@ const App = () => {
 
         {/* VIEW: ABOUT (Kept as is) */}
         {currentView === 'about' && (
-          <div className="flex flex-col h-full items-center">
+          <div className="animate-in fade-in slide-in-from-bottom-2 duration-700 flex flex-col h-full items-center">
             <button onClick={() => handleBackClick('main')} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-6 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
             <div className="flex-grow flex flex-col items-center w-full space-y-6">
                 <div className="text-center px-4 w-full mb-4">
@@ -2157,29 +2351,87 @@ const App = () => {
             </div>
           </div>
         )}
+
+        {/* VIEW: ADMIN PANEL */}
+        {currentView === 'admin' && (
+            <AdminPanel 
+                leads={leads}
+                visitors={visitors} 
+                onBack={() => setCurrentView('main')} 
+                onClearLeads={() => setLeads([])}
+                onUpdateLead={updateLead}
+                onUpdateVisitor={updateVisitor}
+            />
+        )}
       </div>
 
-      {/* Modals & Toasts */}
+      {/* Modals & Toasts stay EXACTLY the same */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center px-4 visible">
-          <div className="absolute inset-0 bg-black/90" onClick={closeModal} />
-          <div className="relative w-full max-w-lg bg-[#0F0F0F] rounded-[40px] border-t border-white/10 p-8 shadow-[0_-10px_50px_rgba(0,0,0,1)] z-[10000]">
+        <div className="fixed inset-0 z-[100] flex items-end justify-center px-4">
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-md animate-in fade-in duration-300" onClick={closeModal} />
+          <div className="relative w-full max-w-lg bg-[#0F0F0F] rounded-t-[40px] border-t border-white/10 p-8 transform translate-y-0 animate-in slide-in-from-bottom duration-300 shadow-[0_-10px_50px_rgba(0,0,0,1)]">
             <div className="w-12 h-1.5 bg-zinc-800 rounded-full mx-auto mb-8 cursor-pointer" onClick={closeModal} />
             <h2 className="text-2xl font-bold text-center mb-2 tracking-tight">Начать сейчас</h2>
-            <p className="text-center text-zinc-500 text-xs uppercase tracking-widest mb-8 font-mono">Интерес: <span className="text-[#00FF9D]">{modalType}</span></p>
+            <p className="text-center text-zinc-500 text-xs uppercase tracking-widest mb-8">Интерес: <span className="text-[#00FF9D]">{modalType}</span></p>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <input type="text" placeholder="Ваше Имя" required className="w-full bg-black border border-white/5 rounded-2xl p-4 text-center text-white focus:border-[#00FF9D]/50 outline-none transition-all placeholder-zinc-700 font-mono" />
-              <input type="text" placeholder="@username" required className="w-full bg-black border border-white/5 rounded-2xl p-4 text-center text-white focus:border-[#00FF9D]/50 outline-none transition-all placeholder-zinc-700 font-mono" />
-              <button type="submit" className="w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-5 rounded-2xl mt-4 text-xs font-mono">Связаться со мной</button>
+              <input type="text" placeholder="Ваше Имя" required className="w-full bg-black border border-white/5 rounded-2xl p-4 text-center text-white focus:border-[#00FF9D]/50 outline-none transition-all placeholder-zinc-700" />
+              <input type="text" placeholder="@username" required className="w-full bg-black border border-white/5 rounded-2xl p-4 text-center text-white focus:border-[#00FF9D]/50 outline-none transition-all placeholder-zinc-700" />
+              <button type="submit" className="w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-5 rounded-2xl mt-4 text-xs">Связаться со мной</button>
             </form>
           </div>
         </div>
       )}
 
+      {/* ADMIN AUTH MODAL */}
+      {isAdminAuthOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
+          <div className="absolute inset-0 bg-black/90 backdrop-blur-md animate-in fade-in duration-300" onClick={() => setIsAdminAuthOpen(false)} />
+          <div className="relative w-full max-w-sm bg-[#0A0A0A] border border-[#00FF9D]/50 p-6 rounded-sm shadow-[0_0_50px_rgba(0,255,157,0.1)]">
+            <div className="text-center mb-6">
+                <Shield className="w-12 h-12 text-[#00FF9D] mx-auto mb-2 animate-pulse" />
+                <h2 className="text-xl font-black text-[#00FF9D] font-mono tracking-widest">БЕЗОПАСНЫЙ ВХОД</h2>
+            </div>
+            <form onSubmit={handleAdminAuth} className="space-y-4">
+              <input type="password" placeholder="КОД ДОСТУПА" required className="w-full bg-black border border-zinc-700 p-3 text-center text-[#00FF9D] font-mono tracking-[0.5em] focus:border-[#00FF9D] outline-none" autoFocus />
+              <button type="submit" className="w-full bg-[#00FF9D] text-black font-bold font-mono tracking-widest py-3 hover:bg-[#00FF9D]/80">ВОЙТИ</button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {activeFaq && (
+        <div className="fixed inset-0 z-[100] flex items-end justify-center px-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-lg animate-in fade-in duration-300" onClick={closeFaq} />
+          <div className="relative w-full max-w-lg bg-[#050505] rounded-t-[30px] border-t border-[#00FF9D]/30 p-8 transform translate-y-0 animate-in slide-in-from-bottom duration-300 shadow-[0_-10px_50px_rgba(0,255,157,0.15)] flex flex-col max-h-[85vh] overflow-y-auto">
+            <div className="w-12 h-1.5 bg-zinc-800 rounded-full mx-auto mb-6 cursor-pointer" onClick={closeFaq} />
+            <div className="flex items-center gap-3 mb-6"><div className="p-2 rounded-full bg-[#00FF9D]/10 text-[#00FF9D]">{activeFaq.icon}</div><h2 className="text-xl font-bold font-['Chakra_Petch'] leading-tight">{activeFaq.question}</h2></div>
+            <div className="mb-4">{activeFaq.component}</div>
+            {activeFaq.isCalc && !showCalculator && (<button onClick={() => setShowCalculator(true)} className="w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-4 rounded-xl shadow-[0_0_15px_rgba(0,255,157,0.3)] animate-pulse hover:scale-[1.02] transition-all text-xs">РАССЧИТАТЬ ПРИБЫЛЬ</button>)}
+            {activeFaq.isCalc && showCalculator && (<div className="mt-6 border-t border-[#00FF9D]/20 pt-6"><ProfitCalculator data={calcData} setData={setCalcData} onAction={() => setCurrentView('strategy')} /></div>)}
+            <button onClick={closeFaq} className="absolute top-6 right-6 text-zinc-500 hover:text-white"><X className="w-6 h-6" /></button>
+          </div>
+        </div>
+      )}
+
+      {/* Image Preview Modal */}
+      {previewImage && (
+        <div className="fixed inset-0 z-[400] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 animate-in fade-in duration-300" onClick={() => setPreviewImage(null)}>
+          <div className="relative w-full max-w-4xl h-full max-h-[90vh] flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+             <img src={previewImage} className="w-full h-full object-contain rounded-lg shadow-2xl" alt="Case Study Full" />
+             <button 
+                className="absolute top-4 right-4 bg-black/50 p-2 rounded-full text-white hover:bg-black/80 transition-colors"
+                onClick={() => setPreviewImage(null)}
+             >
+                <X className="w-6 h-6" />
+             </button>
+          </div>
+        </div>
+      )}
+
       {showToast && (
-        <div className="fixed top-10 left-1/2 -translate-x-1/2 z-[110] bg-zinc-900 border border-[#00FF9D]/30 px-6 py-3 rounded-full flex items-center gap-3 shadow-2xl">
+        <div className="fixed top-10 left-1/2 -translate-x-1/2 z-[110] bg-zinc-900 border border-[#00FF9D]/30 px-6 py-3 rounded-full flex items-center gap-3 shadow-2xl animate-in zoom-in duration-300">
           <CheckCircle2 className="w-4 h-4 text-[#00FF9D]" />
-          <span className="text-xs font-bold uppercase tracking-wider font-mono">Запрос принят</span>
+          <span className="text-xs font-bold uppercase tracking-wider">Запрос принят</span>
         </div>
       )}
     </div>

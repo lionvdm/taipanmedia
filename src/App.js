@@ -37,7 +37,7 @@ class ErrorBoundary extends React.Component {
 // --- CONFIGURATION & INIT ---
 const manifestUrl = 'https://taipan-rose.vercel.app/tonconnect-manifest.json';
 
-// 1. Prioritize Environment Config
+// 1. Prioritize Environment Config (SAFE VERSION)
 let firebaseConfig;
 try {
   if (typeof window !== 'undefined' && window.__firebase_config) {
@@ -76,6 +76,17 @@ const haptic = (style = 'light') => {
   if (tg?.HapticFeedback) {
     tg.HapticFeedback.impactOccurred(style);
   }
+};
+
+// Safe vibration helper to prevent crashes
+const safeVibrate = (pattern) => {
+    try {
+        if (typeof navigator !== 'undefined' && navigator.vibrate) {
+            navigator.vibrate(pattern);
+        }
+    } catch (e) {
+        // Ignore vibration errors
+    }
 };
 
 const notify = (type = 'success') => {
@@ -1484,7 +1495,7 @@ const App = () => {
                                 <span className="text-[8px] text-zinc-500 text-center leading-tight font-mono">Рассчитайте потенциальную прибыль</span>
                             </div>
 
-                            <div onClick={() => openModal('Mini App')} className="glass-card p-3 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-[#00FF9D]/30 transition-all h-auto py-4 group">
+                            <div onClick={() => window.open('https://t.me/taipanmedia', '_blank')} className="glass-card p-3 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-[#00FF9D]/30 transition-all h-auto py-4 group">
                                 <Code className="w-8 h-8 text-zinc-500 group-hover:text-[#00FF9D] mb-2 transition-colors" />
                                 <span className="text-[10px] font-bold text-zinc-300 text-center leading-tight uppercase tracking-wider mb-1 font-mono">Mini App</span>
                                 <span className="text-[8px] text-zinc-500 text-center leading-tight font-mono">Заказать персональный</span>
@@ -1521,7 +1532,7 @@ const App = () => {
 
                         {/* Secondary Buttons Grid - Larger Version */}
                         <div className="grid grid-cols-3 gap-2">
-                             <div onClick={() => openModal('Личный кабинет')} className="glass-card p-3 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-[#00FF9D]/30 transition-all h-28 group">
+                             <div onClick={() => setCurrentView('strategy')} className="glass-card p-3 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-[#00FF9D]/30 transition-all h-28 group">
                                 <Users className="w-8 h-8 text-zinc-500 group-hover:text-[#00FF9D] mb-3 transition-colors" />
                                 <span className="text-[10px] font-bold text-zinc-300 text-center leading-tight uppercase tracking-wider">Личный кабинет</span>
                             </div>

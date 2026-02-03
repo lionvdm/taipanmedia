@@ -78,17 +78,6 @@ const haptic = (style = 'light') => {
   }
 };
 
-// Safe vibration helper to prevent crashes
-const safeVibrate = (pattern) => {
-    try {
-        if (typeof navigator !== 'undefined' && navigator.vibrate) {
-            navigator.vibrate(pattern);
-        }
-    } catch (e) {
-        // Ignore vibration errors
-    }
-};
-
 const notify = (type = 'success') => {
   if (tg?.HapticFeedback) {
     tg.HapticFeedback.notificationOccurred(type);
@@ -502,17 +491,20 @@ const AcademyCalculator = ({ onAction }) => {
 // 7. BaneIntro
 const BaneIntro = ({ onComplete }) => {
     const [phase, setPhase] = useState(0);
+    // Use ref to keep the audio instance stable across renders
+    const audioRef = useRef(null);
 
     useEffect(() => {
-        // Audio playback logic wrapped safely
-        const audio = new Audio('/VID_20260122_010534_539 (online-audio-converter.com).mp3');
-        audio.volume = 1.0;
-        
-        const playPromise = audio.play();
+        // Initialize audio only once
+        if (!audioRef.current) {
+             audioRef.current = new Audio('/VID_20260122_010534_539 (online-audio-converter.com).mp3');
+             audioRef.current.volume = 1.0;
+        }
+
+        const playPromise = audioRef.current.play();
         if (playPromise !== undefined) {
             playPromise.catch(error => {
-                // Autoplay prevented or file not found - expected behavior in sandbox
-                console.log("Audio skipped");
+                console.log("Audio play prevented:", error);
             });
         }
 
@@ -523,7 +515,10 @@ const BaneIntro = ({ onComplete }) => {
 
         return () => { 
             clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); 
-            audio.pause();
+            if (audioRef.current) {
+                audioRef.current.pause();
+                audioRef.current.currentTime = 0;
+            }
         };
     }, [onComplete]);
 

@@ -78,17 +78,6 @@ const haptic = (style = 'light') => {
   }
 };
 
-// Safe vibration helper to prevent crashes
-const safeVibrate = (pattern) => {
-    try {
-        if (typeof navigator !== 'undefined' && navigator.vibrate) {
-            navigator.vibrate(pattern);
-        }
-    } catch (e) {
-        // Ignore vibration errors
-    }
-};
-
 const notify = (type = 'success') => {
   if (tg?.HapticFeedback) {
     tg.HapticFeedback.notificationOccurred(type);
@@ -158,6 +147,7 @@ const GlobalStyles = () => (
         background-color: #00FF9D;
         border-radius: 99px;
         animation: bar-bounce 0.8s ease-in-out infinite;
+        will-change: height; /* Optimization hint */
     }
     /* Paused state for visualizer */
     .visualizer-bar.paused {
@@ -529,6 +519,9 @@ const BaneIntro = ({ onComplete }) => {
         onCompleteRef.current = onComplete;
     }, [onComplete]);
 
+    // Use memo to ensure bars are only created once
+    const bars = useMemo(() => Array.from({ length: 12 }, () => Math.random() * 0.5), []);
+
     useEffect(() => {
         // Создаем аудио только один раз
         if (!audioRef.current) {
@@ -544,9 +537,9 @@ const BaneIntro = ({ onComplete }) => {
         const handleTimeUpdate = () => {
             const t = audio.currentTime;
             // Синхронизация текста
-            if (t < 3.2) setPhase(1);
-            else if (t >= 3.2 && t < 4.2) setPhase(2);
-            else if (t >= 4.2) setPhase(3);
+            if (t < 3.2) setPhase(prev => (prev !== 1 ? 1 : prev));
+            else if (t >= 3.2 && t < 4.2) setPhase(prev => (prev !== 2 ? 2 : prev));
+            else if (t >= 4.2) setPhase(prev => (prev !== 3 ? 3 : prev));
         };
 
         const handleEnded = () => {
@@ -596,12 +589,12 @@ const BaneIntro = ({ onComplete }) => {
             <div className="max-w-md w-full relative">
                  {/* Voice Visualizer - Active only when playing */}
                 <div className="flex justify-center items-end gap-1 h-16 mb-12 opacity-80">
-                      {[...Array(12)].map((_, i) => (
+                      {bars.map((delay, i) => (
                           <div 
                             key={i} 
                             className={`visualizer-bar ${!isPlaying ? 'paused' : ''}`}
                             style={{ 
-                                animationDelay: `${Math.random() * 0.5}s`, 
+                                animationDelay: `${delay}s`, 
                                 height: '10%' 
                             }}
                           ></div>
@@ -2387,4 +2380,3 @@ const App = () => {
 };
 
 export default App;
- 

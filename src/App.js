@@ -78,6 +78,17 @@ const haptic = (style = 'light') => {
   }
 };
 
+// Safe vibration helper to prevent crashes
+const safeVibrate = (pattern) => {
+    try {
+        if (typeof navigator !== 'undefined' && navigator.vibrate) {
+            navigator.vibrate(pattern);
+        }
+    } catch (e) {
+        // Ignore vibration errors
+    }
+};
+
 const notify = (type = 'success') => {
   if (tg?.HapticFeedback) {
     tg.HapticFeedback.notificationOccurred(type);
@@ -136,6 +147,24 @@ const GlobalStyles = () => (
     }
     
     .pb-safe { padding-bottom: env(safe-area-inset-bottom, 20px); }
+
+    /* Visualizer Animation */
+    @keyframes bar-bounce {
+        0%, 100% { height: 10%; }
+        50% { height: 100%; }
+    }
+    .visualizer-bar {
+        width: 6px;
+        background-color: #00FF9D;
+        border-radius: 99px;
+        animation: bar-bounce 0.8s ease-in-out infinite;
+    }
+    /* Paused state for visualizer */
+    .visualizer-bar.paused {
+        animation-play-state: paused;
+        height: 10% !important;
+        transition: height 0.3s ease;
+    }
 
     @keyframes contourPulse {
       0% { filter: drop-shadow(0 0 1px rgba(0, 255, 157, 0.3)); opacity: 0.8; }
@@ -488,64 +517,114 @@ const AcademyCalculator = ({ onAction }) => {
   );
 };
 
-// 7. BaneIntro
+// 7. BaneIntro (FIXED AUDIO SYNC & DOUBLE PLAY)
 const BaneIntro = ({ onComplete }) => {
     const [phase, setPhase] = useState(0);
-    // Use ref to keep the audio instance stable across renders
     const audioRef = useRef(null);
-
+    const [isPlaying, setIsPlaying] = useState(false);
+    
+    // Используем Ref для onComplete, чтобы не перезапускать эффект при смене функции
+    const onCompleteRef = useRef(onComplete);
     useEffect(() => {
-        // Initialize audio only once
-        if (!audioRef.current) {
-             audioRef.current = new Audio('/VID_20260122_010534_539 (online-audio-converter.com).mp3');
-             audioRef.current.volume = 1.0;
-        }
-
-        const playPromise = audioRef.current.play();
-        if (playPromise !== undefined) {
-            playPromise.catch(error => {
-                console.log("Audio play prevented:", error);
-            });
-        }
-
-        const t1 = setTimeout(() => setPhase(1), 50); 
-        const t2 = setTimeout(() => setPhase(2), 3400); 
-        const t3 = setTimeout(() => setPhase(3), 4400); 
-        const t4 = setTimeout(() => onComplete(), 7800); 
-
-        return () => { 
-            clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); 
-            if (audioRef.current) {
-                audioRef.current.pause();
-                audioRef.current.currentTime = 0;
-            }
-        };
+        onCompleteRef.current = onComplete;
     }, [onComplete]);
 
+    useEffect(() => {
+        // Создаем аудио только один раз
+        if (!audioRef.current) {
+            audioRef.current = new Audio('/VID_20260122_010534_539 (online-audio-converter.com).mp3');
+            audioRef.current.volume = 1.0;
+            audioRef.current.playsInline = true;
+            // Важно для iOS/Telegram: предзагрузка
+            audioRef.current.preload = 'auto';
+        }
+
+        const audio = audioRef.current;
+
+        const handleTimeUpdate = () => {
+            const t = audio.currentTime;
+            // Синхронизация текста
+            if (t < 3.2) setPhase(1);
+            else if (t >= 3.2 && t < 4.2) setPhase(2);
+            else if (t >= 4.2) setPhase(3);
+        };
+
+        const handleEnded = () => {
+            if (onCompleteRef.current) onCompleteRef.current();
+        };
+
+        audio.addEventListener('timeupdate', handleTimeUpdate);
+        audio.addEventListener('ended', handleEnded);
+
+        // Логика безопасного запуска
+        const playAudio = async () => {
+            try {
+                // Проверяем, не играет ли уже (защита от двойного звука)
+                if (audio.paused) {
+                    await audio.play();
+                    setIsPlaying(true);
+                }
+            } catch (e) {
+                console.error("Autoplay blocked/Interrupted", e);
+                // Если автоплей заблокирован, можно показать кнопку Play, 
+                // но в данном дизайне мы просто ничего не делаем или пропускаем
+            }
+        };
+
+        playAudio();
+
+        // CLEANUP FUNCTION
+        return () => {
+            if (audio) {
+                audio.pause();
+                // Не сбрасываем currentTime в 0, чтобы избежать глитчей при быстром анмаунте
+                audio.removeEventListener('timeupdate', handleTimeUpdate);
+                audio.removeEventListener('ended', handleEnded);
+            }
+        };
+        // ВАЖНО: Пустой массив зависимостей [], чтобы эффект сработал ТОЛЬКО один раз при монтировании
+    }, []); 
+
     return (
-        <div className="fixed inset-0 z-[300] bg-black flex flex-col items-center justify-center p-6 text-center cursor-pointer" onClick={onComplete}>
+        <div className="fixed inset-0 z-[300] bg-black flex flex-col items-center justify-center p-6 text-center cursor-pointer" onClick={() => {
+            // При клике плавно завершаем
+            if (audioRef.current) {
+                audioRef.current.pause();
+            }
+            if (onCompleteRef.current) onCompleteRef.current();
+        }}>
             <div className="max-w-md w-full relative">
-                 {/* Voice Visualizer */}
-                <div className="flex justify-center items-end gap-1 h-16 mb-12 opacity-50">
+                 {/* Voice Visualizer - Active only when playing */}
+                <div className="flex justify-center items-end gap-1 h-16 mb-12 opacity-80">
                       {[...Array(12)].map((_, i) => (
-                          <div key={i} className="w-2 bg-[#00FF9D] rounded-full animate-[voiceWave_0.8s_ease-in-out_infinite]" style={{ animationDelay: `${Math.random() * 0.5}s`, height: '10%' }}></div>
+                          <div 
+                            key={i} 
+                            className={`visualizer-bar ${!isPlaying ? 'paused' : ''}`}
+                            style={{ 
+                                animationDelay: `${Math.random() * 0.5}s`, 
+                                height: '10%' 
+                            }}
+                          ></div>
                       ))}
                 </div>
 
                 <div className="space-y-8 relative z-10">
-                    <div className={`transition-all duration-[1500ms] ease-out ${phase >= 1 ? 'opacity-100' : 'opacity-0'}`}>
+                     {/* Phase 1: "Неважно кто мы такие" */}
+                    <div className={`transition-all duration-300 ease-out ${phase === 1 ? 'opacity-100 scale-100' : 'opacity-0 scale-95 absolute inset-0'}`}>
                         <h2 className="text-xl sm:text-2xl font-black uppercase font-['Chakra_Petch'] tracking-[0.2em] text-zinc-500 animate-[smoke-fade_2s_ease-out_forwards]">
                             НЕВАЖНО КТО МЫ ТАКИЕ
                         </h2>
                     </div>
                     
-                    <div className={`transition-all duration-[100ms] ${phase >= 2 ? 'opacity-100' : 'opacity-0'}`}>
-                        <h2 className="text-2xl sm:text-3xl font-black uppercase font-['Chakra_Petch'] tracking-widest text-white animate-[aggressive-glitch-text_0.5s_cubic-bezier(0.25,0.46,0.45,0.94)_both]">
+                    {/* Phase 2: "ВАЖНО ТО" */}
+                    <div className={`transition-all duration-100 ${phase === 2 ? 'opacity-100 scale-110' : 'opacity-0 scale-95 absolute inset-0'}`}>
+                        <h2 className="text-3xl sm:text-4xl font-black uppercase font-['Chakra_Petch'] tracking-widest text-white animate-[aggressive-glitch-text_0.5s_cubic-bezier(0.25,0.46,0.45,0.94)_both]">
                             ВАЖНО ТО
                         </h2>
                     </div>
 
-                    <div className={`transition-all duration-[500ms] ${phase >= 3 ? 'opacity-100' : 'opacity-0'}`}>
+                    {/* Phase 3: "КАКОЙ У НАС ПЛАН" */}
+                    <div className={`transition-all duration-500 ${phase === 3 ? 'opacity-100 scale-105' : 'opacity-0 scale-95 absolute inset-0'}`}>
                         <div className="relative inline-block">
                             <h2 className="text-3xl sm:text-5xl font-black uppercase font-['Chakra_Petch'] tracking-widest text-[#00FF9D] animate-[simple-glow_3s_infinite_ease-in-out]">
                                 КАКОЙ У НАС ПЛАН
@@ -554,8 +633,10 @@ const BaneIntro = ({ onComplete }) => {
                     </div>
                 </div>
                 
-                <div className="absolute bottom-[-100px] left-0 right-0 text-center">
-                    <p className="text-[10px] text-zinc-700 uppercase tracking-[0.5em] animate-pulse">Включите звук</p>
+                <div className="absolute bottom-10 left-0 right-0 text-center">
+                    <p className="text-[10px] text-zinc-700 uppercase tracking-[0.5em] animate-pulse">
+                         {isPlaying ? "Слушайте..." : "Загрузка аудио..."}
+                    </p>
                 </div>
             </div>
         </div>

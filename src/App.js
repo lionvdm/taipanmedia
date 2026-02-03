@@ -520,6 +520,7 @@ const AcademyCalculator = ({ onAction }) => {
 
 // 7. BaneIntro (OPTIMIZED: NO VISUALIZER)
 const BaneIntro = ({ onComplete }) => {
+    const [phase, setPhase] = useState(0);
     const audioRef = useRef(null);
     const completedRef = useRef(false);
     
@@ -613,6 +614,15 @@ const BaneIntro = ({ onComplete }) => {
                             }}
                           ></div>
                       ))}
+                </div>
+                
+                {/* Bane Mask Image - Absolute to sit behind or integrated */}
+                <div className={`transition-all duration-1000 ease-out absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 z-0 opacity-20 scale-100`}>
+                    <img 
+                        src="https://www.pngall.com/wp-content/uploads/2016/04/Bane-Mask-Free-Download-PNG.png" 
+                        alt="Bane Mask" 
+                        className="w-full h-full object-contain drop-shadow-[0_0_30px_rgba(0,255,157,0.2)]"
+                    />
                 </div>
             </div>
         </div>

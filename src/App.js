@@ -520,7 +520,6 @@ const AcademyCalculator = ({ onAction }) => {
 
 // 7. BaneIntro (OPTIMIZED: NO VISUALIZER)
 const BaneIntro = ({ onComplete }) => {
-    const [phase, setPhase] = useState(0);
     const audioRef = useRef(null);
     const completedRef = useRef(false);
     
@@ -614,15 +613,6 @@ const BaneIntro = ({ onComplete }) => {
                             }}
                           ></div>
                       ))}
-                </div>
-                
-                {/* Bane Mask Image - Absolute to sit behind or integrated */}
-                <div className={`transition-all duration-1000 ease-out absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 z-0 opacity-20 scale-100`}>
-                    <img 
-                        src="https://www.pngall.com/wp-content/uploads/2016/04/Bane-Mask-Free-Download-PNG.png" 
-                        alt="Bane Mask" 
-                        className="w-full h-full object-contain drop-shadow-[0_0_30px_rgba(0,255,157,0.2)]"
-                    />
                 </div>
             </div>
         </div>
@@ -1104,6 +1094,8 @@ const App = () => {
   const [currentUserId, setCurrentUserId] = useState(null); 
   const [spotsLeft, setSpotsLeft] = useState(4);
   const [referralCount, setReferralCount] = useState(0);
+  // --- NEW: Business Intro State ---
+  const [businessIntroActive, setBusinessIntroActive] = useState(false);
 
   // New State for Academy Calculator (Lifted Up)
   const [academyCalcData, setAcademyCalcData] = useState({ salary: 300000, days: 22, hours: 8 });
@@ -1447,7 +1439,10 @@ const App = () => {
       setUserRole('business');
       if (userRole !== 'business') saveUserSegment('business');
       setShopIntroFinished(false); // Reset intro to replay it
-      setCurrentView('shop');
+      
+      // SHOW INTRO OVERLAY FIRST, THEN NAVIGATE TO MAIN
+      setBusinessIntroActive(true); 
+      setCurrentView('main');
   };
 
   const handleAcademyNav = () => {
@@ -1500,8 +1495,12 @@ const App = () => {
   return (
     <div className="min-h-screen bg-[#050505] text-white font-sans selection:bg-[#00FF9D]/30 relative overflow-hidden flex flex-col">
       <GlobalStyles />
-      {/* Bane Intro Overlay */}
+      {/* Bane Intro Overlay - Only Voice + Eq */}
       {baneIntroActive && <BaneIntro onComplete={handleBaneIntroComplete} />}
+      
+      {/* Business Intro Overlay */}
+      {businessIntroActive && <ShopIntroSequence onComplete={() => setBusinessIntroActive(false)} />}
+      
       {/* GLOBAL IMAGE VIEWER MODAL */}
       {previewImage && (
         <div 
@@ -1608,7 +1607,7 @@ const App = () => {
             <div className="w-full space-y-3">
                 {userRole === 'business' ? (
                     <>
-                        <div onClick={handleShopClick} className="glass-card p-4 rounded-2xl flex flex-col items-center justify-center cursor-pointer border-[#00FF9D]/40 hover:bg-[#00FF9D]/10 transition-all text-center relative overflow-hidden group mb-2">
+                        <div onClick={() => setCurrentView('shop')} className="glass-card p-4 rounded-2xl flex flex-col items-center justify-center cursor-pointer border-[#00FF9D]/40 hover:bg-[#00FF9D]/10 transition-all text-center relative overflow-hidden group mb-2">
                             <div className="absolute inset-0 bg-gradient-to-br from-[#00FF9D]/10 to-transparent opacity-50"></div>
                             <TelegramLogoMain className="w-8 h-8 text-[#00FF9D] mb-1.5 relative z-10" />
                             <span className="text-base font-bold text-white relative z-10 font-['Chakra_Petch'] tracking-wider">ТЕЛЕГРАМ МАГАЗИН</span>
@@ -1708,73 +1707,67 @@ const App = () => {
         {/* VIEW: SHOP (Kept as is) */}
         {currentView === 'shop' && (
           <div className="flex flex-col h-full items-center w-full">
-             {!shopIntroFinished ? (
-                <ShopIntroSequence onComplete={() => setShopIntroFinished(true)} />
-             ) : (
-                <>
-                  <div className="flex-grow flex flex-col items-center w-full space-y-6 overflow-y-auto pb-20 no-scrollbar">
-                      <div className="text-center px-4 w-full">
-                        <div className="w-20 h-20 mx-auto bg-[#00FF9D]/10 rounded-full flex items-center justify-center border border-[#00FF9D]/30 mb-4 animate-[pulse_3s_infinite]">
-                            <TelegramLogoMain className="w-10 h-10 text-[#00FF9D] drop-shadow-[0_0_15px_rgba(0,255,157,0.5)]" />
+            <div className="flex-grow flex flex-col items-center w-full space-y-6 overflow-y-auto pb-20 no-scrollbar">
+                <div className="text-center px-4 w-full">
+                <div className="w-20 h-20 mx-auto bg-[#00FF9D]/10 rounded-full flex items-center justify-center border border-[#00FF9D]/30 mb-4 animate-[pulse_3s_infinite]">
+                    <TelegramLogoMain className="w-10 h-10 text-[#00FF9D] drop-shadow-[0_0_15px_rgba(0,255,157,0.5)]" />
+                </div>
+                <h2 className="text-2xl sm:text-3xl font-black tracking-tighter uppercase mb-2 font-['Chakra_Petch'] leading-none text-white">ТЕЛЕГРАМ <span className="text-[#00FF9D]">МАГАЗИН</span></h2>
+                <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] font-bold">ПОЛНАЯ АВТОМАТИЗАЦИЯ</p>
+                </div>
+
+                <div className="w-full space-y-4">
+                    <div className="glass-card p-5 rounded-2xl border border-zinc-800">
+                        <h3 className="text-xs font-bold text-white uppercase tracking-wider mb-4 flex items-center gap-2">
+                            <Zap className="w-4 h-4 text-[#00FF9D]" />
+                            Преимущества
+                        </h3>
+                        <ul className="space-y-4">
+                            <li className="flex items-start gap-3">
+                                <div className="min-w-[4px] h-4 bg-[#00FF9D] rounded-full mt-0.5"></div>
+                                <div>
+                                    <p className="text-xs font-bold text-white mb-0.5">Без скачивания</p>
+                                    <p className="text-[10px] text-zinc-400 leading-snug">Клиент покупает прямо в любимом мессенджере. Никаких лишних действий.</p>
+                                </div>
+                            </li>
+                            <li className="flex items-start gap-3">
+                                <div className="min-w-[4px] h-4 bg-[#00FF9D] rounded-full mt-0.5"></div>
+                                <div>
+                                    <p className="text-xs font-bold text-white mb-0.5">Push-рассылки</p>
+                                    <p className="text-[10px] text-zinc-400 leading-snug">Бесплатные уведомления об акциях с открываемостью 95%.</p>
+                                </div>
+                            </li>
+                            <li className="flex items-start gap-3">
+                                <div className="min-w-[4px] h-4 bg-[#00FF9D] rounded-full mt-0.5"></div>
+                                <div>
+                                    <p className="text-xs font-bold text-white mb-0.5">Синхронизация</p>
+                                    <p className="text-[10px] text-zinc-400 leading-snug">Выгрузка товаров из Excel, 1C или МойСклад. Автоматические остатки.</p>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div className="glass-card p-5 rounded-2xl border border-[#00FF9D]/30 relative overflow-hidden bg-gradient-to-br from-[#00FF9D]/5 to-transparent">
+                        <div className="absolute top-2 right-2 opacity-50"><Sparkles className="w-4 h-4 text-[#00FF9D]" /></div>
+                        <h3 className="text-xs font-bold text-white uppercase tracking-wider mb-3 relative z-10">ФУНКЦИОНАЛ</h3>
+                        <div className="grid grid-cols-2 gap-2 relative z-10">
+                            {['Каталог товаров', 'Корзина и оплата', 'Личный кабинет', 'История заказов', 'Бонусная система', 'Техподдержка'].map((tag, i) => (
+                                <div key={i} className="bg-black/60 border border-zinc-700/50 rounded-lg p-2 text-center">
+                                    <span className="text-[9px] text-zinc-300 font-mono uppercase">{tag}</span>
+                                </div>
+                            ))}
                         </div>
-                        <h2 className="text-2xl sm:text-3xl font-black tracking-tighter uppercase mb-2 font-['Chakra_Petch'] leading-none text-white">ТЕЛЕГРАМ <span className="text-[#00FF9D]">МАГАЗИН</span></h2>
-                        <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] font-bold">ПОЛНАЯ АВТОМАТИЗАЦИЯ</p>
-                      </div>
+                    </div>
+                </div>
 
-                      <div className="w-full space-y-4">
-                          <div className="glass-card p-5 rounded-2xl border border-zinc-800">
-                              <h3 className="text-xs font-bold text-white uppercase tracking-wider mb-4 flex items-center gap-2">
-                                  <Zap className="w-4 h-4 text-[#00FF9D]" />
-                                  Преимущества
-                              </h3>
-                              <ul className="space-y-4">
-                                  <li className="flex items-start gap-3">
-                                      <div className="min-w-[4px] h-4 bg-[#00FF9D] rounded-full mt-0.5"></div>
-                                      <div>
-                                          <p className="text-xs font-bold text-white mb-0.5">Без скачивания</p>
-                                          <p className="text-[10px] text-zinc-400 leading-snug">Клиент покупает прямо в любимом мессенджере. Никаких лишних действий.</p>
-                                      </div>
-                                  </li>
-                                  <li className="flex items-start gap-3">
-                                      <div className="min-w-[4px] h-4 bg-[#00FF9D] rounded-full mt-0.5"></div>
-                                      <div>
-                                          <p className="text-xs font-bold text-white mb-0.5">Push-рассылки</p>
-                                          <p className="text-[10px] text-zinc-400 leading-snug">Бесплатные уведомления об акциях с открываемостью 95%.</p>
-                                      </div>
-                                  </li>
-                                  <li className="flex items-start gap-3">
-                                      <div className="min-w-[4px] h-4 bg-[#00FF9D] rounded-full mt-0.5"></div>
-                                      <div>
-                                          <p className="text-xs font-bold text-white mb-0.5">Синхронизация</p>
-                                          <p className="text-[10px] text-zinc-400 leading-snug">Выгрузка товаров из Excel, 1C или МойСклад. Автоматические остатки.</p>
-                                      </div>
-                                  </li>
-                              </ul>
-                          </div>
-
-                          <div className="glass-card p-5 rounded-2xl border border-[#00FF9D]/30 relative overflow-hidden bg-gradient-to-br from-[#00FF9D]/5 to-transparent">
-                              <div className="absolute top-2 right-2 opacity-50"><Sparkles className="w-4 h-4 text-[#00FF9D]" /></div>
-                              <h3 className="text-xs font-bold text-white uppercase tracking-wider mb-3 relative z-10">ФУНКЦИОНАЛ</h3>
-                              <div className="grid grid-cols-2 gap-2 relative z-10">
-                                  {['Каталог товаров', 'Корзина и оплата', 'Личный кабинет', 'История заказов', 'Бонусная система', 'Техподдержка'].map((tag, i) => (
-                                      <div key={i} className="bg-black/60 border border-zinc-700/50 rounded-lg p-2 text-center">
-                                          <span className="text-[9px] text-zinc-300 font-mono uppercase">{tag}</span>
-                                      </div>
-                                  ))}
-                              </div>
-                          </div>
-                      </div>
-
-                      <div className="w-full pb-8 pt-2">
-                          <button onClick={() => setCurrentView('calculator')} className="w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-4 rounded-xl shadow-[0_0_20px_rgba(0,255,157,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs flex items-center justify-center gap-2 animate-pulse">
-                              <Wallet className="w-4 h-4" />
-                              РАССЧИТАТЬ ПРИБЫЛЬ
-                          </button>
-                          <p className="text-center text-[9px] text-zinc-600 mt-3">Узнайте, сколько вы теряете без магазина</p>
-                      </div>
-                  </div>
-                </>
-             )}
+                <div className="w-full pb-8 pt-2">
+                    <button onClick={() => setCurrentView('calculator')} className="w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-4 rounded-xl shadow-[0_0_20px_rgba(0,255,157,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs flex items-center justify-center gap-2 animate-pulse">
+                        <Wallet className="w-4 h-4" />
+                        РАССЧИТАТЬ ПРИБЫЛЬ
+                    </button>
+                    <p className="text-center text-[9px] text-zinc-600 mt-3">Узнайте, сколько вы теряете без магазина</p>
+                </div>
+            </div>
           </div>
         )}
 

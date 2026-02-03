@@ -1499,7 +1499,11 @@ const App = () => {
       {baneIntroActive && <BaneIntro onComplete={handleBaneIntroComplete} />}
       
       {/* Business Intro Overlay */}
-      {businessIntroActive && <ShopIntroSequence onComplete={() => setBusinessIntroActive(false)} />}
+      {businessIntroActive && (
+        <div className="fixed inset-0 z-[300] bg-black flex flex-col items-center justify-center">
+            <ShopIntroSequence onComplete={() => setBusinessIntroActive(false)} />
+        </div>
+      )}
       
       {/* GLOBAL IMAGE VIEWER MODAL */}
       {previewImage && (

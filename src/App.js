@@ -37,7 +37,7 @@ class ErrorBoundary extends React.Component {
 // --- CONFIGURATION & INIT ---
 const manifestUrl = 'https://taipan-rose.vercel.app/tonconnect-manifest.json';
 
-// 1. Prioritize Environment Config (SAFE VERSION)
+// 1. Prioritize Environment Config
 let firebaseConfig;
 try {
   if (typeof window !== 'undefined' && window.__firebase_config) {
@@ -76,17 +76,6 @@ const haptic = (style = 'light') => {
   if (tg?.HapticFeedback) {
     tg.HapticFeedback.impactOccurred(style);
   }
-};
-
-// Safe vibration helper to prevent crashes
-const safeVibrate = (pattern) => {
-    try {
-        if (typeof navigator !== 'undefined' && navigator.vibrate) {
-            navigator.vibrate(pattern);
-        }
-    } catch (e) {
-        // Ignore vibration errors
-    }
 };
 
 const notify = (type = 'success') => {
@@ -146,6 +135,8 @@ const GlobalStyles = () => (
         pointer-events: none;
     }
     
+    .pb-safe { padding-bottom: env(safe-area-inset-bottom, 20px); }
+
     @keyframes contourPulse {
       0% { filter: drop-shadow(0 0 1px rgba(0, 255, 157, 0.3)); opacity: 0.8; }
       50% { filter: drop-shadow(0 0 6px rgba(0, 255, 157, 0.6)); opacity: 1; }
@@ -286,6 +277,7 @@ const HelpCircle = (p) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2
 const Sparkles = (p) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275-1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" /></svg>;
 const Send = (p) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" /></svg>;
 const MessageCircle = (p) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" /></svg>;
+const Briefcase = (p) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><rect width="20" height="14" x="2" y="7" rx="2" ry="2" /><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" /></svg>;
 
 const TelegramLogoMain = React.memo(({ className }) => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" stroke="none" className={className}>
@@ -988,6 +980,31 @@ const RoiView = ({ profit, onBack, onAction }) => {
   );
 };
 
+// Bottom Nav Component
+const BottomNav = ({ onBack, onBusiness, onAcademy, onAbout, activeRole }) => (
+  <div className="fixed bottom-0 left-0 right-0 bg-[#050505]/90 backdrop-blur-xl border-t border-zinc-800 pb-safe pt-2 px-6 z-[1000] flex justify-between items-center h-[80px]">
+    <button onClick={onBack} className="flex flex-col items-center gap-1 w-14 text-zinc-500 hover:text-white transition-colors active:scale-95">
+       <ChevronLeft className="w-5 h-5" />
+       <span className="text-[8px] font-bold uppercase tracking-wider">Назад</span>
+    </button>
+    
+    <button onClick={onBusiness} className={`flex flex-col items-center gap-1 w-14 transition-colors active:scale-95 ${activeRole === 'business' ? 'text-[#00FF9D]' : 'text-zinc-500 hover:text-white'}`}>
+       <Briefcase className="w-5 h-5" />
+       <span className="text-[8px] font-bold uppercase tracking-wider">Бизнес</span>
+    </button>
+
+    <button onClick={onAcademy} className={`flex flex-col items-center gap-1 w-14 transition-colors active:scale-95 ${activeRole === 'academy' ? 'text-blue-400' : 'text-zinc-500 hover:text-white'}`}>
+       <GraduationCap className="w-5 h-5" />
+       <span className="text-[8px] font-bold uppercase tracking-wider">Академия</span>
+    </button>
+
+    <button onClick={onAbout} className="flex flex-col items-center gap-1 w-14 text-zinc-500 hover:text-white transition-colors active:scale-95">
+       <Users className="w-5 h-5" />
+       <span className="text-[8px] font-bold uppercase tracking-wider">О нас</span>
+    </button>
+  </div>
+);
+
 const App = () => {
   useEffect(() => { console.log("Taipan Media App Initialized"); }, []);
   const [currentView, setCurrentView] = useState('role_selection'); 
@@ -1359,6 +1376,47 @@ const App = () => {
     { id: 'calc', question: "Найду ли я клиентов?", icon: <Wallet className="w-5 h-5 text-stranger-red" />, isCalc: true, component: (<div className="w-full"><ClientDemandProof /><div className="text-sm text-zinc-300 leading-relaxed border-l-2 border-[#00FF9D]/50 pl-4 mb-4"><p><span className="text-white font-bold">Ты не просто их найдешь — они тоже будут тебя искать.</span></p><br/><p>Статистика Яндекса не врет: каждый месяц <span className="text-[#00FF9D] font-bold">6 650</span> предпринимателей ищут, кто сделает им магазин в Telegram. Спрос огромный, а тех, кто умеет делать это качественно — единицы.</p><br/><p>На обучении мы даем не только технические навыки, но и <span className="text-white font-bold">полную систему продаж</span>:</p><br/><ul className="list-disc pl-4 space-y-2"><li><span className="text-[#00FF9D] font-bold">Где брать клиентов:</span> Покажем, как выйти на те самые тысячи заказов.</li><li><span className="text-[#00FF9D] font-bold">Как продавать:</span> Научим вести переговоры с бизнесменами и закрывать сделки на высокие чеки.</li><li><span className="text-[#00FF9D] font-bold">Готовые шаблоны предложений:</span> Тебе не нужно ничего придумывать — просто бери наше проверенное КП и отправляй клиенту.</li></ul><br/><p>Мы научим тебя делать результат «под ключ», чтобы ты мог уверенно забирать свои <span className="text-white font-bold">100 000₸</span> за проект.</p></div></div>) }
   ];
 
+  // Global Back Handler
+  const handleGlobalBack = () => {
+    haptic('light');
+    if (currentView === 'role_selection') return;
+    if (currentView === 'main') {
+        setCurrentView('role_selection');
+        return;
+    }
+    
+    // Define logic based on current view and role
+    switch(currentView) {
+        case 'shop': setCurrentView('main'); break;
+        case 'calculator': 
+            setCurrentView(userRole === 'academy' ? 'main' : 'shop'); 
+            break;
+        case 'roi': 
+            setCurrentView('calculator'); 
+            break;
+        case 'strategy':
+             // Business: Came from Main -> Strategy. Back -> Main.
+             // Academy: Came from Main -> Strategy. Back -> Main.
+             setCurrentView('main');
+             break;
+        case 'education': setCurrentView('role_selection'); break; 
+        case 'faq': setCurrentView(userRole === 'academy' ? 'main' : 'education'); break;
+        case 'program': setCurrentView(userRole === 'academy' ? 'main' : 'faq'); break;
+        case 'cases': setCurrentView('main'); break;
+        case 'reviews': setCurrentView('main'); break;
+        case 'about': setCurrentView('main'); break;
+        default: setCurrentView('main');
+    }
+  };
+
+  const handleTabSwitch = (role) => {
+      haptic('medium');
+      setUserRole(role);
+      // We also update the segment in Firestore if changed, but async
+      if (userRole !== role) saveUserSegment(role);
+      setCurrentView('main');
+  };
+
   return (
     <div className="min-h-screen bg-[#050505] text-white font-sans selection:bg-[#00FF9D]/30 relative overflow-hidden flex flex-col">
       <GlobalStyles />
@@ -1391,7 +1449,7 @@ const App = () => {
         <div className="absolute inset-0 opacity-20 -z-10" style={{ backgroundImage: `linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px)`, backgroundSize: '50px 50px', maskImage: 'radial-gradient(circle at 50% 30%, black 40%, transparent 100%)', WebkitMaskImage: 'radial-gradient(circle at 50% 30%, black 40%, transparent 100%)' }} />
       </div>
 
-      <div className="relative z-10 flex-grow flex flex-col max-w-lg mx-auto w-full px-4 pt-5 pb-20">
+      <div className="relative z-10 flex-grow flex flex-col max-w-lg mx-auto w-full px-4 pt-5 pb-32">
         
         {currentView === 'role_selection' && (
           <div className="flex flex-col items-center justify-center h-full w-full px-4 pt-5 pb-20">
@@ -1558,21 +1616,7 @@ const App = () => {
                     </div>
                 )}
             </div>
-
-            {/* --- SWITCHER FOOTER --- */}
-            <div className="w-full mt-12 pt-6 border-t border-zinc-900 flex flex-col items-center gap-6">
-                <button 
-                    onClick={() => { haptic('light'); setCurrentView('role_selection'); }}
-                    className="text-[9px] text-zinc-500 uppercase tracking-[0.2em] hover:text-[#00FF9D] transition-colors border border-zinc-800 px-6 py-3 rounded-full hover:border-[#00FF9D]/30 active:scale-95"
-                >
-                    Сменить направление
-                </button>
-                
-                <div className="flex gap-8 opacity-40">
-                    <div onClick={handleAboutClick} className="uppercase text-[9px] tracking-widest cursor-pointer hover:text-white transition-colors">О нас</div>
-                    <div onClick={() => window.open('https://t.me/taipanmedia', '_blank')} className="uppercase text-[9px] tracking-widest cursor-pointer hover:text-[#00FF9D] transition-colors">Контакт</div>
-                </div>
-            </div>
+            
           </div>
         )}
 
@@ -1585,7 +1629,6 @@ const App = () => {
                 <ShopIntroSequence onComplete={() => setShopIntroFinished(true)} />
              ) : (
                 <>
-                  <button onClick={() => handleBackClick('main')} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-4 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
                   <div className="flex-grow flex flex-col items-center w-full space-y-6 overflow-y-auto pb-20 no-scrollbar">
                       <div className="text-center px-4 w-full">
                         <div className="w-20 h-20 mx-auto bg-[#00FF9D]/10 rounded-full flex items-center justify-center border border-[#00FF9D]/30 mb-4 animate-[pulse_3s_infinite]">
@@ -1655,8 +1698,6 @@ const App = () => {
         {/* VIEW: CALCULATOR (Kept as is) */}
         {currentView === 'calculator' && (
           <div className="w-full flex flex-col items-center pb-24">
-            {/* Logic for Back Button: Return to Main if Academy, else go back to Shop or Main based on context */}
-            <button onClick={() => handleBackClick(userRole === 'academy' ? 'main' : 'shop')} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-4 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
             <div className="w-full space-y-2">
                 {userRole === 'business' ? (
                     <div className="text-center px-4 w-full mb-2">
@@ -1687,7 +1728,6 @@ const App = () => {
 
         {currentView === 'strategy' && (
           <div className="flex flex-col h-full items-center w-full">
-              <button onClick={() => handleBackClick(userRole === 'academy' ? 'main' : 'calculator')} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-4 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
               <div className="flex-grow flex flex-col items-center w-full space-y-6 overflow-y-auto pb-20 no-scrollbar">
                 
                 {/* UNIFIED PERSONAL CABINET HEADER */}
@@ -1949,7 +1989,6 @@ const App = () => {
         {/* VIEW: REVIEWS (NEW) */}
         {currentView === 'reviews' && (
           <div className="flex flex-col h-full items-center w-full">
-             <button onClick={() => handleBackClick('main')} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-4 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
              <div className="flex-grow flex flex-col items-center w-full space-y-6 overflow-y-auto pb-20 no-scrollbar">
                 <div className="text-center px-4 w-full">
                     <h2 className="text-2xl sm:text-3xl font-black tracking-tighter uppercase mb-1 font-['Chakra_Petch'] leading-none whitespace-nowrap">ЧЕСТНЫЕ <span className="text-[#00FF9D]">ОТЗЫВЫ</span></h2>
@@ -1998,7 +2037,6 @@ const App = () => {
         {/* VIEW: CASES (SEPARATE VIEW) */}
         {currentView === 'cases' && (
           <div className="flex flex-col h-full items-center w-full">
-             <button onClick={() => handleBackClick('main')} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-4 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
              <div className="flex-grow flex flex-col items-center w-full space-y-6 overflow-y-auto pb-20 no-scrollbar">
                 <div className="text-center px-4 w-full">
                     <h2 className="text-2xl sm:text-3xl font-black tracking-tighter uppercase mb-1 font-['Chakra_Petch'] leading-none whitespace-nowrap">КЕЙСЫ <span className="text-[#00FF9D]">ПАРТНЕРОВ</span></h2>
@@ -2025,14 +2063,12 @@ const App = () => {
 
         {/* VIEW: ROI VIEW (Kept as is) */}
         {currentView === 'roi' && (
-           <RoiView profit={calculateProfit()} onBack={() => handleBackClick('main')} onAction={() => openModal('Start Project')} />
+           <RoiView profit={calculateProfit()} onBack={() => handleBackClick('calculator')} onAction={() => openModal('Start Project')} />
         )}
 
         {/* VIEW: EDUCATION (Kept as is) */}
         {currentView === 'education' && (
           <div className="flex flex-col h-full items-center">
-            {/* Используем previousView для кнопки Назад */}
-            <button onClick={() => handleBackClick(previousView)} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-6 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
             <div className="flex-grow flex flex-col items-center justify-center space-y-10 w-full">
               <div className="text-center px-4 w-full mb-10"><h2 className="text-4xl font-black tracking-tighter uppercase mb-2 font-['Chakra_Petch']">Упущенные<br/><span className="text-[#00FF9D]">Возможности</span></h2><p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] mr-[-0.3em] font-bold">История твоих сомнений</p></div>
               <div className="relative w-full h-[280px] flex items-center justify-center">
@@ -2057,7 +2093,6 @@ const App = () => {
         {/* VIEW: FAQ (Kept as is) */}
         {currentView === 'faq' && (
           <div className="flex flex-col h-full">
-            <button onClick={() => handleBackClick(userRole === 'academy' ? 'main' : 'education')} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-6 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
             <div className="flex-grow flex flex-col items-center w-full space-y-6">
               <div className="w-full mb-6"><Carousel3D /><div className="text-center mt-2"></div></div>
               <div className="w-full space-y-4">
@@ -2076,7 +2111,6 @@ const App = () => {
         {/* VIEW: PROGRAM (Kept as is) */}
         {currentView === 'program' && (
           <div className="flex flex-col h-full">
-            <button onClick={() => handleBackClick(userRole === 'academy' ? 'main' : 'faq')} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-6 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
             <div className="flex-grow flex flex-col items-center w-full space-y-6">
               <div className="flex flex-col items-center text-center px-4 w-full mb-6 mx-auto max-w-sm"><h2 className="text-3xl sm:text-4xl font-black tracking-tight uppercase mb-2 font-['Chakra_Petch'] leading-tight">Модули обучения<br/><span className="text-[#00FF9D]">TAIPAN ACADEMY</span></h2><p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] mr-[-0.3em] font-bold">Система доминирования</p></div>
               
@@ -2111,7 +2145,6 @@ const App = () => {
         {/* VIEW: ABOUT (Kept as is) */}
         {currentView === 'about' && (
           <div className="flex flex-col h-full items-center">
-            <button onClick={() => handleBackClick('main')} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-6 hover:opacity-70 transition-all w-fit"><ChevronLeft className="w-4 h-4 mr-1" /> Назад</button>
             <div className="flex-grow flex flex-col items-center w-full space-y-6">
                 <div className="text-center px-4 w-full mb-4">
                     <h2 className="text-4xl font-black tracking-tighter uppercase mb-2 font-['Chakra_Petch'] whitespace-nowrap">КТО <span className="text-[#00FF9D]">МЫ</span></h2>
@@ -2218,6 +2251,16 @@ const App = () => {
           </div>
         )}
       </div>
+
+      {currentView !== 'role_selection' && (
+        <BottomNav 
+          onBack={handleGlobalBack} 
+          onBusiness={() => handleTabSwitch('business')} 
+          onAcademy={() => handleTabSwitch('academy')} 
+          onAbout={() => setCurrentView('about')} 
+          activeRole={userRole} 
+        />
+      )}
 
       {/* Modals & Toasts */}
       {isModalOpen && (

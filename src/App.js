@@ -78,6 +78,17 @@ const haptic = (style = 'light') => {
   }
 };
 
+// Safe vibration helper to prevent crashes
+const safeVibrate = (pattern) => {
+    try {
+        if (typeof navigator !== 'undefined' && navigator.vibrate) {
+            navigator.vibrate(pattern);
+        }
+    } catch (e) {
+        // Ignore vibration errors
+    }
+};
+
 const notify = (type = 'success') => {
   if (tg?.HapticFeedback) {
     tg.HapticFeedback.notificationOccurred(type);
@@ -136,25 +147,6 @@ const GlobalStyles = () => (
     }
     
     .pb-safe { padding-bottom: env(safe-area-inset-bottom, 20px); }
-
-    /* Visualizer Animation */
-    @keyframes bar-bounce {
-        0%, 100% { height: 10%; }
-        50% { height: 100%; }
-    }
-    .visualizer-bar {
-        width: 6px;
-        background-color: #00FF9D;
-        border-radius: 99px;
-        animation: bar-bounce 0.8s ease-in-out infinite;
-        will-change: height; /* Optimization hint */
-    }
-    /* Paused state for visualizer */
-    .visualizer-bar.paused {
-        animation-play-state: paused;
-        height: 10% !important;
-        transition: height 0.3s ease;
-    }
 
     @keyframes contourPulse {
       0% { filter: drop-shadow(0 0 1px rgba(0, 255, 157, 0.3)); opacity: 0.8; }
@@ -507,28 +499,22 @@ const AcademyCalculator = ({ onAction }) => {
   );
 };
 
-// 7. BaneIntro (FIXED AUDIO SYNC & DOUBLE PLAY)
+// 7. BaneIntro (OPTIMIZED: NO VISUALIZER)
 const BaneIntro = ({ onComplete }) => {
     const [phase, setPhase] = useState(0);
     const audioRef = useRef(null);
-    const [isPlaying, setIsPlaying] = useState(false);
+    const completedRef = useRef(false);
     
-    // Используем Ref для onComplete, чтобы не перезапускать эффект при смене функции
     const onCompleteRef = useRef(onComplete);
     useEffect(() => {
         onCompleteRef.current = onComplete;
     }, [onComplete]);
 
-    // Use memo to ensure bars are only created once
-    const bars = useMemo(() => Array.from({ length: 12 }, () => Math.random() * 0.5), []);
-
     useEffect(() => {
-        // Создаем аудио только один раз
         if (!audioRef.current) {
             audioRef.current = new Audio('/VID_20260122_010534_539 (online-audio-converter.com).mp3');
             audioRef.current.volume = 1.0;
             audioRef.current.playsInline = true;
-            // Важно для iOS/Telegram: предзагрузка
             audioRef.current.preload = 'auto';
         }
 
@@ -539,67 +525,57 @@ const BaneIntro = ({ onComplete }) => {
             // Синхронизация текста
             if (t < 3.2) setPhase(prev => (prev !== 1 ? 1 : prev));
             else if (t >= 3.2 && t < 4.2) setPhase(prev => (prev !== 2 ? 2 : prev));
-            else if (t >= 4.2) setPhase(prev => (prev !== 3 ? 3 : prev));
+            else if (t >= 4.2) {
+                setPhase(prev => (prev !== 3 ? 3 : prev));
+                
+                // Закрываем интро через 1 секунду после появления последней фразы
+                if (t >= 5.2 && !completedRef.current) {
+                     completedRef.current = true;
+                     if (onCompleteRef.current) onCompleteRef.current();
+                }
+            }
         };
 
         const handleEnded = () => {
-            if (onCompleteRef.current) onCompleteRef.current();
+            if (!completedRef.current && onCompleteRef.current) {
+                 completedRef.current = true;
+                 onCompleteRef.current();
+            }
         };
 
         audio.addEventListener('timeupdate', handleTimeUpdate);
         audio.addEventListener('ended', handleEnded);
 
-        // Логика безопасного запуска
         const playAudio = async () => {
             try {
-                // Проверяем, не играет ли уже (защита от двойного звука)
                 if (audio.paused) {
                     await audio.play();
-                    setIsPlaying(true);
                 }
             } catch (e) {
                 console.error("Autoplay blocked/Interrupted", e);
-                // Если автоплей заблокирован, можно показать кнопку Play, 
-                // но в данном дизайне мы просто ничего не делаем или пропускаем
             }
         };
 
         playAudio();
 
-        // CLEANUP FUNCTION
         return () => {
             if (audio) {
                 audio.pause();
-                // Не сбрасываем currentTime в 0, чтобы избежать глитчей при быстром анмаунте
                 audio.removeEventListener('timeupdate', handleTimeUpdate);
                 audio.removeEventListener('ended', handleEnded);
             }
         };
-        // ВАЖНО: Пустой массив зависимостей [], чтобы эффект сработал ТОЛЬКО один раз при монтировании
     }, []); 
 
     return (
         <div className="fixed inset-0 z-[300] bg-black flex flex-col items-center justify-center p-6 text-center cursor-pointer" onClick={() => {
-            // При клике плавно завершаем
             if (audioRef.current) {
                 audioRef.current.pause();
             }
             if (onCompleteRef.current) onCompleteRef.current();
         }}>
             <div className="max-w-md w-full relative">
-                 {/* Voice Visualizer - Active only when playing */}
-                <div className="flex justify-center items-end gap-1 h-16 mb-12 opacity-80">
-                      {bars.map((delay, i) => (
-                          <div 
-                            key={i} 
-                            className={`visualizer-bar ${!isPlaying ? 'paused' : ''}`}
-                            style={{ 
-                                animationDelay: `${delay}s`, 
-                                height: '10%' 
-                            }}
-                          ></div>
-                      ))}
-                </div>
+                 <div className="h-16 mb-12"></div> {/* Spacer for layout balance */}
 
                 <div className="space-y-8 relative z-10">
                      {/* Phase 1: "Неважно кто мы такие" */}
@@ -624,12 +600,6 @@ const BaneIntro = ({ onComplete }) => {
                             </h2>
                         </div>
                     </div>
-                </div>
-                
-                <div className="absolute bottom-10 left-0 right-0 text-center">
-                    <p className="text-[10px] text-zinc-700 uppercase tracking-[0.5em] animate-pulse">
-                         {isPlaying ? "Слушайте..." : "Загрузка аудио..."}
-                    </p>
                 </div>
             </div>
         </div>
@@ -1692,21 +1662,7 @@ const App = () => {
                     </div>
                 )}
             </div>
-
-            {/* --- SWITCHER FOOTER --- */}
-            <div className="w-full mt-12 pt-6 border-t border-zinc-900 flex flex-col items-center gap-6">
-                <button 
-                    onClick={() => { haptic('light'); setCurrentView('role_selection'); }}
-                    className="text-[9px] text-zinc-500 uppercase tracking-[0.2em] hover:text-[#00FF9D] transition-colors border border-zinc-800 px-6 py-3 rounded-full hover:border-[#00FF9D]/30 active:scale-95"
-                >
-                    Сменить направление
-                </button>
-                
-                <div className="flex gap-8 opacity-40">
-                    <div onClick={handleAboutClick} className="uppercase text-[9px] tracking-widest cursor-pointer hover:text-white transition-colors">О нас</div>
-                    <div onClick={() => window.open('https://t.me/taipanmedia', '_blank')} className="uppercase text-[9px] tracking-widest cursor-pointer hover:text-[#00FF9D] transition-colors">Контакт</div>
-                </div>
-            </div>
+            
           </div>
         )}
 

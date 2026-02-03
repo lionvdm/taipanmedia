@@ -78,6 +78,17 @@ const haptic = (style = 'light') => {
   }
 };
 
+// Safe vibration helper to prevent crashes
+const safeVibrate = (pattern) => {
+    try {
+        if (typeof navigator !== 'undefined' && navigator.vibrate) {
+            navigator.vibrate(pattern);
+        }
+    } catch (e) {
+        // Ignore vibration errors
+    }
+};
+
 const notify = (type = 'success') => {
   if (tg?.HapticFeedback) {
     tg.HapticFeedback.notificationOccurred(type);
@@ -1000,7 +1011,7 @@ const BottomNav = ({ onBack, onBusiness, onAcademy, onAbout, activeRole }) => (
 
     <button onClick={onAbout} className="flex flex-col items-center gap-1 w-14 text-zinc-500 hover:text-white transition-colors active:scale-95">
        <Users className="w-5 h-5" />
-       <span className="text-[8px] font-bold uppercase tracking-wider">О нас</span>
+       <span className="text-[8px] font-bold uppercase tracking-wider">Кто мы?</span>
     </button>
   </div>
 );
@@ -1369,6 +1380,21 @@ const App = () => {
         setBaneIntroActive(false);
         setCurrentView('about');
   }
+  const handleBusinessNav = () => {
+      haptic('medium');
+      setUserRole('business');
+      if (userRole !== 'business') saveUserSegment('business');
+      setShopIntroFinished(false); // Reset intro to replay it
+      setCurrentView('shop');
+  };
+
+  const handleAcademyNav = () => {
+      haptic('medium');
+      setUserRole('academy');
+      if (userRole !== 'academy') saveUserSegment('academy');
+      setCurrentView('education');
+  };
+
   const faqItems = [
     { id: 'stats', question: "Это вообще покупают?", icon: <TrendingUp className="w-5 h-5 text-stranger-red" />, component: (<div className="w-full"><WordstatGraph /><h3 className="text-white font-bold mb-3 uppercase tracking-wide text-sm font-mono leading-tight">6 650 человек ищут тебя. Как долго ты будешь их игнорировать?</h3><p className="text-sm text-zinc-300 leading-relaxed border-l-2 border-[#00FF9D]/50 pl-4 mb-4">Это официальная статистика Яндекса: <span className="text-stranger-red font-bold">6 650</span> прямых запросов на ТГ-магазины в месяц.<br/><br/>Пока ты ищешь «подходящий момент», наши ученики уже забирают эти чеки по <span className="text-white font-bold">100 000₸</span>, просто потому что они оказались на связи.<br/><br/>Мы даем тебе все инструменты и доступ к этому потоку. Твой результат — это просто вопрос того, возьмешь ли ты готовую систему и начнешь ли по ней работать.<br/><br/><span className="text-[#00FF9D] italic font-medium">Рынок платит тем, кто действует, а не тем, кто наблюдает.</span></p></div>) },
     { id: 'proof', question: "А это реально работает?", icon: <Lock className="w-5 h-5 text-stranger-red" />, component: (<div className="w-full"><HackerProof /><p className="text-sm text-zinc-300 leading-relaxed border-l-2 border-[#00FF9D]/50 pl-4 mb-2">Пока ты сомневаешься, <span className="text-stranger-red font-bold">Карашаш</span> прошла наше обучение и уже забирает свои <span className="text-white font-bold">100 000₸</span>.<br/><br/>На скриншоте — результат её работы. Она просто взяла знания, которые мы даём, и закрыла одного из <span className="text-stranger-red font-bold">6 650</span> горячих клиентов в Яндексе. Ей не нужен был «подходящий момент», ей нужна была рабочая система.<br/><br/><span className="text-white italic">Рынок пустой. Деньги на столе. Ты следующий или так и будешь смотреть на чужие чеки?</span></p></div>) },
@@ -1407,14 +1433,6 @@ const App = () => {
         case 'about': setCurrentView('main'); break;
         default: setCurrentView('main');
     }
-  };
-
-  const handleTabSwitch = (role) => {
-      haptic('medium');
-      setUserRole(role);
-      // We also update the segment in Firestore if changed, but async
-      if (userRole !== role) saveUserSegment(role);
-      setCurrentView('main');
   };
 
   return (
@@ -1468,12 +1486,7 @@ const App = () => {
               
               <div className="w-full space-y-4 mb-8 flex flex-col items-center">
                   {/* BUSINESS CARD */}
-                  <div onClick={() => { 
-                      setUserRole('business'); 
-                      saveUserSegment('business'); // SAVE SEGMENT
-                      setCurrentView('main'); 
-                      haptic('medium'); 
-                  }} className="group relative w-10/12 max-w-[280px] bg-zinc-900/60 border border-[#00FF9D]/20 p-1 rounded-3xl overflow-hidden transition-all duration-300 hover:border-[#00FF9D] hover:shadow-[0_0_30px_rgba(0,255,157,0.15)] active:scale-[0.98] cursor-pointer">
+                  <div onClick={handleBusinessNav} className="group relative w-10/12 max-w-[280px] bg-zinc-900/60 border border-[#00FF9D]/20 p-1 rounded-3xl overflow-hidden transition-all duration-300 hover:border-[#00FF9D] hover:shadow-[0_0_30px_rgba(0,255,157,0.15)] active:scale-[0.98] cursor-pointer">
                       <div className="absolute inset-0 bg-gradient-to-r from-[#00FF9D]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                       <div className="relative flex flex-col items-center justify-center bg-[#050505]/50 rounded-[20px] p-5 h-full text-center">
                           <div className="w-14 h-14 mb-3 rounded-full bg-gradient-to-br from-[#00FF9D]/20 to-black border border-[#00FF9D]/30 flex items-center justify-center shadow-[0_0_15px_rgba(0,255,157,0.1)] group-hover:scale-110 transition-transform duration-300">
@@ -1486,13 +1499,7 @@ const App = () => {
                   </div>
 
                   {/* ACADEMY CARD */}
-                  <div onClick={() => { 
-                      setUserRole('academy'); 
-                      saveUserSegment('academy'); // SAVE SEGMENT
-                      setPreviousView('role_selection'); // Запоминаем, что пришли с выбора роли
-                      setCurrentView('education'); 
-                      haptic('medium'); 
-                  }} className="group relative w-10/12 max-w-[280px] bg-zinc-900/60 border border-blue-500/20 p-1 rounded-3xl overflow-hidden transition-all duration-300 hover:border-blue-500 hover:shadow-[0_0_30px_rgba(59,130,246,0.15)] active:scale-[0.98] cursor-pointer">
+                  <div onClick={handleAcademyNav} className="group relative w-10/12 max-w-[280px] bg-zinc-900/60 border border-blue-500/20 p-1 rounded-3xl overflow-hidden transition-all duration-300 hover:border-blue-500 hover:shadow-[0_0_30px_rgba(59,130,246,0.15)] active:scale-[0.98] cursor-pointer">
                       <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                       <div className="relative flex flex-col items-center justify-center bg-[#050505]/50 rounded-[20px] p-5 h-full text-center">
                           <div className="w-14 h-14 mb-3 rounded-full bg-gradient-to-br from-blue-500/20 to-black border border-blue-500/30 flex items-center justify-center shadow-[0_0_15px_rgba(59,130,246,0.1)] group-hover:scale-110 transition-transform duration-300">
@@ -1616,7 +1623,21 @@ const App = () => {
                     </div>
                 )}
             </div>
-            
+
+            {/* --- SWITCHER FOOTER --- */}
+            <div className="w-full mt-12 pt-6 border-t border-zinc-900 flex flex-col items-center gap-6">
+                <button 
+                    onClick={() => { haptic('light'); setCurrentView('role_selection'); }}
+                    className="text-[9px] text-zinc-500 uppercase tracking-[0.2em] hover:text-[#00FF9D] transition-colors border border-zinc-800 px-6 py-3 rounded-full hover:border-[#00FF9D]/30 active:scale-95"
+                >
+                    Сменить направление
+                </button>
+                
+                <div className="flex gap-8 opacity-40">
+                    <div onClick={handleAboutClick} className="uppercase text-[9px] tracking-widest cursor-pointer hover:text-white transition-colors">О нас</div>
+                    <div onClick={() => window.open('https://t.me/taipanmedia', '_blank')} className="uppercase text-[9px] tracking-widest cursor-pointer hover:text-[#00FF9D] transition-colors">Контакт</div>
+                </div>
+            </div>
           </div>
         )}
 
@@ -2255,9 +2276,9 @@ const App = () => {
       {currentView !== 'role_selection' && (
         <BottomNav 
           onBack={handleGlobalBack} 
-          onBusiness={() => handleTabSwitch('business')} 
-          onAcademy={() => handleTabSwitch('academy')} 
-          onAbout={() => setCurrentView('about')} 
+          onBusiness={handleBusinessNav} 
+          onAcademy={handleAcademyNav} 
+          onAbout={handleAboutClick} 
           activeRole={userRole} 
         />
       )}

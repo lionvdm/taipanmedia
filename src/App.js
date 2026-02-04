@@ -37,7 +37,6 @@ class ErrorBoundary extends React.Component {
 // --- CONFIGURATION & INIT ---
 const manifestUrl = 'https://taipan-rose.vercel.app/tonconnect-manifest.json';
 
-// 1. Prioritize Environment Config
 let firebaseConfig;
 try {
   if (typeof window !== 'undefined' && window.__firebase_config) {
@@ -78,31 +77,10 @@ const haptic = (style = 'light') => {
   }
 };
 
-// Safe vibration helper to prevent crashes
-const safeVibrate = (pattern) => {
-    try {
-        if (typeof navigator !== 'undefined' && navigator.vibrate) {
-            navigator.vibrate(pattern);
-        }
-    } catch (e) {
-        // Ignore vibration errors
-    }
-};
-
 const notify = (type = 'success') => {
   if (tg?.HapticFeedback) {
     tg.HapticFeedback.notificationOccurred(type);
   }
-};
-
-const getPlural = (number, one, two, five) => {
-  let n = Math.abs(number);
-  n %= 100;
-  if (n >= 5 && n <= 20) return five;
-  n %= 10;
-  if (n === 1) return one;
-  if (n >= 2 && n <= 4) return two;
-  return five;
 };
 
 // --- STYLES ---
@@ -116,7 +94,6 @@ const GlobalStyles = () => (
     input[type=number] { -moz-appearance: textfield; }
 
     .glass-card {
-        background-color: #1a1a1a; 
         background-color: rgba(20, 20, 20, 0.95); 
         border: 1px solid rgba(0, 255, 157, 0.2);
         box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
@@ -154,11 +131,11 @@ const GlobalStyles = () => (
         50% { height: 100%; }
     }
     .visualizer-bar {
-        width: 6px;
+        width: 8px;
         background-color: #00FF9D;
         border-radius: 99px;
         animation: bar-bounce 0.8s ease-in-out infinite;
-        will-change: height; /* Optimization hint */
+        will-change: height;
     }
     /* Paused state for visualizer */
     .visualizer-bar.paused {
@@ -1126,10 +1103,8 @@ const App = () => {
   // Состояние вкладки рефералов
   const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' or 'referrals'
   // Фейковые данные рефералов (потом заменишь на реальные из БД)
-  const [referrals, setReferrals] = useState([
-      { id: 1, name: 'Алишер К.', date: '27.01.26', profit: 5000 },
-      { id: 2, name: 'Елена М.', date: '28.01.26', profit: 5000 }
-  ]);
+  const [referrals, setReferrals] = useState([]);
+  const [totalEarnings, setTotalEarnings] = useState(0);
 
   // --- REVIEW DATA WITH SCREENSHOTS ---
   const reviewsData = [
@@ -1240,7 +1215,16 @@ const App = () => {
     const vRef = collection(db, 'artifacts', appId, 'public', 'data', 'app_visitors');
     const q = query(vRef, where("referrerId", "==", currentUserId.toString()));
     const unsubscribe = onSnapshot(q, (snapshot) => {
+        const refs = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setReferrals(refs);
         setReferralCount(snapshot.size);
+        
+        // Calculate earnings
+        const earnings = refs.reduce((acc, curr) => acc + (curr.isStudent ? 5000 : 0), 0);
+        setTotalEarnings(earnings);
     });
     return () => unsubscribe();
   }, [currentUserId]);
@@ -1611,7 +1595,7 @@ const App = () => {
             <div className="w-full space-y-3">
                 {userRole === 'business' ? (
                     <>
-                        <div onClick={() => setCurrentView('shop')} className="glass-card p-4 rounded-2xl flex flex-col items-center justify-center cursor-pointer border-[#00FF9D]/40 hover:bg-[#00FF9D]/10 transition-all text-center relative overflow-hidden group mb-2">
+                        <div onClick={handleShopClick} className="glass-card p-4 rounded-2xl flex flex-col items-center justify-center cursor-pointer border-[#00FF9D]/40 hover:bg-[#00FF9D]/10 transition-all text-center relative overflow-hidden group mb-2">
                             <div className="absolute inset-0 bg-gradient-to-br from-[#00FF9D]/10 to-transparent opacity-50"></div>
                             <TelegramLogoMain className="w-8 h-8 text-[#00FF9D] mb-1.5 relative z-10" />
                             <span className="text-base font-bold text-white relative z-10 font-['Chakra_Petch'] tracking-wider">ТЕЛЕГРАМ МАГАЗИН</span>
@@ -2042,14 +2026,43 @@ const App = () => {
                                     </div>
                                 </div>
 
+                                {/* Dynamic Balance Display */}
+                                <div className="mb-4">
+                                     <div className="flex justify-between items-end mb-1">
+                                         <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">Ваш баланс</p>
+                                         <p className="text-lg font-black text-[#a855f7] font-mono">{totalEarnings.toLocaleString()} ₸</p>
+                                     </div>
+                                     <div className="w-full h-1 bg-zinc-900 rounded-full overflow-hidden">
+                                         <div className="h-full bg-purple-600 rounded-full" style={{ width: `${Math.min(referralCount * 10, 100)}%` }}></div>
+                                     </div>
+                                </div>
+
+                                {/* Referrals List */}
+                                {referrals.length > 0 && (
+                                    <div className="mb-4 space-y-2 max-h-[150px] overflow-y-auto no-scrollbar border-t border-purple-500/10 pt-3">
+                                        <p className="text-[9px] text-zinc-500 font-bold uppercase tracking-wider mb-2">Ваши рефералы</p>
+                                        {referrals.map((ref) => (
+                                            <div key={ref.id} className="flex justify-between items-center bg-black/40 p-2 rounded-lg border border-zinc-800">
+                                                <div>
+                                                    <p className="text-[10px] font-bold text-white">{ref.userName || 'Аноним'}</p>
+                                                    <p className="text-[8px] text-zinc-500">ID: {ref.id.substring(0, 8)}...</p>
+                                                </div>
+                                                <div className={`px-2 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider ${ref.isStudent ? 'bg-purple-500/20 text-purple-400' : 'bg-zinc-800 text-zinc-500'}`}>
+                                                    {ref.isStudent ? 'СТУДЕНТ' : 'ГОСТЬ'}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+
                                 {/* Input Field */}
                                 <div className="flex items-center gap-2 bg-[#121212] border border-zinc-800 p-2 rounded-xl mb-3 relative z-10">
                                     <div className="flex-grow text-[10px] text-zinc-500 font-mono px-2 truncate select-all">
-                                        t.me/taipan_bot?start={currentUserId || 'id'}
+                                        https://t.me/taipan_bot/app?startapp={currentUserId || 'id'}
                                     </div>
                                     <button 
                                         onClick={() => {
-                                            navigator.clipboard.writeText(`https://t.me/taipan_bot?start=${currentUserId}`);
+                                            navigator.clipboard.writeText(`https://t.me/taipan_bot/app?startapp=${currentUserId}`);
                                             notify('success');
                                         }}
                                         className="bg-[#1c1c1e] hover:bg-[#252525] p-2 rounded-lg text-zinc-400 transition-colors border border-zinc-700"

@@ -49,6 +49,7 @@ try {
 }
 
 if (!firebaseConfig) {
+  // Fallback/Default config (You should replace these with your actual keys if not provided by env)
   firebaseConfig = {
       apiKey: "AIzaSyCdcj_56EdygidWa8pQm17fegnF39XB8Xg",
       authDomain: "taipan-680b2.firebaseapp.com",
@@ -176,7 +177,7 @@ const MatrixBackground = React.memo(() => {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d', { alpha: false }); // Optimization: disable alpha if not needed strictly, or keep if transparency is key.
     let width = canvas.width = window.innerWidth;
     let height = canvas.height = window.innerHeight;
     const chars = "TAIPAN0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -219,7 +220,8 @@ const MatrixBackground = React.memo(() => {
       window.removeEventListener('resize', handleResize);
     };
   }, []);
-  return <canvas ref={canvasRef} className="fixed inset-0 z-[1] opacity-20 mix-blend-screen pointer-events-none" style={{ willChange: 'contents' }} />;
+  // Added translateZ(0) to force GPU layer
+  return <canvas ref={canvasRef} className="fixed inset-0 z-[1] opacity-20 mix-blend-screen pointer-events-none" style={{ willChange: 'transform', transform: 'translateZ(0)' }} />;
 });
 
 // 2. Odometer Hook
@@ -741,15 +743,18 @@ const BrandLogos = {
       }
     }, [isActive]);
     return (
-      <div className={`flex flex-col items-center animate-in fade-in zoom-in duration-1000 relative`}>
+      // Added will-change-transform and removed heavy animations, kept logic
+      <div className={`flex flex-col items-center transition-opacity duration-700 ${isActive ? 'opacity-100' : 'opacity-0'} relative`} style={{ willChange: 'transform, opacity' }}>
         {/* Logo Container */}
-        <div className={`transition-all duration-1000 ${isMissed ? 'grayscale opacity-40 scale-90 blur-[1px]' : 'grayscale-0 opacity-100 scale-100'}`}>
+        <div className={`transition-all duration-1000 ${isMissed ? 'grayscale opacity-40 scale-90' : 'grayscale-0 opacity-100 scale-100'}`}>
             <svg viewBox="-2 -2 28 28" fill="#F7931A" className="w-20 h-20 mb-4 drop-shadow-[0_0_15px_rgba(247,147,26,0.5)]"><path d="M23.638 14.904c-1.602 6.43-8.113 10.34-14.542 8.736C2.67 22.05-1.244 15.556.358 9.126 1.96 2.695 8.47-1.216 14.9-.388c6.426 1.602 10.34 8.09 8.738 15.292zM18.106 10.12c.264-1.765-1.08-2.71-2.914-3.344l.596-2.39-1.454-.362-.58 2.33c-.382-.096-.776-.186-1.166-.273l.586-2.355-1.454-.362-.596 2.39c-.316-.072-.625-.144-.925-.218l.002-.008-2.007-.502-.388 1.55s1.08.247 1.057.263c.59.147.696.537.678.847l-.68 2.73c.04.01.094.026.152.05-.054-.014-.112-.03-.17-.044l-1.103 4.426c-.072.178-.254.445-.664.343.014.02-1.057-.263-1.057-.263l-.723 1.67 1.894.474c.35.088.694.18 1.034.266l-.604 2.43 1.452.362.598-2.396c.396.108.783.21 1.16.307l-.592 2.38 1.454.363.604-2.43c2.482.47 4.35.28 5.136-1.965.634-1.808-.032-2.852-1.336-3.535 1.03-.238 1.81-.916 2.02-2.31zM14.47 14.524c-.45 1.81-3.5 0.83-4.484.588l.8-3.212c.983.244 4.14.726 3.684 2.624zm.45-4.44c-.41 1.644-2.96.81-3.774.606l.724-2.912c.814.204 3.468.583 3.05 2.306z"/></svg>
         </div>
         
         <div className="relative">
-          <p className={`font-['Chakra_Petch'] font-black text-xl tracking-tighter transition-all duration-700 ${isMissed ? 'text-zinc-600 line-through decoration-red-600/80 decoration-[3px] blur-[0.5px]' : 'text-[#F7931A]'}`}>2009: BITCOIN</p>
-          <div className={`absolute -top-3 -right-8 rotate-[15deg] border-2 border-red-600/60 text-red-600 text-[8px] font-black uppercase px-2 py-0.5 rounded-sm bg-red-900/10 backdrop-blur-sm transition-all duration-300 transform ${isMissed ? 'opacity-100 scale-125 animate-pulse' : 'opacity-0 scale-150'}`}>УПУЩЕНО</div>
+          {/* Removed blur-[0.5px] to improve performance */}
+          <p className={`font-['Chakra_Petch'] font-black text-xl tracking-tighter transition-all duration-700 ${isMissed ? 'text-zinc-600 line-through decoration-red-600/80 decoration-[3px]' : 'text-[#F7931A]'}`}>2009: BITCOIN</p>
+          {/* Removed backdrop-blur-sm */}
+          <div className={`absolute -top-3 -right-8 rotate-[15deg] border-2 border-red-600/60 text-red-600 text-[8px] font-black uppercase px-2 py-0.5 rounded-sm bg-red-900/10 transition-all duration-300 transform ${isMissed ? 'opacity-100 scale-125 animate-pulse' : 'opacity-0 scale-150'}`}>УПУЩЕНО</div>
         </div>
         
         <div className="mt-4 text-center px-2 flex flex-col items-center">
@@ -776,15 +781,15 @@ const BrandLogos = {
       }
     }, [isActive]);
     return (
-      <div className={`flex flex-col items-center animate-in fade-in zoom-in duration-1000 relative`}>
+      <div className={`flex flex-col items-center transition-opacity duration-700 ${isActive ? 'opacity-100' : 'opacity-0'} relative`} style={{ willChange: 'transform, opacity' }}>
         {/* Logo Container */}
-        <div className={`transition-all duration-1000 ${isMissed ? 'grayscale opacity-40 scale-90 blur-[1px]' : 'grayscale-0 opacity-100 scale-100'}`}>
+        <div className={`transition-all duration-1000 ${isMissed ? 'grayscale opacity-40 scale-90' : 'grayscale-0 opacity-100 scale-100'}`}>
             <svg viewBox="0 0 24 24" fill="none" stroke="#E1306C" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-20 h-20 mb-4 drop-shadow-[0_0_15px_rgba(225,48,108,0.5)]"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
         </div>
         
         <div className="relative">
-          <p className={`font-['Chakra_Petch'] font-black text-xl tracking-tighter transition-all duration-700 ${isMissed ? 'text-zinc-600 line-through decoration-red-600/80 decoration-[3px] blur-[0.5px]' : 'text-[#E1306C]'}`}>2012: INSTAGRAM</p>
-          <div className={`absolute -top-3 -right-8 rotate-[15deg] border-2 border-red-600/60 text-red-600 text-[8px] font-black uppercase px-2 py-0.5 rounded-sm bg-red-900/10 backdrop-blur-sm transition-all duration-300 transform ${isMissed ? 'opacity-100 scale-125 animate-pulse' : 'opacity-0 scale-150'}`}>УПУЩЕНО</div>
+          <p className={`font-['Chakra_Petch'] font-black text-xl tracking-tighter transition-all duration-700 ${isMissed ? 'text-zinc-600 line-through decoration-red-600/80 decoration-[3px]' : 'text-[#E1306C]'}`}>2012: INSTAGRAM</p>
+          <div className={`absolute -top-3 -right-8 rotate-[15deg] border-2 border-red-600/60 text-red-600 text-[8px] font-black uppercase px-2 py-0.5 rounded-sm bg-red-900/10 transition-all duration-300 transform ${isMissed ? 'opacity-100 scale-125 animate-pulse' : 'opacity-0 scale-150'}`}>УПУЩЕНО</div>
         </div>
         
         <div className="mt-4 text-center px-2 flex flex-col items-center">
@@ -811,15 +816,15 @@ const BrandLogos = {
       }
     }, [isActive]);
     return (
-      <div className={`flex flex-col items-center animate-in fade-in zoom-in duration-1000 relative`}>
+      <div className={`flex flex-col items-center transition-opacity duration-700 ${isActive ? 'opacity-100' : 'opacity-0'} relative`} style={{ willChange: 'transform, opacity' }}>
         {/* Logo Container */}
-        <div className={`flex gap-3 mb-4 items-center transition-all duration-1000 ${isMissed ? 'grayscale opacity-40 scale-90 blur-[1px]' : 'grayscale-0 opacity-100 scale-100'}`}>
+        <div className={`flex gap-3 mb-4 items-center transition-all duration-1000 ${isMissed ? 'grayscale opacity-40 scale-90' : 'grayscale-0 opacity-100 scale-100'}`}>
             <span className="text-4xl font-black italic text-purple-500">WB</span><span className="text-3xl font-bold text-red-600">Kaspi</span>
         </div>
         
         <div className="relative">
-          <p className={`font-['Chakra_Petch'] font-black text-xl tracking-tighter transition-all duration-700 ${isMissed ? 'text-zinc-600 line-through decoration-red-600/80 decoration-[3px] blur-[0.5px]' : 'text-white'}`}>2019: МАРКЕТПЛЕЙСЫ</p>
-          <div className={`absolute -top-3 -right-8 rotate-[15deg] border-2 border-red-600/60 text-red-600 text-[8px] font-black uppercase px-2 py-0.5 rounded-sm bg-red-900/10 backdrop-blur-sm transition-all duration-300 transform ${isMissed ? 'opacity-100 scale-125 animate-pulse' : 'opacity-0 scale-150'}`}>УПУЩЕНО</div>
+          <p className={`font-['Chakra_Petch'] font-black text-xl tracking-tighter transition-all duration-700 ${isMissed ? 'text-zinc-600 line-through decoration-red-600/80 decoration-[3px]' : 'text-white'}`}>2019: МАРКЕТПЛЕЙСЫ</p>
+          <div className={`absolute -top-3 -right-8 rotate-[15deg] border-2 border-red-600/60 text-red-600 text-[8px] font-black uppercase px-2 py-0.5 rounded-sm bg-red-900/10 transition-all duration-300 transform ${isMissed ? 'opacity-100 scale-125 animate-pulse' : 'opacity-0 scale-150'}`}>УПУЩЕНО</div>
         </div>
         
         <div className="mt-4 text-center px-2 flex flex-col items-center">
@@ -834,7 +839,7 @@ const BrandLogos = {
     );
   },
   Telegram: ({ isActive }) => (
-    <div className="flex flex-col items-center animate-in fade-in zoom-in duration-1000">
+    <div className={`flex flex-col items-center transition-opacity duration-700 ${isActive ? 'opacity-100' : 'opacity-0'}`} style={{ willChange: 'opacity' }}>
       <svg viewBox="0 0 24 24" fill="#0088cc" className="w-20 h-20 mb-4 drop-shadow-[0_0_25px_rgba(0,136,204,0.5)]"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.446 1.394c-.16.16-.295.293-.605.293l.214-3.054 5.56-5.022c.24-.213-.054-.334-.373-.121l-6.869 4.326-2.962-.924c-.64-.203-.658-.64.135-.954l11.566-4.458c.538-.196 1.006.128.832.942z"/></svg>
       <p className="text-white font-black text-2xl tracking-[0.1em] font-['Chakra_Petch']">2026: TELEGRAM STORE</p>
       <p className="text-[#00FF9D] text-[12px] uppercase tracking-[0.3em] mt-3 font-bold bg-[#00FF9D]/10 border border-[#00FF9D]/30 px-6 py-2 rounded-full shadow-[0_0_15px_rgba(0,255,157,0.2)] text-center">Обучись новому тренду с нами</p>
@@ -2027,8 +2032,8 @@ const App = () => {
                                 {/* Dynamic Balance Display */}
                                 <div className="mb-4">
                                      <div className="flex justify-between items-end mb-1">
-                                         <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">Ваш баланс</p>
-                                         <p className="text-lg font-black text-[#a855f7] font-mono">{totalEarnings.toLocaleString()} ₸</p>
+                                      <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">Ваш баланс</p>
+                                      <p className="text-lg font-black text-[#a855f7] font-mono">{totalEarnings.toLocaleString()} ₸</p>
                                      </div>
                                      <div className="w-full h-1 bg-zinc-900 rounded-full overflow-hidden">
                                          <div className="h-full bg-purple-600 rounded-full" style={{ width: `${Math.min(referralCount * 10, 100)}%` }}></div>
@@ -2165,9 +2170,10 @@ const App = () => {
               <div className="relative w-full h-[280px] flex items-center justify-center">
                   <div className="relative w-full h-[280px] flex items-center justify-center overflow-hidden">
                     {slides.map((SlideComponent, idx) => (
-                       <div key={idx} className={`absolute inset-0 flex items-center justify-center transition-all duration-[1200ms] ease-in-out transform ${activeSlide === idx ? 'opacity-100 scale-100 blur-0' : 'opacity-0 scale-75 blur-3xl'}`}>
+                       <div key={idx} className={`absolute inset-0 flex items-center justify-center transition-all duration-[800ms] ease-out transform ${activeSlide === idx ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}`}>
                          <div className="relative w-full text-center">
-                           <div className="absolute inset-0 bg-white/5 blur-3xl rounded-full transform scale-150 left-1/2 -translate-x-1/2" />
+                           {/* Removed blur-3xl for mobile performance */}
+                           <div className="absolute inset-0 bg-white/5 rounded-full transform scale-150 left-1/2 -translate-x-1/2 opacity-20" />
                            <div className="relative z-10"><SlideComponent isActive={activeSlide === idx} /></div>
                          </div>
                        </div>

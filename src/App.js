@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 
 // --- FIREBASE INTEGRATION ---
 import { initializeApp } from 'firebase/app';
-import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from 'firebase/auth';
+// UPDATED: Added signInWithEmailAndPassword and createUserWithEmailAndPassword
+import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
 import { getFirestore, doc, setDoc, updateDoc, serverTimestamp, collection, query, onSnapshot, deleteDoc, where, getDoc } from 'firebase/firestore';
 
 // --- ERROR BOUNDARY COMPONENT ---
@@ -49,7 +50,7 @@ try {
 }
 
 if (!firebaseConfig) {
-  // Fallback/Default config (You should replace these with your actual keys if not provided by env)
+  // Fallback/Default config
   firebaseConfig = {
       apiKey: "AIzaSyCdcj_56EdygidWa8pQm17fegnF39XB8Xg",
       authDomain: "taipan-680b2.firebaseapp.com",
@@ -177,7 +178,7 @@ const MatrixBackground = React.memo(() => {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext('2d', { alpha: false }); // Optimization: disable alpha if not needed strictly, or keep if transparency is key.
+    const ctx = canvas.getContext('2d', { alpha: false }); 
     let width = canvas.width = window.innerWidth;
     let height = canvas.height = window.innerHeight;
     const chars = "TAIPAN0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -273,18 +274,10 @@ const Users = (p) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
 const Shield = (p) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>;
 const Crosshair = (p) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><circle cx="12" cy="12" r="10" /><line x1="22" y1="12" x2="18" y2="12" /><line x1="6" y1="12" x2="2" y2="12" /><line x1="12" y1="6" x2="12" y2="2" /><line x1="12" y1="22" x2="12" y2="18" /></svg>;
 const Code = (p) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><polyline points="16 18 22 12 16 6" /><polyline points="8 6 2 12 8 18" /></svg>;
-const Database = (p) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><ellipse cx="12" cy="5" rx="9" ry="3" /><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" /><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" /></svg>;
-const Trash2 = (p) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><path d="M3 6h18" /><path d="M19 6v14c0 1.1-.9 2 2 2H7c-1.1 0-2-.9-2-2V6" /><path d="M8 6V4c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v2" /></svg>;
-const Activity = (p) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></svg>;
 const Edit2 = (p) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" /></svg>;
-const Save = (p) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" /><polyline points="17 21 17 13 7 13 7 21" /><polyline points="7 3 7 8 15 8" /></svg>;
-const Filter = (p) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" /></svg>;
-const BarChart2 = (p) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" /></svg>;
-const PieChart = (p) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><path d="M21.21 15.89A10 10 0 1 1 8 2.83" /><path d="M22 12A10 10 0 0 0 12 2v10z" /></svg>;
 const Copy = (p) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><rect width="14" height="14" x="8" y="8" rx="2" ry="2" /><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" /></svg>;
 const HelpCircle = (p) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>;
 const Sparkles = (p) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275-1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" /></svg>;
-const Send = (p) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" /></svg>;
 const MessageCircle = (p) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" /></svg>;
 const Briefcase = (p) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><rect width="20" height="14" x="2" y="7" rx="2" ry="2" /><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" /></svg>;
 
@@ -505,16 +498,13 @@ const BaneIntro = ({ onComplete }) => {
         onCompleteRef.current = onComplete;
     }, [onComplete]);
 
-    // Use memo to ensure bars are only created once
     const bars = useMemo(() => Array.from({ length: 12 }, () => Math.random() * 0.5), []);
 
     useEffect(() => {
-        // Создаем аудио только один раз
         if (!audioRef.current) {
             audioRef.current = new Audio('/VID_20260122_010534_539 (online-audio-converter.com).mp3');
             audioRef.current.volume = 1.0;
             audioRef.current.playsInline = true;
-            // Важно для iOS/Telegram: предзагрузка
             audioRef.current.preload = 'auto';
         }
 
@@ -522,8 +512,6 @@ const BaneIntro = ({ onComplete }) => {
 
         const handleTimeUpdate = () => {
             const t = audio.currentTime;
-            
-            // Закрываем интро через 1 секунду после появления последней фразы (4.2 + 1.0 = 5.2)
             if (t >= 5.5 && !completedRef.current) {
                  completedRef.current = true;
                  if (onCompleteRef.current) onCompleteRef.current();
@@ -540,44 +528,35 @@ const BaneIntro = ({ onComplete }) => {
         audio.addEventListener('timeupdate', handleTimeUpdate);
         audio.addEventListener('ended', handleEnded);
 
-        // Логика безопасного запуска
         const playAudio = async () => {
             try {
-                // Проверяем, не играет ли уже (защита от двойного звука)
                 if (audio.paused) {
                     await audio.play();
                 }
             } catch (e) {
                 console.error("Autoplay blocked/Interrupted", e);
-                // Если автоплей заблокирован, можно показать кнопку Play, 
-                // но в данном дизайне мы просто ничего не делаем или пропускаем
             }
         };
 
         playAudio();
 
-        // CLEANUP FUNCTION
         return () => {
             if (audio) {
                 audio.pause();
-                // Не сбрасываем currentTime в 0, чтобы избежать глитчей при быстром анмаунте
                 audio.removeEventListener('timeupdate', handleTimeUpdate);
                 audio.removeEventListener('ended', handleEnded);
             }
         };
-        // ВАЖНО: Пустой массив зависимостей [], чтобы эффект сработал ТОЛЬКО один раз при монтировании
     }, []); 
 
     return (
         <div className="fixed inset-0 z-[300] bg-black flex flex-col items-center justify-center p-6 text-center cursor-pointer" onClick={() => {
-            // При клике плавно завершаем
             if (audioRef.current) {
                 audioRef.current.pause();
             }
             if (onCompleteRef.current) onCompleteRef.current();
         }}>
             <div className="max-w-md w-full relative flex flex-col items-center justify-center h-full">
-                 {/* Voice Visualizer - Active only when playing */}
                 <div className="flex justify-center items-end gap-1.5 h-32 opacity-80">
                       {bars.map((delay, i) => (
                           <div 
@@ -737,26 +716,20 @@ const BrandLogos = {
         setIsMissed(false);
         const timer = setTimeout(() => {
           setIsMissed(true);
-          if (navigator.vibrate) navigator.vibrate([50, 30, 50]); // Aggressive vibration
+          if (navigator.vibrate) navigator.vibrate([50, 30, 50]);
         }, 1500);
         return () => clearTimeout(timer);
       }
     }, [isActive]);
     return (
-      // Added will-change-transform and removed heavy animations, kept logic
       <div className={`flex flex-col items-center transition-opacity duration-700 ${isActive ? 'opacity-100' : 'opacity-0'} relative`} style={{ willChange: 'transform, opacity' }}>
-        {/* Logo Container */}
         <div className={`transition-all duration-1000 ${isMissed ? 'grayscale opacity-40 scale-90' : 'grayscale-0 opacity-100 scale-100'}`}>
             <svg viewBox="-2 -2 28 28" fill="#F7931A" className="w-20 h-20 mb-4 drop-shadow-[0_0_15px_rgba(247,147,26,0.5)]"><path d="M23.638 14.904c-1.602 6.43-8.113 10.34-14.542 8.736C2.67 22.05-1.244 15.556.358 9.126 1.96 2.695 8.47-1.216 14.9-.388c6.426 1.602 10.34 8.09 8.738 15.292zM18.106 10.12c.264-1.765-1.08-2.71-2.914-3.344l.596-2.39-1.454-.362-.58 2.33c-.382-.096-.776-.186-1.166-.273l.586-2.355-1.454-.362-.596 2.39c-.316-.072-.625-.144-.925-.218l.002-.008-2.007-.502-.388 1.55s1.08.247 1.057.263c.59.147.696.537.678.847l-.68 2.73c.04.01.094.026.152.05-.054-.014-.112-.03-.17-.044l-1.103 4.426c-.072.178-.254.445-.664.343.014.02-1.057-.263-1.057-.263l-.723 1.67 1.894.474c.35.088.694.18 1.034.266l-.604 2.43 1.452.362.598-2.396c.396.108.783.21 1.16.307l-.592 2.38 1.454.363.604-2.43c2.482.47 4.35.28 5.136-1.965.634-1.808-.032-2.852-1.336-3.535 1.03-.238 1.81-.916 2.02-2.31zM14.47 14.524c-.45 1.81-3.5 0.83-4.484.588l.8-3.212c.983.244 4.14.726 3.684 2.624zm.45-4.44c-.41 1.644-2.96.81-3.774.606l.724-2.912c.814.204 3.468.583 3.05 2.306z"/></svg>
         </div>
-        
         <div className="relative">
-          {/* Removed blur-[0.5px] to improve performance */}
           <p className={`font-['Chakra_Petch'] font-black text-xl tracking-tighter transition-all duration-700 ${isMissed ? 'text-zinc-600 line-through decoration-red-600/80 decoration-[3px]' : 'text-[#F7931A]'}`}>2009: BITCOIN</p>
-          {/* Removed backdrop-blur-sm */}
           <div className={`absolute -top-3 -right-8 rotate-[15deg] border-2 border-red-600/60 text-red-600 text-[8px] font-black uppercase px-2 py-0.5 rounded-sm bg-red-900/10 transition-all duration-300 transform ${isMissed ? 'opacity-100 scale-125 animate-pulse' : 'opacity-0 scale-150'}`}>УПУЩЕНО</div>
         </div>
-        
         <div className="mt-4 text-center px-2 flex flex-col items-center">
           <p className="text-zinc-500 text-[11px] leading-tight font-medium mb-2">«Пока ты думал, что это фантики...»</p>
           <div className={`${isMissed ? 'animate-[smoke-glitch-appear_0.6s_ease-out_forwards]' : 'opacity-0'}`}>
@@ -782,16 +755,13 @@ const BrandLogos = {
     }, [isActive]);
     return (
       <div className={`flex flex-col items-center transition-opacity duration-700 ${isActive ? 'opacity-100' : 'opacity-0'} relative`} style={{ willChange: 'transform, opacity' }}>
-        {/* Logo Container */}
         <div className={`transition-all duration-1000 ${isMissed ? 'grayscale opacity-40 scale-90' : 'grayscale-0 opacity-100 scale-100'}`}>
             <svg viewBox="0 0 24 24" fill="none" stroke="#E1306C" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-20 h-20 mb-4 drop-shadow-[0_0_15px_rgba(225,48,108,0.5)]"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
         </div>
-        
         <div className="relative">
           <p className={`font-['Chakra_Petch'] font-black text-xl tracking-tighter transition-all duration-700 ${isMissed ? 'text-zinc-600 line-through decoration-red-600/80 decoration-[3px]' : 'text-[#E1306C]'}`}>2012: INSTAGRAM</p>
           <div className={`absolute -top-3 -right-8 rotate-[15deg] border-2 border-red-600/60 text-red-600 text-[8px] font-black uppercase px-2 py-0.5 rounded-sm bg-red-900/10 transition-all duration-300 transform ${isMissed ? 'opacity-100 scale-125 animate-pulse' : 'opacity-0 scale-150'}`}>УПУЩЕНО</div>
         </div>
-        
         <div className="mt-4 text-center px-2 flex flex-col items-center">
           <p className="text-zinc-500 text-[11px] leading-tight font-medium mb-2">«Пока ты просто выкладывал еду...»</p>
           <div className={`${isMissed ? 'animate-[smoke-glitch-appear_0.6s_ease-out_forwards]' : 'opacity-0'}`}>
@@ -817,16 +787,13 @@ const BrandLogos = {
     }, [isActive]);
     return (
       <div className={`flex flex-col items-center transition-opacity duration-700 ${isActive ? 'opacity-100' : 'opacity-0'} relative`} style={{ willChange: 'transform, opacity' }}>
-        {/* Logo Container */}
         <div className={`flex gap-3 mb-4 items-center transition-all duration-1000 ${isMissed ? 'grayscale opacity-40 scale-90' : 'grayscale-0 opacity-100 scale-100'}`}>
             <span className="text-4xl font-black italic text-purple-500">WB</span><span className="text-3xl font-bold text-red-600">Kaspi</span>
         </div>
-        
         <div className="relative">
           <p className={`font-['Chakra_Petch'] font-black text-xl tracking-tighter transition-all duration-700 ${isMissed ? 'text-zinc-600 line-through decoration-red-600/80 decoration-[3px]' : 'text-white'}`}>2019: МАРКЕТПЛЕЙСЫ</p>
           <div className={`absolute -top-3 -right-8 rotate-[15deg] border-2 border-red-600/60 text-red-600 text-[8px] font-black uppercase px-2 py-0.5 rounded-sm bg-red-900/10 transition-all duration-300 transform ${isMissed ? 'opacity-100 scale-125 animate-pulse' : 'opacity-0 scale-150'}`}>УПУЩЕНО</div>
         </div>
-        
         <div className="mt-4 text-center px-2 flex flex-col items-center">
           <p className="text-zinc-500 text-[11px] leading-tight font-medium mb-2">«Пока ты боялся логистики...»</p>
           <div className={`${isMissed ? 'animate-[smoke-glitch-appear_0.6s_ease-out_forwards]' : 'opacity-0'}`}>
@@ -1159,8 +1126,36 @@ const App = () => {
         // 1. Try Custom Token (Canvas/Preview Env)
         if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
            await signInWithCustomToken(auth, __initial_auth_token);
+           return;
+        } 
+        
+        // 2. Telegram Auth Strategy (MVP)
+        if (tg?.initDataUnsafe?.user?.id) {
+            const userId = tg.initDataUnsafe.user.id.toString();
+            const email = `${userId}@taipan.media`;
+            const salt = "Taipan_Secret_Salt_v1"; // In real prod, use backend!
+            const password = `${salt}_${userId}`;
+
+            try {
+              // Try to sign in
+              await signInWithEmailAndPassword(auth, email, password);
+            } catch (error) {
+              if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
+                 // Create user if not exists
+                 try {
+                    await createUserWithEmailAndPassword(auth, email, password);
+                 } catch (createError) {
+                    console.error("Auth Create Error:", createError);
+                    // Fallback
+                    await signInAnonymously(auth);
+                 }
+              } else {
+                 console.error("Auth Signin Error:", error);
+                 await signInAnonymously(auth);
+              }
+            }
         } else {
-           // 2. Fallback to Anonymous (Real App/Browser)
+           // 3. Fallback for browser testing (no TG)
            await signInAnonymously(auth);
         }
       } catch (e) {
@@ -1211,6 +1206,35 @@ const App = () => {
       });
       return () => unsubscribe();
   }, []);
+
+  // --- SYNC USER DATA (BIND TELEGRAM ID TO FIREBASE) ---
+  useEffect(() => {
+    if (!currentUserId || !firebaseUser) return;
+
+    const userDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'app_visitors', currentUserId.toString());
+
+    // Real-time listener for user profile
+    const unsubscribe = onSnapshot(userDocRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        
+        // Sync Segment/Role
+        if (data.segment && ['business', 'academy'].includes(data.segment)) {
+           // Only update if different to avoid loops if needed, though React handles simple checks
+           setUserRole(prev => (prev !== data.segment ? data.segment : prev));
+        }
+
+        // Sync Student Status
+        if (typeof data.isStudent === 'boolean') {
+           setIsStudent(data.isStudent);
+        }
+      }
+    }, (error) => {
+        console.error("Error syncing profile:", error);
+    });
+
+    return () => unsubscribe();
+  }, [currentUserId, firebaseUser]);
 
   // --- REFERRAL COUNT EFFECT ---
   useEffect(() => {
@@ -2026,7 +2050,7 @@ const App = () => {
                                     <div>
                                         <h3 className="text-sm font-black text-white uppercase tracking-wider mb-1">ПАРТНЕРСКАЯ ПРОГРАММА</h3>
                                         <p className="text-[10px] text-zinc-400 leading-snug max-w-[200px]">
-                                            Ваш бонус: <span className="text-[#a855f7] font-bold">10% (5 000 ₸)</span> с каждой оплаты привлеченного ученика.
+                                            Ваш бонус: <span className="text-[#a855f7] font-bold">10% (3 000 ₸)</span> с каждой оплаты привлеченного ученика.
                                         </p>
                                     </div>
                                     <div className="bg-[#1a1625] border border-purple-500/20 rounded-lg p-2 text-center min-w-[70px]">
@@ -2180,7 +2204,6 @@ const App = () => {
                     {slides.map((SlideComponent, idx) => (
                        <div key={idx} className={`absolute inset-0 flex items-center justify-center transition-all duration-[800ms] ease-out transform ${activeSlide === idx ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}`}>
                          <div className="relative w-full text-center">
-                           {/* Removed blur-3xl for mobile performance */}
                            <div className="absolute inset-0 bg-white/5 rounded-full transform scale-150 left-1/2 -translate-x-1/2 opacity-20" />
                            <div className="relative z-10"><SlideComponent isActive={activeSlide === idx} /></div>
                          </div>
@@ -2190,7 +2213,6 @@ const App = () => {
               </div>
               <div className="text-center w-full px-6 flex justify-center mb-8"><p className="text-zinc-500 text-[12px] font-bold uppercase tracking-widest mr-[-0.1em] animate-pulse whitespace-nowrap">Не стань историей упущенных шансов</p></div>
             </div>
-            {/* Кнопка ведет в главное меню (main), а не в FAQ */}
             <button onClick={() => setCurrentView('main')} className="w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-6 rounded-3xl shadow-[0_5px_30px_rgba(0,255,157,0.3)] hover:scale-[1.02] active:scale-[0.98] transition-all mt-4 text-xs">Стань тем кто успел</button>
           </div>
         )}
@@ -2199,7 +2221,6 @@ const App = () => {
         {currentView === 'faq' && (
           <div className="flex flex-col h-full w-full">
             {activeFaq ? (
-               // DETAILED VIEW
                <div className="flex-grow flex flex-col w-full animate-in fade-in slide-in-from-bottom-4 duration-300">
                   <button onClick={closeFaq} className="self-start flex items-center text-[10px] text-[#00FF9D] uppercase tracking-widest font-bold mb-6 hover:opacity-70 transition-all w-fit">
                     <ChevronLeft className="w-4 h-4 mr-1" /> Назад к вопросам
@@ -2226,7 +2247,6 @@ const App = () => {
                   )}
                </div>
             ) : (
-              // LIST VIEW
               <>
                 <div className="flex-grow flex flex-col items-center w-full space-y-6">
                   <div className="w-full mb-6"><Carousel3D /><div className="text-center mt-2"></div></div>

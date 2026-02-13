@@ -2093,11 +2093,11 @@ const App = () => {
                                 {/* Input Field */}
                                 <div className="flex items-center gap-2 bg-[#121212] border border-zinc-800 p-2 rounded-xl mb-3 relative z-10">
                                     <div className="flex-grow text-[10px] text-zinc-500 font-mono px-2 truncate select-all">
-                                        https://t.me/taipan_bot/app?startapp={currentUserId || 'id'}
+                                        https://t.me/taipanmedia_bot/app?startapp={currentUserId || 'id'}
                                     </div>
                                     <button 
                                         onClick={() => {
-                                            navigator.clipboard.writeText(`https://t.me/taipan_bot/app?startapp=${currentUserId}`);
+                                            navigator.clipboard.writeText(`https://t.me/taipanmedia_bot/app?startapp=${currentUserId}`);
                                             notify('success');
                                         }}
                                         className="bg-[#1c1c1e] hover:bg-[#252525] p-2 rounded-lg text-zinc-400 transition-colors border border-zinc-700"

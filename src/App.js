@@ -2,9 +2,14 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 
 // --- FIREBASE INTEGRATION ---
 import { initializeApp } from 'firebase/app';
-// UPDATED: Added signInWithEmailAndPassword and createUserWithEmailAndPassword
 import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
 import { getFirestore, doc, setDoc, updateDoc, serverTimestamp, collection, query, onSnapshot, deleteDoc, where, getDoc } from 'firebase/firestore';
+
+// --- CONFIGURATION & INIT ---
+// ВАЖНО: ЗАМЕНИТЕ ЭТО ЗНАЧЕНИЕ НА ЮЗЕРНЕЙМ ВАШЕГО БОТА (без @)
+const BOT_USERNAME = 'TaipanAcademyBot'; 
+
+const manifestUrl = 'https://taipan-rose.vercel.app/tonconnect-manifest.json';
 
 // --- ERROR BOUNDARY COMPONENT ---
 class ErrorBoundary extends React.Component {
@@ -34,9 +39,6 @@ class ErrorBoundary extends React.Component {
     return this.props.children;
   }
 }
-
-// --- CONFIGURATION & INIT ---
-const manifestUrl = 'https://taipan-rose.vercel.app/tonconnect-manifest.json';
 
 let firebaseConfig;
 try {
@@ -512,6 +514,8 @@ const BaneIntro = ({ onComplete }) => {
 
         const handleTimeUpdate = () => {
             const t = audio.currentTime;
+            
+            // Закрываем интро через 1 секунду после появления последней фразы (4.2 + 1.0 = 5.2)
             if (t >= 5.5 && !completedRef.current) {
                  completedRef.current = true;
                  if (onCompleteRef.current) onCompleteRef.current();
@@ -528,35 +532,44 @@ const BaneIntro = ({ onComplete }) => {
         audio.addEventListener('timeupdate', handleTimeUpdate);
         audio.addEventListener('ended', handleEnded);
 
+        // Логика безопасного запуска
         const playAudio = async () => {
             try {
+                // Проверяем, не играет ли уже (защита от двойного звука)
                 if (audio.paused) {
                     await audio.play();
                 }
             } catch (e) {
                 console.error("Autoplay blocked/Interrupted", e);
+                // Если автоплей заблокирован, можно показать кнопку Play, 
+                // но в данном дизайне мы просто ничего не делаем или пропускаем
             }
         };
 
         playAudio();
 
+        // CLEANUP FUNCTION
         return () => {
             if (audio) {
                 audio.pause();
+                // Не сбрасываем currentTime в 0, чтобы избежать глитчей при быстром анмаунте
                 audio.removeEventListener('timeupdate', handleTimeUpdate);
                 audio.removeEventListener('ended', handleEnded);
             }
         };
+        // ВАЖНО: Пустой массив зависимостей [], чтобы эффект сработал ТОЛЬКО один раз при монтировании
     }, []); 
 
     return (
         <div className="fixed inset-0 z-[300] bg-black flex flex-col items-center justify-center p-6 text-center cursor-pointer" onClick={() => {
+            // При клике плавно завершаем
             if (audioRef.current) {
                 audioRef.current.pause();
             }
             if (onCompleteRef.current) onCompleteRef.current();
         }}>
             <div className="max-w-md w-full relative flex flex-col items-center justify-center h-full">
+                 {/* Voice Visualizer - Active only when playing */}
                 <div className="flex justify-center items-end gap-1.5 h-32 opacity-80">
                       {bars.map((delay, i) => (
                           <div 
@@ -1119,6 +1132,27 @@ const App = () => {
       }
   };
 
+  const copyToClipboard = (text) => {
+    // Fallback copy method for webview/iframe environments where Clipboard API is blocked
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.style.position = "fixed"; // Avoid scrolling to bottom
+    textArea.style.left = "-9999px";
+    textArea.style.top = "0";
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    
+    try {
+      const successful = document.execCommand('copy');
+      if (successful) notify('success');
+    } catch (err) {
+      console.error('Fallback: Oops, unable to copy', err);
+    }
+    
+    document.body.removeChild(textArea);
+  };
+
   // --- FIREBASE SETUP & AUTH ---
   useEffect(() => {
     const initAuth = async () => {
@@ -1449,9 +1483,7 @@ const App = () => {
       haptic('medium');
       setUserRole('business');
       if (userRole !== 'business') saveUserSegment('business');
-      setShopIntroFinished(false); // Reset intro to replay it
-      
-      // SHOW INTRO OVERLAY FIRST, THEN NAVIGATE TO MAIN
+      setShopIntroFinished(false); 
       setBusinessIntroActive(true); 
       setCurrentView('main');
   };
@@ -1470,7 +1502,6 @@ const App = () => {
     { id: 'calc', question: "Найду ли я клиентов?", icon: <Wallet className="w-5 h-5 text-stranger-red" />, isCalc: true, component: (<div className="w-full"><ClientDemandProof /><div className="text-sm text-zinc-300 leading-relaxed border-l-2 border-[#00FF9D]/50 pl-4 mb-4"><p><span className="text-white font-bold">Ты не просто их найдешь — они тоже будут тебя искать.</span></p><br/><p>Статистика Яндекса не врет: каждый месяц <span className="text-[#00FF9D] font-bold">6 650</span> предпринимателей ищут, кто сделает им магазин в Telegram. Спрос огромный, а тех, кто умеет делать это качественно — единицы.</p><br/><p>На обучении мы даем не только технические навыки, но и <span className="text-white font-bold">полную систему продаж</span>:</p><br/><ul className="list-disc pl-4 space-y-2"><li><span className="text-[#00FF9D] font-bold">Где брать клиентов:</span> Покажем, как выйти на те самые тысячи заказов.</li><li><span className="text-[#00FF9D] font-bold">Как продавать:</span> Научим вести переговоры с бизнесменами и закрывать сделки на высокие чеки.</li><li><span className="text-[#00FF9D] font-bold">Готовые шаблоны предложений:</span> Тебе не нужно ничего придумывать — просто бери наше проверенное КП и отправляй клиенту.</li></ul><br/><p>Мы научим тебя делать результат «под ключ», чтобы ты мог уверенно забирать свои <span className="text-white font-bold">100 000₸</span> за проект.</p></div></div>) }
   ];
 
-  // Global Back Handler
   const handleGlobalBack = () => {
     haptic('light');
     if (currentView === 'role_selection') return;
@@ -1479,7 +1510,6 @@ const App = () => {
         return;
     }
     
-    // Define logic based on current view and role
     switch(currentView) {
         case 'shop': setCurrentView('main'); break;
         case 'calculator': 
@@ -1489,8 +1519,6 @@ const App = () => {
             setCurrentView('calculator'); 
             break;
         case 'strategy':
-             // Business: Came from Main -> Strategy. Back -> Main.
-             // Academy: Came from Main -> Strategy. Back -> Main.
              setCurrentView('main');
              break;
         case 'education': setCurrentView('role_selection'); break; 
@@ -1506,23 +1534,19 @@ const App = () => {
   return (
     <div className="min-h-screen bg-[#050505] text-white font-sans selection:bg-[#00FF9D]/30 relative overflow-hidden flex flex-col">
       <GlobalStyles />
-      {/* Bane Intro Overlay - Only Voice + Eq */}
       {baneIntroActive && <BaneIntro onComplete={handleBaneIntroComplete} />}
       
-      {/* Business Intro Overlay */}
       {businessIntroActive && (
         <div className="fixed inset-0 z-[300] bg-black flex flex-col items-center justify-center">
             <ShopIntroSequence onComplete={() => setBusinessIntroActive(false)} />
         </div>
       )}
       
-      {/* GLOBAL IMAGE VIEWER MODAL */}
       {previewImage && (
         <div 
           className="fixed inset-0 z-[300] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 cursor-zoom-out" 
           onClick={() => { haptic('light'); setPreviewImage(null); }}
         >
-          {/* Уменьшил max-w-2xl до max-w-sm (размер смартфона), чтобы скриншоты не были огромными */}
           <div className="relative w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
               <SmartImage src={previewImage} className="w-full h-auto rounded-lg border border-[#00FF9D]/30 shadow-[0_0_50px_rgba(0,255,157,0.1)]" alt="Preview" />
               <div className="absolute top-4 right-4 bg-black/60 rounded-full p-2 cursor-pointer border border-zinc-700" onClick={() => setPreviewImage(null)}>
@@ -1533,7 +1557,6 @@ const App = () => {
         </div>
       )}
 
-      {/* MATRIX BACKGROUND COMPONENT (FIXED z-index and position) */}
       <MatrixBackground />
 
       <div className="fixed inset-0 z-0 pointer-events-none">
@@ -1548,7 +1571,6 @@ const App = () => {
         {currentView === 'role_selection' && (
           <div className="flex flex-col items-center justify-center h-full w-full px-4 pt-5 pb-20">
               <div className="text-center mb-12">
-                  {/* GLOWING TITLE */}
                   <h1 className="font-['Chakra_Petch'] font-[700] uppercase tracking-[0.15em] whitespace-nowrap overflow-visible relative block w-full text-center" style={{ fontSize: 'clamp(1.5rem, 8.5vw, 3.5rem)', textShadow: '0 0 20px #00FF9D', color: '#ffffff' }}>
                     <span className="relative inline-block mr-[-0.15em]">TAIPAN MEDIA<span className="absolute inset-0 -z-10 opacity-40 blur-[12px] animate-pulse text-[#00FF9D]">TAIPAN MEDIA</span></span>
                   </h1>
@@ -1668,10 +1690,7 @@ const App = () => {
                         </div>
                     </>
                 ) : (
-                    // === ACADEMY ROLE ===
-                    // Hero Button (Education)
                     <div className="w-full space-y-3">
-                         {/* Hero Button - Compact Version */}
                         <div onClick={() => setCurrentView('program')} className="glass-card p-4 rounded-2xl flex flex-col items-center justify-center cursor-pointer border-[#00FF9D]/40 hover:bg-[#00FF9D]/10 transition-all text-center relative overflow-hidden group mb-2">
                             <div className="absolute inset-0 bg-gradient-to-br from-[#00FF9D]/10 to-transparent opacity-50"></div>
                             <GraduationCap className="w-8 h-8 text-[#00FF9D] mb-1.5 relative z-10" />
@@ -1679,7 +1698,6 @@ const App = () => {
                             <p className="text-[9px] text-zinc-400 relative z-10 uppercase tracking-widest mt-0.5">Узнайте пошаговую программу выхода на новый доход</p>
                         </div>
 
-                        {/* Secondary Buttons Grid - Larger Version */}
                         <div className="grid grid-cols-3 gap-2">
                              <div onClick={() => setCurrentView('strategy')} className="glass-card p-3 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-[#00FF9D]/30 transition-all h-28 group">
                                 <Users className="w-8 h-8 text-zinc-500 group-hover:text-[#00FF9D] mb-3 transition-colors" />
@@ -1697,7 +1715,6 @@ const App = () => {
                             </div>
                         </div>
 
-                        {/* New Button: Отзывы наших учеников */}
                         <div onClick={() => setCurrentView('reviews')} className="glass-card p-4 rounded-2xl flex flex-col items-center justify-center cursor-pointer border-[#00FF9D]/40 hover:bg-[#00FF9D]/10 transition-all text-center relative overflow-hidden group mt-2">
                             <div className="absolute inset-0 bg-gradient-to-br from-[#00FF9D]/10 to-transparent opacity-50"></div>
                             <MessageCircle className="w-8 h-8 text-[#00FF9D] mb-1.5 relative z-10" />
@@ -1708,7 +1725,6 @@ const App = () => {
                 )}
             </div>
 
-            {/* --- SWITCHER FOOTER --- */}
             <div className="w-full mt-12 pt-6 border-t border-zinc-900 flex flex-col items-center gap-6">
                 <button 
                     onClick={() => { haptic('light'); setCurrentView('role_selection'); }}
@@ -2071,8 +2087,8 @@ const App = () => {
                                          <div className="h-full bg-purple-600 rounded-full" style={{ width: `${Math.min(referralCount * 10, 100)}%` }}></div>
                                      </div>
                                 </div>
-
-                                {/* Referrals List */}
+                                
+                                {/* UPDATED: Referral list display logic */}
                                 {referrals.length > 0 && (
                                     <div className="mb-4 space-y-2 max-h-[150px] overflow-y-auto no-scrollbar border-t border-purple-500/10 pt-3">
                                         <p className="text-[9px] text-zinc-500 font-bold uppercase tracking-wider mb-2">Ваши рефералы</p>
@@ -2090,16 +2106,12 @@ const App = () => {
                                     </div>
                                 )}
 
-                                {/* Input Field */}
                                 <div className="flex items-center gap-2 bg-[#121212] border border-zinc-800 p-2 rounded-xl mb-3 relative z-10">
                                     <div className="flex-grow text-[10px] text-zinc-500 font-mono px-2 truncate select-all">
-                                        https://t.me/taipanmedia_bot/app?startapp={currentUserId || 'id'}
+                                        https://t.me/{BOT_USERNAME}/app?startapp={currentUserId || 'id'}
                                     </div>
                                     <button 
-                                        onClick={() => {
-                                            navigator.clipboard.writeText(`https://t.me/taipanmedia_bot/app?startapp=${currentUserId}`);
-                                            notify('success');
-                                        }}
+                                        onClick={() => copyToClipboard(`https://t.me/${BOT_USERNAME}/app?startapp=${currentUserId}`)}
                                         className="bg-[#1c1c1e] hover:bg-[#252525] p-2 rounded-lg text-zinc-400 transition-colors border border-zinc-700"
                                     >
                                         <Copy className="w-4 h-4" />

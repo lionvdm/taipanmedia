@@ -8,7 +8,7 @@ import { getFirestore, doc, setDoc, updateDoc, serverTimestamp, collection, quer
 
 // --- CONFIGURATION & INIT ---
 // ВАЖНО: ЗАМЕНИТЕ ЭТО ЗНАЧЕНИЕ НА ЮЗЕРНЕЙМ ВАШЕГО БОТА (без @)
-const BOT_USERNAME = 'taipanmedia_bot'; 
+const BOT_USERNAME = '@taipanmedia_bot'; 
 
 const manifestUrl = 'https://taipan-rose.vercel.app/tonconnect-manifest.json';
 
@@ -438,6 +438,16 @@ const AcademyCalculator = ({ onAction, onCalculate }) => {
     return 'магазинов';
   };
 
+  const handleTakeIt = () => {
+      haptic('heavy');
+      const url = 'https://t.me/taipanmedia';
+      if (tg && tg.openTelegramLink) {
+          tg.openTelegramLink(url);
+      } else {
+          window.open(url, '_blank');
+      }
+  };
+
   return (
     <div className="w-full">
       <div className="text-center mb-6">
@@ -499,7 +509,7 @@ const AcademyCalculator = ({ onAction, onCalculate }) => {
          </div>
       </div>
 
-      <button onClick={onAction} className="w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-4 rounded-xl shadow-[0_0_20px_rgba(0,255,157,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs flex items-center justify-center gap-2 animate-pulse">
+      <button onClick={handleTakeIt} className="w-full bg-[#00FF9D] text-black font-black uppercase tracking-widest py-4 rounded-xl shadow-[0_0_20px_rgba(0,255,157,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs flex items-center justify-center gap-2 animate-pulse">
         ЗАБРАТЬ СВОЁ
       </button>
     </div>
@@ -1884,11 +1894,19 @@ const App = () => {
                 
                 <div className="w-full glass-card p-4 rounded-3xl border border-[#00FF9D]/20 relative overflow-hidden">
                     {userRole === 'business' ? (
-                        <ProfitCalculator data={calcData} setData={setCalcData} onAction={() => {
-                            setCurrentView('roi');
-                        }} />
+                        <ProfitCalculator 
+                            data={calcData} 
+                            setData={setCalcData} 
+                            onAction={() => setCurrentView('roi')} 
+                            onCalculate={handleSaveCalculation}
+                        />
                     ) : (
-                        <AcademyCalculator data={academyCalcData} setData={setAcademyCalcData} onAction={() => setCurrentView('roi')} />
+                        <AcademyCalculator 
+                            data={academyCalcData} 
+                            setData={setAcademyCalcData} 
+                            onAction={() => openModal('Хочу зарабатывать')} 
+                            onCalculate={handleSaveCalculation}
+                        />
                     )}
                 </div>
             </div>

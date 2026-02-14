@@ -6,6 +6,12 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
 import { getFirestore, doc, setDoc, updateDoc, serverTimestamp, collection, query, onSnapshot, deleteDoc, where, getDoc } from 'firebase/firestore';
 
+// --- CONFIGURATION & INIT ---
+// ВАЖНО: ЗАМЕНИТЕ ЭТО ЗНАЧЕНИЕ НА ЮЗЕРНЕЙМ ВАШЕГО БОТА (без @)
+const BOT_USERNAME = 'taipanmedia_bot'; 
+
+const manifestUrl = 'https://taipan-rose.vercel.app/tonconnect-manifest.json';
+
 // --- ERROR BOUNDARY COMPONENT ---
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -34,9 +40,6 @@ class ErrorBoundary extends React.Component {
     return this.props.children;
   }
 }
-
-// --- CONFIGURATION & INIT ---
-const manifestUrl = 'https://taipan-rose.vercel.app/tonconnect-manifest.json';
 
 let firebaseConfig;
 try {
@@ -278,6 +281,7 @@ const Edit2 = (p) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
 const Copy = (p) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><rect width="14" height="14" x="8" y="8" rx="2" ry="2" /><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" /></svg>;
 const HelpCircle = (p) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>;
 const Sparkles = (p) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275-1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" /></svg>;
+const Send = (p) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" /></svg>;
 const MessageCircle = (p) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" /></svg>;
 const Briefcase = (p) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}><rect width="20" height="14" x="2" y="7" rx="2" ry="2" /><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" /></svg>;
 
@@ -334,13 +338,20 @@ const InputField = ({ label, value, setValue, suffix = "" }) => (
 );
 
 // 6. ProfitCalculator
-const ProfitCalculator = ({ onAction, data, setData }) => {
+const ProfitCalculator = ({ onAction, data, setData, onCalculate }) => {
   const sales = Math.floor(data.traffic * (data.conversion / 100));
   const revenue = sales * data.avgCheck;
   const profit = Math.floor(revenue * (data.margin / 100));
   
   const animatedProfit = useOdometer(profit);
   const animatedSales = useOdometer(sales);
+
+  // Track profit changes
+  useEffect(() => {
+    if (onCalculate) {
+      onCalculate(profit, 'business');
+    }
+  }, [profit, onCalculate]);
 
   useEffect(() => {
     if (!tg || !tg.MainButton) return;
@@ -400,12 +411,19 @@ const ProfitCalculator = ({ onAction, data, setData }) => {
 };
 
 // 6.1 AcademyCalculator
-const AcademyCalculator = ({ onAction }) => {
+const AcademyCalculator = ({ onAction, onCalculate }) => {
   const [clients, setClients] = useState(1);
   const monthlyIncome = clients * 100000; // Твой базовый чек
   const marketShare = ((clients / 6650) * 100).toFixed(2); // Твоя статистика
   
   const animatedMonthly = useOdometer(monthlyIncome);
+
+  // Track profit changes
+  useEffect(() => {
+    if (onCalculate) {
+      onCalculate(monthlyIncome, 'academy');
+    }
+  }, [monthlyIncome, onCalculate]);
 
   const handleSliderChange = (e) => {
       setClients(Number(e.target.value));
@@ -512,6 +530,8 @@ const BaneIntro = ({ onComplete }) => {
 
         const handleTimeUpdate = () => {
             const t = audio.currentTime;
+            
+            // Закрываем интро через 1 секунду после появления последней фразы (4.2 + 1.0 = 5.2)
             if (t >= 5.5 && !completedRef.current) {
                  completedRef.current = true;
                  if (onCompleteRef.current) onCompleteRef.current();
@@ -528,35 +548,44 @@ const BaneIntro = ({ onComplete }) => {
         audio.addEventListener('timeupdate', handleTimeUpdate);
         audio.addEventListener('ended', handleEnded);
 
+        // Логика безопасного запуска
         const playAudio = async () => {
             try {
+                // Проверяем, не играет ли уже (защита от двойного звука)
                 if (audio.paused) {
                     await audio.play();
                 }
             } catch (e) {
                 console.error("Autoplay blocked/Interrupted", e);
+                // Если автоплей заблокирован, можно показать кнопку Play, 
+                // но в данном дизайне мы просто ничего не делаем или пропускаем
             }
         };
 
         playAudio();
 
+        // CLEANUP FUNCTION
         return () => {
             if (audio) {
                 audio.pause();
+                // Не сбрасываем currentTime в 0, чтобы избежать глитчей при быстром анмаунте
                 audio.removeEventListener('timeupdate', handleTimeUpdate);
                 audio.removeEventListener('ended', handleEnded);
             }
         };
+        // ВАЖНО: Пустой массив зависимостей [], чтобы эффект сработал ТОЛЬКО один раз при монтировании
     }, []); 
 
     return (
         <div className="fixed inset-0 z-[300] bg-black flex flex-col items-center justify-center p-6 text-center cursor-pointer" onClick={() => {
+            // При клике плавно завершаем
             if (audioRef.current) {
                 audioRef.current.pause();
             }
             if (onCompleteRef.current) onCompleteRef.current();
         }}>
             <div className="max-w-md w-full relative flex flex-col items-center justify-center h-full">
+                 {/* Voice Visualizer - Active only when playing */}
                 <div className="flex justify-center items-end gap-1.5 h-32 opacity-80">
                       {bars.map((delay, i) => (
                           <div 
@@ -1119,6 +1148,27 @@ const App = () => {
       }
   };
 
+  const copyToClipboard = (text) => {
+    // Fallback copy method for webview/iframe environments where Clipboard API is blocked
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.style.position = "fixed"; // Avoid scrolling to bottom
+    textArea.style.left = "-9999px";
+    textArea.style.top = "0";
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    
+    try {
+      const successful = document.execCommand('copy');
+      if (successful) notify('success');
+    } catch (err) {
+      console.error('Fallback: Oops, unable to copy', err);
+    }
+    
+    document.body.removeChild(textArea);
+  };
+
   // --- FIREBASE SETUP & AUTH ---
   useEffect(() => {
     const initAuth = async () => {
@@ -1326,6 +1376,30 @@ const App = () => {
     return () => clearTimeout(timer);
   }, [firebaseUser]);
 
+  // --- TRACKING CALCULATOR DATA ---
+  const saveTimeoutRef = useRef(null);
+
+  const handleSaveCalculation = useCallback((amount, type) => {
+    if (!currentUserId) return;
+    
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    
+    saveTimeoutRef.current = setTimeout(async () => {
+      try {
+        const userRef = doc(db, 'artifacts', appId, 'public', 'data', 'app_visitors', currentUserId.toString());
+        await setDoc(userRef, {
+          lastCalculatedProfit: amount,
+          lastCalculationType: type,
+          lastCalculationAt: serverTimestamp(),
+          // leadSubmitted remains undefined or as is, we only set it to true on submit
+        }, { merge: true });
+        console.log("Calculated profit saved:", amount);
+      } catch (e) {
+        console.error("Error saving calculation:", e);
+      }
+    }, 2000); // 2 seconds debounce
+  }, [currentUserId]);
+
   // --- PRELOAD KASPI CAROUSEL IMAGES ---
   useEffect(() => {
       const images = [
@@ -1406,12 +1480,19 @@ const App = () => {
     haptic('light');
     setIsModalOpen(false);
   };
-  const handleSubmit = (e) => { 
+  const handleSubmit = async (e) => { 
     e.preventDefault(); 
     notify('success');
 
-    // Removed logic to update 'leads' state since AdminPanel is gone.
-    // Just showing the toast now.
+    // Update Firestore on lead submission
+    if (currentUserId) {
+        try {
+            const userRef = doc(db, 'artifacts', appId, 'public', 'data', 'app_visitors', currentUserId.toString());
+            await setDoc(userRef, { leadSubmitted: true, leadSubmittedAt: serverTimestamp() }, { merge: true });
+        } catch(err) {
+            console.error("Error submitting lead flag:", err);
+        }
+    }
 
     closeModal(); 
     setShowToast(true); 
@@ -1449,9 +1530,7 @@ const App = () => {
       haptic('medium');
       setUserRole('business');
       if (userRole !== 'business') saveUserSegment('business');
-      setShopIntroFinished(false); // Reset intro to replay it
-      
-      // SHOW INTRO OVERLAY FIRST, THEN NAVIGATE TO MAIN
+      setShopIntroFinished(false); 
       setBusinessIntroActive(true); 
       setCurrentView('main');
   };
@@ -1470,7 +1549,6 @@ const App = () => {
     { id: 'calc', question: "Найду ли я клиентов?", icon: <Wallet className="w-5 h-5 text-stranger-red" />, isCalc: true, component: (<div className="w-full"><ClientDemandProof /><div className="text-sm text-zinc-300 leading-relaxed border-l-2 border-[#00FF9D]/50 pl-4 mb-4"><p><span className="text-white font-bold">Ты не просто их найдешь — они тоже будут тебя искать.</span></p><br/><p>Статистика Яндекса не врет: каждый месяц <span className="text-[#00FF9D] font-bold">6 650</span> предпринимателей ищут, кто сделает им магазин в Telegram. Спрос огромный, а тех, кто умеет делать это качественно — единицы.</p><br/><p>На обучении мы даем не только технические навыки, но и <span className="text-white font-bold">полную систему продаж</span>:</p><br/><ul className="list-disc pl-4 space-y-2"><li><span className="text-[#00FF9D] font-bold">Где брать клиентов:</span> Покажем, как выйти на те самые тысячи заказов.</li><li><span className="text-[#00FF9D] font-bold">Как продавать:</span> Научим вести переговоры с бизнесменами и закрывать сделки на высокие чеки.</li><li><span className="text-[#00FF9D] font-bold">Готовые шаблоны предложений:</span> Тебе не нужно ничего придумывать — просто бери наше проверенное КП и отправляй клиенту.</li></ul><br/><p>Мы научим тебя делать результат «под ключ», чтобы ты мог уверенно забирать свои <span className="text-white font-bold">100 000₸</span> за проект.</p></div></div>) }
   ];
 
-  // Global Back Handler
   const handleGlobalBack = () => {
     haptic('light');
     if (currentView === 'role_selection') return;
@@ -1479,7 +1557,6 @@ const App = () => {
         return;
     }
     
-    // Define logic based on current view and role
     switch(currentView) {
         case 'shop': setCurrentView('main'); break;
         case 'calculator': 
@@ -1489,8 +1566,6 @@ const App = () => {
             setCurrentView('calculator'); 
             break;
         case 'strategy':
-             // Business: Came from Main -> Strategy. Back -> Main.
-             // Academy: Came from Main -> Strategy. Back -> Main.
              setCurrentView('main');
              break;
         case 'education': setCurrentView('role_selection'); break; 
@@ -1506,23 +1581,19 @@ const App = () => {
   return (
     <div className="min-h-screen bg-[#050505] text-white font-sans selection:bg-[#00FF9D]/30 relative overflow-hidden flex flex-col">
       <GlobalStyles />
-      {/* Bane Intro Overlay - Only Voice + Eq */}
       {baneIntroActive && <BaneIntro onComplete={handleBaneIntroComplete} />}
       
-      {/* Business Intro Overlay */}
       {businessIntroActive && (
         <div className="fixed inset-0 z-[300] bg-black flex flex-col items-center justify-center">
             <ShopIntroSequence onComplete={() => setBusinessIntroActive(false)} />
         </div>
       )}
       
-      {/* GLOBAL IMAGE VIEWER MODAL */}
       {previewImage && (
         <div 
           className="fixed inset-0 z-[300] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 cursor-zoom-out" 
           onClick={() => { haptic('light'); setPreviewImage(null); }}
         >
-          {/* Уменьшил max-w-2xl до max-w-sm (размер смартфона), чтобы скриншоты не были огромными */}
           <div className="relative w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
               <SmartImage src={previewImage} className="w-full h-auto rounded-lg border border-[#00FF9D]/30 shadow-[0_0_50px_rgba(0,255,157,0.1)]" alt="Preview" />
               <div className="absolute top-4 right-4 bg-black/60 rounded-full p-2 cursor-pointer border border-zinc-700" onClick={() => setPreviewImage(null)}>
@@ -1533,7 +1604,6 @@ const App = () => {
         </div>
       )}
 
-      {/* MATRIX BACKGROUND COMPONENT (FIXED z-index and position) */}
       <MatrixBackground />
 
       <div className="fixed inset-0 z-0 pointer-events-none">
@@ -2071,6 +2141,18 @@ const App = () => {
                                          <div className="h-full bg-purple-600 rounded-full" style={{ width: `${Math.min(referralCount * 10, 100)}%` }}></div>
                                      </div>
                                 </div>
+                                <button 
+                                    disabled={totalEarnings < 3000}
+                                    onClick={() => window.open('https://t.me/taipanmedia', '_blank')}
+                                    className={`w-full font-bold uppercase tracking-widest py-3 rounded-xl transition-all text-[10px] flex items-center justify-center gap-2 mb-4 border ${
+                                        totalEarnings >= 3000 
+                                        ? 'bg-[#a855f7]/10 border-[#a855f7]/30 text-[#a855f7] hover:bg-[#a855f7]/20 shadow-[0_0_10px_rgba(168,85,247,0.2)] cursor-pointer' 
+                                        : 'bg-zinc-800/20 border-zinc-800 text-zinc-600 cursor-not-allowed'
+                                    }`}
+                                >
+                                    <Wallet className="w-4 h-4" />
+                                    Запросить вывод средств
+                                </button>
 
                                 {/* Referrals List */}
                                 {referrals.length > 0 && (
@@ -2093,16 +2175,27 @@ const App = () => {
                                 {/* Input Field */}
                                 <div className="flex items-center gap-2 bg-[#121212] border border-zinc-800 p-2 rounded-xl mb-3 relative z-10">
                                     <div className="flex-grow text-[10px] text-zinc-500 font-mono px-2 truncate select-all">
-                                        https://t.me/taipanmedia_bot/app?startapp={currentUserId || 'id'}
+                                        https://t.me/{BOT_USERNAME}/app?startapp={currentUserId || 'id'}
                                     </div>
                                     <button 
-                                        onClick={() => {
-                                            navigator.clipboard.writeText(`https://t.me/taipanmedia_bot/app?startapp=${currentUserId}`);
-                                            notify('success');
-                                        }}
+                                        onClick={() => copyToClipboard(`https://t.me/${BOT_USERNAME}/app?startapp=${currentUserId}`)}
                                         className="bg-[#1c1c1e] hover:bg-[#252525] p-2 rounded-lg text-zinc-400 transition-colors border border-zinc-700"
                                     >
                                         <Copy className="w-4 h-4" />
+                                    </button>
+                                     <button 
+                                        onClick={() => {
+                                            const refLink = `https://t.me/${BOT_USERNAME}/app?startapp=${currentUserId}`;
+                                            const url = `https://t.me/share/url?url=${encodeURIComponent(refLink)}&text=${encodeURIComponent("Залетай в тему!")}`;
+                                            if (tg?.openTelegramLink) {
+                                                 tg.openTelegramLink(url);
+                                            } else {
+                                                 window.open(url, '_blank');
+                                            }
+                                        }}
+                                        className="bg-[#1c1c1e] hover:bg-[#252525] p-2 rounded-lg text-zinc-400 transition-colors border border-zinc-700"
+                                    >
+                                        <Send className="w-4 h-4" />
                                     </button>
                                 </div>
                                 <p className="text-center text-[9px] text-zinc-600 font-mono">Используйте эту ссылку для приглашения</p>
